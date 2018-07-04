@@ -3,6 +3,7 @@ using System.Reactive.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using CardGame.Peer.Server;
+using Newtonsoft.Json;
 using Unity;
 using Unity.Lifetime;
 
@@ -32,10 +33,16 @@ namespace CardGamePeer
 
             try
             {
-                using (var c = container.Resolve<HelloWorldClient>())
+                using (var c = container.Resolve<MessageClient>())
                 {
+                    c.MessageObservable.Subscribe(m =>
+                    {
+                        outputService.WriteLine($"Message Received:{JsonConvert.SerializeObject(m)}");
+                    });
                     c.Connect(TimeSpan.FromSeconds(1.0));
-                    c.SendMessage(new Message { Id = -999 });
+                    var message = new Message { Id = Guid.NewGuid() };
+                    outputService.WriteLine($"Sending: {JsonConvert.SerializeObject(message)}");
+                    c.SendMessage(message);
 
                     Task.Delay(TimeSpan.FromSeconds(2)).Wait();
                 }
@@ -44,14 +51,21 @@ namespace CardGamePeer
             {
                 outputService.WriteLine("Client failed to connect. Assuming server role");
                 //using (
-                var s = container.Resolve<HelloWorldServer>();
+                var s = container.Resolve<MessageServer>();
                 //){
                 s.ClientConnectedObservable
                     //.Take(1)
                     //.Delay(TimeSpan.FromMilliseconds(1))
                     .Subscribe(i =>
                 {
-                    s.SendMessage(new Message { Id = 88 });
+                    outputService.WriteLine("Client Connected");
+                    var message = new Message { Id = Guid.NewGuid() };
+                    outputService.WriteLine($"Sending: {JsonConvert.SerializeObject(message)}");
+                    s.SendMessage(message);
+                });
+                s.MessageObservable.Subscribe(m =>
+                {
+                    outputService.WriteLine($"Message Received:{JsonConvert.SerializeObject(m)}");
                 });
                 Task.Delay(TimeSpan.FromSeconds(2)).Wait();
                 //}
