@@ -16,12 +16,9 @@ namespace CardGamePeer
             container.RegisterType<OutputService>(new ContainerControlledLifetimeManager());
         }
 
-        public void Configure(OutputService outputService)
+        public void Configure()
         {
-            outputService.OutputObservable.Subscribe(s=>
-            {
-                Console.WriteLine(s);
-            });
+            
         }
     }
 }

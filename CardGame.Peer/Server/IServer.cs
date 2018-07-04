@@ -11,7 +11,7 @@ using ProtoBuf;
 
 namespace CardGame.Peer.Server
 {
-    public class HelloWorldServer
+    public class HelloWorldServer: IDisposable
     {
         public const string MytestPipeName = "MyTest.Pipe";
         private readonly OutputService _outputService;
@@ -37,9 +37,9 @@ namespace CardGame.Peer.Server
 
         }
 
-        private void _serverPipe_ReadDataEvent(PipeEventArgs e)
+        private void _serverPipe_ReadDataEvent(byte[] bytes)
         {
-            var memoryStream = new MemoryStream(e.m_pData, 0, e.m_nDataLen);
+            var memoryStream = new MemoryStream(bytes, 0, bytes.Length);
             var message = Serializer.Deserialize<Message>(memoryStream);
             _outputService.WriteLine($"Message: {JsonConvert.SerializeObject(message)}");
         }
@@ -48,9 +48,14 @@ namespace CardGame.Peer.Server
         {
             return _serverPipe.SendCommandAsync(message);
         }
+
+        public void Dispose()
+        {
+            _serverPipe?.Dispose();
+        }
     }
 
-    public class HelloWorldClient
+    public class HelloWorldClient : IDisposable
     {
         private const string PipeServername = ".";
         private readonly OutputService _outputService;
@@ -63,9 +68,9 @@ namespace CardGame.Peer.Server
             _clientPipe.DataReadObservable.Subscribe(_clientPipe_ReadDataEvent);
         }
 
-        private void _clientPipe_ReadDataEvent(PipeEventArgs e)
+        private void _clientPipe_ReadDataEvent(byte[] bytes)
         {
-            var memoryStream = new MemoryStream(e.m_pData, 0, e.m_nDataLen);
+            var memoryStream = new MemoryStream(bytes, 0, bytes.Length);
             var message = Serializer.Deserialize<Message>(memoryStream);
             _outputService.WriteLine($"Message: {JsonConvert.SerializeObject(message)}");
         }
@@ -79,6 +84,11 @@ namespace CardGame.Peer.Server
         {
             _clientPipe.Connect(timeout);
         }
+
+        public void Dispose()
+        {
+            _clientPipe?.Dispose();
+        }
     }
 
     public interface MessageSender
@@ -88,7 +98,7 @@ namespace CardGame.Peer.Server
 
     public class ClientPipe : BasicPipe
     {
-        NamedPipeClientStream m_pPipe;
+        readonly NamedPipeClientStream m_pPipe;
 
         public ClientPipe(string szServerName, string szPipeName)
         {
@@ -99,7 +109,6 @@ namespace CardGame.Peer.Server
 
         public void Connect(TimeSpan? timeout = null)
         {
-            Console.WriteLine($"Pipe {m_szPipeName} connecting to server");
             if (timeout == null)
             {
                 m_pPipe.Connect(); // doesn't seem to be an async method for this routine. just a timeout.
@@ -117,7 +126,7 @@ namespace CardGame.Peer.Server
     {
         public event EventHandler<EventArgs> GotConnectionEvent;
 
-        NamedPipeServerStream m_pPipe;
+        readonly NamedPipeServerStream m_pPipe;
 
         public ServerPipe(string szPipeName)
         {
@@ -140,9 +149,15 @@ namespace CardGame.Peer.Server
 
         void GotPipeConnection(IAsyncResult pAsyncResult)
         {
-            m_pPipe.EndWaitForConnection(pAsyncResult);
-
-            Console.WriteLine("Server Pipe " + m_szPipeName + " got a connection");
+            try
+            {
+                m_pPipe.EndWaitForConnection(pAsyncResult);
+            }
+            catch (IOException ioException) when(ioException.Message.StartsWith("The pipe has been ended"))
+            {
+                Close();
+                return;
+            }
 
             GotConnectionEvent?.Invoke(this, new EventArgs());
 
@@ -158,18 +173,16 @@ namespace CardGame.Peer.Server
         public static int MaxLen = 1024 * 1024; // why not
         protected string m_szPipeName;
 
-        public IObservable<PipeEventArgs> DataReadObservable => _dataReadSubject;
+        public IObservable<byte[]> DataReadObservable => _dataReadSubject;
         public IObservable<int?> PipeClosedObservable => _pipeClosedSubject;
-
-        //protected byte[] m_pPipeBuffer = new byte[BasicPipe.MaxLen];
-
+        
         PipeStream m_pPipeStream;
-        private readonly ISubject<PipeEventArgs> _dataReadSubject;
+        private readonly ISubject<byte[]> _dataReadSubject;
         private readonly ISubject<int?> _pipeClosedSubject;
 
         protected BasicPipe()
         {
-            _dataReadSubject = new Subject<PipeEventArgs>();
+            _dataReadSubject = new Subject<byte[]>();
             _pipeClosedSubject = new Subject<int?>();
         }
 
@@ -180,33 +193,37 @@ namespace CardGame.Peer.Server
 
         public void Close()
         {
-            m_pPipeStream.WaitForPipeDrain();
+            try
+            {
+                m_pPipeStream.WaitForPipeDrain();
+            }
+            catch (ObjectDisposedException objectDisposedException) when(objectDisposedException.Message.StartsWith("Cannot access a closed pipe."))
+            {
+                return;
+            }
+            
             m_pPipeStream.Close();
-            m_pPipeStream.Dispose();
-            m_pPipeStream = null;
+            //m_pPipeStream.Dispose();
+            //m_pPipeStream = null;
+            _pipeClosedSubject.OnNext(null);
         }
 
         // called when Server pipe gets a connection, or when Client pipe is created
         public void StartReadingAsync()
         {
-            Console.WriteLine($"Pipe {m_szPipeName} calling ReadAsync");
-
             // okay we're connected, now immediately listen for incoming buffers
             //
             byte[] pBuffer = new byte[MaxLen];
             m_pPipeStream.ReadAsync(pBuffer, 0, MaxLen).ContinueWith(t =>
             {
-                Console.WriteLine($"Pipe {m_szPipeName} finished a read request");
-
-                int ReadLen = t.Result;
-                if (ReadLen == 0)
+                int readLen = t.Result;
+                if (readLen == 0)
                 {
-                    Console.WriteLine("Got a null read length, remote pipe was closed");
-                    _pipeClosedSubject.OnNext(null);
+                    Close();
                     return;
                 }
-
-                _dataReadSubject.OnNext(new PipeEventArgs(pBuffer, ReadLen));
+                Array.Resize(ref pBuffer, readLen);
+                _dataReadSubject.OnNext(pBuffer);
 
                 // lodge ANOTHER read request
                 //
@@ -223,7 +240,6 @@ namespace CardGame.Peer.Server
 
         public Task SendCommandAsync(Message pCmd)
         {
-            Console.WriteLine($"Pipe {m_szPipeName}, writing Message {JsonConvert.SerializeObject(pCmd)}");
             var memoryStream = new MemoryStream();
             Serializer.Serialize(memoryStream, pCmd);
             memoryStream.Position = 0;
