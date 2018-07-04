@@ -1,17 +1,22 @@
 ﻿using System;
 using System.IO;
 using System.IO.Pipes;
+using System.Reactive.Subjects;
 
 namespace CardGame.Peer.NamedPipes
 {
     public class ServerPipe : PipeBase
     {
-        public event EventHandler<EventArgs> GotConnectionEvent;
+        public IObservable<bool> ConnectedObservable { get; set; }
+        private readonly ISubject<bool> _connectedSubject;
 
         readonly NamedPipeServerStream m_pPipe;
 
         public ServerPipe(string szPipeName)
         {
+            _connectedSubject = new BehaviorSubject<bool>(false);
+            ConnectedObservable = _connectedSubject;
+            PipeClosedObservable.Subscribe(ni => _connectedSubject.OnNext(false));
             m_szPipeName = szPipeName;
             m_pPipe = new NamedPipeServerStream(
                 szPipeName,
@@ -41,7 +46,7 @@ namespace CardGame.Peer.NamedPipes
                 return;
             }
 
-            GotConnectionEvent?.Invoke(this, new EventArgs());
+            _connectedSubject.OnNext(true);
 
             // lodge the first read request to get us going
             //

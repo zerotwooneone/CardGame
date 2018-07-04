@@ -2,6 +2,7 @@
 using System.Threading.Tasks;
 using CardGame.Peer;
 using CardGame.Peer.MessagePipe;
+using CardGame.Peer.NamedPipes;
 using Newtonsoft.Json;
 using Unity;
 using Unity.Lifetime;
@@ -16,7 +17,7 @@ namespace CardGamePeer
             var container = new UnityContainer();
 
             container.RegisterType<Startup>(new ContainerControlledLifetimeManager());
-            
+
             var startup = container.Resolve<Startup>();
 
             startup.Setup(container);
@@ -29,45 +30,18 @@ namespace CardGamePeer
 
             var outputService = container.Resolve<OutputService>();
 
-            try
+            var factory = container.Resolve<MessagePipeFactory>();
+            const string PipeServername = ".";
+            const string MytestPipeName = "MyTest.Pipe";
+            var namedPipeConfig = new NamedPipeConfig { PipeName = MytestPipeName, ServerName = PipeServername };
+            var messagePipe = factory.GetMessagePipe(namedPipeConfig).Result;
+            messagePipe.MessageObservable.Subscribe(m =>
             {
-                using (var c = container.Resolve<MessageClient>())
-                {
-                    c.MessageObservable.Subscribe(m =>
-                    {
-                        outputService.WriteLine($"Message Received:{JsonConvert.SerializeObject(m)}");
-                    });
-                    c.Connect(TimeSpan.FromSeconds(1.0));
-                    var message = new Message { Id = Guid.NewGuid() };
-                    outputService.WriteLine($"Sending: {JsonConvert.SerializeObject(message)}");
-                    c.SendMessage(message);
-
-                    Task.Delay(TimeSpan.FromSeconds(2)).Wait();
-                }
-            }
-            catch (TimeoutException e) when (e.Message.StartsWith("The operation has timed out."))
-            {
-                outputService.WriteLine("Client failed to connect. Assuming server role");
-                //using (
-                var s = container.Resolve<MessageServer>();
-                //){
-                s.ClientConnectedObservable
-                    //.Take(1)
-                    //.Delay(TimeSpan.FromMilliseconds(1))
-                    .Subscribe(i =>
-                {
-                    outputService.WriteLine("Client Connected");
-                    var message = new Message { Id = Guid.NewGuid() };
-                    outputService.WriteLine($"Sending: {JsonConvert.SerializeObject(message)}");
-                    s.SendMessage(message);
-                });
-                s.MessageObservable.Subscribe(m =>
-                {
-                    outputService.WriteLine($"Message Received:{JsonConvert.SerializeObject(m)}");
-                });
-                Task.Delay(TimeSpan.FromSeconds(2)).Wait();
-                //}
-            }
+                outputService.WriteLine($"Message Received:{JsonConvert.SerializeObject(m)}");
+            });
+            var message = new Message { Id = Guid.NewGuid() };
+            outputService.WriteLine($"Sending: {JsonConvert.SerializeObject(message)}");
+            messagePipe.SendMessage(message).Wait();
 
             do
             {

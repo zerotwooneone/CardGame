@@ -7,19 +7,19 @@ using ProtoBuf;
 
 namespace CardGame.Peer.MessagePipe
 {
-    public class MessageClient : IDisposable, IMessagePipe
+    public class MessageClient : IMessagePipe
     {
-        private const string PipeServername = ".";
+        
         private readonly ClientPipe _clientPipe;
         private readonly ISubject<Message> _messageSubject;
 
         public IObservable<Message> MessageObservable { get; }
 
-        public MessageClient()
+        public MessageClient(ClientPipe clientPipe)
         {
             _messageSubject = new Subject<Message>();
             MessageObservable = _messageSubject;
-            _clientPipe = new ClientPipe(PipeServername, MessageServer.MytestPipeName);
+            _clientPipe = clientPipe;
             _clientPipe.DataReadObservable.Subscribe(_clientPipe_ReadDataEvent);
         }
 

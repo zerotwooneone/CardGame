@@ -8,32 +8,30 @@ using ProtoBuf;
 
 namespace CardGame.Peer.MessagePipe
 {
-    public class MessageServer: IDisposable, IMessagePipe
+    public class MessageServer: IMessagePipe
     {
-        public const string MytestPipeName = "MyTest.Pipe";
         private readonly ServerPipe _serverPipe;
-        public IObservable<int> ClientConnectedObservable { get; }
+        //public IObservable<int> ClientConnectedObservable { get; }
         private readonly ISubject<Message> _messageSubject;
         public IObservable<Message> MessageObservable { get; }
 
-        public MessageServer()
+        public MessageServer(ServerPipe serverPipe)
         {
             _messageSubject = new Subject<Message>();
             MessageObservable = _messageSubject;
-            _serverPipe = new ServerPipe(MytestPipeName);
+            _serverPipe = serverPipe;
             _serverPipe.DataReadObservable.Subscribe(_serverPipe_ReadDataEvent);
-            ClientConnectedObservable = Observable.FromEvent<EventHandler<EventArgs>, int>(
-                onNextHandler =>
-                {
-                    void HandleEvent(object x, EventArgs y)
-                    {
-                        onNextHandler(0);
-                    }
-                    return HandleEvent;
-                },
-                h => _serverPipe.GotConnectionEvent += h,
-                h => _serverPipe.GotConnectionEvent -= h);
-
+            //ClientConnectedObservable = Observable.FromEvent<EventHandler<EventArgs>, int>(
+            //    onNextHandler =>
+            //    {
+            //        void HandleEvent(object x, EventArgs y)
+            //        {
+            //            onNextHandler(0);
+            //        }
+            //        return HandleEvent;
+            //    },
+            //    h => _serverPipe.GotConnectionEvent += h,
+            //    h => _serverPipe.GotConnectionEvent -= h);
         }
 
         private void _serverPipe_ReadDataEvent(byte[] bytes)
