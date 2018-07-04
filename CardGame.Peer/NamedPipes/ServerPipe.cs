@@ -2,7 +2,7 @@
 using System.IO;
 using System.IO.Pipes;
 
-namespace CardGame.Peer.Server
+namespace CardGame.Peer.NamedPipes
 {
     public class ServerPipe : PipeBase
     {

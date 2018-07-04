@@ -13,8 +13,4 @@
     <ProjectReference Include="..\CardGame.Core\CardGame.Core.csproj" />
   </ItemGroup>
 
-  <ItemGroup>
-    <Folder Include="NamedPipes\" />
-  </ItemGroup>
-
 </Project>

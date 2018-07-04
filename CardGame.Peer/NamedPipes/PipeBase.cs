@@ -1,11 +1,9 @@
 ﻿using System;
-using System.IO;
 using System.IO.Pipes;
 using System.Reactive.Subjects;
 using System.Threading.Tasks;
-using ProtoBuf;
 
-namespace CardGame.Peer.Server
+namespace CardGame.Peer.NamedPipes
 {
     public abstract class PipeBase : IDisposable
     {

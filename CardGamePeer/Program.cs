@@ -1,8 +1,7 @@
 ﻿using System;
-using System.Reactive.Linq;
-using System.Threading;
 using System.Threading.Tasks;
-using CardGame.Peer.Server;
+using CardGame.Peer;
+using CardGame.Peer.MessagePipe;
 using Newtonsoft.Json;
 using Unity;
 using Unity.Lifetime;
@@ -17,8 +16,7 @@ namespace CardGamePeer
             var container = new UnityContainer();
 
             container.RegisterType<Startup>(new ContainerControlledLifetimeManager());
-            container.RegisterType<OutputService>(new ContainerControlledLifetimeManager());
-
+            
             var startup = container.Resolve<Startup>();
 
             startup.Setup(container);
@@ -42,7 +40,7 @@ namespace CardGamePeer
                     c.Connect(TimeSpan.FromSeconds(1.0));
                     var message = new Message { Id = Guid.NewGuid() };
                     outputService.WriteLine($"Sending: {JsonConvert.SerializeObject(message)}");
-                    c.SendMessage(message);
+                    c.GetResponse(message);
 
                     Task.Delay(TimeSpan.FromSeconds(2)).Wait();
                 }

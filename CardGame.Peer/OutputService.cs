@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Reactive.Subjects;
 
-namespace CardGamePeer
+namespace CardGame.Peer
 {
     public class OutputService
     {

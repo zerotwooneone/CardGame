@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Reactive.Linq;
+using CardGame.Peer;
 
 namespace CardGamePeer
 {

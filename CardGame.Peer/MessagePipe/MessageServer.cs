@@ -3,9 +3,10 @@ using System.IO;
 using System.Reactive.Linq;
 using System.Reactive.Subjects;
 using System.Threading.Tasks;
+using CardGame.Peer.NamedPipes;
 using ProtoBuf;
 
-namespace CardGame.Peer.Server
+namespace CardGame.Peer.MessagePipe
 {
     public class MessageServer: IDisposable
     {

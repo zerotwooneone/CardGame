@@ -1,7 +1,7 @@
 ﻿using System;
 using ProtoBuf;
 
-namespace CardGame.Peer.Server
+namespace CardGame.Peer.MessagePipe
 {
     [ProtoContract]
     public class Response
