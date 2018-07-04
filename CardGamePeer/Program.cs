@@ -40,7 +40,7 @@ namespace CardGamePeer
                     c.Connect(TimeSpan.FromSeconds(1.0));
                     var message = new Message { Id = Guid.NewGuid() };
                     outputService.WriteLine($"Sending: {JsonConvert.SerializeObject(message)}");
-                    c.GetResponse(message);
+                    c.SendMessage(message);
 
                     Task.Delay(TimeSpan.FromSeconds(2)).Wait();
                 }

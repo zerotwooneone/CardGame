@@ -8,7 +8,7 @@ using ProtoBuf;
 
 namespace CardGame.Peer.MessagePipe
 {
-    public class MessageServer: IDisposable
+    public class MessageServer: IDisposable, IMessagePipe
     {
         public const string MytestPipeName = "MyTest.Pipe";
         private readonly ServerPipe _serverPipe;
