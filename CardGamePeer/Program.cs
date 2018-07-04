@@ -1,7 +1,8 @@
 ﻿using System;
+using System.Reactive.Linq;
 using System.Threading;
+using CardGame.Peer.Server;
 using Unity;
-using Unity.Injection;
 using Unity.Lifetime;
 
 namespace CardGamePeer
@@ -12,6 +13,21 @@ namespace CardGamePeer
         {
             Console.WriteLine("Starting...");
             var container = new UnityContainer();
+
+            try
+            {
+                var c = container.Resolve<HelloWorldClient>();
+                c.Connect(TimeSpan.FromSeconds(1.0));
+                c.SendMessage(new Message {Id = -999});
+            }
+            catch (TimeoutException e) when(e.Message.StartsWith("The operation has timed out."))
+            {
+                var s =container.Resolve<HelloWorldServer>();
+                s.ClientConnectedObservable.Take(1).Delay(TimeSpan.FromMilliseconds(1)).Subscribe(i =>
+                {
+                    s.SendMessage(new Message {Id = 88});
+                });
+            }
 
             container.RegisterType<Startup>(new ContainerControlledLifetimeManager());
 

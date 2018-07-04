@@ -1,6 +1,4 @@
-﻿using System;
-
-namespace CardGame.Peer
+﻿namespace CardGame.Peer
 {
     public class Class1
     {

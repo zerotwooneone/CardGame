@@ -1,7 +1,4 @@
-﻿using System;
-using System.Reactive.Subjects;
-
-namespace CardGamePeer
+﻿namespace CardGamePeer
 {
     public class ProgramViewmodel
     {
