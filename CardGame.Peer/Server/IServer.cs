@@ -21,8 +21,8 @@ namespace CardGame.Peer.Server
         public HelloWorldServer(OutputService outputService)
         {
             _outputService = outputService;
-            _serverPipe = new ServerPipe(MytestPipeName, 0);
-            _serverPipe.ReadDataEvent += _serverPipe_ReadDataEvent;
+            _serverPipe = new ServerPipe(MytestPipeName);
+            _serverPipe.DataReadObservable.Subscribe(_serverPipe_ReadDataEvent);
             ClientConnectedObservable = Observable.FromEvent<EventHandler<EventArgs>, int>(
                 onNextHandler =>
                 {
@@ -37,7 +37,7 @@ namespace CardGame.Peer.Server
 
         }
 
-        private void _serverPipe_ReadDataEvent(object sender, PipeEventArgs e)
+        private void _serverPipe_ReadDataEvent(PipeEventArgs e)
         {
             var memoryStream = new MemoryStream(e.m_pData, 0, e.m_nDataLen);
             var message = Serializer.Deserialize<Message>(memoryStream);
@@ -52,29 +52,22 @@ namespace CardGame.Peer.Server
 
     public class HelloWorldClient
     {
+        private const string PipeServername = ".";
         private readonly OutputService _outputService;
         private readonly ClientPipe _clientPipe;
 
         public HelloWorldClient(OutputService outputService)
         {
             _outputService = outputService;
-            _clientPipe = new ClientPipe(".", HelloWorldServer.MytestPipeName);
-            _clientPipe.ReadDataEvent += _clientPipe_ReadDataEvent;
+            _clientPipe = new ClientPipe(PipeServername, HelloWorldServer.MytestPipeName);
+            _clientPipe.DataReadObservable.Subscribe(_clientPipe_ReadDataEvent);
         }
 
-        private void _clientPipe_ReadDataEvent(object sender, PipeEventArgs e)
+        private void _clientPipe_ReadDataEvent(PipeEventArgs e)
         {
-            if (e.m_pData.Length > 0)
-            {
-                var memoryStream = new MemoryStream(e.m_pData, 0, e.m_nDataLen);
-                var message = Serializer.Deserialize<Message>(memoryStream);
-                _outputService.WriteLine($"Message: {JsonConvert.SerializeObject(message)}");
-            }
-            else
-            {
-                _outputService.WriteLine("DDS Zero length read");
-            }
-
+            var memoryStream = new MemoryStream(e.m_pData, 0, e.m_nDataLen);
+            var message = Serializer.Deserialize<Message>(memoryStream);
+            _outputService.WriteLine($"Message: {JsonConvert.SerializeObject(message)}");
         }
 
         public Task SendMessage(Message message)
@@ -88,7 +81,7 @@ namespace CardGame.Peer.Server
         }
     }
 
-    public interface PipeSender
+    public interface MessageSender
     {
         Task SendCommandAsync(Message pCmd);
     }
@@ -98,7 +91,6 @@ namespace CardGame.Peer.Server
         NamedPipeClientStream m_pPipe;
 
         public ClientPipe(string szServerName, string szPipeName)
-            : base("Client")
         {
             m_szPipeName = szPipeName; // debugging
             m_pPipe = new NamedPipeClientStream(szServerName, szPipeName, PipeDirection.InOut, PipeOptions.Asynchronous);
@@ -107,7 +99,7 @@ namespace CardGame.Peer.Server
 
         public void Connect(TimeSpan? timeout = null)
         {
-            Console.WriteLine("Pipe " + FullPipeNameDebug() + " connecting to server");
+            Console.WriteLine($"Pipe {m_szPipeName} connecting to server");
             if (timeout == null)
             {
                 m_pPipe.Connect(); // doesn't seem to be an async method for this routine. just a timeout.
@@ -119,9 +111,6 @@ namespace CardGame.Peer.Server
 
             StartReadingAsync();
         }
-
-        // the client's pipe index is always 0
-        internal override int PipeId() { return 0; }
     }
 
     public class ServerPipe : BasicPipe
@@ -129,13 +118,10 @@ namespace CardGame.Peer.Server
         public event EventHandler<EventArgs> GotConnectionEvent;
 
         NamedPipeServerStream m_pPipe;
-        int m_nPipeId;
 
-        public ServerPipe(string szPipeName, int nPipeId)
-            : base("Server")
+        public ServerPipe(string szPipeName)
         {
             m_szPipeName = szPipeName;
-            m_nPipeId = nPipeId;
             m_pPipe = new NamedPipeServerStream(
                 szPipeName,
                 PipeDirection.InOut,
@@ -164,40 +150,33 @@ namespace CardGame.Peer.Server
             //
             StartReadingAsync();
         }
-
-        internal override int PipeId() { return m_nPipeId; }
     }
 
 
-    public abstract class BasicPipe : PipeSender
+    public abstract class BasicPipe : MessageSender, IDisposable
     {
         public static int MaxLen = 1024 * 1024; // why not
         protected string m_szPipeName;
-        protected string m_szDebugPipeName;
 
-        public event EventHandler<PipeEventArgs> ReadDataEvent;
-        public event EventHandler<EventArgs> PipeClosedEvent;
+        public IObservable<PipeEventArgs> DataReadObservable => _dataReadSubject;
+        public IObservable<int?> PipeClosedObservable => _pipeClosedSubject;
 
-        protected byte[] m_pPipeBuffer = new byte[BasicPipe.MaxLen];
+        //protected byte[] m_pPipeBuffer = new byte[BasicPipe.MaxLen];
 
         PipeStream m_pPipeStream;
+        private readonly ISubject<PipeEventArgs> _dataReadSubject;
+        private readonly ISubject<int?> _pipeClosedSubject;
 
-        public BasicPipe(string szDebugPipeName)
+        protected BasicPipe()
         {
-            m_szDebugPipeName = szDebugPipeName;
+            _dataReadSubject = new Subject<PipeEventArgs>();
+            _pipeClosedSubject = new Subject<int?>();
         }
 
         protected void SetPipeStream(PipeStream p)
         {
             m_pPipeStream = p;
         }
-
-        protected string FullPipeNameDebug()
-        {
-            return m_szDebugPipeName + "-" + m_szPipeName;
-        }
-
-        internal abstract int PipeId();
 
         public void Close()
         {
@@ -210,34 +189,24 @@ namespace CardGame.Peer.Server
         // called when Server pipe gets a connection, or when Client pipe is created
         public void StartReadingAsync()
         {
-            Console.WriteLine("Pipe " + FullPipeNameDebug() + " calling ReadAsync");
+            Console.WriteLine($"Pipe {m_szPipeName} calling ReadAsync");
 
             // okay we're connected, now immediately listen for incoming buffers
             //
             byte[] pBuffer = new byte[MaxLen];
             m_pPipeStream.ReadAsync(pBuffer, 0, MaxLen).ContinueWith(t =>
             {
-                Console.WriteLine("Pipe " + FullPipeNameDebug() + " finished a read request");
+                Console.WriteLine($"Pipe {m_szPipeName} finished a read request");
 
                 int ReadLen = t.Result;
                 if (ReadLen == 0)
                 {
                     Console.WriteLine("Got a null read length, remote pipe was closed");
-                    if (PipeClosedEvent != null)
-                    {
-                        PipeClosedEvent(this, new EventArgs());
-                    }
+                    _pipeClosedSubject.OnNext(null);
                     return;
                 }
 
-                if (ReadDataEvent != null)
-                {
-                    ReadDataEvent(this, new PipeEventArgs(pBuffer, ReadLen));
-                }
-                else
-                {
-                    Debug.Assert(false, "something happened");
-                }
+                _dataReadSubject.OnNext(new PipeEventArgs(pBuffer, ReadLen));
 
                 // lodge ANOTHER read request
                 //
@@ -254,12 +223,26 @@ namespace CardGame.Peer.Server
 
         public Task SendCommandAsync(Message pCmd)
         {
-            Console.WriteLine("Pipe " + FullPipeNameDebug() + ", writing Message" + JsonConvert.SerializeObject(pCmd));
+            Console.WriteLine($"Pipe {m_szPipeName}, writing Message {JsonConvert.SerializeObject(pCmd)}");
             var memoryStream = new MemoryStream();
             Serializer.Serialize(memoryStream, pCmd);
             memoryStream.Position = 0;
             Task t = WriteByteArray(memoryStream.ToArray());
             return t;
+        }
+
+        protected virtual void Dispose(bool disposing)
+        {
+            if (disposing)
+            {
+                m_pPipeStream?.Dispose();
+            }
+        }
+
+        public void Dispose()
+        {
+            Dispose(true);
+            GC.SuppressFinalize(this);
         }
     }
 
