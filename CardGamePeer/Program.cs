@@ -37,18 +37,18 @@ namespace CardGamePeer
             var namedPipeConfig = new NamedPipeConfig { PipeName = MytestPipeName, ServerName = PipeServername };
             var messagePipe = factory.GetMessagePipe(namedPipeConfig).Result;
             var responsePipe = new ResponsePipe(messagePipe);
-            //messagePipe.MessageObservable.Subscribe(m =>
-            //{
-            //    outputService.WriteLine($"Message Received:{JsonConvert.SerializeObject(m)}");
-            //});
+    messagePipe.MessageObservable.Subscribe(m =>
+    {
+        outputService.WriteLine($"Message Received:{JsonConvert.SerializeObject(m)}");
+    });
             var messageHandler = new MessageHandler(messagePipe);
-            var magicGuid = Guid.Parse("00000000000000000000000000000000");
+            var magicGuid = Guid.Parse("00000000000000000000000000000001");
             var handlerConfigs = new[] { new HandlerConfig { Filter = m => m.Id == magicGuid, Handler = m => outputService.WriteLine($"message:{JsonConvert.SerializeObject(m)}") } };
             Dictionary<Func<Message, bool>, Func<Message, Response>> readOnlyDictionary = new Dictionary<Func<Message, bool>, Func<Message, Response>> { { m => m.Id == magicGuid, m => new Response { Id = Guid.NewGuid() } } };
             messageHandler.RegisterHandlers(handlerConfigs, readOnlyDictionary);
-            var message = new Message { Id = Guid.NewGuid() };
-            outputService.WriteLine($"Sending: {JsonConvert.SerializeObject(message)}");
-            responsePipe.SendMessage(message).Wait();
+            //var message = new Message { Id = Guid.NewGuid() };
+            //outputService.WriteLine($"Sending: {JsonConvert.SerializeObject(message)}");
+            //responsePipe.SendMessage(message).Wait();
             var response = responsePipe.GetResponse(new Message { Id = magicGuid }).Result;
             outputService.WriteLine($"Response:{JsonConvert.SerializeObject(response)}");
 

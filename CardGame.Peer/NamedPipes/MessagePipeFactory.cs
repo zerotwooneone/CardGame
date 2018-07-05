@@ -31,7 +31,7 @@ namespace CardGame.Peer.NamedPipes
                 await Task.Run(() =>
                 {
                     clientPipe.Connect(ClientConnecTimeSpan);
-                });
+                }).ConfigureAwait(false);
                 result = new MessageClient(clientPipe);
             }
             catch (TimeoutException e) when (e.Message.StartsWith("The operation has timed out."))
@@ -44,7 +44,7 @@ namespace CardGame.Peer.NamedPipes
                 await serverPipe.ConnectedObservable
                     .Where(c => c)
                     .Take(1)
-                    .ToTask();
+                    .ToTask().ConfigureAwait(false);
                 result = new MessageServer(serverPipe);
             }
             return result;

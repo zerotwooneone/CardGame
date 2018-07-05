@@ -27,7 +27,7 @@ namespace CardGame.Peer.MessagePipe
             const bool senderNotWaitingForResponseDefault = false;
 
 
-            await _writeSemaphore.WaitAsync();
+            await _writeSemaphore.WaitAsync().ConfigureAwait(false);
             try
             {
                 if (message.SenderNotWaitingForResponse ?? senderNotWaitingForResponseDefault)
@@ -45,14 +45,14 @@ namespace CardGame.Peer.MessagePipe
                         .Take(1)
                         .ToTask();
                 }
-                await _messagePipe.SendMessage(message);
+                await _messagePipe.SendMessage(message).ConfigureAwait(false);
                 if (message.SenderNotWaitingForResponse ?? senderNotWaitingForResponseDefault)
                 {
                     return (Response)null;
                 }
                 else
                 {
-                    return await responseTask;
+                    return await responseTask.ConfigureAwait(false);
                 }
             }
             finally
@@ -64,10 +64,10 @@ namespace CardGame.Peer.MessagePipe
 
         public async Task SendMessage(Message message)
         {
-            await _writeSemaphore.WaitAsync();
+            await _writeSemaphore.WaitAsync().ConfigureAwait(false);
             try
             {
-                await _messagePipe.SendMessage(message);
+                await _messagePipe.SendMessage(message).ConfigureAwait(false);
             }
             finally
             {

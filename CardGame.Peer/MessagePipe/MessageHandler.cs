@@ -23,21 +23,14 @@ namespace CardGame.Peer.MessagePipe
             {
                 var subscription = _messagePipe
                     .MessageObservable
-                    .Select(m =>
-                    {
-                        return m;
-                    })
                     .Where(handlerConfig.Filter)
-                    .Select(m =>
-                    {
-                        return m;
-                    })
                     .Subscribe(handlerConfig.Handler);
                 _subscriptions.Add(subscription);
             }
 
             var s = _messagePipe
                 .MessageObservable
+                .Where(m=>m.Response == null)
                 .Subscribe(m =>
                 {
                     var handler = responseHandlers.FirstOrDefault(kvp => kvp.Key(m));

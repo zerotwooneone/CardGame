@@ -19,15 +19,21 @@ namespace CardGame.Peer.NamedPipes
         public async Task<Response> GetResponse(Message message)
         {
             var responseTask = _messagePipe.MessageObservable
-                .Where(m => m.Response != null && m.Id == message.Id)
+                .Where(m =>
+                {
+                    return m.Response != null && m.Id == message.Id;
+                })
                 .Take(1)
-                .Select(m => m.Response)
+                .Select(m =>
+                {
+                    return m.Response;
+                })
                 .ToTask();
-            await _writeSemaphore.WaitAsync();
+            await _writeSemaphore.WaitAsync().ConfigureAwait(false);
             try
             {
-                await _messagePipe.SendMessage(message);
-                return await responseTask;
+                await _messagePipe.SendMessage(message).ConfigureAwait(false);
+                return await responseTask.ConfigureAwait(false);
             }
             finally
             {
@@ -37,10 +43,10 @@ namespace CardGame.Peer.NamedPipes
 
         public async Task SendMessage(Message message)
         {
-            await _writeSemaphore.WaitAsync();
+            await _writeSemaphore.WaitAsync().ConfigureAwait(false);
             try
             {
-                await _messagePipe.SendMessage(message);
+                await _messagePipe.SendMessage(message).ConfigureAwait(false);
             }
             finally
             {
