@@ -19,7 +19,7 @@ namespace CardGamePeer
 
         private string FormatForConsole(string s)
         {
-            return $"os {DateTime.Now:hh:mm:ss.fff}:{s}";
+            return $"{DateTime.Now:hh:mm:ss.fff}:{s}";
         }
 
         public void Start()
