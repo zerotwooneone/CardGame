@@ -32,26 +32,4 @@ namespace CardGame.Core.Game
             Broadcast(new PlayerAddedEvent(playerId));
         }
     }
-
-    public class GameCreatedEvent : IEvent
-    {
-        public GameCreatedEvent(Guid gameId, IEnumerable<Guid> players)
-        {
-            GameId = gameId;
-            Players = players;
-        }
-
-        public Guid GameId { get; set; }
-        public IEnumerable<Guid> Players { get; set; }
-    }
-
-    public class PlayerAddedEvent : IEvent
-    {
-        public PlayerAddedEvent(Guid playerId)
-        {
-            PlayerId = playerId;
-        }
-
-        public Guid PlayerId { get; set; }
-    }
 }

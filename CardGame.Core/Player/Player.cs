@@ -5,9 +5,18 @@ namespace CardGame.Core.Player
 {
     public class Player: IAggregate<Guid>
     {
-        public Player(Guid id)
+        private readonly IEventBus _eventBus;
+
+        public Player(IEventBus eventBus, Guid id)
         {
+            _eventBus = eventBus;
             Id = id;
+            Apply(new PlayerCreatedEvent {Id = Id});
+        }
+
+        private void Apply(IEvent eventObj)
+        {
+            _eventBus.Broadcast(eventObj);
         }
 
         public Guid Id { get; }

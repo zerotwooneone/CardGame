@@ -3,9 +3,8 @@ using System.Reactive.Threading.Tasks;
 using System.Threading;
 using System.Threading.Tasks;
 using CardGame.Peer.MessagePipe;
-using CardGame.Peer.ResponsePipe;
 
-namespace CardGame.Peer.NamedPipes
+namespace CardGame.Peer.ResponsePipe
 {
     public class ResponsePipe : IResponsePipe
     {
