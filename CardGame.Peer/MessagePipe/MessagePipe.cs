@@ -2,7 +2,6 @@
 using System.IO;
 using System.Reactive.Linq;
 using System.Reactive.Threading.Tasks;
-using System.Threading;
 using System.Threading.Tasks;
 using ProtoBuf;
 
@@ -12,7 +11,6 @@ namespace CardGame.Peer.MessagePipe
     {
         private readonly IMessagePipe _messagePipe;
         private const double ResponseTimeoutSeconds = 60;
-        private readonly SemaphoreSlim _writeSemaphore = new SemaphoreSlim(1, 1);
 
         public MessagePipe(IMessagePipe messagePipe)
         {
@@ -23,56 +21,38 @@ namespace CardGame.Peer.MessagePipe
             var memoryStream = new MemoryStream();
             Serializer.Serialize(memoryStream, message);
             memoryStream.Position = 0;
-            Task<Response> responseTask;
             const bool senderNotWaitingForResponseDefault = false;
 
-
-            await _writeSemaphore.WaitAsync().ConfigureAwait(false);
-            try
+            Task<Response> responseTask;
+            if (message.SenderNotWaitingForResponse ?? senderNotWaitingForResponseDefault)
             {
-                if (message.SenderNotWaitingForResponse ?? senderNotWaitingForResponseDefault)
-                {
-                    responseTask = Task.FromResult((Response)null);
-                }
-                else
-                {
-                    var waitForResponse = true;
-                    responseTask = _messagePipe.MessageObservable
-                        .Timeout(TimeSpan.FromSeconds(ResponseTimeoutSeconds))
-                        .TakeWhile(b => waitForResponse)
-                        .Where(responseMessage => message.Response != null && message.Id == responseMessage.Id)
-                        .Select(m => m.Response)
-                        .Take(1)
-                        .ToTask();
-                }
-                await _messagePipe.SendMessage(message).ConfigureAwait(false);
-                if (message.SenderNotWaitingForResponse ?? senderNotWaitingForResponseDefault)
-                {
-                    return (Response)null;
-                }
-                else
-                {
-                    return await responseTask.ConfigureAwait(false);
-                }
+                responseTask = Task.FromResult((Response)null);
             }
-            finally
+            else
             {
-                _writeSemaphore.Release();
+                var waitForResponse = true;
+                responseTask = _messagePipe.MessageObservable
+                    .Timeout(TimeSpan.FromSeconds(ResponseTimeoutSeconds))
+                    .TakeWhile(b => waitForResponse)
+                    .Where(responseMessage => message.Response != null && message.Id == responseMessage.Id)
+                    .Select(m => m.Response)
+                    .Take(1)
+                    .ToTask();
             }
-
+            await _messagePipe.SendMessage(message).ConfigureAwait(false);
+            if (message.SenderNotWaitingForResponse ?? senderNotWaitingForResponseDefault)
+            {
+                return (Response)null;
+            }
+            else
+            {
+                return await responseTask.ConfigureAwait(false);
+            }
         }
 
         public async Task SendMessage(Message message)
         {
-            await _writeSemaphore.WaitAsync().ConfigureAwait(false);
-            try
-            {
-                await _messagePipe.SendMessage(message).ConfigureAwait(false);
-            }
-            finally
-            {
-                _writeSemaphore.Release();
-            }
+            await _messagePipe.SendMessage(message).ConfigureAwait(false);
         }
     }
 }
