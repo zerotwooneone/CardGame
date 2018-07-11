@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using System.Reactive.Linq;
+using Newtonsoft.Json;
 
 namespace CardGame.Peer.MessagePipe
 {
@@ -21,24 +22,33 @@ namespace CardGame.Peer.MessagePipe
         {
             foreach (var handlerConfig in handlerConfigs)
             {
-                var subscription = _messagePipe
-                    .MessageObservable
-                    .Where(handlerConfig.Filter)
-                    .Subscribe(handlerConfig.Handler);
-                _subscriptions.Add(subscription);
+                if (handlerConfig.Handler != null)
+                {
+                    var subscription = _messagePipe
+                        .MessageObservable
+                        //.Select(m=>
+                        //{
+                        //    Console.WriteLine($"trying to handle message:{JsonConvert.SerializeObject(m)}");
+                        //    return m;
+                        //})
+                        .Where(m => handlerConfig.Filter(m))
+                        .Subscribe(m => { handlerConfig.Handler(m); });
+                    _subscriptions.Add(subscription);
+                }
             }
 
             var s = _messagePipe
                 .MessageObservable
-                .Where(m=>m.Response == null)
+                .Where(m =>
+                {
+                    return m.Response == null;
+                })
                 .Subscribe(m =>
                 {
                     var handler = responseHandlers.FirstOrDefault(kvp => kvp.Key(m));
-                    if (!default(KeyValuePair<Func<Message, bool>, Func<Message, Response>>).Equals(handler))
-                    {
-                        var response = responseHandlers[handler.Key](m);
-                        _messagePipe.SendMessage(new Message { Id = m.Id, Response = response });
-                    }
+                    if (default(KeyValuePair<Func<Message, bool>, Func<Message, Response>>).Equals(handler)) return;
+                    var response = responseHandlers[handler.Key](m);
+                    _messagePipe.SendMessage(new Message { Id = m.Id, Response = response });
                 });
             _subscriptions.Add(s);
         }
@@ -53,16 +63,10 @@ namespace CardGame.Peer.MessagePipe
                 }
                 catch (Exception e)
                 {
-                    Debug.WriteLine(e);
+                    Console.WriteLine(e);
                 }
             }
             _messagePipe?.Dispose();
         }
-    }
-
-    public class HandlerConfig
-    {
-        public Func<Message, bool> Filter { get; set; }
-        public Action<Message> Handler { get; set; }
     }
 }

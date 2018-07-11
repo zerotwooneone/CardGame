@@ -7,12 +7,12 @@ namespace CardGame.Core.Game
 {
     public class Game : IAggregate<Guid>
     {
-        private readonly IEventBus _eventBus;
+        private readonly EventBroadcaster _eventBroadcaster;
         private readonly IProducerConsumerCollection<Guid> _players;
 
-        public Game(IEventBus eventBus, Guid id, Guid playerId)
+        public Game(EventBroadcaster eventBroadcaster, Guid id, Guid playerId)
         {
-            _eventBus = eventBus;
+            _eventBroadcaster = eventBroadcaster;
             Id = id;
             _players = new ConcurrentBag<Guid>(new[]{ playerId });
             Broadcast(new GameCreatedEvent(Id, Players));
@@ -21,7 +21,7 @@ namespace CardGame.Core.Game
         public Guid Id { get; }
         public EventResponse Broadcast(IEvent eventObj)
         {
-            return _eventBus.Broadcast(eventObj);
+            return _eventBroadcaster.Broadcast(eventObj);
         }
 
         public IEnumerable<Guid> Players => _players;

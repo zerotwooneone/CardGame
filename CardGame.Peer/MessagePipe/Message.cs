@@ -9,7 +9,7 @@ namespace CardGame.Peer.MessagePipe
         [ProtoMember(1)]
         public Guid Id { get; set; }
         [ProtoMember(2)]
-        public string EventJson { get; set; }
+        public EventWrapper Event { get; set; }
         [ProtoMember(3)]
         public bool? SenderNotWaitingForResponse { get; set; }
         [ProtoMember(4)]

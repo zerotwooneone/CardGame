@@ -1,9 +1,13 @@
 ﻿using System;
+using System.Collections.Generic;
+using System.Reactive.Subjects;
+using CardGame.Core.CQRS;
 using CardGame.Peer;
 using CardGame.Peer.NamedPipes;
 using Unity;
 using Unity.Injection;
 using Unity.Lifetime;
+using EventHandler = CardGame.Core.CQRS.EventHandler;
 
 namespace CardGamePeer
 {
@@ -36,6 +40,16 @@ namespace CardGamePeer
 
                         return (Func<NamedPipeConfig, ServerPipe>) GetClientPipe;
                     }));
+            const string staticEventHandler = "Static";
+            container.RegisterInstance<IDictionary<Type, Func<IEvent, EventResponse>>>(staticEventHandler,
+                new Dictionary<Type, Func<IEvent, EventResponse>>());
+            container.RegisterType<CardGame.Core.CQRS.EventHandler>(
+                new InjectionConstructor(
+                    new ResolvedParameter<IDictionary<Type, Func<IEvent, EventResponse>>>(staticEventHandler)));
+
+            const string staticEventBroadcast = "staticEventBroadcast";
+            container.RegisterInstance<ISubject<IEvent>>(staticEventBroadcast, new Subject<IEvent>());
+            container.RegisterType<EventBroadcaster>(new InjectionConstructor(typeof(CardGame.Core.CQRS.EventHandler),new ResolvedParameter<ISubject<IEvent>>(staticEventBroadcast)));
         }
 
         public void Configure()
