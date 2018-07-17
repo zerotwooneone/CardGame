@@ -1,35 +1,70 @@
 ﻿using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Threading.Tasks;
 using CardGame.Core.CQRS;
 
 namespace CardGame.Core.Game
 {
-    public class Game : IAggregate<Guid>
+    public class Game : IAggregate<Guid?>
     {
         private readonly EventBroadcaster _eventBroadcaster;
         private readonly IProducerConsumerCollection<Guid> _players;
 
-        public Game(EventBroadcaster eventBroadcaster, Guid id, Guid playerId)
+        public Game(EventBroadcaster eventBroadcaster, Guid id, Guid? round) : this(eventBroadcaster)
         {
-            _eventBroadcaster = eventBroadcaster;
             Id = id;
-            _players = new ConcurrentBag<Guid>(new[]{ playerId });
-            Broadcast(new GameCreatedEvent(Id, Players));
+            Round = round;
         }
 
-        public Guid Id { get; }
-        public EventResponse Broadcast(IEvent eventObj)
+        public Game(EventBroadcaster eventBroadcaster)
+        {
+            _eventBroadcaster = eventBroadcaster;
+            _players = new ConcurrentBag<Guid>();
+            var result = Broadcast(new GameCreatedEvent());
+            result.ContinueWith(t =>
+            {
+                var eventResponse = t.Result;
+                if (eventResponse.Success ?? false)
+                {
+                    var guid = Guid.Parse(eventResponse.CreatedId);
+                    Id = guid;
+                    Broadcast(new GameIdSetEvent(guid));
+                }
+                else
+                {
+                    throw new Exception("Didn't receive game id in response");
+                }
+            });
+        }
+
+        public Guid? Id { get; private set; }
+        public Guid? Round { get; private set; }
+        public Task<EventResponse> Broadcast(IEvent eventObj)
         {
             return _eventBroadcaster.Broadcast(eventObj);
         }
 
         public IEnumerable<Guid> Players => _players;
 
-        public void AddPlayer(Guid playerId)
+        public void AddPlayers(IEnumerable<Guid> players)
         {
-            _players.TryAdd(playerId);
-            Broadcast(new PlayerAddedEvent(playerId));
+            foreach (var player in players)
+            {
+                if (_players.TryAdd(player))
+                {
+                    Broadcast(new PlayerAddedEvent(player));
+                }
+            }
+
         }
+
+        public void SetId(Guid id)
+        {
+            Id = id;
+            Broadcast(new GameIdSetEvent(Id.Value));
+        }
+
+
     }
 }

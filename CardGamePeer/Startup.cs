@@ -1,9 +1,14 @@
 ﻿using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.Reactive.Subjects;
+using System.Threading.Tasks;
 using CardGame.Core.CQRS;
 using CardGame.Peer;
+using CardGame.Peer.MessagePipe;
 using CardGame.Peer.NamedPipes;
+using Newtonsoft.Json;
 using Unity;
 using Unity.Injection;
 using Unity.Lifetime;
@@ -41,20 +46,24 @@ namespace CardGamePeer
                         return (Func<NamedPipeConfig, ServerPipe>) GetClientPipe;
                     }));
             const string staticEventHandler = "Static";
-            container.RegisterInstance<IDictionary<Type, Func<IEvent, EventResponse>>>(staticEventHandler,
-                new Dictionary<Type, Func<IEvent, EventResponse>>());
+            container.RegisterInstance(staticEventHandler, new MyDictionary());
             container.RegisterType<CardGame.Core.CQRS.EventHandler>(
                 new InjectionConstructor(
-                    new ResolvedParameter<IDictionary<Type, Func<IEvent, EventResponse>>>(staticEventHandler)));
+                    new ResolvedParameter<MyDictionary>(staticEventHandler)));
 
             const string staticEventBroadcast = "staticEventBroadcast";
             container.RegisterInstance<ISubject<IEvent>>(staticEventBroadcast, new Subject<IEvent>());
             container.RegisterType<EventBroadcaster>(new InjectionConstructor(typeof(CardGame.Core.CQRS.EventHandler),new ResolvedParameter<ISubject<IEvent>>(staticEventBroadcast)));
         }
 
-        public void Configure()
+        public void Configure(OutputService outputService)
         {
             
         }
+    }
+
+    public class MyDictionary : Dictionary<Type, Func<IEvent, Task<EventResponse>>>
+    {
+
     }
 }

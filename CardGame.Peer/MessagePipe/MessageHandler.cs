@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using System.Reactive.Linq;
+using System.Threading.Tasks;
 using Newtonsoft.Json;
 
 namespace CardGame.Peer.MessagePipe
@@ -18,7 +19,7 @@ namespace CardGame.Peer.MessagePipe
             _subscriptions = new List<IDisposable>();
         }
 
-        public void RegisterHandlers(IEnumerable<HandlerConfig> handlerConfigs, IReadOnlyDictionary<Func<Message, bool>, Func<Message, Response>> responseHandlers)
+        public void RegisterHandlers(IEnumerable<HandlerConfig> handlerConfigs, IReadOnlyDictionary<Func<Message, bool>, Func<Message, Task<Response>>> responseHandlers)
         {
             foreach (var handlerConfig in handlerConfigs)
             {
@@ -26,11 +27,6 @@ namespace CardGame.Peer.MessagePipe
                 {
                     var subscription = _messagePipe
                         .MessageObservable
-                        //.Select(m=>
-                        //{
-                        //    Console.WriteLine($"trying to handle message:{JsonConvert.SerializeObject(m)}");
-                        //    return m;
-                        //})
                         .Where(m => handlerConfig.Filter(m))
                         .Subscribe(m => { handlerConfig.Handler(m); });
                     _subscriptions.Add(subscription);
@@ -39,16 +35,13 @@ namespace CardGame.Peer.MessagePipe
 
             var s = _messagePipe
                 .MessageObservable
-                .Where(m =>
-                {
-                    return m.Response == null;
-                })
-                .Subscribe(m =>
+                .Where(m => m.Response == null)
+                .Subscribe(async m =>
                 {
                     var handler = responseHandlers.FirstOrDefault(kvp => kvp.Key(m));
-                    if (default(KeyValuePair<Func<Message, bool>, Func<Message, Response>>).Equals(handler)) return;
-                    var response = responseHandlers[handler.Key](m);
-                    _messagePipe.SendMessage(new Message { Id = m.Id, Response = response });
+                    if (default(KeyValuePair<Func<Message, bool>, Func<Message, Task<Response>>>).Equals(handler)) return;
+                    var response = await responseHandlers[handler.Key](m).ConfigureAwait(false);
+                    await _messagePipe.SendMessage(new Message { Id = m.Id, Response = response }).ConfigureAwait(false);
                 });
             _subscriptions.Add(s);
         }

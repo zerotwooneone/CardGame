@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Reactive.Subjects;
+using System.Threading.Tasks;
 
 namespace CardGame.Core.CQRS
 {
@@ -15,7 +16,7 @@ namespace CardGame.Core.CQRS
             _broadcastSubject = broadcastSubject;
         }
 
-        public EventResponse Broadcast(IEvent eventObj)
+        public Task<EventResponse> Broadcast(IEvent eventObj)
         {
             _broadcastSubject.OnNext(eventObj);
             return _eventHandler.Handle(eventObj);

@@ -34,15 +34,16 @@ namespace CardGame.Peer.MessagePipe
 
         private static readonly IDictionary<string, Type> _types = new Dictionary<string, Type>();
 
-        public void AddEventType<T>() where T : IEvent
+        public EventWrapperService AddEventType<T>() where T : IEvent
         {
-            AddEventType(typeof(T));
+            return AddEventType(typeof(T));
         }
 
-        public void AddEventType(Type type)
+        public EventWrapperService AddEventType(Type type)
         {
             var hashCode = GetTypeHashCode(type);
             _types.Add(hashCode, type);
+            return this;
         }
     }
 }

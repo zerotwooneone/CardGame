@@ -5,6 +5,5 @@ namespace CardGame.Core.Player
 {
     public class PlayerCreatedEvent : IEvent
     {
-        public Guid Id { get; set; }
     }
 }
