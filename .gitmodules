@@ -1,0 +1,3 @@
+[submodule "MassTransit.Automatonymous.UnityIntegration"]
+	path = MassTransit.Automatonymous.UnityIntegration
+	url = https://github.com/miridfd/MassTransit.Automatonymous.UnityIntegration
