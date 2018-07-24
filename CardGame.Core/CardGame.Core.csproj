@@ -5,7 +5,15 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="Automatonymous" Version="4.1.1" />
+    <PackageReference Include="MassTransit.Automatonymous" Version="5.1.4" />
     <PackageReference Include="System.Reactive.Interfaces" Version="4.0.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Reference Include="MassTransit.AutomatonymousIntegration">
+      <HintPath>..\..\..\..\.nuget\packages\masstransit.automatonymous\5.1.4\lib\netstandard2.0\MassTransit.AutomatonymousIntegration.dll</HintPath>
+    </Reference>
   </ItemGroup>
 
 </Project>

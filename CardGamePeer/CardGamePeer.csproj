@@ -7,6 +7,7 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="MassTransit.Automatonymous.UnityIntegration" Version="1.0.0.10" />
     <PackageReference Include="NETStandard.Library" Version="2.0.3" />
     <PackageReference Include="Unity" Version="5.8.6" />
   </ItemGroup>
