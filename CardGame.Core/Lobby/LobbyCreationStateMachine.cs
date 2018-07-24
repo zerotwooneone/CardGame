@@ -4,9 +4,9 @@ using Lobby;
 
 namespace CardGame.Core.Lobby
 {
-    public class LobbyStateMachine : MassTransitStateMachine<Lobby>
+    public class LobbyCreationStateMachine : MassTransitStateMachine<LobbyCreation>
     {
-        public LobbyStateMachine()
+        public LobbyCreationStateMachine()
         {
             InstanceState(x => x.CurrentState);
 
