@@ -1,4 +1,6 @@
 ﻿using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using CardGame.Core.Lobby;
@@ -36,39 +38,48 @@ namespace CardGamePeer
 
             try
             {
-                var gsm = new LobbyCreationStateMachine();
-                
-                var inMemorySagaRepository = new InMemorySagaRepository<CardGame.Core.Lobby.LobbyCreation>();
                 var bus = Bus.Factory
-                    .CreateUsingRabbitMq(sbc =>
+                    .CreateUsingRabbitMq(factoryConfigurator =>
                 {
-                    var host = sbc.Host(new Uri("rabbitmq://localhost"), h =>
+                    var host = factoryConfigurator.Host(new Uri("rabbitmq://localhost"), hostConfigurator =>
                     {
-                        h.Username("guest");
-                        h.Password("guest");
+                        hostConfigurator.Username("guest");
+                        hostConfigurator.Password("guest");
                     });
 
-                    sbc.ReceiveEndpoint(host, "game_state", e =>
+                    factoryConfigurator.ReceiveEndpoint(host, "game_state", endpointConfigurator =>
                     {
-                        e.PrefetchCount = 8;
-                        e.StateMachineSaga(gsm, inMemorySagaRepository);
-                        e.Handler<LobbyIdSetEvent>(context =>
+                        endpointConfigurator.PrefetchCount = 8;
+                        endpointConfigurator.UseInMemoryOutbox();
+                        //endpointConfigurator.AutoDelete = true;
+                        //endpointConfigurator.PurgeOnStartup = true;
+                        
+                        endpointConfigurator.Handler<LobbyIdSetEvent>(context =>
                         {
                             outputService.WriteLine($"state machine got : {context.Message.Id}");
                             return Task.CompletedTask;
                         });
+                        
                     });
                 });
 
-                var busHandle = TaskUtil.Await(() => bus.StartAsync());
-                
-                var newGuid = Guid.NewGuid();
-                outputService.WriteLine($"creating game id : {newGuid}");
-                var gameIdSetEvent = new LobbyIdSetEvent(newGuid);
-                
-                bus.Publish(gameIdSetEvent);
+                BusHandle busHandle = TaskUtil.Await(() => bus.StartAsync());
+                try
+                {
+                    var newGuid = Guid.NewGuid();
+                    outputService.WriteLine($"creating game id : {newGuid}");
+                    var gameIdSetEvent = new LobbyIdSetEvent(newGuid);
 
-                outputService.WriteLine("done");
+                    bus.Publish(gameIdSetEvent);
+                    
+                    
+                    Task.Delay(TimeSpan.FromSeconds(5)).Wait(); //give the bus time to drain
+                    outputService.WriteLine("done");
+                }
+                finally
+                {
+                    busHandle.Stop();
+                }
             }
             catch (Exception e)
             {
@@ -83,5 +94,19 @@ namespace CardGamePeer
         }
 
 
+    }
+
+    public static class Extensions
+    {
+        public static T? FirstOrNull<T>(this IEnumerable<T> enumerable, Func<T, bool> predicate) where T : struct
+        {
+            var first = enumerable.FirstOrDefault(predicate);
+            return EqualityComparer<T>.Default.Equals(first, default(T)) ? (T?)null : first;
+        }
+
+        public static T? FirstOrNull<T>(this IEnumerable<T> enumerable) where T : struct
+        {
+            return enumerable.FirstOrNull(t=>true);
+        }
     }
 }

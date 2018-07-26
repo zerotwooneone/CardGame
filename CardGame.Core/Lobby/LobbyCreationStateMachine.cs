@@ -12,11 +12,14 @@ namespace CardGame.Core.Lobby
 
             Event(() => IdSet,
                 x => x
-                    .CorrelateBy(game => game.Id, context => (Guid?)context.Message.Id)
-                    .SelectId(context => context.Message.Id));
+                    .CorrelateBy(game => (Guid?)game.Id, context => (Guid?)context.Message.Id)
+                    .SelectId(context =>
+                    {
+                        return context.Message.Id;
+                    }));
 
             Initially(When(IdSet)
-                //.Then(context=>context.Instance.SetId())
+                //.Then(context=>context.Instance.SetId(context.Data.Id))
                 .TransitionTo(PlayerLobby));
 
             During(PlayerLobby,
