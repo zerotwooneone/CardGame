@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using CardGame.Core.Challenge;
 using CardGame.Core.Lobby;
 using Lobby;
 using CardGame.Peer;
@@ -35,44 +36,71 @@ namespace CardGamePeer
             programViewmodel.OutputObservable.Subscribe(s => Console.WriteLine(s));
             startup.Start(programViewmodel);
 
-
             try
             {
+                var lowHighChallengeFactory = new LowHighChallengeFactory();
+                Guid source = Guid.NewGuid();
+                Guid target = Guid.NewGuid();
+                var lhSm = new LowHighChallengeStateMachine(lowHighChallengeFactory, source);
+                var targetSm = new LowHighChallengeStateMachine(lowHighChallengeFactory, target);
+                var inMemorySagaRepository = new InMemorySagaRepository<LowHighChallenge>();
                 var bus = Bus.Factory
                     .CreateUsingRabbitMq(factoryConfigurator =>
-                {
-                    var host = factoryConfigurator.Host(new Uri("rabbitmq://localhost"), hostConfigurator =>
                     {
-                        hostConfigurator.Username("guest");
-                        hostConfigurator.Password("guest");
-                    });
-
-                    factoryConfigurator.ReceiveEndpoint(host, "game_state", endpointConfigurator =>
-                    {
-                        endpointConfigurator.PrefetchCount = 8;
-                        endpointConfigurator.UseInMemoryOutbox();
-                        //endpointConfigurator.AutoDelete = true;
-                        //endpointConfigurator.PurgeOnStartup = true;
-                        
-                        endpointConfigurator.Handler<LobbyIdSetEvent>(context =>
+                        var host = factoryConfigurator.Host(new Uri("rabbitmq://localhost"), hostConfigurator =>
                         {
-                            outputService.WriteLine($"state machine got : {context.Message.Id}");
-                            return Task.CompletedTask;
+                            hostConfigurator.Username("guest");
+                            hostConfigurator.Password("guest");
                         });
-                        
+
+                        factoryConfigurator.ReceiveEndpoint(host, "game_state", endpointConfigurator =>
+                        {
+                            endpointConfigurator.PrefetchCount = 8;
+                            endpointConfigurator.UseInMemoryOutbox();
+                            endpointConfigurator.AutoDelete = true;
+                            endpointConfigurator.PurgeOnStartup = true;
+
+                            endpointConfigurator.Handler<LobbyIdSetEvent>(context =>
+                            {
+                                outputService.WriteLine($"state machine got : {context.Message.Id}");
+                                return Task.CompletedTask;
+                            });
+
+                            endpointConfigurator.StateMachineSaga(lhSm, inMemorySagaRepository);
+                            endpointConfigurator.StateMachineSaga(targetSm, new InMemorySagaRepository<LowHighChallenge>());
+                        });
                     });
-                });
 
                 BusHandle busHandle = TaskUtil.Await(() => bus.StartAsync());
                 try
                 {
-                    var newGuid = Guid.NewGuid();
-                    outputService.WriteLine($"creating game id : {newGuid}");
-                    var gameIdSetEvent = new LobbyIdSetEvent(newGuid);
+                    //var newGuid = Guid.NewGuid();
+                    //outputService.WriteLine($"creating game id : {newGuid}");
+                    //var gameIdSetEvent = new LobbyIdSetEvent(newGuid);
 
-                    bus.Publish(gameIdSetEvent);
+                    //bus.Publish(gameIdSetEvent);
+
                     
-                    
+                    outputService.WriteLine($"source: {source}{Environment.NewLine} target:{target}");
+                    var challenge = lowHighChallengeFactory.CreateRequest(source, target, bus);
+                    //inMemorySagaRepository.Add(new SagaInstance<LowHighChallenge>(challenge), CancellationToken.None ).Wait();
+                    //var currentState = challenge.CurrentState;
+                    //outputService.WriteLine($"{nameof(currentState)}:{currentState}");
+                    var count = (int)TimeSpan.TicksPerSecond * 2;
+                    var delay = TimeSpan.FromTicks(1);
+                    //foreach (var i in Enumerable
+                    //    .Range(1, count))
+                    //{
+                        //if (challenge.CurrentState != currentState)
+                        //{
+                        //    outputService.WriteLine($"{nameof(currentState)}:{currentState}");
+                        //    currentState = challenge.CurrentState;
+                        //}
+                    //    Task.Delay(delay).Wait();
+                    //}
+                    //var result = challenge.Success.Result;
+                    //outputService.WriteLine($"success:{result}");
+
                     Task.Delay(TimeSpan.FromSeconds(5)).Wait(); //give the bus time to drain
                     outputService.WriteLine("done");
                 }
@@ -94,19 +122,5 @@ namespace CardGamePeer
         }
 
 
-    }
-
-    public static class Extensions
-    {
-        public static T? FirstOrNull<T>(this IEnumerable<T> enumerable, Func<T, bool> predicate) where T : struct
-        {
-            var first = enumerable.FirstOrDefault(predicate);
-            return EqualityComparer<T>.Default.Equals(first, default(T)) ? (T?)null : first;
-        }
-
-        public static T? FirstOrNull<T>(this IEnumerable<T> enumerable) where T : struct
-        {
-            return enumerable.FirstOrNull(t=>true);
-        }
     }
 }
