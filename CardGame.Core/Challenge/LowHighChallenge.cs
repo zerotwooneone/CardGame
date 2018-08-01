@@ -9,24 +9,24 @@ namespace CardGame.Core.Challenge
     {
         public Guid Target { get; }
         public Guid Requester { get; }
-        private readonly Random _random;
-
-        public LowHighChallenge(Guid requester, Guid target, Random random) : this(random)
+        
+        public LowHighChallenge(Guid requester, Guid target, Guid correlationId, int requesterValue, byte[] encryptedRequesterValue, byte[] requesterKey)
         {
             Target = target;
+            RequesterValue = requesterValue;
+            EncryptedRequesterValue = encryptedRequesterValue;
+            RequesterKey = requesterKey;
             Requester = requester;
         }
 
-        public LowHighChallenge(Guid requester, Guid target, Guid correlationId, Random random) : this(requester, target, random)
+        public LowHighChallenge(Guid requester, Guid target, Guid correlationId, byte[] encryptedRequesterValue, int targetValue, bool targetIsLowerThanRequester)
         {
             Target = target;
             Requester = requester;
             CorrelationId = correlationId;
-        }
-
-        private LowHighChallenge(Random random)
-        {
-            _random = random;
+            EncryptedRequesterValue = encryptedRequesterValue;
+            TargetValue = targetValue;
+            TargetIsLowerThanRequester = targetIsLowerThanRequester;
         }
 
         public Guid CorrelationId { get; set; }
@@ -42,31 +42,7 @@ namespace CardGame.Core.Challenge
         {
             EncryptedRequesterValue = encrypted;
         }
-        private int GetRandomInt()
-        {
-            return _random.Next(int.MinValue, int.MaxValue - 1);
-        }
-
-        public void InitRequest(Func<int, byte[]> encrypt, byte[] key)
-        {
-            RequesterValue = GetRandomInt();
-            EncryptedRequesterValue = encrypt(RequesterValue.Value);
-            RequesterKey = key;
-        }
-
-        public void InitResponse(byte[] encrypted)
-        {
-            TargetValue = GetRandomInt();
-            EncryptedRequesterValue = encrypted;
-            TargetIsLowerThanRequester = GetRandomBool();
-        }
-
-        private bool GetRandomBool()
-        {
-            var value = _random.NextDouble();
-            return value > 0.5;
-        }
-
+        
         public void SetResponse(bool isLowerThan, int targetValue)
         {
             TargetIsLowerThanRequester = isLowerThan;
@@ -94,21 +70,36 @@ namespace CardGame.Core.Challenge
         {
             _random = new Random();
         }
-        public LowHighChallenge CreateFromRequest(Guid requester, Guid target, Guid correlationId, byte[] encrypted)
+        public LowHighChallenge CreateFromRequest(Guid requester, Guid target, Guid correlationId, byte[] encryptedRequesterValue)
         {
-            var lowHighChallenge = new LowHighChallenge(requester, target, correlationId, _random);
-            lowHighChallenge.InitResponse(encrypted);
+            int targetValue = GetRandomInt();
+            bool targetIsLowerThanRequester = GetRandomBool();
+            var lowHighChallenge = new LowHighChallenge(requester, target, correlationId, encryptedRequesterValue, targetValue, targetIsLowerThanRequester);
             return lowHighChallenge;
         }
-        public LowHighChallenge CreateRequest(Guid source, Guid target, IPublishEndpoint publishEndpoint)
+        public LowHighChallenge CreateRequest(Guid requester, Guid target, IPublishEndpoint publishEndpoint)
         {
-            var lowHighChallenge = new LowHighChallenge(source, target, new Random());
-            lowHighChallenge.InitRequest(i => Encoding.UTF8.GetBytes(i.ToString()), new byte[] { });
             var correlationId = Guid.NewGuid();
+            int requesterValue = GetRandomInt();
+            byte[] encryptedRequesterValue = Encoding.UTF8.GetBytes(requesterValue.ToString());
+            byte[] requesterKey = Encoding.UTF8.GetBytes("super secrete key");
+            var lowHighChallenge = new LowHighChallenge(requester, target, correlationId, requesterValue, encryptedRequesterValue, requesterKey);
+            
             Console.WriteLine($"{nameof(correlationId)}:{correlationId}");
             publishEndpoint.Publish(new LowHighChallengeRequestEvent(
                 lowHighChallenge.EncryptedRequesterValue, lowHighChallenge.Target, lowHighChallenge.Requester, correlationId));
             return lowHighChallenge;
+        }
+
+        private int GetRandomInt()
+        {
+            return _random.Next(int.MinValue, int.MaxValue - 1);
+        }
+        
+        private bool GetRandomBool()
+        {
+            var value = _random.NextDouble();
+            return value > 0.5;
         }
     }
 
