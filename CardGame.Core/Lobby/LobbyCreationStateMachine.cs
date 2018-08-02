@@ -19,7 +19,7 @@ namespace CardGame.Core.Lobby
                     }));
 
             Initially(When(IdSet)
-                //.Then(context=>context.Instance.SetId(context.Data.Id))
+                //.Then(context=>context.Instance.SetId(context.Data.CorrelationId))
                 .TransitionTo(PlayerLobby));
 
             During(PlayerLobby,

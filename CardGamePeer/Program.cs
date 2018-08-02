@@ -38,11 +38,12 @@ namespace CardGamePeer
 
             try
             {
-                var lowHighChallengeFactory = new LowHighChallengeFactory();
+                var lowHighChallengeFactory = container.Resolve<LowHighChallengeFactory>();
                 Guid source = Guid.NewGuid();
                 Guid target = Guid.NewGuid();
-                var lhSm = new LowHighChallengeStateMachine(lowHighChallengeFactory, source);
-                var targetSm = new LowHighChallengeStateMachine(lowHighChallengeFactory, target);
+                var cryptoService = container.Resolve<ICryptoService>();
+                var lhSm = new LowHighChallengeStateMachine(lowHighChallengeFactory, source, cryptoService);
+                var targetSm = new LowHighChallengeStateMachine(lowHighChallengeFactory, target, cryptoService);
                 var inMemorySagaRepository = new InMemorySagaRepository<LowHighChallenge>();
                 var bus = Bus.Factory
                     .CreateUsingRabbitMq(factoryConfigurator =>

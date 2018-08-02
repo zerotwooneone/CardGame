@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Linq;
+using CardGame.Core.Challenge;
 using CardGame.Peer;
 using MassTransit;
 using Unity;
@@ -17,6 +18,7 @@ namespace CardGamePeer
         public void Setup(IUnityContainer container)
         {
             container.RegisterType<OutputService>(new ContainerControlledLifetimeManager());
+            container.RegisterType<ICryptoService, DummyCryptoService>(new ContainerControlledLifetimeManager());
             
             // scan for types
             var type = typeof(IConsumer);
