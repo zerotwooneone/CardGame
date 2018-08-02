@@ -75,32 +75,27 @@ namespace CardGamePeer
                 BusHandle busHandle = TaskUtil.Await(() => bus.StartAsync());
                 try
                 {
-                    //var newGuid = Guid.NewGuid();
-                    //outputService.WriteLine($"creating game id : {newGuid}");
-                    //var gameIdSetEvent = new LobbyIdSetEvent(newGuid);
-
-                    //bus.Publish(gameIdSetEvent);
-
+                    var challenge = lowHighChallengeFactory.CreateRequest(source, target, bus, c =>
+                    {
+                        inMemorySagaRepository.Add(new SagaInstance<LowHighChallenge>(c), CancellationToken.None ).Wait();
+                    });
                     
-                    outputService.WriteLine($"source: {source}{Environment.NewLine} target:{target}");
-                    var challenge = lowHighChallengeFactory.CreateRequest(source, target, bus);
-                    //inMemorySagaRepository.Add(new SagaInstance<LowHighChallenge>(challenge), CancellationToken.None ).Wait();
-                    //var currentState = challenge.CurrentState;
-                    //outputService.WriteLine($"{nameof(currentState)}:{currentState}");
+                    var currentState = challenge.CurrentState;
+                    outputService.WriteLine($"{nameof(currentState)}:{currentState}");
                     var count = (int)TimeSpan.TicksPerSecond * 2;
                     var delay = TimeSpan.FromTicks(1);
-                    //foreach (var i in Enumerable
-                    //    .Range(1, count))
-                    //{
-                        //if (challenge.CurrentState != currentState)
-                        //{
-                        //    outputService.WriteLine($"{nameof(currentState)}:{currentState}");
-                        //    currentState = challenge.CurrentState;
-                        //}
-                    //    Task.Delay(delay).Wait();
-                    //}
-                    //var result = challenge.Success.Result;
-                    //outputService.WriteLine($"success:{result}");
+                    foreach (var i in Enumerable
+                        .Range(1, count))
+                    {
+                        if (challenge.CurrentState != currentState)
+                        {
+                            outputService.WriteLine($"{nameof(currentState)}:{currentState}");
+                            currentState = challenge.CurrentState;
+                        }
+                        Task.Delay(delay).Wait();
+                    }
+                    var result = challenge.Win;
+                    outputService.WriteLine($"success:{result}");
 
                     Task.Delay(TimeSpan.FromSeconds(5)).Wait(); //give the bus time to drain
                     outputService.WriteLine("done");

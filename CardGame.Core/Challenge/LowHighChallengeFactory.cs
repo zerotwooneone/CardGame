@@ -21,15 +21,16 @@ namespace CardGame.Core.Challenge
             var lowHighChallenge = new LowHighChallenge(requester, target, correlationId, encryptedRequesterValue, targetValue, targetIsLowerThanRequester);
             return lowHighChallenge;
         }
-        public LowHighChallenge CreateRequest(Guid requester, Guid target, IPublishEndpoint publishEndpoint)
+        public LowHighChallenge CreateRequest(Guid requester, Guid target, IPublishEndpoint publishEndpoint, Action<LowHighChallenge> saveCallback)
         {
             var correlationId = Guid.NewGuid();
             int requesterValue = GetRandomInt();
-            byte[] requesterKey = Encoding.UTF8.GetBytes("super secrete key");
+            byte[] requesterKey = Encoding.UTF8.GetBytes("super secret key");
             byte[] encryptedRequesterValue = _cryptoService.Encrypt(requesterValue, requesterKey);
             var lowHighChallenge = new LowHighChallenge(requester, target, correlationId, requesterValue, encryptedRequesterValue, requesterKey);
+
+            saveCallback(lowHighChallenge);
             
-            Console.WriteLine($"{nameof(correlationId)}:{correlationId}");
             publishEndpoint.Publish(new LowHighChallengeRequestEvent(
                 lowHighChallenge.EncryptedRequesterValue, lowHighChallenge.Target, lowHighChallenge.Requester, correlationId));
             return lowHighChallenge;

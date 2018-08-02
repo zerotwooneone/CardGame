@@ -22,7 +22,7 @@ namespace CardGame.Core.Challenge
                     })
                     .SetSagaFactory(context =>
                     {
-                        Console.WriteLine($"creating new {Environment.NewLine} requester:{context.Message.Requester} target:{context.Message.Target}");
+                        //Console.WriteLine($"creating new {Environment.NewLine} requester:{context.Message.Requester} target:{context.Message.Target}");
                         return lowHighChallengeFactory.CreateFromRequest(context.Message.Requester, context.Message.Target, context.Message.CorrelationId, context.Message.Encrypted);
                     })
             );
@@ -46,10 +46,10 @@ namespace CardGame.Core.Challenge
                     {
                         context.Instance.SetRequest(context.Data.Encrypted);
                     })
-                    .ThenAsync(context =>
-                    {
-                        return Console.Out.WriteLineAsync($"Setting Encrypted Bytes iid:{context.Instance.CorrelationId}");
-                    })
+                    //.ThenAsync(context =>
+                    //{
+                    //    return Console.Out.WriteLineAsync($"Setting Encrypted Bytes iid:{context.Instance.CorrelationId}");
+                    //})
                     .TransitionTo(AwaitingResult)
                     .Publish(context =>
                     {
@@ -61,10 +61,10 @@ namespace CardGame.Core.Challenge
 
             Initially(
                 When(Request, context=>context.Data.Requester == id)
-                    .ThenAsync(context =>
-                    {
-                        return Console.Out.WriteLineAsync($"Adding to repo:{context.Instance.CorrelationId}");
-                    })
+                    //.ThenAsync(context =>
+                    //{
+                    //    return Console.Out.WriteLineAsync($"Adding to repo:{context.Instance.CorrelationId}");
+                    //})
                     .TransitionTo(AwaitingResponse)
             );
 
@@ -74,20 +74,20 @@ namespace CardGame.Core.Challenge
                     {
                         context.Instance.SetResponse(context.Data.IsLowerThan, context.Data.Value);
                     })
-                    .ThenAsync(context =>
-                    {
-                        return Console.Out.WriteLineAsync($"Setting Response  eid:{context.Data.CorrelationId} iid:{context.Instance.CorrelationId}");
-                    })
+                    //.ThenAsync(context =>
+                    //{
+                    //    return Console.Out.WriteLineAsync($"Setting Response  eid:{context.Data.CorrelationId} iid:{context.Instance.CorrelationId}");
+                    //})
                     .TransitionTo(RequesterComplete)
                     .Publish(context =>
                     {
                         return new LowHighChallengeResultEvent(context.Data.CorrelationId, context.Instance.RequesterKey,
                             context.Instance.Target);
                     })
-                    .ThenAsync(context =>
-                    {
-                        return Console.Out.WriteLineAsync($"id:{id} win:{context.Instance.Win}");
-                    })
+                    //.ThenAsync(context =>
+                    //{
+                    //    return Console.Out.WriteLineAsync($"id:{id} win:{context.Instance.Win}");
+                    //})
                     .Finalize()
             );
 
@@ -99,15 +99,15 @@ namespace CardGame.Core.Challenge
                             cryptoService.DecryptInt(context.Instance.EncryptedRequesterValue, context.Data.Key);
                         context.Instance.SetResult(context.Data.Key, requesterValue);
                     })
-                    .ThenAsync(context =>
-                    {
-                        return Console.Out.WriteLineAsync($"Setting Result  eid:{context.Data.CorrelationId} iid:{context.Instance.CorrelationId}");
-                    })
+                    //.ThenAsync(context =>
+                    //{
+                    //    return Console.Out.WriteLineAsync($"Setting Result  eid:{context.Data.CorrelationId} iid:{context.Instance.CorrelationId}");
+                    //})
                     .TransitionTo(TargetComplete)
-                    .ThenAsync(context =>
-                    {
-                        return Console.Out.WriteLineAsync($"id:{id} win:{context.Instance.Win}");
-                    })
+                    //.ThenAsync(context =>
+                    //{
+                    //    return Console.Out.WriteLineAsync($"id:{id} win:{context.Instance.Win}");
+                    //})
                     .Finalize(),
                 When(Response, context=>context.Data.Requester == id)
             );
