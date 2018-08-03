@@ -1,6 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reactive.Linq;
+using System.Reactive.Subjects;
+using System.Reactive.Threading.Tasks;
 using System.Threading;
 using System.Threading.Tasks;
 using CardGame.Core.Challenge;
@@ -35,16 +38,19 @@ namespace CardGamePeer
             var programViewmodel = container.Resolve<ProgramViewmodel>(); //yuck, fix this later
             programViewmodel.OutputObservable.Subscribe(s => Console.WriteLine(s));
             startup.Start(programViewmodel);
-
+            var winSubject = new Subject<bool>();
             try
             {
                 var lowHighChallengeFactory = container.Resolve<LowHighChallengeFactory>();
-                Guid source = Guid.NewGuid();
-                Guid target = Guid.NewGuid();
                 var cryptoService = container.Resolve<ICryptoService>();
-                var lhSm = new LowHighChallengeStateMachine(lowHighChallengeFactory, source, cryptoService);
-                var targetSm = new LowHighChallengeStateMachine(lowHighChallengeFactory, target, cryptoService);
-                var inMemorySagaRepository = new InMemorySagaRepository<LowHighChallenge>();
+                var stateMachines = new List<LowHighChallengeStateMachine>();
+                var sagaRespositories = new Dictionary<Guid, InMemorySagaRepository<LowHighChallenge>>();
+                foreach (var i in Enumerable.Range(1, 30))
+                {
+                    var source = Guid.NewGuid();
+                    stateMachines.Add(new LowHighChallengeStateMachine(lowHighChallengeFactory, source, cryptoService));
+                    sagaRespositories.Add(source, new InMemorySagaRepository<LowHighChallenge>());
+                }
                 var bus = Bus.Factory
                     .CreateUsingRabbitMq(factoryConfigurator =>
                     {
@@ -61,44 +67,59 @@ namespace CardGamePeer
                             endpointConfigurator.AutoDelete = true;
                             endpointConfigurator.PurgeOnStartup = true;
 
-                            endpointConfigurator.Handler<LobbyIdSetEvent>(context =>
+                            stateMachines.ForEach(sm =>
                             {
-                                outputService.WriteLine($"state machine got : {context.Message.Id}");
-                                return Task.CompletedTask;
+                                endpointConfigurator.StateMachineSaga(sm, sagaRespositories[sm.Id]);
                             });
 
-                            endpointConfigurator.StateMachineSaga(lhSm, inMemorySagaRepository);
-                            endpointConfigurator.StateMachineSaga(targetSm, new InMemorySagaRepository<LowHighChallenge>());
+                            endpointConfigurator
+                                .Handler<LowHighChallengeCompletedEvent>(context =>
+                                {
+                                    winSubject.OnNext(context.Message.RequesterWins);
+                                    return Task.CompletedTask;
+                                });
                         });
                     });
 
                 BusHandle busHandle = TaskUtil.Await(() => bus.StartAsync());
                 try
                 {
-                    var challenge = lowHighChallengeFactory.CreateRequest(source, target, bus, c =>
-                    {
-                        inMemorySagaRepository.Add(new SagaInstance<LowHighChallenge>(c), CancellationToken.None ).Wait();
-                    });
+                    var intObservable = winSubject
+                        .Select(b=>b? 1:0);
+                    var allIntObservable = intObservable
+                        .TakeUntil(intObservable.Throttle(TimeSpan.FromSeconds(1)));
+                    var avgTask = allIntObservable
+                        .Average()
+                        .ToTask();
                     
-                    var currentState = challenge.CurrentState;
-                    outputService.WriteLine($"{nameof(currentState)}:{currentState}");
-                    var count = (int)TimeSpan.TicksPerSecond * 2;
-                    var delay = TimeSpan.FromTicks(1);
-                    foreach (var i in Enumerable
-                        .Range(1, count))
+                    var random = new Random();
+                    int requestTotal = 0;
+                    for (int i = 0; i < stateMachines.Count; i++)
                     {
-                        if (challenge.CurrentState != currentState)
+                        LowHighChallengeStateMachine stateMachine = stateMachines[i];
+                        var requestCount = random.Next(1,20);
+                        requestTotal += requestCount;
+                        for(int requestIndex =0; requestIndex < requestCount; requestIndex++)
                         {
-                            outputService.WriteLine($"{nameof(currentState)}:{currentState}");
-                            currentState = challenge.CurrentState;
+                            var target = stateMachines[random.Next(0, stateMachines.Count)].Id;
+                            while (target == stateMachine.Id)
+                            {
+                                target = stateMachines[random.Next(0, stateMachines.Count)].Id;
+                            }
+                            var challenge =
+                                lowHighChallengeFactory.CreateRequest(stateMachine.Id, target, bus, c =>
+                                {
+                                    var repository = sagaRespositories[stateMachine.Id];
+                                    repository.Add(new SagaInstance<LowHighChallenge>(c), CancellationToken.None).Wait();
+                                });
                         }
-                        Task.Delay(delay).Wait();
                     }
-                    var result = challenge.Win;
-                    outputService.WriteLine($"success:{result}");
 
-                    Task.Delay(TimeSpan.FromSeconds(5)).Wait(); //give the bus time to drain
+                    outputService.WriteLine($"avg:{avgTask.Result}{Environment.NewLine}total requests:{requestTotal}");
+
+                    
                     outputService.WriteLine("done");
+                    
                 }
                 finally
                 {

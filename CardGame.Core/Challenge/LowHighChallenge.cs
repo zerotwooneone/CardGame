@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Text;
 using Automatonymous;
 
 namespace CardGame.Core.Challenge
@@ -36,7 +35,7 @@ namespace CardGame.Core.Challenge
         public int? TargetValue { get; private set; }
         public bool? TargetIsLowerThanRequester { get; private set; }
         public byte[] RequesterKey { get; private set; }
-        public bool? Win { get; private set; }
+        public bool? RequesterWin { get; private set; }
 
         public void SetRequest(byte[] encrypted)
         {
@@ -47,19 +46,19 @@ namespace CardGame.Core.Challenge
         {
             TargetIsLowerThanRequester = isLowerThan;
             TargetValue = targetValue;
-            Win = !TargetWins();
+            RequesterWin = RequesterWins();
         }
 
         public void SetResult(byte[] requesterKey, int requesterValue)
         {
             RequesterKey = requesterKey;
             RequesterValue = requesterValue;
-            Win = TargetWins();
+            RequesterWin = RequesterWins();
         }
 
-        private bool TargetWins()
+        private bool RequesterWins()
         {
-            return TargetIsLowerThanRequester.Value ? TargetValue <= RequesterValue : RequesterValue > TargetValue;
+            return TargetIsLowerThanRequester.Value ? RequesterValue > TargetValue : TargetValue <= RequesterValue;
         }
     }
 }

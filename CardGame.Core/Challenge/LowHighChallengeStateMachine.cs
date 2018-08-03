@@ -6,8 +6,11 @@ namespace CardGame.Core.Challenge
 {
     public class LowHighChallengeStateMachine : MassTransitStateMachine<LowHighChallenge>
     {
+        public Guid Id { get; }
+
         public LowHighChallengeStateMachine(LowHighChallengeFactory lowHighChallengeFactory, Guid id, ICryptoService cryptoService)
         {
+            Id = id;
             InstanceState(instance => instance.CurrentState);
 
             Event(() => Request, configurator =>
@@ -29,16 +32,10 @@ namespace CardGame.Core.Challenge
 
             Event(() => Response, configurator =>
                 configurator
-                    .CorrelateById(context =>
-                    {
-                        return context.Message.CorrelationId;
-                    }));
+                    .CorrelateById(context => context.Message.CorrelationId));
 
             Event(() => Result, configurator =>
-                configurator.CorrelateById(context =>
-                {
-                    return context.Message.CorrelationId;
-                }));
+                configurator.CorrelateById(context => context.Message.CorrelationId));
 
             Initially(
                 When(Request, context=>context.Data.Target == id)
@@ -46,10 +43,7 @@ namespace CardGame.Core.Challenge
                     {
                         context.Instance.SetRequest(context.Data.Encrypted);
                     })
-                    //.ThenAsync(context =>
-                    //{
-                    //    return Console.Out.WriteLineAsync($"Setting Encrypted Bytes iid:{context.Instance.CorrelationId}");
-                    //})
+                    //.Then(context => Console.Out.WriteLineAsync($"Receive {nameof(Request)} {context.Instance.CorrelationId.ToString().Substring(0,8)}"))//{Environment.NewLine}  R:{context.Data.Requester}{Environment.NewLine}  T:{context.Data.Target}"))
                     .TransitionTo(AwaitingResult)
                     .Publish(context =>
                     {
@@ -61,11 +55,20 @@ namespace CardGame.Core.Challenge
 
             Initially(
                 When(Request, context=>context.Data.Requester == id)
-                    //.ThenAsync(context =>
-                    //{
-                    //    return Console.Out.WriteLineAsync($"Adding to repo:{context.Instance.CorrelationId}");
-                    //})
+                    //.Then(context => Console.Out.WriteLineAsync($"Make {nameof(Request)} {context.Instance.CorrelationId.ToString().Substring(0,8)}"))//{Environment.NewLine}  R:{context.Data.Requester}{Environment.NewLine}  T:{context.Data.Target}"))
                     .TransitionTo(AwaitingResponse)
+            );
+
+            Initially(
+                When(Result)
+                    .Then(context => { }
+                        //Console.Out.WriteLineAsync($"{nameof(Initial)}->{nameof(Result)} {context.Instance.CorrelationId.ToString().Substring(0, 8)}{Environment.NewLine}  R:{context.Instance.Requester}{Environment.NewLine}  T:{context.Data.Target}{Environment.NewLine}  id:{id}")
+                        )
+                ,
+                When(Response)
+                    .Then(context => { }
+                        //Console.Out.WriteLineAsync($"{nameof(Initial)}->{nameof(Response)} {context.Instance.CorrelationId.ToString().Substring(0, 8)}{Environment.NewLine}  R:{context.Instance.Requester}{Environment.NewLine}  T:{context.Instance.Target}{Environment.NewLine}  id:{id}")
+                        )
             );
 
             During(AwaitingResponse,
@@ -74,21 +77,14 @@ namespace CardGame.Core.Challenge
                     {
                         context.Instance.SetResponse(context.Data.IsLowerThan, context.Data.Value);
                     })
-                    //.ThenAsync(context =>
-                    //{
-                    //    return Console.Out.WriteLineAsync($"Setting Response  eid:{context.Data.CorrelationId} iid:{context.Instance.CorrelationId}");
-                    //})
+                    //.Then(context => Console.Out.WriteLineAsync($"{nameof(Response)} {context.Instance.CorrelationId.ToString().Substring(0,8)}"))//{Environment.NewLine}  R:{context.Data.Requester}{Environment.NewLine}  R:{context.Instance.Target}"))
                     .TransitionTo(RequesterComplete)
                     .Publish(context =>
                     {
                         return new LowHighChallengeResultEvent(context.Data.CorrelationId, context.Instance.RequesterKey,
                             context.Instance.Target);
                     })
-                    //.ThenAsync(context =>
-                    //{
-                    //    return Console.Out.WriteLineAsync($"id:{id} win:{context.Instance.Win}");
-                    //})
-                    .Finalize()
+                    //.Finalize()
             );
 
             During(AwaitingResult,
@@ -99,18 +95,19 @@ namespace CardGame.Core.Challenge
                             cryptoService.DecryptInt(context.Instance.EncryptedRequesterValue, context.Data.Key);
                         context.Instance.SetResult(context.Data.Key, requesterValue);
                     })
-                    //.ThenAsync(context =>
-                    //{
-                    //    return Console.Out.WriteLineAsync($"Setting Result  eid:{context.Data.CorrelationId} iid:{context.Instance.CorrelationId}");
-                    //})
+                    //.Then(context => Console.Out.WriteLineAsync($"{nameof(Result)} {context.Instance.CorrelationId.ToString().Substring(0,8)}"))
                     .TransitionTo(TargetComplete)
-                    //.ThenAsync(context =>
-                    //{
-                    //    return Console.Out.WriteLineAsync($"id:{id} win:{context.Instance.Win}");
-                    //})
-                    .Finalize(),
-                When(Response, context=>context.Data.Requester == id)
+                    .Publish(context=>new LowHighChallengeCompletedEvent(context.Data.CorrelationId, context.Instance.RequesterWin.Value))
+                //    .Finalize()
+                ,
+                When(Response, context=>context.Data.Requester != id)
             );
+
+            During(RequesterComplete,
+                When(Result)
+                    .Then(context => { }
+                        //Console.Out.WriteLineAsync($"{nameof(RequesterComplete)}->{nameof(Result)} {context.Instance.CorrelationId.ToString().Substring(0, 8)}{Environment.NewLine}  R:{context.Instance.Requester}{Environment.NewLine}  T:{context.Data.Target}{Environment.NewLine}  id:{id}")
+                        ));
 
             SetCompletedWhenFinalized();
         }
@@ -123,5 +120,6 @@ namespace CardGame.Core.Challenge
         public Event<LowHighChallengeRequestEvent> Request { get; private set; }
         public Event<LowHighChallengeResponseEvent> Response { get; private set; }
         public Event<LowHighChallengeResultEvent> Result { get; private set; }
+        //public Event<LowHighChallengeCompletedEvent> Complete { get; private set; }
     }
 }
