@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Reactive.Linq;
 using System.Reactive.Subjects;
@@ -7,8 +8,6 @@ using System.Reactive.Threading.Tasks;
 using System.Threading;
 using System.Threading.Tasks;
 using CardGame.Core.Challenge;
-using CardGame.Core.Lobby;
-using Lobby;
 using CardGame.Peer;
 using MassTransit;
 using MassTransit.Saga;
@@ -45,9 +44,19 @@ namespace CardGamePeer
                 var cryptoService = container.Resolve<ICryptoService>();
                 var stateMachines = new List<LowHighChallengeStateMachine>();
                 var sagaRespositories = new Dictionary<Guid, InMemorySagaRepository<LowHighChallenge>>();
-                foreach (var i in Enumerable.Range(1, 30))
+                var isOne = DateTime.Now.Minute == 7;
+                //if (isOne)
+                //{
+                //    Task.Delay(TimeSpan.FromMinutes(1)).Wait();
+                //}
+                //File.WriteAllLines("one.txt", Enumerable.Range(1,30).Select(i=>Guid.NewGuid().ToString()));
+                //File.WriteAllLines("two.txt", Enumerable.Range(1,30).Select(i=>Guid.NewGuid().ToString()));
+                var guids = File
+                    .ReadAllLines(isOne ? "one.txt" : "two.txt")
+                    .Select(Guid.Parse)
+                    .Take(30);
+                foreach (var source in guids)
                 {
-                    var source = Guid.NewGuid();
                     stateMachines.Add(new LowHighChallengeStateMachine(lowHighChallengeFactory, source, cryptoService));
                     sagaRespositories.Add(source, new InMemorySagaRepository<LowHighChallenge>());
                 }
@@ -85,41 +94,44 @@ namespace CardGamePeer
                 try
                 {
                     var intObservable = winSubject
-                        .Select(b=>b? 1:0);
+                        .Select(b => b ? 1 : 0);
                     var allIntObservable = intObservable
                         .TakeUntil(intObservable.Throttle(TimeSpan.FromSeconds(1)));
                     var avgTask = allIntObservable
                         .Average()
                         .ToTask();
-                    
+
                     var random = new Random();
                     int requestTotal = 0;
                     for (int i = 0; i < stateMachines.Count; i++)
                     {
                         LowHighChallengeStateMachine stateMachine = stateMachines[i];
-                        var requestCount = random.Next(1,20);
+                        var requestCount = i < (stateMachines.Count / 2) ? 10 : 0;
                         requestTotal += requestCount;
-                        for(int requestIndex =0; requestIndex < requestCount; requestIndex++)
+                        for (int requestIndex = 0; requestIndex < requestCount; requestIndex++)
                         {
                             var target = stateMachines[random.Next(0, stateMachines.Count)].Id;
                             while (target == stateMachine.Id)
                             {
                                 target = stateMachines[random.Next(0, stateMachines.Count)].Id;
                             }
+
                             var challenge =
                                 lowHighChallengeFactory.CreateRequest(stateMachine.Id, target, bus, c =>
                                 {
                                     var repository = sagaRespositories[stateMachine.Id];
-                                    repository.Add(new SagaInstance<LowHighChallenge>(c), CancellationToken.None).Wait();
+                                    repository.Add(new SagaInstance<LowHighChallenge>(c), CancellationToken.None)
+                                        .Wait();
                                 });
+
                         }
                     }
 
                     outputService.WriteLine($"avg:{avgTask.Result}{Environment.NewLine}total requests:{requestTotal}");
 
-                    
+
                     outputService.WriteLine("done");
-                    
+
                 }
                 finally
                 {

@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Text;
 using Automatonymous;
 
 namespace CardGame.Core.Challenge
@@ -38,88 +37,85 @@ namespace CardGame.Core.Challenge
                 configurator.CorrelateById(context => context.Message.CorrelationId));
 
             Initially(
-                When(Request, context=>context.Data.Target == id)
+                When(Request, context => context.Data.Target == id)
                     .Then(context =>
                     {
+                        //Console.Out.WriteLine($"{nameof(Initial)} handling {Request} {Environment.NewLine}   R:{context.Data.Requester}{Environment.NewLine}   T:{context.Data.Target}{Environment.NewLine}   I:{id}");
                         context.Instance.SetRequest(context.Data.Encrypted);
                     })
-                    //.Then(context => Console.Out.WriteLineAsync($"Receive {nameof(Request)} {context.Instance.CorrelationId.ToString().Substring(0,8)}"))//{Environment.NewLine}  R:{context.Data.Requester}{Environment.NewLine}  T:{context.Data.Target}"))
-                    .TransitionTo(AwaitingResult)
                     .Publish(context =>
                     {
                         return new LowHighChallengeResponseEvent(context.Instance.CorrelationId,
                             context.Instance.TargetValue.Value, context.Instance.TargetIsLowerThanRequester.Value,
                             context.Instance.Requester);
                     })
-            );
-
-            Initially(
-                When(Request, context=>context.Data.Requester == id)
-                    //.Then(context => Console.Out.WriteLineAsync($"Make {nameof(Request)} {context.Instance.CorrelationId.ToString().Substring(0,8)}"))//{Environment.NewLine}  R:{context.Data.Requester}{Environment.NewLine}  T:{context.Data.Target}"))
+                ,
+                When(Response, context => context.Instance.Target == id)
+                    .TransitionTo(AwaitingResult)
+                ,
+                When(Request, context => context.Data.Requester != id && context.Data.Target != id)
+                    //.Then(context => 
+                    //    Console.Out.WriteLineAsync($"{nameof(Initial)} handling {Request}  Going to observe{Environment.NewLine}   R:{context.Data.Requester}{Environment.NewLine}   T:{context.Data.Target}{Environment.NewLine}   I:{id}"))
+                    .TransitionTo(Observaing)
+                ,
+                When(Request, context => context.Data.Requester == id)
+                    //.Then(context => Console.Out.WriteLineAsync($"{nameof(Initial)} handling {Request}  {context.Instance.CorrelationId.ToString().Substring(0, 8)}{Environment.NewLine}   R:{context.Data.Requester}{Environment.NewLine}   T:{context.Data.Target}{Environment.NewLine}   I:{id}"))
                     .TransitionTo(AwaitingResponse)
             );
 
-            Initially(
-                When(Result)
-                    .Then(context => { }
-                        //Console.Out.WriteLineAsync($"{nameof(Initial)}->{nameof(Result)} {context.Instance.CorrelationId.ToString().Substring(0, 8)}{Environment.NewLine}  R:{context.Instance.Requester}{Environment.NewLine}  T:{context.Data.Target}{Environment.NewLine}  id:{id}")
-                        )
-                ,
-                When(Response)
-                    .Then(context => { }
-                        //Console.Out.WriteLineAsync($"{nameof(Initial)}->{nameof(Response)} {context.Instance.CorrelationId.ToString().Substring(0, 8)}{Environment.NewLine}  R:{context.Instance.Requester}{Environment.NewLine}  T:{context.Instance.Target}{Environment.NewLine}  id:{id}")
-                        )
-            );
-
             During(AwaitingResponse,
-                When(Response, context=>context.Data.Requester == id)
+                When(Response, context => context.Data.Requester == id)
                     .Then(context =>
                     {
                         context.Instance.SetResponse(context.Data.IsLowerThan, context.Data.Value);
                     })
-                    //.Then(context => Console.Out.WriteLineAsync($"{nameof(Response)} {context.Instance.CorrelationId.ToString().Substring(0,8)}"))//{Environment.NewLine}  R:{context.Data.Requester}{Environment.NewLine}  R:{context.Instance.Target}"))
-                    .TransitionTo(RequesterComplete)
+                    //.Then(context => Console.Out.WriteLineAsync($"{nameof(AwaitingResponse)} handling {Response} going to final{Environment.NewLine}   R:{context.Data.Requester}{Environment.NewLine}   T:{context.Instance.Target}{Environment.NewLine}   I:{id}"))
                     .Publish(context =>
                     {
                         return new LowHighChallengeResultEvent(context.Data.CorrelationId, context.Instance.RequesterKey,
                             context.Instance.Target);
                     })
-                    //.Finalize()
+                ,
+                When(Result, context => context.Instance.Requester == id)
+                    .TransitionTo(Final)
+                    .Finalize()
             );
 
             During(AwaitingResult,
-                When(Result, context=>context.Data.Target == id)
+                When(Result, context => context.Data.Target == id)
                     .Then(context =>
                     {
                         var requesterValue =
                             cryptoService.DecryptInt(context.Instance.EncryptedRequesterValue, context.Data.Key);
                         context.Instance.SetResult(context.Data.Key, requesterValue);
                     })
-                    //.Then(context => Console.Out.WriteLineAsync($"{nameof(Result)} {context.Instance.CorrelationId.ToString().Substring(0,8)}"))
-                    .TransitionTo(TargetComplete)
-                    .Publish(context=>new LowHighChallengeCompletedEvent(context.Data.CorrelationId, context.Instance.RequesterWin.Value))
-                //    .Finalize()
-                ,
-                When(Response, context=>context.Data.Requester != id)
+                    //.Then(context => Console.Out.WriteLineAsync($"{nameof(AwaitingResult)} handling {Result} going to final{Environment.NewLine}   R:{context.Instance.Requester}{Environment.NewLine}   T:{context.Data.Target}{Environment.NewLine}   I:{id}"))
+                    .Publish(context => new LowHighChallengeCompletedEvent(context.Data.CorrelationId, context.Instance.RequesterWin.Value))
+                    .TransitionTo(Final)
+                    .Finalize()
             );
 
-            During(RequesterComplete,
+            During(Observaing,
+                When(Response)
+                    .Then(context => { }
+                        //Console.Out.WriteLine($"{nameof(Observaing)} handling {Response}  do nothing{Environment.NewLine}   R:{context.Data.Requester}{Environment.NewLine}   T:{context.Instance.Target}{Environment.NewLine}   I:{id}")
+                        ),
                 When(Result)
                     .Then(context => { }
-                        //Console.Out.WriteLineAsync($"{nameof(RequesterComplete)}->{nameof(Result)} {context.Instance.CorrelationId.ToString().Substring(0, 8)}{Environment.NewLine}  R:{context.Instance.Requester}{Environment.NewLine}  T:{context.Data.Target}{Environment.NewLine}  id:{id}")
-                        ));
+                        //Console.Out.WriteLine($"{nameof(Observaing)} handling {Result}  do nothing{Environment.NewLine}   R:{context.Instance.Requester}{Environment.NewLine}   T:{context.Data.Target}{Environment.NewLine}   I:{id}")
+                        )
+                    .Finalize()
+                );
 
             SetCompletedWhenFinalized();
         }
 
         public State AwaitingResponse { get; private set; }
         public State AwaitingResult { get; private set; }
-        public State RequesterComplete { get; private set; }
-        public State TargetComplete { get; private set; }
+        public State Observaing { get; private set; }
 
         public Event<LowHighChallengeRequestEvent> Request { get; private set; }
         public Event<LowHighChallengeResponseEvent> Response { get; private set; }
         public Event<LowHighChallengeResultEvent> Result { get; private set; }
-        //public Event<LowHighChallengeCompletedEvent> Complete { get; private set; }
     }
 }
