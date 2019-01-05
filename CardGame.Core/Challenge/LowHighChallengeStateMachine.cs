@@ -51,15 +51,20 @@ namespace CardGame.Core.Challenge
                     })
                 ,
                 When(Response, context => context.Instance.Target == id)
+                    .Then(context =>
+                    {
+                        var x = 0;
+                    })
                     .TransitionTo(AwaitingResult)
                 ,
                 When(Request, context => context.Data.Requester != id && context.Data.Target != id)
-                    //.Then(context => 
-                    //    Console.Out.WriteLineAsync($"{nameof(Initial)} handling {Request}  Going to observe{Environment.NewLine}   R:{context.Data.Requester}{Environment.NewLine}   T:{context.Data.Target}{Environment.NewLine}   I:{id}"))
+                    .Then(context => 
+                        Console.Out.WriteLineAsync($"{nameof(Initial)} handling {Request}  Going to observe{Environment.NewLine}   R:{context.Data.Requester}{Environment.NewLine}   T:{context.Data.Target}{Environment.NewLine}   I:{id}"))
                     .TransitionTo(Observaing)
                 ,
                 When(Request, context => context.Data.Requester == id)
-                    //.Then(context => Console.Out.WriteLineAsync($"{nameof(Initial)} handling {Request}  {context.Instance.CorrelationId.ToString().Substring(0, 8)}{Environment.NewLine}   R:{context.Data.Requester}{Environment.NewLine}   T:{context.Data.Target}{Environment.NewLine}   I:{id}"))
+                    .Then(context => 
+                        Console.Out.WriteLineAsync($"{nameof(Initial)} handling {Request}  {context.Instance.CorrelationId.ToString().Substring(0, 8)}{Environment.NewLine}   R:{context.Data.Requester}{Environment.NewLine}   T:{context.Data.Target}{Environment.NewLine}   I:{id}"))
                     .TransitionTo(AwaitingResponse)
             );
 
@@ -77,6 +82,10 @@ namespace CardGame.Core.Challenge
                     })
                 ,
                 When(Result, context => context.Instance.Requester == id)
+                    .Then(context =>
+                    {
+                        var x = 0;
+                    })
                     .TransitionTo(Final)
                     .Finalize()
             );
@@ -97,12 +106,12 @@ namespace CardGame.Core.Challenge
 
             During(Observaing,
                 When(Response)
-                    .Then(context => { }
-                        //Console.Out.WriteLine($"{nameof(Observaing)} handling {Response}  do nothing{Environment.NewLine}   R:{context.Data.Requester}{Environment.NewLine}   T:{context.Instance.Target}{Environment.NewLine}   I:{id}")
+                    .Then(context => 
+                        Console.Out.WriteLine($"{nameof(Observaing)} handling {Response}  do nothing{Environment.NewLine}   R:{context.Data.Requester}{Environment.NewLine}   T:{context.Instance.Target}{Environment.NewLine}   I:{id}")
                         ),
                 When(Result)
-                    .Then(context => { }
-                        //Console.Out.WriteLine($"{nameof(Observaing)} handling {Result}  do nothing{Environment.NewLine}   R:{context.Instance.Requester}{Environment.NewLine}   T:{context.Data.Target}{Environment.NewLine}   I:{id}")
+                    .Then(context => 
+                        Console.Out.WriteLine($"{nameof(Observaing)} handling {Result}  do nothing{Environment.NewLine}   R:{context.Instance.Requester}{Environment.NewLine}   T:{context.Data.Target}{Environment.NewLine}   I:{id}")
                         )
                     .Finalize()
                 );
