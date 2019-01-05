@@ -1,9 +1,8 @@
 ﻿using System;
-using CardGame.Core.CQRS;
 
 namespace CardGame.Core.Player
 {
-    public class Player : IAggregate<Guid?>
+    public class Player
     {
         public Player(Guid id)
         {
