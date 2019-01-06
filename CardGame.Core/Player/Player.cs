@@ -9,8 +9,12 @@ namespace CardGame.Core.Player
             Id = id;
         }
 
-        public Guid? Id { get; }
+        public Guid Id { get; }
+        public Hand.Hand Hand { get; private set; }
 
-        
+        public void SetHand(Hand.Hand newHand)
+        {
+            Hand = newHand;
+        }
     }
 }

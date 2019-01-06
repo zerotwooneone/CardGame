@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Reactive.Linq;
+using System.Threading.Tasks;
 using CardGame.Peer;
 
 namespace CardGamePeer
@@ -22,7 +23,7 @@ namespace CardGamePeer
             return $"{DateTime.Now:hh:mm:ss.fff}:{s}";
         }
 
-        public void Start()
+        public async Task Start()
         {
             _outputService.WriteLine("start called");
         }

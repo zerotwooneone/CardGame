@@ -33,12 +33,11 @@ namespace CardGamePeer
 
             var programViewmodel = container.Resolve<ProgramViewmodel>(); //yuck, fix this later
             programViewmodel.OutputObservable.Subscribe(s => Console.WriteLine(s));
-            startup.Start(programViewmodel);
-
-            do
-            {
-                Thread.Sleep(TimeSpan.FromMilliseconds(1));
-            } while (true);
+            programViewmodel.Start().Wait();
+            
+            Console.WriteLine("\n\n");
+            Console.WriteLine("Press enter to quit");
+            Console.ReadLine();
         }
     }
 }
