@@ -5,13 +5,10 @@ VisualStudioVersion = 15.0.27703.2035
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "CardGame.Core", "CardGame.Core\CardGame.Core.csproj", "{81459CEA-02A7-442C-A886-4DDCED26A0A5}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "CardGame.Peer", "CardGame.Peer\CardGame.Peer.csproj", "{61D05446-64D0-456F-964E-CFC1B19D615C}"
-EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "CardGamePeer", "CardGamePeer\CardGamePeer.csproj", "{914201A5-4C74-42BE-8AAA-4D4673C12274}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{D306B466-462E-4E53-BE76-8C7E60329130}"
 	ProjectSection(SolutionItems) = preProject
-		deleteAllQueues.txt = deleteAllQueues.txt
 		README.md = README.md
 	EndProjectSection
 EndProject
@@ -25,10 +22,6 @@ Global
 		{81459CEA-02A7-442C-A886-4DDCED26A0A5}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{81459CEA-02A7-442C-A886-4DDCED26A0A5}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{81459CEA-02A7-442C-A886-4DDCED26A0A5}.Release|Any CPU.Build.0 = Release|Any CPU
-		{61D05446-64D0-456F-964E-CFC1B19D615C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{61D05446-64D0-456F-964E-CFC1B19D615C}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{61D05446-64D0-456F-964E-CFC1B19D615C}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{61D05446-64D0-456F-964E-CFC1B19D615C}.Release|Any CPU.Build.0 = Release|Any CPU
 		{914201A5-4C74-42BE-8AAA-4D4673C12274}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{914201A5-4C74-42BE-8AAA-4D4673C12274}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{914201A5-4C74-42BE-8AAA-4D4673C12274}.Release|Any CPU.ActiveCfg = Release|Any CPU
