@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using CardGame.Core.Card;
 
 namespace CardGame.Core.Round
 {
@@ -37,7 +38,6 @@ namespace CardGame.Core.Round
             }
         }
 
-        public IEnumerable<Card.Card> DrawCards => _drawCards;
         public IEnumerable<Card.Card> Discarded => _discarded;
 
         public Turn.Turn CurrentTurn { get; private set; }
@@ -47,12 +47,14 @@ namespace CardGame.Core.Round
         {
             var card = _drawCards.First();
             _drawCards.RemoveAt(0);
+            card.OnDraw(CreateRoundContext()); //there is going to be an issue when being forced to draw countess while holding king or prince
             return card;
         }
 
         public RoundContext CreateRoundContext()
         {
-            return new RoundContext(OnForcedDiscard, AddPlayerProtection, Draw, EliminatePlayer);
+            var result = new RoundContext(OnForcedDiscard, AddPlayerProtection, Draw, EliminatePlayer, CurrentTurn);
+            return result;
         }
 
         private void EliminatePlayer(Guid playerId)
@@ -67,7 +69,8 @@ namespace CardGame.Core.Round
 
         private void OnForcedDiscard(Card.Card card)
         {
-            _discarded.Add(card);
+            card.OnDiscard(CreateRoundContext(), null, null);
+            Discard(card);
         }
 
         public Guid? GetWinningPlayerId()
@@ -115,7 +118,8 @@ namespace CardGame.Core.Round
                 turn = GetNextTurn();
                 if (turn != null)
                 {
-                    turn.Init(Draw());
+                    var card = Draw();
+                    turn.Init(card);
                     yield return turn;
                 }
                 
@@ -129,14 +133,19 @@ namespace CardGame.Core.Round
                 var handPrevious = player.Hand.Previous;
                 if (handPrevious != null)
                 {
-                    OnForcedDiscard(handPrevious);
+                    Discard(handPrevious);
                 }
             }
 
             foreach (var setAsideCard in _setAsideCards)
             {
-                OnForcedDiscard(setAsideCard);
+                Discard(setAsideCard);
             }
+        }
+
+        public void Discard(Card.Card playCard)
+        {
+            _discarded.Add(playCard);
         }
     }
 }

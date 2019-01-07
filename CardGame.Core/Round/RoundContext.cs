@@ -1,6 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
 
 namespace CardGame.Core.Round
 {
@@ -11,15 +9,17 @@ namespace CardGame.Core.Round
         private readonly Func<Card.Card> _drawCard;
         private readonly Action<Guid> _eliminatePlayer;
         
-        public RoundContext(Action<Card.Card> onForcedDiscard,
+        public RoundContext(
+            Action<Card.Card> onForcedDiscard,
             Action<Guid> addPlayerProtection,
             Func<Card.Card> drawCard,
-            Action<Guid> eliminatePlayer)
+            Action<Guid> eliminatePlayer, Turn.Turn currentTurn)
         {
             _onForcedDiscard = onForcedDiscard;
             _addPlayerProtection = addPlayerProtection;
             _drawCard = drawCard;
             _eliminatePlayer = eliminatePlayer;
+            CurrentTurn = currentTurn;
         }
 
         public Turn.Turn CurrentTurn { get; private set; }
@@ -27,14 +27,15 @@ namespace CardGame.Core.Round
         public void EliminateCurrentPlayer()
         {
             var currentPlayer = CurrentTurn.CurrentPlayer;
-            Eliminate(currentPlayer);
+            Eliminate(currentPlayer.Id);
         }
 
-        public void DiscardAndDraw(Player.Player target)
+        public Card.Card DiscardAndDraw(Player.Player target)
         {
             var newCard = Draw();
             var discard = target.Hand.Replace(newCard);
             _onForcedDiscard(discard);
+            return discard;
         }
 
         private Card.Card Draw()
@@ -48,9 +49,8 @@ namespace CardGame.Core.Round
             _addPlayerProtection(player.Id);
         }
 
-        public void Eliminate(Player.Player target)
+        public void Eliminate(Guid targetId)
         {
-            var targetId = target.Id;
             _eliminatePlayer(targetId);
         }
     }

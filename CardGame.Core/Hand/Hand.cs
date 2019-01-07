@@ -17,7 +17,7 @@ namespace CardGame.Core.Hand
             Drawn = drawn;
             if (Drawn != null)
             {
-                _hand.Add(Previous);
+                _hand.Add(Drawn);
             }
         }
 

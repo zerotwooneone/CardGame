@@ -1,18 +1,31 @@
-﻿using Unity;
-using Unity.Lifetime;
+﻿using System;
+using Autofac;
+using CardGame.Core.Card;
 
 namespace CardGamePeer
 {
     public class Startup
     {
-        public void Setup(IUnityContainer container)
+        public void Setup(ContainerBuilder builder)
         {
-            container.RegisterType<OutputService>(new ContainerControlledLifetimeManager());
-        }
+            var assembly = typeof(ProgramViewmodel).Assembly;
+            builder.RegisterAssemblyTypes(assembly)
+                .PublicOnly()
+                .AsSelf()
+                .AsImplementedInterfaces();
 
-        public void Configure(OutputService outputService)
-        {
-            
+            var coreAssembly = typeof(Card).Assembly;
+            builder.RegisterAssemblyTypes(coreAssembly)
+                .PublicOnly()
+                .AsSelf()
+                .AsImplementedInterfaces();
+
+            builder
+                .Register(c =>
+                {
+                    return new Random(222);
+                })
+                .SingleInstance();
         }
     }
 }

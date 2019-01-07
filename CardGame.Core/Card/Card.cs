@@ -38,10 +38,13 @@ namespace CardGame.Core.Card
                     case CardValue.Countess:
                         HandleCountessOnDraw(roundContext);
                         break;
+                    default:
+                        HandleNonCountessOnDraw(roundContext);
+                        break;
                 }
             };
         }
-
+        
         public Action<RoundContext, Player.Player, CardValue?> GetOnDiscard(CardValue value,
             Action<RoundContext, Player.Player, CardValue?> specialOnDiscard)
         {
@@ -109,9 +112,7 @@ namespace CardGame.Core.Card
         {
             if (guessValue != CardValue.Guard &&
                 target.Hand.First().Value == guessValue)
-            {
-                roundContext.Eliminate(target);
-            }
+                roundContext.Eliminate(target.Id);
         }
 
         private void HandlePriestOnDiscard(RoundContext roundContext, Player.Player target)
@@ -121,21 +122,19 @@ namespace CardGame.Core.Card
 
         private void HandleBaronOnDiscard(RoundContext roundContext, Player.Player target)
         {
-            var currentPlayer = roundContext.CurrentTurn.CurrentPlayer;
-            var current = currentPlayer.Hand.First();
             var other = target.Hand.First();
-
-            if (current.Value == other.Value)
+            if (CardValue.Baron == other.Value)
             {
                 //we do nothing
             }
-            else if (current.Value > other.Value)
+            else if (CardValue.Baron > other.Value)
             {
-                roundContext.Eliminate(target);
+                roundContext.Eliminate(target.Id);
             }
             else
             {
-                roundContext.Eliminate(currentPlayer);
+                var currentPlayer = roundContext.CurrentTurn.CurrentPlayer;
+                roundContext.Eliminate(currentPlayer.Id);
             }
         }
 
@@ -161,9 +160,15 @@ namespace CardGame.Core.Card
 
         public void HandleCountessOnDraw(RoundContext roundContext)
         {
-            var otherValue = roundContext.CurrentTurn.CurrentPlayer.Hand.Previous.Value;
-            if (otherValue == CardValue.King ||
-                otherValue == CardValue.Prince)
+            var unplayable = roundContext.CurrentTurn?.CurrentPlayer.Hand.FirstOrDefault(c=> c.Value == CardValue.King || c.Value == CardValue.Prince);
+            if (unplayable != null)
+                roundContext.CurrentTurn.MarkUnplayable(unplayable);
+        }
+
+        private void HandleNonCountessOnDraw(RoundContext roundContext)
+        {
+            var countess = roundContext.CurrentTurn?.CurrentPlayer.Hand.FirstOrDefault(c=>c.Value == CardValue.Countess);
+            if (countess != null)
                 roundContext.CurrentTurn.MarkUnplayable(this);
         }
     }
