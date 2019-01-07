@@ -1,22 +1,27 @@
 ﻿using System;
-using System.Reactive.Subjects;
+using System.Threading.Tasks;
 
-namespace CardGame.Peer
+namespace CardGamePeer
 {
     public class OutputService
     {
-        private readonly Subject<string> _outputSubject;
-
-        public OutputService(Subject<string> outputSubject)
+        public virtual Task WriteLine(string message)
         {
-            _outputSubject = outputSubject;
+            return Console.Out.WriteLineAsync(message);
         }
 
-        public IObservable<string> OutputObservable => _outputSubject;
-
-        public void WriteLine(string message)
+        public virtual Task<string> ReadLine()
         {
-            _outputSubject.OnNext(message);
+            return Console.In.ReadLineAsync();
+        }
+    }
+
+    public static class OutputServiceExtensions
+    {
+        public static async Task<string> Prompt(this OutputService outputService, string promptMessage)
+        {
+            await outputService.WriteLine(promptMessage);
+            return await outputService.ReadLine();
         }
     }
 }

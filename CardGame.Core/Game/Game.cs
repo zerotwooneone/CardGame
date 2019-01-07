@@ -82,6 +82,8 @@ namespace CardGame.Core.Game
                 playerIndex = Players
                     .SelectMany((value, index) => value.Id == playerId ? new[] {index} : Enumerable.Empty<int>())
                     .DefaultIfEmpty(-1).First();
+                
+                CurrentRound.Cleanup();
             }
 
             var players = Players.Skip(playerIndex).Concat(Players.Take(playerIndex));
@@ -97,6 +99,7 @@ namespace CardGame.Core.Game
                 round = GetNextRound();
                 if (round != null)
                 {
+                    CurrentRound.Init();
                     yield return round;
                 }
             } while (round != null);

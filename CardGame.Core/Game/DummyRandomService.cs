@@ -13,7 +13,7 @@ namespace CardGame.Core.Game
 
         public int GetInclusive(int minInclusive, int maxInclusive)
         {
-            return _random.Next(maxInclusive, maxInclusive + 1);
+            return _random.Next(minInclusive, maxInclusive + 1);
         }
     }
 }

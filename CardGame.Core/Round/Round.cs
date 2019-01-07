@@ -8,6 +8,7 @@ namespace CardGame.Core.Round
     {
         private readonly IList<Card.Card> _discarded;
         private readonly IList<Card.Card> _drawCards;
+        private readonly IList<Card.Card> _setAsideCards;
         private readonly IList<Guid> _protectedPlayers;
         private readonly IDictionary<Guid, Player.Player> _remainingPlayers;
         public readonly IEnumerable<Player.Player> Players;
@@ -19,11 +20,21 @@ namespace CardGame.Core.Round
         {
             _drawCards = deck.ToList();
             _discarded = new List<Card.Card>();
+            _setAsideCards = new List<Card.Card>();
             var enumerablePlayers = players as Player.Player[] ?? players.ToArray();
             Players = enumerablePlayers;
             _remainingPlayers = enumerablePlayers.ToDictionary(p => p.Id);
             _protectedPlayers = new List<Guid>();
             _winningPlayerId = null;
+        }
+
+        public void Init()
+        {
+            _setAsideCards.Add(Draw());
+            foreach (var player in Players)
+            {
+                player.SetHand(new Hand.Hand(Draw()));
+            }
         }
 
         public IEnumerable<Card.Card> DrawCards => _drawCards;
@@ -102,8 +113,30 @@ namespace CardGame.Core.Round
             do
             {
                 turn = GetNextTurn();
-                yield return turn;
+                if (turn != null)
+                {
+                    turn.Init(Draw());
+                    yield return turn;
+                }
+                
             } while (turn != null);
+        }
+
+        public void Cleanup()
+        {
+            foreach (var player in Players)
+            {
+                var handPrevious = player.Hand.Previous;
+                if (handPrevious != null)
+                {
+                    OnForcedDiscard(handPrevious);
+                }
+            }
+
+            foreach (var setAsideCard in _setAsideCards)
+            {
+                OnForcedDiscard(setAsideCard);
+            }
         }
     }
 }

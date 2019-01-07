@@ -31,5 +31,10 @@ namespace CardGame.Core.Turn
         {
             KnownPlayerHand = new KnownPlayerHand(target.Id, target.Hand.First().Id);
         }
+
+        public void Init(Card.Card draw)
+        {
+            CurrentPlayer.SetHand(new Hand.Hand(CurrentPlayer.Hand.Previous, draw));
+        }
     }
 }

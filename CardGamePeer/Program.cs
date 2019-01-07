@@ -8,7 +8,6 @@ using System.Reactive.Threading.Tasks;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
-using CardGame.Peer;
 using Unity;
 using Unity.Lifetime;
 
@@ -28,12 +27,12 @@ namespace CardGamePeer
 
             startup.Setup(container);
 
+            var programViewmodel = container.Resolve<ProgramViewmodel>(); //yuck, fix this later
+
             var outputService = container.Resolve<OutputService>();
             startup.Configure(outputService);
 
-            var programViewmodel = container.Resolve<ProgramViewmodel>(); //yuck, fix this later
-            programViewmodel.OutputObservable.Subscribe(s => Console.WriteLine(s));
-            programViewmodel.Start().Wait();
+            programViewmodel.Run().Wait();
             
             Console.WriteLine("\n\n");
             Console.WriteLine("Press enter to quit");
