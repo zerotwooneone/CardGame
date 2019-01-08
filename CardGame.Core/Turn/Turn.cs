@@ -1,5 +1,4 @@
 ﻿using System.Linq;
-using CardGame.Core.Card;
 
 namespace CardGame.Core.Turn
 {
