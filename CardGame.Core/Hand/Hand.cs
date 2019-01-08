@@ -1,15 +1,14 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
-using CardGame.Core.Card;
 
 namespace CardGame.Core.Hand
 {
     public class Hand : IEnumerable<Card.Card>
     {
         private readonly List<Card.Card> _hand;
-        public Card.Card Previous { get; private set; }
-        public Card.Card Drawn { get; private set; }
+        public Card.Card Previous { get; }
+        public Card.Card Drawn { get; }
 
         public Hand(Card.Card previous, Card.Card drawn = null)
         {
@@ -33,14 +32,7 @@ namespace CardGame.Core.Hand
             return GetEnumerator();
         }
 
-        public Card.Card Replace(Card.Card newCard)
-        {
-            var result = Previous;
-            Previous = newCard;
-            return result;
-        }
-
-        public Hand CreateNew(Card.Card drawn)
+        public Hand Append(Card.Card drawn)
         {
             if (Previous != null && Drawn != null)
             {
@@ -56,15 +48,23 @@ namespace CardGame.Core.Hand
             return new Hand(previous, drawn);
         }
 
-        public Hand Discard(CardValue cardValue)
+        public Hand Discard(Guid cardId)
         {
-            if (Previous?.Value == cardValue)
+            if (Previous?.Id == cardId)
             {
+                if (Drawn == null)
+                {
+                    return null;
+                }
                 return new Hand(Drawn);
             }
 
-            if (Drawn?.Value == cardValue)
+            if (Drawn?.Id == cardId)
             {
+                if (Previous == null)
+                {
+                    return null;
+                }
                 return new Hand(Previous);
             }
             throw new InvalidOperationException("Cannot discard a card which does not exist in the hand.");

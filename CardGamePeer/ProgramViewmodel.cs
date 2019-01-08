@@ -71,7 +71,7 @@ namespace CardGamePeer
                 {
                     await _outputService.WriteLine("");
                     await WriteLine($"Player {turn.CurrentPlayer.DisplayName} turn.");
-                    var hand = turn.CurrentPlayer.Hand;
+                    var hand = round.GetCurrentPlayerHand();
 
                     string input;
                     do
@@ -132,8 +132,7 @@ namespace CardGamePeer
                     }
 
                     var playCard = hand.First(c => c.Value == cardValue);
-                    turn.CurrentPlayer.Discard(playCard.Value);
-                    playCard.OnDiscard(round.CreateRoundContext(), targetPlayer, guessedCardvalue);
+                    playCard.OnDiscard(round.CreatePlayContext(targetPlayer?.Id, guessedCardvalue));
                     round.Discard(playCard);
                 }
 

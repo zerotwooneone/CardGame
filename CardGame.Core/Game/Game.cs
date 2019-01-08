@@ -20,7 +20,7 @@ namespace CardGame.Core.Game
         private readonly IRandomService _randomService;
         private readonly Dictionary<Guid, int> _scores;
         public readonly int WinningScore;
-
+        
         public Game(Guid id, IEnumerable<Player.Player> players, IRandomService randomService)
         {
             _randomService = randomService;

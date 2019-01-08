@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Linq;
 using CardGame.Core.Round;
 
 namespace CardGame.Core.Card
@@ -8,8 +7,8 @@ namespace CardGame.Core.Card
     {
         public readonly Guid Id;
         public readonly string Name;
-        public readonly Action<RoundContext, Player.Player, CardValue?> OnDiscard;
-        public readonly Action<RoundContext> OnDraw;
+        public readonly Action<PlayContext> OnDiscard;
+        public readonly Action<DrawContext> OnDraw;
         public readonly string TypeName;
         public readonly CardValue Value;
 
@@ -17,8 +16,8 @@ namespace CardGame.Core.Card
             CardValue value,
             string name,
             string typeName,
-            Action<RoundContext> specialOnDraw = null,
-            Action<RoundContext, Player.Player, CardValue?> specialOnDiscard = null)
+            Action<DrawContext> specialOnDraw = null,
+            Action<PlayContext> specialOnDiscard = null)
         {
             Id = id;
             Value = value;
@@ -28,148 +27,61 @@ namespace CardGame.Core.Card
             OnDiscard = GetOnDiscard(Value, specialOnDiscard);
         }
 
-        public Action<RoundContext> GetOnDraw(CardValue value, Action<RoundContext> specialOnDraw)
+        public Action<DrawContext> GetOnDraw(CardValue value, Action<DrawContext> specialOnDraw)
         {
-            return roundContext =>
+            return drawContext =>
             {
-                specialOnDraw?.Invoke(roundContext);
+                specialOnDraw?.Invoke(drawContext);
                 switch (value)
                 {
                     case CardValue.Countess:
-                        HandleCountessOnDraw(roundContext);
-                        break;
                     default:
-                        HandleNonCountessOnDraw(roundContext);
+                        drawContext.MarkUnplayableCards();
                         break;
                 }
             };
         }
         
-        public Action<RoundContext, Player.Player, CardValue?> GetOnDiscard(CardValue value,
-            Action<RoundContext, Player.Player, CardValue?> specialOnDiscard)
+        public Action<PlayContext> GetOnDiscard(CardValue value,
+            Action<PlayContext> specialOnDiscard)
         {
-            return (roundContext, target, guessValue) =>
+            return (playContext) =>
             {
-                //switch (value)
-                //{
-                //    case CardValue.King:
-                //    case CardValue.Prince:
-                //    case CardValue.Baron:
-                //    case CardValue.Priest:
-                //    case CardValue.Guard:
-                //        if (target == null) throw new Exception("target must be set");
-                //        break;
-                //    case CardValue.Princess:
-                //    case CardValue.Handmaid:
-                //    case CardValue.Countess:
-                //    default:
-                //        break;
-                //}
-
-                //if (value == CardValue.Guard &&
-                //    guessValue == null)
-                //{
-                //    throw new Exception("guessValue must be set");
-                //}
-
-                specialOnDiscard?.Invoke(roundContext, target, guessValue);
+                specialOnDiscard?.Invoke(playContext);
                 switch (value)
                 {
                     case CardValue.Princess:
-                        HandlePrincessOnDiscard(roundContext);
+                        playContext.EliminateCurrentPlayer();
                         break;
                     case CardValue.King:
-                        if (target == null) break;
-                        HandleKingOnDiscard(roundContext, target);
+                        if (playContext.TargetPlayerId == null) break;
+                        playContext.TradeHands(playContext.TargetPlayerId.Value);
                         break;
                     case CardValue.Prince:
-                        if (target == null) break;
-                        HandlePrinceOnDiscard(roundContext, target);
+                        if (playContext.TargetPlayerId == null) break;
+                        playContext.DiscardAndDraw(playContext.TargetPlayerId.Value);
                         break;
                     case CardValue.Handmaid:
-                        HandleHandMaidOnDiscard(roundContext);
+                        playContext.AddCurrentPlayerProtection();
                         break;
                     case CardValue.Baron:
-                        if (target == null) break;
-                        HandleBaronOnDiscard(roundContext, target);
+                        if (playContext.TargetPlayerId == null) break;
+                        playContext.CompareHands(playContext.TargetPlayerId.Value);
                         break;
                     case CardValue.Priest:
-                        if (target == null) break;
-                        HandlePriestOnDiscard(roundContext, target);
+                        if (playContext.TargetPlayerId == null) break;
+                        playContext.RevealHand(playContext.TargetPlayerId.Value);
                         break;
                     case CardValue.Guard:
-                        if (target == null) break;
-                        HandleGuardOnDiscard(roundContext, target, guessValue.Value);
+                        if (playContext.TargetPlayerId == null) break;
+                        if(playContext.GuessedCardvalue == null) break;
+                        playContext.GuessAndCheck(playContext.TargetPlayerId.Value, playContext.GuessedCardvalue.Value);
                         break;
                     case CardValue.Countess:
                     default:
                         break;
                 }
             };
-        }
-
-        private void HandleGuardOnDiscard(RoundContext roundContext, Player.Player target, CardValue guessValue)
-        {
-            if (guessValue != CardValue.Guard &&
-                target.Hand.First().Value == guessValue)
-                roundContext.Eliminate(target.Id);
-        }
-
-        private void HandlePriestOnDiscard(RoundContext roundContext, Player.Player target)
-        {
-            roundContext.CurrentTurn.RevealHand(target);
-        }
-
-        private void HandleBaronOnDiscard(RoundContext roundContext, Player.Player target)
-        {
-            var other = target.Hand.First();
-            if (CardValue.Baron == other.Value)
-            {
-                //we do nothing
-            }
-            else if (CardValue.Baron > other.Value)
-            {
-                roundContext.Eliminate(target.Id);
-            }
-            else
-            {
-                var currentPlayer = roundContext.CurrentTurn.CurrentPlayer;
-                roundContext.Eliminate(currentPlayer.Id);
-            }
-        }
-
-        private void HandleHandMaidOnDiscard(RoundContext roundContext)
-        {
-            roundContext.AddCurrentPlayerProtection();
-        }
-
-        private void HandlePrinceOnDiscard(RoundContext roundContext, Player.Player target)
-        {
-            roundContext.DiscardAndDraw(target);
-        }
-
-        private void HandleKingOnDiscard(RoundContext roundContext, Player.Player target)
-        {
-            roundContext.CurrentTurn.TradeHands(target);
-        }
-
-        private void HandlePrincessOnDiscard(RoundContext roundContext)
-        {
-            roundContext.EliminateCurrentPlayer();
-        }
-
-        public void HandleCountessOnDraw(RoundContext roundContext)
-        {
-            var unplayable = roundContext.CurrentTurn?.CurrentPlayer.Hand.FirstOrDefault(c=> c.Value == CardValue.King || c.Value == CardValue.Prince);
-            if (unplayable != null)
-                roundContext.CurrentTurn.MarkUnplayable(unplayable);
-        }
-
-        private void HandleNonCountessOnDraw(RoundContext roundContext)
-        {
-            var countess = roundContext.CurrentTurn?.CurrentPlayer.Hand.FirstOrDefault(c=>c.Value == CardValue.Countess);
-            if (countess != null)
-                roundContext.CurrentTurn.MarkUnplayable(this);
         }
     }
 }

@@ -1,16 +1,17 @@
 ﻿using System;
+using CardGame.Core.Card;
 
 namespace CardGame.Core.Turn
 {
     public class KnownPlayerHand
     {
-        public KnownPlayerHand(Guid playerId, Guid cardId)
+        public KnownPlayerHand(Guid playerId, CardValue cardValue)
         {
             PlayerId = playerId;
-            CardId = cardId;
+            CardValue = cardValue;
         }
 
         public Guid PlayerId { get; }
-        public Guid CardId { get; }
+        public CardValue CardValue { get; }
     }
 }

@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using CardGame.Core.Card;
 
 namespace CardGame.Core.Round
 {
@@ -8,12 +9,13 @@ namespace CardGame.Core.Round
     {
         private readonly IList<Card.Card> _discarded;
         private readonly IList<Card.Card> _drawCards;
-        private readonly IList<Card.Card> _setAsideCards;
+        private readonly IDictionary<Guid, Hand.Hand> _hands;
         private readonly IList<Guid> _protectedPlayers;
         private readonly IDictionary<Guid, Player.Player> _remainingPlayers;
-        public readonly IEnumerable<Player.Player> Players;
+        private readonly IList<Card.Card> _setAsideCards;
 
         private readonly Guid? _winningPlayerId;
+        public readonly IEnumerable<Player.Player> Players;
 
         public Round(IEnumerable<Player.Player> players,
             IEnumerable<Card.Card> deck)
@@ -26,6 +28,7 @@ namespace CardGame.Core.Round
             _remainingPlayers = enumerablePlayers.ToDictionary(p => p.Id);
             _protectedPlayers = new List<Guid>();
             _winningPlayerId = null;
+            _hands = enumerablePlayers.ToDictionary(p => p.Id, p => (Hand.Hand) null);
         }
 
         public IEnumerable<Card.Card> Discarded => _discarded;
@@ -35,16 +38,61 @@ namespace CardGame.Core.Round
 
         private Card.Card Draw()
         {
-            var card = _drawCards.First();
-            _drawCards.RemoveAt(0);
-            card.OnDraw(CreateRoundContext()); //there is going to be an issue when being forced to draw countess while holding king or prince
+            var card = RemoveTopCard();
+            var drawContext = CreateDrawContext();
+            card.OnDraw(
+                drawContext);
             return card;
         }
 
-        public RoundContext CreateRoundContext()
+        private Card.Card RemoveTopCard()
         {
-            var result = new RoundContext(OnForcedDiscard, AddPlayerProtection, Draw, EliminatePlayer, CurrentTurn);
+            var card = _drawCards.First();
+            _drawCards.RemoveAt(0);
+            return card;
+        }
+
+        private DrawContext CreateDrawContext()
+        {
+            return new DrawContext(CurrentTurn, GetCurrentPlayerHand);
+        }
+
+        public PlayContext CreatePlayContext(Guid? targetPlayerId, CardValue? guessedCardvalue)
+        {
+            var result = new PlayContext(AddPlayerProtection,
+                EliminatePlayer, CurrentTurn, TradeHands, RevealHand,
+                DiscardAndDraw, targetPlayerId, guessedCardvalue);
             return result;
+        }
+
+        private void DiscardAndDraw(Guid targetId)
+        {
+            if (_protectedPlayers.Contains(targetId)) return;
+            var hand = _hands[targetId];
+            Discard(hand.Previous);
+            var newCard = Draw();
+            var newHand = new Hand.Hand(newCard);
+            _hands[targetId] = newHand;
+        }
+
+        public Hand.Hand GetCurrentPlayerHand()
+        {
+            return _hands[CurrentTurn.CurrentPlayer.Id];
+        }
+
+        private CardValue RevealHand(Guid targetPlayerId)
+        {
+            //crud. need two versions of this method. one which can be immune with _protectedPlayers
+            return _hands[targetPlayerId].Previous.Value;
+        }
+
+        private void TradeHands(Guid sourcePlayerId, Guid targetPlayerId)
+        {
+            if (_protectedPlayers.Contains(targetPlayerId)) return;
+            var sourceHand = _hands[sourcePlayerId];
+            var targetHand = _hands[targetPlayerId];
+            _hands[sourcePlayerId] = targetHand;
+            _hands[targetPlayerId] = sourceHand;
         }
 
         private void EliminatePlayer(Guid playerId)
@@ -57,24 +105,15 @@ namespace CardGame.Core.Round
             _protectedPlayers.Add(playerId);
         }
 
-        private void OnForcedDiscard(Card.Card card)
-        {
-            card.OnDiscard(CreateRoundContext(), null, null);
-            Discard(card);
-        }
-
         public Guid? GetWinningPlayerId()
         {
             if (_winningPlayerId == null)
             {
-                if (_remainingPlayers.Count == 1)
-                {
-                    return _remainingPlayers.Values.First().Id;
-                }
+                if (_remainingPlayers.Count == 1) return _remainingPlayers.Values.First().Id;
 
-                var maxValue = _remainingPlayers.Max(p => p.Value.Hand.First().Value);
+                var maxValue = _remainingPlayers.Max(p => _hands[p.Key].Max(c => c.Value));
                 //we arbitrarily choose the last player (the first match might be the winner from the last round) that matches, but really we need a better way
-                return _remainingPlayers.Last(p => p.Value.Hand.First().Value == maxValue).Value.Id;
+                return _remainingPlayers.Last(p => _hands[p.Key].Max(c => c.Value) == maxValue).Value.Id;
             }
 
             return _winningPlayerId;
@@ -84,14 +123,14 @@ namespace CardGame.Core.Round
         {
             if (CurrentTurn == null)
             {
-                _setAsideCards.Add(Draw());
+                CurrentTurn = new Turn.Turn(Players.First());
+                _setAsideCards.Add(RemoveTopCard());
                 foreach (var player in Players)
                 {
-                    var drawn = Draw();
+                    var drawn = RemoveTopCard();
                     var newHand = new Hand.Hand(drawn);
-                    player.SetHand(newHand);
+                    _hands[player.Id] = newHand;
                 }
-                CurrentTurn = new Turn.Turn(Players.First());
             }
             else
             {
@@ -101,8 +140,8 @@ namespace CardGame.Core.Round
                 var nextPlayerIndex = Players.ToList().IndexOf(CurrentTurn.CurrentPlayer) + 1;
                 var nextPlayer = Players.Concat(Players).Skip(nextPlayerIndex).First();
                 var drawn = Draw();
-                var newHand = nextPlayer.Hand.CreateNew(drawn);
-                nextPlayer.SetHand(newHand);
+                var newHand = _hands[nextPlayer.Id].Append(drawn);
+                _hands[nextPlayer.Id] = newHand;
                 CurrentTurn = new Turn.Turn(nextPlayer);
             }
 
@@ -117,11 +156,12 @@ namespace CardGame.Core.Round
                 turn = GetNextTurn();
                 if (turn != null)
                 {
-                    var card = Draw();
-                    turn.Init(card);
+                    _protectedPlayers.Remove(CurrentTurn.CurrentPlayer.Id);
+                    var drawn = Draw();
+                    var hand = GetCurrentPlayerHand();
+                    _hands[CurrentTurn.CurrentPlayer.Id] = hand.Append(drawn);
                     yield return turn;
                 }
-                
             } while (turn != null);
         }
 
@@ -129,22 +169,28 @@ namespace CardGame.Core.Round
         {
             foreach (var player in Players)
             {
-                var handPrevious = player.Hand.Previous;
-                if (handPrevious != null)
-                {
-                    Discard(handPrevious);
-                }
+                var handPrevious = _hands[player.Id].Previous;
+                if (handPrevious != null) Discard(handPrevious);
             }
 
-            foreach (var setAsideCard in _setAsideCards)
-            {
-                Discard(setAsideCard);
-            }
+            foreach (var setAsideCard in _setAsideCards) Discard(setAsideCard);
         }
 
         public void Discard(Card.Card playCard)
         {
-            _discarded.Add(playCard);
+            var keyValuePair = _hands.FirstOrDefault(kvp =>
+            {
+                return kvp.Value != null && 
+                       kvp.Value.Any(p =>
+                {
+                    return p.Id == playCard.Id;
+                });
+            });
+            if (!default(KeyValuePair<Guid, Hand.Hand>).Equals(keyValuePair))
+            {
+                _hands[keyValuePair.Key] = keyValuePair.Value.Discard(playCard.Id);
+                _discarded.Add(playCard);
+            }
         }
     }
 }
