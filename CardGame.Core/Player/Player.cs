@@ -24,11 +24,8 @@ namespace CardGame.Core.Player
 
         public void Discard(CardValue cardValue)
         {
-            var remaining = Hand.FirstOrDefault(c=>
-            {
-                return c.Value != cardValue;
-            });
-            SetHand(new Hand.Hand(remaining));
+            var newHand = Hand.Discard(cardValue);
+            SetHand(newHand);
         }
     }
 }

@@ -142,7 +142,6 @@ namespace CardGamePeer
                 {
                     await WriteLine($"Round winner {game.Players.First(p => p.Id == winner).DisplayName}");
                 }
-                break;
             }
         }
     }

@@ -35,7 +35,8 @@ namespace CardGame.Core.Turn
 
         public void Init(Card.Card draw)
         {
-            CurrentPlayer.SetHand(new Hand.Hand(CurrentPlayer.Hand.Previous, draw));
+            var newHand = CurrentPlayer.Hand.CreateNew(draw);
+            CurrentPlayer.SetHand(newHand);
         }
     }
 }

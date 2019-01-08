@@ -99,7 +99,6 @@ namespace CardGame.Core.Game
                 round = GetNextRound();
                 if (round != null)
                 {
-                    CurrentRound.Init();
                     yield return round;
                 }
             } while (round != null);

@@ -29,15 +29,6 @@ namespace CardGame.Core.Round
             _winningPlayerId = null;
         }
 
-        public void Init()
-        {
-            _setAsideCards.Add(Draw());
-            foreach (var player in Players)
-            {
-                player.SetHand(new Hand.Hand(Draw()));
-            }
-        }
-
         public IEnumerable<Card.Card> Discarded => _discarded;
 
         public Turn.Turn CurrentTurn { get; private set; }
@@ -94,6 +85,13 @@ namespace CardGame.Core.Round
         {
             if (CurrentTurn == null)
             {
+                _setAsideCards.Add(Draw());
+                foreach (var player in Players)
+                {
+                    var drawn = Draw();
+                    var newHand = new Hand.Hand(drawn);
+                    player.SetHand(newHand);
+                }
                 CurrentTurn = new Turn.Turn(Players.First());
             }
             else
@@ -103,7 +101,9 @@ namespace CardGame.Core.Round
                     return null;
                 var nextPlayerIndex = Players.ToList().IndexOf(CurrentTurn.CurrentPlayer) + 1;
                 var nextPlayer = Players.Concat(Players).Skip(nextPlayerIndex).First();
-                nextPlayer.SetHand(new Hand.Hand(nextPlayer.Hand.Previous, Draw()));
+                var drawn = Draw();
+                var newHand = nextPlayer.Hand.CreateNew(drawn);
+                nextPlayer.SetHand(newHand);
                 CurrentTurn = new Turn.Turn(nextPlayer);
             }
 

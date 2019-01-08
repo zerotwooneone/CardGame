@@ -1,5 +1,8 @@
-﻿using System.Collections;
+﻿using System;
+using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
+using CardGame.Core.Card;
 
 namespace CardGame.Core.Hand
 {
@@ -36,6 +39,36 @@ namespace CardGame.Core.Hand
             var result = Previous;
             Previous = newCard;
             return result;
+        }
+
+        public Hand CreateNew(Card.Card drawn)
+        {
+            if (Previous != null && Drawn != null)
+            {
+                throw new InvalidOperationException("Cannot draw when holding two cards.");
+            }
+
+            if (Previous == null && Drawn == null)
+            {
+                return new Hand(drawn);
+            }
+
+            var previous = Previous ?? Drawn;
+            return new Hand(previous, drawn);
+        }
+
+        public Hand Discard(CardValue cardValue)
+        {
+            if (Previous?.Value == cardValue)
+            {
+                return new Hand(Drawn);
+            }
+
+            if (Drawn?.Value == cardValue)
+            {
+                return new Hand(Previous);
+            }
+            throw new InvalidOperationException("Cannot discard a card which does not exist in the hand.");
         }
     }
 }
