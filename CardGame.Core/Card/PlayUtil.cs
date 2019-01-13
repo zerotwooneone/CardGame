@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using CardGame.Core.Round;
+using CardGame.Core.Turn;
 
 namespace CardGame.Core.Card
 {
@@ -15,9 +17,9 @@ namespace CardGame.Core.Card
             {CardValue.King, CardValue.Prince, CardValue.Baron, CardValue.Priest, CardValue.Guard};
 
         public void Play(Guid playerId,
-            Card playCard,
-            Turn.Turn turn,
-            Round.Round round,
+            IPlayCard playCard,
+            IPlayTurn turn,
+            IPlayRound round,
             CardValue previousValue,
             CardValue drawnValue,
             Guid? targetPlayer = null,
@@ -48,7 +50,7 @@ namespace CardGame.Core.Card
                     PlayPrincess(playCard.Id, playerId, round);
                     break;
                 case CardValue.King:
-                    PlayKing(playCard.Id, playerId, targetPlayer.Value, round);
+                    var newCardId = PlayKing(playCard.Id, playerId, targetPlayer.Value, round);
                     break;
                 case CardValue.Prince:
                     PlayPrince(playCard.Id, playerId, targetPlayer.Value, round);
@@ -60,7 +62,7 @@ namespace CardGame.Core.Card
                     PlayBaron(playCard.Id, playerId, targetPlayer.Value, targetCard.Value, round);
                     break;
                 case CardValue.Priest:
-                    PlayPriest(playCard.Id, playerId, targetPlayer.Value, targetCard.Value, turn, round);
+                    var knownPlayerHand = PlayPriest(playCard.Id, playerId, targetPlayer.Value, targetCard.Value, turn, round);
                     break;
                 case CardValue.Guard:
                     PlayGuard(playCard.Id, playerId, targetPlayer.Value, targetCard.Value, round,
@@ -75,36 +77,37 @@ namespace CardGame.Core.Card
             round.Discard(playCard.Id);
         }
 
-        public void PlayPrincess(Guid cardId, Guid playerId, Round.Round round)
+        public void PlayPrincess(Guid cardId, Guid playerId, IPlayRound round)
         {
             round.EliminatePlayer(playerId);
             Play(cardId, round);
         }
 
-        private void Play(Guid cardId, Round.Round round)
+        private void Play(Guid cardId, IPlayRound round)
         {
             round.Discard(cardId);
         }
 
-        public void PlayKing(Guid cardId, Guid playerId, Guid targetId, Round.Round round)
+        public Guid? PlayKing(Guid cardId, Guid playerId, Guid targetId, IPlayRound round)
         {
-            round.TradeHands(playerId, targetId);
+            var result = round.TradeHands(playerId, targetId);
             Play(cardId, round);
+            return result;
         }
 
-        public void PlayPrince(Guid cardId, Guid playerId, Guid targetId, Round.Round round)
+        public void PlayPrince(Guid cardId, Guid playerId, Guid targetId, IPlayRound round)
         {
             round.DiscardAndDraw(targetId);
             Play(cardId, round);
         }
 
-        public void PlayHandmaid(Guid cardId, Guid playerId, Round.Round round)
+        public void PlayHandmaid(Guid cardId, Guid playerId, IPlayRound round)
         {
             round.AddPlayerProtection(playerId);
             Play(cardId, round);
         }
 
-        public void PlayBaron(Guid cardId, Guid playerId, Guid targetId, CardValue targetHand, Round.Round round)
+        public void PlayBaron(Guid cardId, Guid playerId, Guid targetId, CardValue targetHand, IPlayRound round)
         {
             if (CardValue.Baron == targetHand)
             {
@@ -122,14 +125,15 @@ namespace CardGame.Core.Card
             Play(cardId, round);
         }
 
-        public void PlayPriest(Guid cardId, Guid playerId, Guid targetId, CardValue targetHand, Turn.Turn turn,
-            Round.Round round)
+        public KnownPlayerHand PlayPriest(Guid cardId, Guid playerId, Guid targetId, CardValue targetHand, IPlayTurn turn,
+            IPlayRound round)
         {
-            turn.RevealHand(targetId, targetHand);
+            var knownPlayerHand = turn.RevealHand(targetId, targetHand);
             Play(cardId, round);
+            return knownPlayerHand;
         }
 
-        public void PlayGuard(Guid cardId, Guid playerId, Guid targetId, CardValue targetHand, Round.Round round,
+        public void PlayGuard(Guid cardId, Guid playerId, Guid targetId, CardValue targetHand, IPlayRound round,
             CardValue guess)
         {
             if (guess == CardValue.Guard) throw new ArgumentException("Can not guess Guard Value", nameof(guess));

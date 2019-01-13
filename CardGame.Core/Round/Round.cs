@@ -5,7 +5,7 @@ using CardGame.Core.Card;
 
 namespace CardGame.Core.Round
 {
-    public class Round
+    public class Round : IPlayRound
     {
         public delegate CardValue GetCardValue(Guid cardId);
 
@@ -20,6 +20,12 @@ namespace CardGame.Core.Round
         public readonly IEnumerable<Guid> Players;
         private ushort _nextRoundId;
 
+        /// <summary>
+        ///     Used for creating a new round during a game
+        /// </summary>
+        /// <param name="players"></param>
+        /// <param name="deck"></param>
+        /// <param name="id"></param>
         public Round(IEnumerable<Guid> players,
             IEnumerable<Guid> deck, Guid id)
         {
@@ -36,10 +42,89 @@ namespace CardGame.Core.Round
             _nextRoundId = 0;
         }
 
+        /// <summary>
+        ///     Used for restoring a saved round
+        /// </summary>
+        /// <param name="playerOrder"></param>
+        /// <param name="playerHands"></param>
+        /// <param name="deck"></param>
+        /// <param name="id"></param>
+        /// <param name="nextRoundId"></param>
+        /// <param name="protectedPlayers"></param>
+        /// <param name="discarded"></param>
+        /// <param name="setAsideCards"></param>
+        public Round(IEnumerable<Guid> playerOrder,
+            IDictionary<Guid, Hand.Hand> playerHands,
+            IEnumerable<Guid> deck, Guid id,
+            ushort nextRoundId,
+            IEnumerable<Guid> protectedPlayers,
+            IEnumerable<Guid> discarded,
+            IEnumerable<Guid> setAsideCards,
+            Turn.Turn currentTurn)
+        {
+            Id = id;
+            _drawCards = deck.ToList();
+            _discarded = discarded.ToList();
+            _setAsideCards = setAsideCards.ToList();
+            Players = playerOrder;
+            _remainingPlayers = playerHands
+                .Where(kvp => kvp.Value != null)
+                .ToDictionary(kvp => kvp.Key, kvp => (string) null);
+            _protectedPlayers = protectedPlayers.ToList();
+            _winningPlayerId = null;
+            _playerHands = playerHands;
+            _nextRoundId = nextRoundId;
+            CurrentTurn = currentTurn;
+        }
+
         public Guid Id { get; }
         public IEnumerable<Guid> Discarded => _discarded;
         public Turn.Turn CurrentTurn { get; private set; }
         public IEnumerable<Guid> RemainingPlayers => _remainingPlayers.Keys;
+
+        public void DiscardAndDraw(Guid targetId)
+        {
+            if (_protectedPlayers.Contains(targetId)) return;
+            var hand = _playerHands[targetId];
+            Discard(hand.Previous);
+            var newCard = RemoveTopCard();
+            var newHand = new Hand.Hand(newCard);
+            _playerHands[targetId] = newHand;
+        }
+
+        public Guid? TradeHands(Guid sourcePlayerId, Guid targetPlayerId)
+        {
+            if (_protectedPlayers.Contains(targetPlayerId)) return null;
+            var sourceHand = _playerHands[sourcePlayerId];
+            var targetHand = _playerHands[targetPlayerId];
+            _playerHands[sourcePlayerId] = targetHand;
+            _playerHands[targetPlayerId] = sourceHand;
+            return targetHand.Previous;
+        }
+
+        public void EliminatePlayer(Guid playerId)
+        {
+            _remainingPlayers.Remove(playerId);
+        }
+
+        public void AddPlayerProtection(Guid playerId)
+        {
+            _protectedPlayers.Add(playerId);
+        }
+
+        public void Discard(Guid playCard)
+        {
+            var keyValuePair = _playerHands.FirstOrDefault(kvp =>
+            {
+                return kvp.Value != null &&
+                       kvp.Value.Any(p => p == playCard);
+            });
+            if (!default(KeyValuePair<Guid, Hand.Hand>).Equals(keyValuePair))
+            {
+                _playerHands[keyValuePair.Key] = keyValuePair.Value.Discard(playCard);
+                _discarded.Add(playCard);
+            }
+        }
 
         private Guid Draw(Guid playerId)
         {
@@ -56,16 +141,6 @@ namespace CardGame.Core.Round
             return card;
         }
 
-        public void DiscardAndDraw(Guid targetId)
-        {
-            if (_protectedPlayers.Contains(targetId)) return;
-            var hand = _playerHands[targetId];
-            Discard(hand.Previous);
-            var newCard = RemoveTopCard();
-            var newHand = new Hand.Hand(newCard);
-            _playerHands[targetId] = newHand;
-        }
-
         public Hand.Hand GetCurrentPlayerHand()
         {
             return _playerHands[CurrentTurn.CurrentPlayerId];
@@ -75,25 +150,6 @@ namespace CardGame.Core.Round
         {
             //crud. need two versions of this method. one which can be immune with _protectedPlayers
             return _playerHands[targetPlayerId].Previous;
-        }
-
-        public void TradeHands(Guid sourcePlayerId, Guid targetPlayerId)
-        {
-            if (_protectedPlayers.Contains(targetPlayerId)) return;
-            var sourceHand = _playerHands[sourcePlayerId];
-            var targetHand = _playerHands[targetPlayerId];
-            _playerHands[sourcePlayerId] = targetHand;
-            _playerHands[targetPlayerId] = sourceHand;
-        }
-
-        public void EliminatePlayer(Guid playerId)
-        {
-            _remainingPlayers.Remove(playerId);
-        }
-
-        public void AddPlayerProtection(Guid playerId)
-        {
-            _protectedPlayers.Add(playerId);
         }
 
         public Guid? GetWinningPlayerId(GetCardValue getCardValue)
@@ -171,20 +227,6 @@ namespace CardGame.Core.Round
             }
 
             foreach (var setAsideCard in _setAsideCards) Discard(setAsideCard);
-        }
-
-        public void Discard(Guid playCard)
-        {
-            var keyValuePair = _playerHands.FirstOrDefault(kvp =>
-            {
-                return kvp.Value != null &&
-                       kvp.Value.Any(p => p == playCard);
-            });
-            if (!default(KeyValuePair<Guid, Hand.Hand>).Equals(keyValuePair))
-            {
-                _playerHands[keyValuePair.Key] = keyValuePair.Value.Discard(playCard);
-                _discarded.Add(playCard);
-            }
         }
     }
 }

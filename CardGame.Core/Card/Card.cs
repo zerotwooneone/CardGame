@@ -2,12 +2,12 @@
 
 namespace CardGame.Core.Card
 {
-    public class Card
+    public class Card : IPlayCard
     {
-        public readonly Guid Id;
-        public readonly string Name;
-        public readonly string TypeName;
-        public readonly CardValue Value;
+        public Guid Id { get; }
+        public CardValue Value { get; }
+        public string Name { get; }
+        public string TypeName { get; }
 
         public Card(Guid id,
             CardValue value,

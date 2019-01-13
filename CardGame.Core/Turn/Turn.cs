@@ -3,7 +3,7 @@ using CardGame.Core.Card;
 
 namespace CardGame.Core.Turn
 {
-    public class Turn
+    public class Turn : IPlayTurn
     {
         public readonly Guid CurrentPlayerId;
 
