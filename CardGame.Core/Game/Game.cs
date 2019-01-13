@@ -21,46 +21,45 @@ namespace CardGame.Core.Game
         private readonly Dictionary<Guid, int> _scores;
         public readonly int WinningScore;
         
-        public Game(Guid id, IEnumerable<Player.Player> players, IRandomService randomService)
+        public Game(Guid id, IEnumerable<Guid> players, IRandomService randomService)
         {
             _randomService = randomService;
             Id = id;
 
-            var playerArray = players as Player.Player[] ?? players.ToArray();
+            var playerArray = players as Guid[] ?? players.ToArray();
             Players = playerArray;
-            _scores = playerArray.ToDictionary(p => p.Id, p => 0);
+            _scores = playerArray.ToDictionary(p => p, p => 0);
             _deck = CreateDeck();
             WinningScore = MaxPoints / playerArray.Length + 1;
         }
 
         public Guid Id { get; }
         public Round.Round CurrentRound { get; private set; }
-        public IEnumerable<Player.Player> Players { get; }
+        public IEnumerable<Guid> Players { get; }
         public IReadOnlyDictionary<Guid, int> Scores => _scores;
 
         public static IEnumerable<Card.Card> CreateDeck()
         {
             yield return new Card.Card(PrincessGuid, CardValue.Princess, nameof(CardValue.Princess),
-                nameof(CardValue.Princess), null, null);
+                nameof(CardValue.Princess));
             yield return new Card.Card(CountessGuid, CardValue.Countess, nameof(CardValue.Countess),
-                nameof(CardValue.Countess), null, null);
-            yield return new Card.Card(KingGuid, CardValue.King, nameof(CardValue.King), nameof(CardValue.King),
-                null, null);
+                nameof(CardValue.Countess));
+            yield return new Card.Card(KingGuid, CardValue.King, nameof(CardValue.King), nameof(CardValue.King));
             for (var count = 0; count < 2; count++)
                 yield return new Card.Card(PrinceGuid, CardValue.Prince, nameof(CardValue.Prince),
-                    nameof(CardValue.Prince), null, null);
+                    nameof(CardValue.Prince));
             for (var count = 0; count < 2; count++)
                 yield return new Card.Card(HandmaidGuid, CardValue.Handmaid, nameof(CardValue.Handmaid),
-                    nameof(CardValue.Handmaid), null, null);
+                    nameof(CardValue.Handmaid));
             for (var count = 0; count < 2; count++)
                 yield return new Card.Card(BaronGuid, CardValue.Baron, nameof(CardValue.Baron),
-                    nameof(CardValue.Baron), null, null);
+                    nameof(CardValue.Baron));
             for (var count = 0; count < 2; count++)
                 yield return new Card.Card(PriestGuid, CardValue.Priest, nameof(CardValue.Priest),
-                    nameof(CardValue.Priest), null, null);
+                    nameof(CardValue.Priest));
             for (var count = 0; count < 5; count++)
                 yield return new Card.Card(GuardGuid, CardValue.Guard, nameof(CardValue.Guard),
-                    nameof(CardValue.Guard), null, null);
+                    nameof(CardValue.Guard));
         }
 
         private Round.Round GetNextRound()
@@ -80,7 +79,7 @@ namespace CardGame.Core.Game
                 var playerId = CurrentRound.GetWinningPlayerId().Value;
                 _scores[playerId] = _scores[playerId] + 1;
                 playerIndex = Players
-                    .SelectMany((value, index) => value.Id == playerId ? new[] {index} : Enumerable.Empty<int>())
+                    .SelectMany((value, index) => value == playerId ? new[] {index} : Enumerable.Empty<int>())
                     .DefaultIfEmpty(-1).First();
                 
                 CurrentRound.Cleanup();
@@ -121,6 +120,69 @@ namespace CardGame.Core.Game
 
                 buffer[j] = buffer[i];
             }
+        }
+
+        public void Play(Card.Card playCard, Turn.Turn turn, Round.Round round, Guid? targetPlayer, CardValue? guessedCardvalue)
+        {
+            var cardValue = playCard.Value;
+            if (RequiresTargetPlayerToPlay(cardValue) && targetPlayer == null)
+            {
+                throw new ArgumentException("Missing target player", nameof(targetPlayer));
+            }
+
+            if (RequiresGuessedCardToPlay(cardValue) && guessedCardvalue == null)
+            {
+                throw new ArgumentException("Missing guessed card value", nameof(guessedCardvalue));
+            }
+
+            var playContext = round.CreatePlayContext(targetPlayer, guessedCardvalue);
+            switch (cardValue)
+            {
+                case CardValue.Princess:
+                    playContext.EliminateCurrentPlayer();
+                    break;
+                case CardValue.King:
+                    if (playContext.TargetPlayerId == null) break;
+                    playContext.TradeHands(playContext.TargetPlayerId.Value);
+                    break;
+                case CardValue.Prince:
+                    if (playContext.TargetPlayerId == null) break;
+                    playContext.DiscardAndDraw(playContext.TargetPlayerId.Value);
+                    break;
+                case CardValue.Handmaid:
+                    playContext.AddCurrentPlayerProtection();
+                    break;
+                case CardValue.Baron:
+                    if (playContext.TargetPlayerId == null) break;
+                    playContext.CompareHands(playContext.TargetPlayerId.Value);
+                    break;
+                case CardValue.Priest:
+                    if (playContext.TargetPlayerId == null) break;
+                    playContext.RevealHand(playContext.TargetPlayerId.Value);
+                    break;
+                case CardValue.Guard:
+                    if (playContext.TargetPlayerId == null) break;
+                    if(playContext.GuessedCardvalue == null) break;
+                    playContext.GuessAndCheck(playContext.TargetPlayerId.Value, playContext.GuessedCardvalue.Value);
+                    break;
+                case CardValue.Countess:
+                default:
+                    break;
+            }
+            round.Discard(playCard);
+        }
+
+        public readonly IEnumerable<CardValue> RequireTargetToPlay = new[]
+            {CardValue.King, CardValue.Prince, CardValue.Baron, CardValue.Priest, CardValue.Guard};
+        public bool RequiresTargetPlayerToPlay(CardValue cardValue)
+        {
+            return RequireTargetToPlay.Contains(cardValue);
+        }
+
+        public readonly IEnumerable<CardValue> RequireGuessedCardValueToPlay = new[] {CardValue.Guard};
+        public bool RequiresGuessedCardToPlay(CardValue cardValue)
+        {
+            return RequireGuessedCardValueToPlay.Contains(cardValue);
         }
     }
 }

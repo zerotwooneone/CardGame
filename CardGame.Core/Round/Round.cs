@@ -11,37 +11,36 @@ namespace CardGame.Core.Round
         private readonly IList<Card.Card> _drawCards;
         private readonly IDictionary<Guid, Hand.Hand> _hands;
         private readonly IList<Guid> _protectedPlayers;
-        private readonly IDictionary<Guid, Player.Player> _remainingPlayers;
+        private readonly IDictionary<Guid, string> _remainingPlayers;
         private readonly IList<Card.Card> _setAsideCards;
 
         private readonly Guid? _winningPlayerId;
-        public readonly IEnumerable<Player.Player> Players;
+        public readonly IEnumerable<Guid> Players;
 
-        public Round(IEnumerable<Player.Player> players,
+        public Round(IEnumerable<Guid> players,
             IEnumerable<Card.Card> deck)
         {
             _drawCards = deck.ToList();
             _discarded = new List<Card.Card>();
             _setAsideCards = new List<Card.Card>();
-            var enumerablePlayers = players as Player.Player[] ?? players.ToArray();
+            var enumerablePlayers = players as Guid[] ?? players.ToArray();
             Players = enumerablePlayers;
-            _remainingPlayers = enumerablePlayers.ToDictionary(p => p.Id);
+            _remainingPlayers = enumerablePlayers.ToDictionary(g=>g,g=>(string)null);
             _protectedPlayers = new List<Guid>();
             _winningPlayerId = null;
-            _hands = enumerablePlayers.ToDictionary(p => p.Id, p => (Hand.Hand) null);
+            _hands = enumerablePlayers.ToDictionary(p => p, p => (Hand.Hand) null);
         }
 
         public IEnumerable<Card.Card> Discarded => _discarded;
 
         public Turn.Turn CurrentTurn { get; private set; }
-        public IEnumerable<Player.Player> RemainingPlayers => _remainingPlayers.Values;
+        public IEnumerable<Guid> RemainingPlayers => _remainingPlayers.Keys;
 
         private Card.Card Draw()
         {
             var card = RemoveTopCard();
             var drawContext = CreateDrawContext();
-            card.OnDraw(
-                drawContext);
+            drawContext.MarkUnplayableCards();
             return card;
         }
 
@@ -77,7 +76,7 @@ namespace CardGame.Core.Round
 
         public Hand.Hand GetCurrentPlayerHand()
         {
-            return _hands[CurrentTurn.CurrentPlayer.Id];
+            return _hands[CurrentTurn.CurrentPlayerId];
         }
 
         private CardValue RevealHand(Guid targetPlayerId)
@@ -109,11 +108,11 @@ namespace CardGame.Core.Round
         {
             if (_winningPlayerId == null)
             {
-                if (_remainingPlayers.Count == 1) return _remainingPlayers.Values.First().Id;
+                if (_remainingPlayers.Count == 1) return _remainingPlayers.Keys.First();
 
                 var maxValue = _remainingPlayers.Max(p => _hands[p.Key].Max(c => c.Value));
                 //we arbitrarily choose the last player (the first match might be the winner from the last round) that matches, but really we need a better way
-                return _remainingPlayers.Last(p => _hands[p.Key].Max(c => c.Value) == maxValue).Value.Id;
+                return _remainingPlayers.Last(p => _hands[p.Key].Max(c => c.Value) == maxValue).Key;
             }
 
             return _winningPlayerId;
@@ -129,7 +128,7 @@ namespace CardGame.Core.Round
                 {
                     var drawn = RemoveTopCard();
                     var newHand = new Hand.Hand(drawn);
-                    _hands[player.Id] = newHand;
+                    _hands[player] = newHand;
                 }
             }
             else
@@ -137,11 +136,11 @@ namespace CardGame.Core.Round
                 if (_remainingPlayers.Count <= 1 ||
                     _drawCards.Count <= 0)
                     return null;
-                var nextPlayerIndex = Players.ToList().IndexOf(CurrentTurn.CurrentPlayer) + 1;
+                var nextPlayerIndex = Players.ToList().IndexOf(CurrentTurn.CurrentPlayerId) + 1;
                 var nextPlayer = Players.Concat(Players).Skip(nextPlayerIndex).First();
                 var drawn = Draw();
-                var newHand = _hands[nextPlayer.Id].Append(drawn);
-                _hands[nextPlayer.Id] = newHand;
+                var newHand = _hands[nextPlayer].Append(drawn);
+                _hands[nextPlayer] = newHand;
                 CurrentTurn = new Turn.Turn(nextPlayer);
             }
 
@@ -156,10 +155,10 @@ namespace CardGame.Core.Round
                 turn = GetNextTurn();
                 if (turn != null)
                 {
-                    _protectedPlayers.Remove(CurrentTurn.CurrentPlayer.Id);
+                    _protectedPlayers.Remove(CurrentTurn.CurrentPlayerId);
                     var drawn = Draw();
                     var hand = GetCurrentPlayerHand();
-                    _hands[CurrentTurn.CurrentPlayer.Id] = hand.Append(drawn);
+                    _hands[CurrentTurn.CurrentPlayerId] = hand.Append(drawn);
                     yield return turn;
                 }
             } while (turn != null);
@@ -169,7 +168,7 @@ namespace CardGame.Core.Round
         {
             foreach (var player in Players)
             {
-                var handPrevious = _hands[player.Id].Previous;
+                var handPrevious = _hands[player].Previous;
                 if (handPrevious != null) Discard(handPrevious);
             }
 

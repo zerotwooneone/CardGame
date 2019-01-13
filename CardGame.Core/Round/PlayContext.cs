@@ -35,8 +35,7 @@ namespace CardGame.Core.Round
 
         public void EliminateCurrentPlayer()
         {
-            var currentPlayer = CurrentTurn.CurrentPlayer;
-            Eliminate(currentPlayer.Id);
+            Eliminate(CurrentTurn.CurrentPlayerId);
         }
 
         public void DiscardAndDraw(Guid targetId)
@@ -46,8 +45,7 @@ namespace CardGame.Core.Round
 
         public void AddCurrentPlayerProtection()
         {
-            var player = CurrentTurn.CurrentPlayer;
-            _addPlayerProtection(player.Id);
+            _addPlayerProtection(CurrentTurn.CurrentPlayerId);
         }
 
         public void Eliminate(Guid targetId)
@@ -57,7 +55,7 @@ namespace CardGame.Core.Round
 
         public void TradeHands(Guid targetId)
         {
-            _tradeHands(CurrentTurn.CurrentPlayer.Id, targetId);
+            _tradeHands(CurrentTurn.CurrentPlayerId, targetId);
         }
 
         public void RevealHand(Guid targetId)
@@ -90,8 +88,7 @@ namespace CardGame.Core.Round
             }
             else
             {
-                var currentPlayer = CurrentTurn.CurrentPlayer;
-                Eliminate(currentPlayer.Id);
+                Eliminate(CurrentTurn.CurrentPlayerId);
             }
         }
     }

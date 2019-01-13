@@ -5,14 +5,14 @@ namespace CardGame.Core.Turn
 {
     public class Turn
     {
-        public readonly Player.Player CurrentPlayer;
+        public readonly Guid CurrentPlayerId;
         public CardValue Unplayable { get; private set; }
 
         public KnownPlayerHand KnownPlayerHand {get; private set; }
 
-        public Turn(Player.Player currentPlayer)
+        public Turn(Guid currentPlayerId)
         {
-            CurrentPlayer = currentPlayer;
+            CurrentPlayerId = currentPlayerId;
             KnownPlayerHand = null;
         }
 
