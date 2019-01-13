@@ -35,7 +35,7 @@ namespace CardGame.CoreTests.Round
             IEnumerable<Guid> protectedPlayers = null,
             IEnumerable<Guid> discarded = null,
             IEnumerable<Guid> setAsideCards = null,
-            Turn currentTurn = null)
+            ushort turnId = 0)
         {
             protectedPlayers = protectedPlayers ?? new Guid[] { };
             discarded = discarded ?? new Guid[] { };
@@ -50,7 +50,7 @@ namespace CardGame.CoreTests.Round
                 protectedPlayers,
                 discarded,
                 setAsideCards,
-                currentTurn);
+                turnId);
         }
 
         private Core.Round.Round CreateRound(IDictionary<Guid, Guid> playerHands,
@@ -60,10 +60,8 @@ namespace CardGame.CoreTests.Round
             IEnumerable<Guid> protectedPlayers = null,
             IEnumerable<Guid> discarded = null,
             IEnumerable<Guid> setAsideCards = null,
-            Guid? currentPlayerId = null,
             ushort currentTurnId = 0)
         {
-            var currentTurn = currentPlayerId == null ? null : new Turn(currentPlayerId.Value, currentTurnId);
             return CreateRound(
                 playerHands.ToDictionary(kvp => kvp.Key, kvp => new Hand(kvp.Value)),
                 deck,
@@ -72,7 +70,7 @@ namespace CardGame.CoreTests.Round
                 protectedPlayers,
                 discarded,
                 setAsideCards,
-                currentTurn);
+                currentTurnId);
         }
 
         //[TestMethod]
@@ -97,7 +95,7 @@ namespace CardGame.CoreTests.Round
         //    var unitUnderTest = this.CreateRound(TODO, TODO);
 
         //    // Act
-        //    var result = unitUnderTest.GetCurrentPlayerHand();
+        //    var result = unitUnderTest.GetPlayerHand();
 
         //    // Assert
         //    Assert.Fail();
@@ -131,15 +129,14 @@ namespace CardGame.CoreTests.Round
                     {sourcePlayerId, card1},
                     {targetPlayerId, card2}
                 },
-                new Guid[] { },
-                currentPlayerId: sourcePlayerId
+                new Guid[] { }
             );
             // Act
             var expected = card2;
             unitUnderTest.TradeHands(
                 sourcePlayerId,
                 targetPlayerId);
-            var actual = unitUnderTest.GetCurrentPlayerHand().Previous;
+            var actual = unitUnderTest.GetPlayerHand(sourcePlayerId).Previous;
 
             // Assert
             Assert.AreEqual(expected, actual);
@@ -159,15 +156,14 @@ namespace CardGame.CoreTests.Round
                     {targetPlayerId, card2}
                 },
                 new Guid[] { },
-                protectedPlayers: new[] {targetPlayerId},
-                currentPlayerId: sourcePlayerId
+                protectedPlayers: new[] {targetPlayerId}
             );
             // Act
             Guid? expected = card1;
             unitUnderTest.TradeHands(
                 sourcePlayerId,
                 targetPlayerId);
-            var actual = unitUnderTest.GetCurrentPlayerHand().Previous;
+            var actual = unitUnderTest.GetPlayerHand(sourcePlayerId).Previous;
 
             // Assert
             Assert.AreEqual(expected, actual);
