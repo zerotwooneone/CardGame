@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using CardGame.Core.Card;
+using CardGame.Core.Deck;
 using CardGame.Core.Game;
 using CardGame.Core.Player;
 using CardGame.Core.Round;
@@ -14,13 +15,20 @@ namespace CardGamePeer
     {
         private readonly OutputService _outputService;
         private readonly IRandomService _randomService;
+        private readonly IDeckFactory _deckFactory;
+        private readonly PlayUtil _playUtil;
 
         private readonly string ExitString = "x1234";
 
-        public ProgramViewmodel(OutputService outputService, IRandomService randomService)
+        public ProgramViewmodel(OutputService outputService, 
+            IRandomService randomService,
+            IDeckFactory deckFactory,
+            PlayUtil playUtil)
         {
             _outputService = outputService;
             _randomService = randomService;
+            _deckFactory = deckFactory;
+            _playUtil = playUtil;
         }
 
         private string FormatForConsole(string s)
@@ -64,33 +72,36 @@ namespace CardGamePeer
                 new Player(player1Id, player1Id.ToString().Substring(0, 4)),
                 new Player(player2Id, player2Id.ToString().Substring(0, 4))
             }.ToDictionary(p=>p.Id);
-            var game = new Game(Guid.NewGuid(), players.Select(p=>p.Key), _randomService);
+            var deck = _deckFactory.Create().ToDictionary(c=>c.Id);
+            var game = new Game(Guid.NewGuid(), players.Select(p=>p.Key), _randomService, deck.Keys);
 
             await WriteLine($"Starting Game: {game.Id}");
 
-            foreach (var round in game.Start())
+            CardValue GetCardValue(Guid cardId) => deck[cardId].Value;
+            foreach (var round in game.Start(player2Id, GetCardValue))
             {
-                foreach (var turn in round.Start())
+                foreach (var turn in round.Start(GetCardValue))
                 {
                     await _outputService.WriteLine("");
                     await WriteLine($"Player {GetPlayerDisplayName(turn, players)} turn.");
                     var hand = round.GetCurrentPlayerHand();
-
+                    var previous = deck[hand.Previous];
+                    var drawn = deck[hand.Drawn.Value];
                     string input;
                     do
                     {
                         await WriteLine($"Enter the number of the card you wish to play. Or {ExitString} to quit.");
                         input = await Prompt(
-                            $"Hand {hand.Previous.Value}({hand.Previous.Value.GetHashCode()}) & {hand.Drawn.Value}({hand.Drawn.Value.GetHashCode()}).");
+                            $"Hand {previous.TypeName}({previous.Value.GetHashCode()}) & {drawn.Value}({drawn.Value.GetHashCode()}).");
                     } while (!ushort.TryParse(input, out var us) ||
-                             (CardValue) us != hand.Previous.Value &&
-                             (CardValue) us != hand.Drawn.Value &&
+                             (CardValue) us != previous.Value &&
+                             (CardValue) us != drawn.Value &&
                              input.ToLower().Trim() != ExitString);
 
                     if (input.ToLower().Trim() == ExitString) break;
                     var cardValue = (CardValue) ushort.Parse(input);
                     Guid? targetPlayer;
-                    if (game.RequiresTargetPlayerToPlay(cardValue))
+                    if (_playUtil.RequiresTargetPlayerToPlay(cardValue))
                     {
                         targetPlayer = await GetTargetPlayer(round, players);
                     }
@@ -100,7 +111,7 @@ namespace CardGamePeer
                     }
 
                     CardValue? guessedCardvalue;
-                    if (game.RequiresGuessedCardToPlay(cardValue))
+                    if (_playUtil.RequiresGuessedCardToPlay(cardValue))
                     {
                         guessedCardvalue = await GetGuessedCardValue();
                     }
@@ -111,12 +122,13 @@ namespace CardGamePeer
 
                     if (!ExitRequested)
                     {
-                        var playCard = hand.First(c => c.Value == cardValue);
-                        game.Play(playCard, turn, round, targetPlayer, guessedCardvalue);
+                        var targetCardValue =_playUtil.RequiresTargetHandToPlay(cardValue) ? deck[round.RevealHand(targetPlayer.Value)].Value : (CardValue?)null;
+                        var playCard = deck[hand.First(c => deck[c].Value == cardValue)];
+                        _playUtil.Play(turn.CurrentPlayerId, playCard, turn, round, targetPlayer, guessedCardvalue,targetCardValue);
                     }
                 }
 
-                var winner = round.GetWinningPlayerId();
+                var winner = round.GetWinningPlayerId(GetCardValue);
                 if (winner != null)
                 {
                     await WriteLine($"Round winner {GetPlayerDisplayName(game.Players.First(p => p == winner), players)}");
