@@ -18,6 +18,8 @@ namespace CardGame.Core.Card
             Card playCard,
             Turn.Turn turn,
             Round.Round round,
+            CardValue previousValue,
+            CardValue drawnValue,
             Guid? targetPlayer = null,
             CardValue? guessedCardvalue = null,
             CardValue? targetCard = null)
@@ -31,6 +33,14 @@ namespace CardGame.Core.Card
 
             if(RequiresTargetHandToPlay(cardValue) && targetCard == null)
                 throw new ArgumentException("Missing target card value", nameof(targetCard));
+
+            if ((previousValue == CardValue.Countess ||
+                 drawnValue == CardValue.Countess) &&
+                (playCard.Value == CardValue.King ||
+                 playCard.Value == CardValue.Prince))
+            {
+                throw new ArgumentException("Can not play King or Prince when Countess is in hand", nameof(playCard));
+            }
 
             switch (cardValue)
             {

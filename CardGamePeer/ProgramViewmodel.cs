@@ -124,7 +124,7 @@ namespace CardGamePeer
                     {
                         var targetCardValue =_playUtil.RequiresTargetHandToPlay(cardValue) ? deck[round.RevealHand(targetPlayer.Value)].Value : (CardValue?)null;
                         var playCard = deck[hand.First(c => deck[c].Value == cardValue)];
-                        _playUtil.Play(turn.CurrentPlayerId, playCard, turn, round, targetPlayer, guessedCardvalue,targetCardValue);
+                        _playUtil.Play(turn.CurrentPlayerId, playCard, turn, round, previous.Value, drawn.Value, targetPlayer, guessedCardvalue,targetCardValue);
                     }
                 }
 
