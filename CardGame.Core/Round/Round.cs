@@ -7,15 +7,18 @@ namespace CardGame.Core.Round
 {
     public class Round
     {
+        public delegate CardValue GetCardValue(Guid cardId);
+
         private readonly IList<Guid> _discarded;
         private readonly IList<Guid> _drawCards;
-        private readonly IDictionary<Guid, Hand.Hand> _hands;
+        private readonly IDictionary<Guid, Hand.Hand> _playerHands;
         private readonly IList<Guid> _protectedPlayers;
         private readonly IDictionary<Guid, string> _remainingPlayers;
         private readonly IList<Guid> _setAsideCards;
 
         private readonly Guid? _winningPlayerId;
         public readonly IEnumerable<Guid> Players;
+        private ushort _nextRoundId;
 
         public Round(IEnumerable<Guid> players,
             IEnumerable<Guid> deck, Guid id)
@@ -29,7 +32,8 @@ namespace CardGame.Core.Round
             _remainingPlayers = enumerablePlayers.ToDictionary(g => g, g => (string) null);
             _protectedPlayers = new List<Guid>();
             _winningPlayerId = null;
-            _hands = enumerablePlayers.ToDictionary(p => p, p => (Hand.Hand) null);
+            _playerHands = enumerablePlayers.ToDictionary(p => p, p => (Hand.Hand) null);
+            _nextRoundId = 0;
         }
 
         public Guid Id { get; }
@@ -37,14 +41,11 @@ namespace CardGame.Core.Round
         public Turn.Turn CurrentTurn { get; private set; }
         public IEnumerable<Guid> RemainingPlayers => _remainingPlayers.Keys;
 
-        public Guid Draw(Guid playerId, Func<Guid, CardValue> getCardValue)
+        private Guid Draw(Guid playerId)
         {
             var cardId = RemoveTopCard();
-            var newHand = _hands[playerId].Append(cardId);
-            _hands[playerId] = newHand;
-            var previous = getCardValue(newHand.Previous);
-            var drawn = getCardValue(newHand.Drawn.Value);
-            CurrentTurn.MarkUnplayable(previous, drawn);
+            var newHand = _playerHands[playerId].Append(cardId);
+            _playerHands[playerId] = newHand;
             return cardId;
         }
 
@@ -58,31 +59,31 @@ namespace CardGame.Core.Round
         public void DiscardAndDraw(Guid targetId)
         {
             if (_protectedPlayers.Contains(targetId)) return;
-            var hand = _hands[targetId];
+            var hand = _playerHands[targetId];
             Discard(hand.Previous);
             var newCard = RemoveTopCard();
             var newHand = new Hand.Hand(newCard);
-            _hands[targetId] = newHand;
+            _playerHands[targetId] = newHand;
         }
 
         public Hand.Hand GetCurrentPlayerHand()
         {
-            return _hands[CurrentTurn.CurrentPlayerId];
+            return _playerHands[CurrentTurn.CurrentPlayerId];
         }
 
         public Guid RevealHand(Guid targetPlayerId)
         {
             //crud. need two versions of this method. one which can be immune with _protectedPlayers
-            return _hands[targetPlayerId].Previous;
+            return _playerHands[targetPlayerId].Previous;
         }
 
         public void TradeHands(Guid sourcePlayerId, Guid targetPlayerId)
         {
             if (_protectedPlayers.Contains(targetPlayerId)) return;
-            var sourceHand = _hands[sourcePlayerId];
-            var targetHand = _hands[targetPlayerId];
-            _hands[sourcePlayerId] = targetHand;
-            _hands[targetPlayerId] = sourceHand;
+            var sourceHand = _playerHands[sourcePlayerId];
+            var targetHand = _playerHands[targetPlayerId];
+            _playerHands[sourcePlayerId] = targetHand;
+            _playerHands[targetPlayerId] = sourceHand;
         }
 
         public void EliminatePlayer(Guid playerId)
@@ -95,65 +96,69 @@ namespace CardGame.Core.Round
             _protectedPlayers.Add(playerId);
         }
 
-        public Guid? GetWinningPlayerId(Func<Guid, CardValue> getCardValue)
+        public Guid? GetWinningPlayerId(GetCardValue getCardValue)
         {
             if (_winningPlayerId == null)
             {
                 if (_remainingPlayers.Count == 1) return _remainingPlayers.Keys.First();
 
-                var maxValue = _remainingPlayers.Max(p => _hands[p.Key].Max(getCardValue));
+                var maxValue = _remainingPlayers.Max(p => _playerHands[p.Key].Max(x => getCardValue(x)));
                 //we arbitrarily choose the last player (the first match might be the winner from the last round) that matches, but really we need a better way
-                return _remainingPlayers.Last(p => _hands[p.Key].Max(getCardValue) == maxValue).Key;
+                return _remainingPlayers.Last(p => _playerHands[p.Key].Max(x => getCardValue(x)) == maxValue).Key;
             }
 
             return _winningPlayerId;
         }
 
-        private Turn.Turn GetNextTurn(Guid nextPlayerId, Func<Guid, CardValue> getCardValue)
+        private Turn.Turn GetNextTurn(Guid nextPlayerId, GetCardValue getCardValue)
         {
             if (CurrentTurn == null)
             {
-                CurrentTurn = new Turn.Turn(nextPlayerId);
                 _setAsideCards.Add(RemoveTopCard());
                 foreach (var player in Players)
                 {
                     var newDeltHand = RemoveTopCard();
                     var newHand = new Hand.Hand(newDeltHand);
-                    _hands[player] = newHand;
+                    _playerHands[player] = newHand;
                 }
-                var drawn = Draw(CurrentTurn.CurrentPlayerId, getCardValue);
             }
             else
             {
                 if (_remainingPlayers.Count <= 1 ||
                     _drawCards.Count <= 0)
                     return null;
-                var drawn = Draw(nextPlayerId, getCardValue);
-                CurrentTurn = new Turn.Turn(nextPlayerId);
             }
+
+            CurrentTurn = new Turn.Turn(nextPlayerId, _nextRoundId);
+            _nextRoundId++;
+            Draw(nextPlayerId);
+            var hand = GetCurrentPlayerHand();
+            var previous = getCardValue(hand.Previous);
+            var drawn = getCardValue(hand.Drawn.Value);
+            CurrentTurn.MarkUnplayable(previous, drawn);
             _protectedPlayers.Remove(CurrentTurn.CurrentPlayerId);
 
             return CurrentTurn;
         }
 
-        public IEnumerable<Turn.Turn> Start(Func<Guid, CardValue> getCardValue)
+        public IEnumerable<Turn.Turn> Start(GetCardValue getCardValue)
         {
             Turn.Turn turn;
             do
             {
                 Guid nextplayerId;
                 if (CurrentTurn == null)
+                {
                     nextplayerId = Players.First();
+                }
                 else
                 {
                     var nextPlayerIndex = Players.ToList().IndexOf(CurrentTurn.CurrentPlayerId) + 1;
                     nextplayerId = Players.Concat(Players).Skip(nextPlayerIndex).First();
                 }
+
                 turn = GetNextTurn(nextplayerId, getCardValue);
-                if (turn != null)
-                {
-                    yield return turn;
-                }
+                if (turn != null) yield return turn;
             } while (turn != null);
         }
 
@@ -161,7 +166,7 @@ namespace CardGame.Core.Round
         {
             foreach (var player in Players)
             {
-                var handPrevious = _hands[player].Previous;
+                var handPrevious = _playerHands[player].Previous;
                 Discard(handPrevious);
             }
 
@@ -170,14 +175,14 @@ namespace CardGame.Core.Round
 
         public void Discard(Guid playCard)
         {
-            var keyValuePair = _hands.FirstOrDefault(kvp =>
+            var keyValuePair = _playerHands.FirstOrDefault(kvp =>
             {
                 return kvp.Value != null &&
                        kvp.Value.Any(p => p == playCard);
             });
             if (!default(KeyValuePair<Guid, Hand.Hand>).Equals(keyValuePair))
             {
-                _hands[keyValuePair.Key] = keyValuePair.Value.Discard(playCard);
+                _playerHands[keyValuePair.Key] = keyValuePair.Value.Discard(playCard);
                 _discarded.Add(playCard);
             }
         }

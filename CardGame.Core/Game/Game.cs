@@ -7,6 +7,8 @@ namespace CardGame.Core.Game
 {
     public class Game
     {
+        public delegate CardValue GetCardValue(Guid cardId);
+
         private const int MaxPoints = 13;
 
         private readonly IEnumerable<Guid> _deck;
@@ -27,39 +29,44 @@ namespace CardGame.Core.Game
         public Guid? CurrentRoundId { get; private set; }
         public IEnumerable<Guid> Players => _playerScores.Keys;
         public IReadOnlyDictionary<Guid, int> PlayerScores => _playerScores;
+        public Guid? FirstPlayerId { get; private set; }
 
-        private Round.Round GetNextRound(Round.Round previousRound, Func<Guid, CardValue> getCardValue, Guid nextPlayerId)
+        private Round.Round GetNextRound(Guid nextPlayerId)
         {
             if (_playerScores.Values.Any(s => s >= WinningScore)) return null;
 
-            var deck = Shuffle();
+            if (FirstPlayerId.HasValue)
+            {
+                _playerScores[FirstPlayerId.Value] = _playerScores[FirstPlayerId.Value] + 1;
+            }
+            FirstPlayerId = nextPlayerId;
 
-            int playerIndex;
-            if (previousRound == null)
-            {
-                var dummy = _randomService.GetInclusive(0, 1);
-                
-            }
-            else
-            {
-                _playerScores[nextPlayerId] = _playerScores[nextPlayerId] + 1;
-                previousRound.Cleanup();
-            }
-            playerIndex = Players.ToList().IndexOf(nextPlayerId);
+            var deck = Shuffle();
+            var playerIndex = Players.ToList().IndexOf(nextPlayerId);
 
             var players = Players.Skip(playerIndex).Concat(Players.Take(playerIndex));
-            previousRound = new Round.Round(players, deck, Guid.NewGuid());
-            CurrentRoundId = previousRound.Id;
-            return previousRound;
+            var newRound = new Round.Round(players, deck, Guid.NewGuid());
+            CurrentRoundId = newRound.Id;
+            return newRound;
         }
 
-        public IEnumerable<Round.Round> Start(Guid firstPlayerId, Func<Guid, CardValue> getCardValue)
+        public IEnumerable<Round.Round> Start(Guid firstPlayerId, GetCardValue getCardValue)
         {
+            
             Round.Round round = null;
             do
             {
-                var nextPlayerId = round == null ? firstPlayerId : round.GetWinningPlayerId(getCardValue).Value;
-                round = GetNextRound(round, getCardValue, nextPlayerId);
+                if (round == null)
+                {
+                    
+                }
+                else
+                {
+                    firstPlayerId = round.GetWinningPlayerId(x => getCardValue(x)).Value;
+                    round.Cleanup();
+                }
+
+                round = GetNextRound(firstPlayerId);
                 if (round != null) yield return round;
             } while (round != null);
         }

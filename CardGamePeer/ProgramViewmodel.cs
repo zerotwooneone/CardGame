@@ -83,7 +83,7 @@ namespace CardGamePeer
                 foreach (var turn in round.Start(GetCardValue))
                 {
                     await _outputService.WriteLine("");
-                    await WriteLine($"Player {GetPlayerDisplayName(turn, players)} turn.");
+                    await WriteLine($"Player {GetPlayerDisplayName(turn, players)}'s turn. Turn id {turn.Id}");
                     var hand = round.GetCurrentPlayerHand();
                     var previous = deck[hand.Previous];
                     var drawn = deck[hand.Drawn.Value];
