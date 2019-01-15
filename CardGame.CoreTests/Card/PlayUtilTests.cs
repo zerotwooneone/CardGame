@@ -61,7 +61,7 @@ namespace CardGame.CoreTests.Card
                 .Setup(r=>r.EliminatePlayer(It.IsAny<Guid>()))
                 .Verifiable();
             _round
-                .Setup(r=>r.Discard(It.IsAny<Guid>()))
+                .Setup(r=>r.Play(It.IsAny<Guid>(),It.IsAny<Guid>()))
                 .Verifiable();
 
             // Act
@@ -93,7 +93,7 @@ namespace CardGame.CoreTests.Card
                 .Setup(r=>r.EliminatePlayer(It.IsAny<Guid>()))
                 .Verifiable();
             _round
-                .Setup(r=>r.Discard(It.IsAny<Guid>()))
+                .Setup(r=>r.Play(It.IsAny<Guid>(),It.IsAny<Guid>()))
                 .Verifiable();
             
             // Act
@@ -119,7 +119,7 @@ namespace CardGame.CoreTests.Card
                 .Setup(r=>r.EliminatePlayer(It.IsAny<Guid>()))
                 .Verifiable();
             _round
-                .Setup(r=>r.Discard(It.IsAny<Guid>()))
+                .Setup(r=>r.Play(It.IsAny<Guid>(),It.IsAny<Guid>()))
                 .Verifiable();
             
             // Act
@@ -130,7 +130,7 @@ namespace CardGame.CoreTests.Card
 
             // Assert
             _round
-                .Verify(r=>r.Discard(cardId));
+                .Verify(r=>r.Play(playerId,cardId));
         }
 
         [TestMethod]
@@ -146,7 +146,7 @@ namespace CardGame.CoreTests.Card
                 .Setup(r=>r.TradeHands(It.IsAny<Guid>(), It.IsAny<Guid>()))
                 .Returns(Guid.Parse("89e99225-35c0-4a63-a62e-f61aa65a1451"));
             _round
-                .Setup(r=>r.Discard(It.IsAny<Guid>()))
+                .Setup(r=>r.Play(It.IsAny<Guid>(), It.IsAny<Guid>()))
                 .Verifiable();
 
             // Act

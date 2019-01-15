@@ -83,12 +83,12 @@ namespace CardGame.Core.Round
         public IEnumerable<Guid> Discarded => _discarded;
         public ushort? CurrentTurnId { get; private set; }
         public IEnumerable<Guid> RemainingPlayers => _remainingPlayers.Keys;
+        public IEnumerable<Guid> ProtectedPlayers => _protectedPlayers;
 
         public void DiscardAndDraw(Guid targetId)
         {
             if (_protectedPlayers.Contains(targetId)) return;
-            var hand = _playerHands[targetId];
-            Discard(hand.Previous);
+            Discard(targetId);
             var newCard = RemoveTopCard();
             var newHand = new Hand.Hand(newCard);
             _playerHands[targetId] = newHand;
@@ -113,18 +113,21 @@ namespace CardGame.Core.Round
         {
             _protectedPlayers.Add(playerId);
         }
-
-        public void Discard(Guid playCard)
+        
+        public void Play(Guid playerId, Guid playCard)
         {
-            var keyValuePair = _playerHands.FirstOrDefault(kvp =>
+            var hand = GetPlayerHand(playerId);
+            _playerHands[playerId] = hand.Discard(playCard);
+            _discarded.Add(playCard);
+        }
+
+        public void Discard(Guid playerId)
+        {
+            var hand = GetPlayerHand(playerId);
+            _playerHands[playerId] = null;
+            foreach (var cardId in hand)
             {
-                return kvp.Value != null &&
-                       kvp.Value.Any(p => p == playCard);
-            });
-            if (!default(KeyValuePair<Guid, Hand.Hand>).Equals(keyValuePair))
-            {
-                _playerHands[keyValuePair.Key] = keyValuePair.Value.Discard(playCard);
-                _discarded.Add(playCard);
+                _discarded.Add(cardId);    
             }
         }
 
@@ -143,9 +146,9 @@ namespace CardGame.Core.Round
             return card;
         }
 
-        public Hand.Hand GetPlayerHand(Guid currentPlayerId)
+        public Hand.Hand GetPlayerHand(Guid playerId)
         {
-            return _playerHands[currentPlayerId];
+            return _playerHands[playerId];
         }
 
         public Guid RevealHand(Guid targetPlayerId)
@@ -225,13 +228,16 @@ namespace CardGame.Core.Round
 
         public void Cleanup()
         {
-            foreach (var player in Players)
+            foreach (var playerId in Players)
             {
-                var handPrevious = _playerHands[player].Previous;
-                Discard(handPrevious);
+                Discard(playerId);
             }
 
-            foreach (var setAsideCard in _setAsideCards) Discard(setAsideCard);
+            foreach (var setAsideCard in _setAsideCards)
+            {
+                _discarded.Add(setAsideCard);
+            }
+            _setAsideCards.Clear();
         }
     }
 }

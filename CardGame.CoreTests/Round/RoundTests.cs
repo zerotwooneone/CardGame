@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using CardGame.Core.Card;
 using CardGame.Core.Hand;
 using CardGame.Core.Turn;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
@@ -169,50 +170,87 @@ namespace CardGame.CoreTests.Round
             Assert.AreEqual(expected, actual);
         }
 
-        //[TestMethod]
-        //public void EliminatePlayer_StateUnderTest_ExpectedBehavior()
-        //{
-        //    // Arrange
-        //    var unitUnderTest = this.CreateRound(TODO, TODO);
-        //    Guid playerId = TODO;
+        [TestMethod]
+        public void EliminatePlayer_StateUnderTest_DoesNotRemain()
+        {
+            // Arrange
+            var playerId = Guid.Parse("bdc77745-76d4-4a52-88be-dd6efd144bea");
+            var unitUnderTest = this.CreateRound(new Dictionary<Guid, Guid>
+                {
+                    {playerId, Guid.Parse("15b62fab-19cc-4029-b548-d00d25681c38")}
+                }, 
+                new Guid[]{});
+            
+            // Act
+            unitUnderTest.EliminatePlayer(
+                playerId);
 
-        //    // Act
-        //    unitUnderTest.EliminatePlayer(
-        //        playerId);
+            // Assert
+            Assert.IsFalse(unitUnderTest.RemainingPlayers.Contains(playerId));
+        }
 
-        //    // Assert
-        //    Assert.Fail();
-        //}
+        [TestMethod]
+        public void AddPlayerProtection_StateUnderTest_IsProtected()
+        {
+            // Arrange
+            var playerId = Guid.Parse("bdc77745-76d4-4a52-88be-dd6efd144bea");
+            var unitUnderTest = this.CreateRound(new Dictionary<Guid, Guid>
+                {
+                    {playerId, Guid.Parse("15b62fab-19cc-4029-b548-d00d25681c38")}
+                }, 
+                new Guid[]{});
 
-        //[TestMethod]
-        //public void AddPlayerProtection_StateUnderTest_ExpectedBehavior()
-        //{
-        //    // Arrange
-        //    var unitUnderTest = this.CreateRound(TODO, TODO);
-        //    Guid playerId = TODO;
+            // Act
+            unitUnderTest.AddPlayerProtection(
+                playerId);
 
-        //    // Act
-        //    unitUnderTest.AddPlayerProtection(
-        //        playerId);
+            // Assert
+            Assert.IsTrue(unitUnderTest.ProtectedPlayers.Contains(playerId));
+        }
 
-        //    // Assert
-        //    Assert.Fail();
-        //}
+        [TestMethod]
+        public void GetWinningPlayerId_OnePlayerInRound_PlayerWins()
+        {
+            // Arrange
+            var playerId = Guid.Parse("bdc77745-76d4-4a52-88be-dd6efd144bea");
+            var unitUnderTest = this.CreateRound(new Dictionary<Guid, Guid>
+                {
+                    {playerId, Guid.Parse("15b62fab-19cc-4029-b548-d00d25681c38")}
+                }, 
+                new Guid[]{});
+            Core.Round.Round.GetCardValue getCardValue = cardId=>CardValue.Guard;
 
-        //[TestMethod]
-        //public void GetWinningPlayerId_StateUnderTest_ExpectedBehavior()
-        //{
-        //    // Arrange
-        //    var unitUnderTest = this.CreateRound(TODO, TODO);
-        //    GetCardValue getCardValue = TODO;
+            // Act
+            var result = unitUnderTest.GetWinningPlayerId(
+                getCardValue);
 
-        //    // Act
-        //    var result = unitUnderTest.GetWinningPlayerId(
-        //        getCardValue);
+            // Assert
+            var expected = playerId;
+            Assert.AreEqual(expected, result);
+        }
 
-        //    // Assert
-        //    Assert.Fail();
-        //}
+        [TestMethod]
+        public void GetWinningPlayerId_TwoPlayers_HighValueWins()
+        {
+            // Arrange
+            var playerId = Guid.Parse("bdc77745-76d4-4a52-88be-dd6efd144bea");
+            var playerCard = Guid.Parse("15b62fab-19cc-4029-b548-d00d25681c38");
+            var unitUnderTest = this.CreateRound(new Dictionary<Guid, Guid>
+                {
+                    {playerId, playerCard},
+                    {Guid.Empty, Guid.Empty}
+                }, 
+                new Guid[]{});
+            Core.Round.Round.GetCardValue getCardValue = cardId=>cardId == playerCard ? CardValue.Princess : CardValue.Guard;
+
+            // Act
+            var result = unitUnderTest.GetWinningPlayerId(
+                getCardValue);
+
+            // Assert
+            var expected = playerId;
+            Assert.AreEqual(expected, result);
+        }
 
         //[TestMethod]
         //public void Start_StateUnderTest_ExpectedBehavior()
@@ -242,19 +280,43 @@ namespace CardGame.CoreTests.Round
         //    Assert.Fail();
         //}
 
-        //[TestMethod]
-        //public void Discard_StateUnderTest_ExpectedBehavior()
-        //{
-        //    // Arrange
-        //    var unitUnderTest = this.CreateRound(TODO, TODO);
-        //    Guid playCard = TODO;
+        [TestMethod]
+        public void Discard_StateUnderTest_IsDiscarded()
+        {
+            // Arrange
+            var playerId = Guid.Parse("bdc77745-76d4-4a52-88be-dd6efd144bea");
+            var playerCard = Guid.Parse("15b62fab-19cc-4029-b548-d00d25681c38");
+            var unitUnderTest = this.CreateRound(new Dictionary<Guid, Guid>
+                {
+                    {playerId, playerCard}
+                }, 
+                new Guid[]{});
 
-        //    // Act
-        //    unitUnderTest.Discard(
-        //        playCard);
+            // Act
+            unitUnderTest.Discard(playerId);
 
-        //    // Assert
-        //    Assert.Fail();
-        //}
+            // Assert
+            Assert.IsTrue(unitUnderTest.Discarded.Contains(playerCard));
+        }
+
+        [TestMethod]
+        public void Play_StateUnderTest_IsDiscarded()
+        {
+            // Arrange
+            var playerId = Guid.Parse("bdc77745-76d4-4a52-88be-dd6efd144bea");
+            var playerCard = Guid.Parse("15b62fab-19cc-4029-b548-d00d25681c38");
+            var unitUnderTest = this.CreateRound(new Dictionary<Guid, Guid>
+                {
+                    {playerId, playerCard}
+                }, 
+                new Guid[]{});
+
+            // Act
+            unitUnderTest.Play(playerId,
+                playerCard);
+
+            // Assert
+            Assert.IsTrue(unitUnderTest.Discarded.Contains(playerCard));
+        }
     }
 }

@@ -73,38 +73,31 @@ namespace CardGame.Core.Card
                 default:
                     throw new ArgumentException("Unknown card value", nameof(cardValue));
             }
-
-            round.Discard(playCard.Id);
         }
 
         public void PlayPrincess(Guid cardId, Guid playerId, IPlayRound round)
         {
             round.EliminatePlayer(playerId);
-            Play(cardId, round);
-        }
-
-        private void Play(Guid cardId, IPlayRound round)
-        {
-            round.Discard(cardId);
+            round.Play(playerId, cardId);
         }
 
         public Guid? PlayKing(Guid cardId, Guid playerId, Guid targetId, IPlayRound round)
         {
             var result = round.TradeHands(playerId, targetId);
-            Play(cardId, round);
+            round.Play(playerId, cardId);
             return result;
         }
 
         public void PlayPrince(Guid cardId, Guid playerId, Guid targetId, IPlayRound round)
         {
             round.DiscardAndDraw(targetId);
-            Play(cardId, round);
+            round.Play(playerId, cardId);
         }
 
         public void PlayHandmaid(Guid cardId, Guid playerId, IPlayRound round)
         {
             round.AddPlayerProtection(playerId);
-            Play(cardId, round);
+            round.Play(playerId, cardId);
         }
 
         public void PlayBaron(Guid cardId, Guid playerId, Guid targetId, CardValue targetHand, IPlayRound round)
@@ -122,14 +115,14 @@ namespace CardGame.Core.Card
                 round.EliminatePlayer(playerId);
             }
 
-            Play(cardId, round);
+            round.Play(playerId, cardId);
         }
 
         public KnownPlayerHand PlayPriest(Guid cardId, Guid playerId, Guid targetId, CardValue targetHand, IPlayTurn turn,
             IPlayRound round)
         {
             var knownPlayerHand = turn.RevealHand(targetId, targetHand);
-            Play(cardId, round);
+            round.Play(playerId, cardId);
             return knownPlayerHand;
         }
 
@@ -139,7 +132,7 @@ namespace CardGame.Core.Card
             if (guess == CardValue.Guard) throw new ArgumentException("Can not guess Guard Value", nameof(guess));
             if (targetHand == guess)
                 round.EliminatePlayer(targetId);
-            Play(cardId, round);
+            round.Play(playerId, cardId);
         }
 
         public bool RequiresTargetPlayerToPlay(CardValue cardValue)
