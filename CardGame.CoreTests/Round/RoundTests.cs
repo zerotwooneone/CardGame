@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Linq;
 using CardGame.Core.Card;
 using CardGame.Core.Hand;
-using CardGame.Core.Turn;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Moq;
 
@@ -118,23 +117,24 @@ namespace CardGame.CoreTests.Round
         //}
 
         [TestMethod]
-        public void TradeHands_TargetNotProtected_TradesHands()
+        public void PlayKing_TargetNotProtected_TradesHands()
         {
             // Arrange
             var sourcePlayerId = Guid.Empty;
             var card1 = Guid.Parse("bdc77745-76d4-4a52-88be-dd6efd144bea");
             var card2 = Guid.Parse("15b62fab-19cc-4029-b548-d00d25681c38");
+            var cardId = Guid.Parse("418a5473-73c0-4ccb-8ab4-8cd2515d50ed");
             var targetPlayerId = Guid.Parse("54f2b615-efb9-49e3-b780-53dcd14777a5");
-            var unitUnderTest = CreateRound(new Dictionary<Guid, Guid>
+            var unitUnderTest = CreateRound(new Dictionary<Guid, Hand>
                 {
-                    {sourcePlayerId, card1},
-                    {targetPlayerId, card2}
+                    {sourcePlayerId, new Hand(card1, cardId)},
+                    {targetPlayerId, new Hand(card2)}
                 },
                 new Guid[] { }
             );
             // Act
             var expected = card2;
-            unitUnderTest.TradeHands(
+            unitUnderTest.PlayKing(cardId,
                 sourcePlayerId,
                 targetPlayerId);
             var actual = unitUnderTest.GetPlayerHand(sourcePlayerId).Previous;
@@ -144,7 +144,7 @@ namespace CardGame.CoreTests.Round
         }
 
         [TestMethod]
-        public void TradeHands_TargetProtected_DoesNotTradesHands()
+        public void PlayKing_TargetProtected_DoesNotTradesHands()
         {
             // Arrange
             var sourcePlayerId = Guid.Empty;
@@ -161,7 +161,7 @@ namespace CardGame.CoreTests.Round
             );
             // Act
             Guid? expected = card1;
-            unitUnderTest.TradeHands(
+            unitUnderTest.PlayKing(Guid.Parse("418a5473-73c0-4ccb-8ab4-8cd2515d50ed"),
                 sourcePlayerId,
                 targetPlayerId);
             var actual = unitUnderTest.GetPlayerHand(sourcePlayerId).Previous;
@@ -171,37 +171,57 @@ namespace CardGame.CoreTests.Round
         }
 
         [TestMethod]
-        public void EliminatePlayer_StateUnderTest_DoesNotRemain()
+        public void PlayPrincess_StateUnderTest_DoesNotRemain()
         {
             // Arrange
             var playerId = Guid.Parse("bdc77745-76d4-4a52-88be-dd6efd144bea");
-            var unitUnderTest = this.CreateRound(new Dictionary<Guid, Guid>
+            var cardId = Guid.Parse("418a5473-73c0-4ccb-8ab4-8cd2515d50ed");
+            var unitUnderTest = CreateRound(new Dictionary<Guid, Guid>
                 {
-                    {playerId, Guid.Parse("15b62fab-19cc-4029-b548-d00d25681c38")}
-                }, 
-                new Guid[]{});
-            
+                    {playerId, cardId}
+                },
+                new Guid[] { });
+
             // Act
-            unitUnderTest.EliminatePlayer(
-                playerId);
+            unitUnderTest.PlayPrincess(cardId, playerId);
 
             // Assert
             Assert.IsFalse(unitUnderTest.RemainingPlayers.Contains(playerId));
         }
 
         [TestMethod]
-        public void AddPlayerProtection_StateUnderTest_IsProtected()
+        public void PlayPrincess_StateUnderTest_HandDiscarded()
         {
             // Arrange
             var playerId = Guid.Parse("bdc77745-76d4-4a52-88be-dd6efd144bea");
-            var unitUnderTest = this.CreateRound(new Dictionary<Guid, Guid>
+            var cardId = Guid.Parse("15b62fab-19cc-4029-b548-d00d25681c38");
+            var unitUnderTest = CreateRound(new Dictionary<Guid, Guid>
                 {
-                    {playerId, Guid.Parse("15b62fab-19cc-4029-b548-d00d25681c38")}
-                }, 
-                new Guid[]{});
+                    {playerId, cardId}
+                },
+                new Guid[] { });
 
             // Act
-            unitUnderTest.AddPlayerProtection(
+            unitUnderTest.PlayPrincess(cardId, playerId);
+
+            // Assert
+            Assert.IsTrue(unitUnderTest.Discarded.Contains(cardId));
+        }
+
+        [TestMethod]
+        public void PlayHandmaid_StateUnderTest_IsProtected()
+        {
+            // Arrange
+            var playerId = Guid.Parse("bdc77745-76d4-4a52-88be-dd6efd144bea");
+            var cardId = Guid.Parse("418a5473-73c0-4ccb-8ab4-8cd2515d50ed");
+            var unitUnderTest = CreateRound(new Dictionary<Guid, Hand>
+                {
+                    {playerId, new Hand(Guid.Parse("15b62fab-19cc-4029-b548-d00d25681c38"), cardId)}
+                },
+                new Guid[] { });
+
+            // Act
+            unitUnderTest.PlayHandmaid(cardId,
                 playerId);
 
             // Assert
@@ -213,12 +233,12 @@ namespace CardGame.CoreTests.Round
         {
             // Arrange
             var playerId = Guid.Parse("bdc77745-76d4-4a52-88be-dd6efd144bea");
-            var unitUnderTest = this.CreateRound(new Dictionary<Guid, Guid>
+            var unitUnderTest = CreateRound(new Dictionary<Guid, Guid>
                 {
                     {playerId, Guid.Parse("15b62fab-19cc-4029-b548-d00d25681c38")}
-                }, 
-                new Guid[]{});
-            Core.Round.Round.GetCardValue getCardValue = cardId=>CardValue.Guard;
+                },
+                new Guid[] { });
+            Core.Round.Round.GetCardValue getCardValue = cardId => CardValue.Guard;
 
             // Act
             var result = unitUnderTest.GetWinningPlayerId(
@@ -235,13 +255,14 @@ namespace CardGame.CoreTests.Round
             // Arrange
             var playerId = Guid.Parse("bdc77745-76d4-4a52-88be-dd6efd144bea");
             var playerCard = Guid.Parse("15b62fab-19cc-4029-b548-d00d25681c38");
-            var unitUnderTest = this.CreateRound(new Dictionary<Guid, Guid>
+            var unitUnderTest = CreateRound(new Dictionary<Guid, Guid>
                 {
                     {playerId, playerCard},
                     {Guid.Empty, Guid.Empty}
-                }, 
-                new Guid[]{});
-            Core.Round.Round.GetCardValue getCardValue = cardId=>cardId == playerCard ? CardValue.Princess : CardValue.Guard;
+                },
+                new Guid[] { });
+            Core.Round.Round.GetCardValue getCardValue = cardId =>
+                cardId == playerCard ? CardValue.Princess : CardValue.Guard;
 
             // Act
             var result = unitUnderTest.GetWinningPlayerId(
@@ -286,11 +307,11 @@ namespace CardGame.CoreTests.Round
             // Arrange
             var playerId = Guid.Parse("bdc77745-76d4-4a52-88be-dd6efd144bea");
             var playerCard = Guid.Parse("15b62fab-19cc-4029-b548-d00d25681c38");
-            var unitUnderTest = this.CreateRound(new Dictionary<Guid, Guid>
+            var unitUnderTest = CreateRound(new Dictionary<Guid, Guid>
                 {
                     {playerId, playerCard}
-                }, 
-                new Guid[]{});
+                },
+                new Guid[] { });
 
             // Act
             unitUnderTest.Discard(playerId);
@@ -305,11 +326,11 @@ namespace CardGame.CoreTests.Round
             // Arrange
             var playerId = Guid.Parse("bdc77745-76d4-4a52-88be-dd6efd144bea");
             var playerCard = Guid.Parse("15b62fab-19cc-4029-b548-d00d25681c38");
-            var unitUnderTest = this.CreateRound(new Dictionary<Guid, Guid>
+            var unitUnderTest = CreateRound(new Dictionary<Guid, Guid>
                 {
                     {playerId, playerCard}
-                }, 
-                new Guid[]{});
+                },
+                new Guid[] { });
 
             // Act
             unitUnderTest.Play(playerId,

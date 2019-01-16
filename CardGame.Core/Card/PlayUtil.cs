@@ -33,39 +33,41 @@ namespace CardGame.Core.Card
             if (RequiresGuessedCardToPlay(cardValue) && guessedCardvalue == null)
                 throw new ArgumentException("Missing guessed card value", nameof(guessedCardvalue));
 
-            if(RequiresTargetHandToPlay(cardValue) && targetCard == null)
+            if (RequiresTargetHandToPlay(cardValue) && targetCard == null)
                 throw new ArgumentException("Missing target card value", nameof(targetCard));
 
             if ((previousValue == CardValue.Countess ||
                  drawnValue == CardValue.Countess) &&
                 (playCard.Value == CardValue.King ||
                  playCard.Value == CardValue.Prince))
-            {
                 throw new ArgumentException("Can not play King or Prince when Countess is in hand", nameof(playCard));
-            }
 
             switch (cardValue)
             {
                 case CardValue.Princess:
-                    PlayPrincess(playCard.Id, playerId, round);
+                    round.PlayPrincess(playCard.Id, playerId);
                     break;
                 case CardValue.King:
-                    var newCardId = PlayKing(playCard.Id, playerId, targetPlayer.Value, round);
+                    var newCardId = round.PlayKing(playCard.Id, playerId, targetPlayer.Value);
                     break;
                 case CardValue.Prince:
-                    PlayPrince(playCard.Id, playerId, targetPlayer.Value, round);
+                    round.PlayPrince(playCard.Id, playerId, targetPlayer.Value);
                     break;
                 case CardValue.Handmaid:
-                    PlayHandmaid(playCard.Id, playerId, round);
+                    round.PlayHandmaid(playCard.Id, playerId);
                     break;
                 case CardValue.Baron:
-                    PlayBaron(playCard.Id, playerId, targetPlayer.Value, targetCard.Value, round);
+                    round.PlayBaron(playCard.Id, playerId, targetPlayer.Value, targetCard.Value);
                     break;
                 case CardValue.Priest:
-                    var knownPlayerHand = PlayPriest(playCard.Id, playerId, targetPlayer.Value, targetCard.Value, turn, round);
+                    if (round.PlayPriest(playCard.Id, playerId, targetPlayer.Value))
+                    {
+                        var knownPlayerHand = turn.PlayPriest(targetPlayer.Value, targetCard.Value);
+                    }
+
                     break;
                 case CardValue.Guard:
-                    PlayGuard(playCard.Id, playerId, targetPlayer.Value, targetCard.Value, round,
+                    round.PlayGuard(playCard.Id, playerId, targetPlayer.Value, targetCard.Value,
                         guessedCardvalue.Value);
                     break;
                 case CardValue.Countess:
@@ -73,66 +75,6 @@ namespace CardGame.Core.Card
                 default:
                     throw new ArgumentException("Unknown card value", nameof(cardValue));
             }
-        }
-
-        public void PlayPrincess(Guid cardId, Guid playerId, IPlayRound round)
-        {
-            round.EliminatePlayer(playerId);
-            round.Play(playerId, cardId);
-        }
-
-        public Guid? PlayKing(Guid cardId, Guid playerId, Guid targetId, IPlayRound round)
-        {
-            var result = round.TradeHands(playerId, targetId);
-            round.Play(playerId, cardId);
-            return result;
-        }
-
-        public void PlayPrince(Guid cardId, Guid playerId, Guid targetId, IPlayRound round)
-        {
-            round.DiscardAndDraw(targetId);
-            round.Play(playerId, cardId);
-        }
-
-        public void PlayHandmaid(Guid cardId, Guid playerId, IPlayRound round)
-        {
-            round.AddPlayerProtection(playerId);
-            round.Play(playerId, cardId);
-        }
-
-        public void PlayBaron(Guid cardId, Guid playerId, Guid targetId, CardValue targetHand, IPlayRound round)
-        {
-            if (CardValue.Baron == targetHand)
-            {
-                //we do nothing
-            }
-            else if (CardValue.Baron > targetHand)
-            {
-                round.EliminatePlayer(targetId);
-            }
-            else
-            {
-                round.EliminatePlayer(playerId);
-            }
-
-            round.Play(playerId, cardId);
-        }
-
-        public KnownPlayerHand PlayPriest(Guid cardId, Guid playerId, Guid targetId, CardValue targetHand, IPlayTurn turn,
-            IPlayRound round)
-        {
-            var knownPlayerHand = turn.RevealHand(targetId, targetHand);
-            round.Play(playerId, cardId);
-            return knownPlayerHand;
-        }
-
-        public void PlayGuard(Guid cardId, Guid playerId, Guid targetId, CardValue targetHand, IPlayRound round,
-            CardValue guess)
-        {
-            if (guess == CardValue.Guard) throw new ArgumentException("Can not guess Guard Value", nameof(guess));
-            if (targetHand == guess)
-                round.EliminatePlayer(targetId);
-            round.Play(playerId, cardId);
         }
 
         public bool RequiresTargetPlayerToPlay(CardValue cardValue)

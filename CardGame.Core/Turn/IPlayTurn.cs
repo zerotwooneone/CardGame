@@ -5,6 +5,6 @@ namespace CardGame.Core.Turn
 {
     public interface IPlayTurn
     {
-        KnownPlayerHand RevealHand(Guid targetId, CardValue targetHand);
+        KnownPlayerHand PlayPriest(Guid targetId, CardValue targetHand);
     }
 }

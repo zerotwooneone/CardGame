@@ -19,6 +19,12 @@ namespace CardGame.Core.Turn
 
         public KnownPlayerHand KnownPlayerHand { get; private set; }
 
+        public KnownPlayerHand PlayPriest(Guid targetId, CardValue targetHand)
+        {
+            KnownPlayerHand = new KnownPlayerHand(targetId, targetHand);
+            return KnownPlayerHand;
+        }
+
         public void MarkUnplayable(CardValue cardValue1, CardValue cardValue2)
         {
             if (cardValue1 == CardValue.Countess)
@@ -29,12 +35,6 @@ namespace CardGame.Core.Turn
             {
                 if (cardValue1 == CardValue.King || cardValue1 == CardValue.Prince) Unplayable = cardValue1;
             }
-        }
-
-        public KnownPlayerHand RevealHand(Guid targetId, CardValue value)
-        {
-            KnownPlayerHand = new KnownPlayerHand(targetId, value);
-            return KnownPlayerHand;
         }
     }
 }

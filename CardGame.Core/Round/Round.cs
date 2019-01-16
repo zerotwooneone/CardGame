@@ -85,35 +85,82 @@ namespace CardGame.Core.Round
         public IEnumerable<Guid> RemainingPlayers => _remainingPlayers.Keys;
         public IEnumerable<Guid> ProtectedPlayers => _protectedPlayers;
 
-        public void DiscardAndDraw(Guid targetId)
+        public void PlayPrince(Guid cardId, Guid playerId, Guid targetId)
         {
             if (_protectedPlayers.Contains(targetId)) return;
+            Play(playerId, cardId);
+
             Discard(targetId);
             var newCard = RemoveTopCard();
             var newHand = new Hand.Hand(newCard);
             _playerHands[targetId] = newHand;
         }
 
-        public Guid? TradeHands(Guid sourcePlayerId, Guid targetPlayerId)
+        public Guid? PlayKing(Guid cardId, Guid playerId, Guid targetId)
         {
-            if (_protectedPlayers.Contains(targetPlayerId)) return null;
-            var sourceHand = _playerHands[sourcePlayerId];
-            var targetHand = _playerHands[targetPlayerId];
-            _playerHands[sourcePlayerId] = targetHand;
-            _playerHands[targetPlayerId] = sourceHand;
+            if (_protectedPlayers.Contains(targetId)) return null;
+            if (playerId == targetId) throw new ArgumentException("Cannot target self", nameof(targetId));
+            Play(playerId, cardId);
+            var sourceHand = _playerHands[playerId];
+            var targetHand = _playerHands[targetId];
+            _playerHands[playerId] = targetHand;
+            _playerHands[targetId] = sourceHand;
             return targetHand.Previous;
         }
 
-        public void EliminatePlayer(Guid playerId)
+        public void PlayBaron(Guid cardId, Guid playerId, Guid targetId, CardValue targetHand)
+        {
+            if (_protectedPlayers.Contains(targetId)) return;
+            if (playerId == targetId) throw new ArgumentException("Cannot target self", nameof(targetId));
+            if (CardValue.Baron == targetHand)
+            {
+                //we do nothing
+            }
+            else if (CardValue.Baron > targetHand)
+            {
+                EliminatePlayer(targetId);
+            }
+            else
+            {
+                EliminatePlayer(playerId);
+            }
+
+            Play(playerId, cardId);
+        }
+
+        public bool PlayPriest(Guid playCardId, Guid playerId, Guid targetId)
+        {
+            if (playerId == targetId) throw new ArgumentException("Cannot target self", nameof(targetId));
+            Play(playerId, playCardId);
+            return !_protectedPlayers.Contains(targetId);
+        }
+
+        public void PlayGuard(Guid cardId, Guid playerId, Guid targetId, CardValue targetHand, CardValue guess)
+        {
+            if (_protectedPlayers.Contains(targetId)) return;
+            if (playerId == targetId) throw new ArgumentException("Cannot target self", nameof(targetId));
+            if (guess == CardValue.Guard) throw new ArgumentException("Can not guess Guard Value", nameof(guess));
+            if (targetHand == guess) EliminatePlayer(targetId);
+            Play(playerId, cardId);
+        }
+
+        public void PlayPrincess(Guid cardId, Guid playerId)
+        {
+            EliminatePlayer(playerId);
+            Play(playerId, cardId);
+        }
+
+        public void PlayHandmaid(Guid cardId, Guid playerId)
+        {
+            _protectedPlayers.Add(playerId);
+            Play(playerId, cardId);
+        }
+
+        private void EliminatePlayer(Guid playerId)
         {
             _remainingPlayers.Remove(playerId);
         }
 
-        public void AddPlayerProtection(Guid playerId)
-        {
-            _protectedPlayers.Add(playerId);
-        }
-        
         public void Play(Guid playerId, Guid playCard)
         {
             var hand = GetPlayerHand(playerId);
@@ -125,10 +172,7 @@ namespace CardGame.Core.Round
         {
             var hand = GetPlayerHand(playerId);
             _playerHands[playerId] = null;
-            foreach (var cardId in hand)
-            {
-                _discarded.Add(cardId);    
-            }
+            foreach (var cardId in hand) _discarded.Add(cardId);
         }
 
         private Guid Draw(Guid playerId)
@@ -228,15 +272,9 @@ namespace CardGame.Core.Round
 
         public void Cleanup()
         {
-            foreach (var playerId in Players)
-            {
-                Discard(playerId);
-            }
+            foreach (var playerId in Players) Discard(playerId);
 
-            foreach (var setAsideCard in _setAsideCards)
-            {
-                _discarded.Add(setAsideCard);
-            }
+            foreach (var setAsideCard in _setAsideCards) _discarded.Add(setAsideCard);
             _setAsideCards.Clear();
         }
     }
