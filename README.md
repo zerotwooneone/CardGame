@@ -8,3 +8,9 @@ https://nodejs.org/en/download/
 Update npm to version 6.13.7 or greater
 npm install -g npm
 
+## To build
+- Compile the client
+  - ng build --prod --delete-output-path --output-path=Out
+- Copy client output to server host directory
+  - cardgame-client/Out/* to Cardgame.Server/ClientApp/dist
+
