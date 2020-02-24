@@ -1,7 +1,7 @@
+using System;
+using CardGame.Server.CommonState;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
-using Microsoft.AspNetCore.HttpsPolicy;
-using Microsoft.AspNetCore.SpaServices.AngularCli;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -26,6 +26,11 @@ namespace CardGame.Server
             {
                 configuration.RootPath = "ClientApp/dist";
             });
+            services.AddSignalR();
+
+            services.AddTransient<CommonStateHub>();
+            services.AddTransient<Func<CommonStateHub>>(sp => sp.GetRequiredService<CommonStateHub>);
+            services.AddTransient<ICommonStateModelFactory, CommonStateModelFactory>();
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
@@ -56,6 +61,7 @@ namespace CardGame.Server
                 endpoints.MapControllerRoute(
                     name: "default",
                     pattern: "{controller}/{action=Index}/{id?}");
+                endpoints.MapHub<CommonStateHub>("/commonState");
             });
 
             app.UseSpa(spa =>

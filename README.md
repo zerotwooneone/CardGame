@@ -12,5 +12,4 @@ This is a educational project to implement a simple card game. There will be a c
 - Compile the client
   - ng build --prod --delete-output-path --output-path=Out
 - Copy client output to server host directory
-  - cardgame-client/Out/* to Cardgame.Server/ClientApp/dist
-
+  - cp -r Out/* ../CardGame.Server/ClientApp/dist
