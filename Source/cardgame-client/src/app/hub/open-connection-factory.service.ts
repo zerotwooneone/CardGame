@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
 import * as signalR from '@aspnet/signalr';
-import { IOpenConnection, RegisterCallback } from './IOpenConnection';
+import { HubConnectionWrapper } from './HubConnectionWrapper';
 
 @Injectable({
   providedIn: 'root'
@@ -9,26 +9,22 @@ export class OpenConnectionFactoryService {
 
   constructor() { }
 
-  public async open(url: string): Promise<IOpenConnection> {
+  public async open(url: string,
+                    closeCallback: () => void = () => {}): Promise<HubConnectionWrapper> {
     const hubConnection = new signalR.HubConnectionBuilder()
       .withUrl(url)
       .build();
+
+    hubConnection.onclose(e => {
+      console.log(`Connection closed Error:${e}`);
+      closeCallback();
+    });
 
     await hubConnection
         .start()
         .then(() => console.log(`Connection started ${url}`))
         .catch(err => console.error(`error while connecting ${url}`));
 
-    return new OpenConnection(hubConnection);
+    return new HubConnectionWrapper(hubConnection);
   }
 }
-
-class OpenConnection implements IOpenConnection {
-  public constructor(private connection: signalR.HubConnection) {}
-  register<TCallback>(methodName: string, callback: RegisterCallback<TCallback>): void {
-    this.connection.on(methodName, callback);
-  }
-
-}
-
-

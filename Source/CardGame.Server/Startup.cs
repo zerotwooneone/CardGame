@@ -1,4 +1,5 @@
 using System;
+using CardGame.Server.Client;
 using CardGame.Server.CommonState;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
@@ -31,6 +32,8 @@ namespace CardGame.Server
             services.AddTransient<CommonStateHub>();
             services.AddTransient<Func<CommonStateHub>>(sp => sp.GetRequiredService<CommonStateHub>);
             services.AddTransient<ICommonStateModelFactory, CommonStateModelFactory>();
+
+            services.AddTransient<ClientHub>();
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
@@ -62,6 +65,7 @@ namespace CardGame.Server
                     name: "default",
                     pattern: "{controller}/{action=Index}/{id?}");
                 endpoints.MapHub<CommonStateHub>("/commonState");
+                endpoints.MapHub<ClientHub>("/client");
             });
 
             app.UseSpa(spa =>

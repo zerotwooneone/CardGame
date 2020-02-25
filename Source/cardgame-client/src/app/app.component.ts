@@ -1,5 +1,7 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonStateFactoryService } from './commonState/common-state-factory.service';
+import { ClientFactoryService } from './client/client-factory.service';
+import { take, first, timeout } from 'rxjs/operators';
 
 @Component({
   selector: 'cgc-root',
@@ -9,15 +11,24 @@ import { CommonStateFactoryService } from './commonState/common-state-factory.se
 export class AppComponent implements OnInit {
   title = 'cardgame-client';
 
-  constructor(private commonStateFactory: CommonStateFactoryService) {}
+  constructor(private commonStateFactory: CommonStateFactoryService,
+              private clientFactory: ClientFactoryService) {}
 
   async ngOnInit(): Promise<void> {
-    this.commonStateFactory.create('some id')
-      .then(commonState => {
-        console.log(commonState);
-      })
-      .catch(err => {
-        console.error(err);
-      });
+    try {
+      const commonState = await this.commonStateFactory.create('some id');
+    } catch (error) {
+      console.error(error);
+    }
+
+    try {
+      const c = await this.clientFactory.Create({Id: 'something'});
+      console.log('created client');
+      const state = await c.State.pipe(first(), timeout(100)).toPromise();
+      console.log(state);
+    } catch (error) {
+      console.error(error);
+    }
+
   }
 }

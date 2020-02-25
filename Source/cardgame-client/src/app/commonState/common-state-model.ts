@@ -1,4 +1,4 @@
-import { IOpenConnection, RegisterCallback } from '../hub/IOpenConnection';
+import { IOpenConnection } from '../hub/IOpenConnection';
 
 export class CommonStateModel {
     constructor(private connection: IOpenConnection) {
@@ -11,6 +11,6 @@ export class CommonStateModel {
     }
 }
 
-interface ICommonStateChanged {
+export interface ICommonStateChanged {
     readonly StateId: string;
 }

@@ -1,7 +1,9 @@
 # CardGame
+
 This is a educational project to implement a simple card game. There will be a central server to which multiple clients will connect.
 
 ## Requirements
+
 - You will need to install NodeJs version 12.16.1 or greater
   - https://nodejs.org/en/download/
 
@@ -9,6 +11,7 @@ This is a educational project to implement a simple card game. There will be a c
   - npm install -g npm
 
 ## To build
+
 - Compile the client
   - ng build --prod --delete-output-path --output-path=Out
 - Copy client output to server host directory
