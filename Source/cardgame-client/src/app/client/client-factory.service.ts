@@ -11,29 +11,32 @@ export class ClientFactoryService {
   constructor(private openConnectionFactory: OpenConnectionFactoryService) { }
 
   async Create(clientId: IClientId): Promise<ClientModel> {
-    const subject = new Subject<IStateChanged>();
+    const stateSubject = new Subject<IStateChanged>();
     const onClose = () => {
-      subject.next({IsOpen: false});
+      stateSubject.next({IsOpen: false});
     };
-
     const events = {
-      StateChange: subject,
+      StateChange: stateSubject,
       close: () => { throw new Error('Not implemented'); }
     };
-    const result = new ClientModel(events);
 
     const connection = await this.openConnectionFactory.open('https://localhost:44379/client', onClose);
-    const connectResult = await connection.send('connect', clientId);
-
+    const connectResult = await connection.send<IClientConnected>('Connect', clientId);
     console.log(`connection result: ${connectResult}`);
     console.log(connectResult);
 
-    subject.next({IsOpen: true});
+    const result = new ClientModel(connectResult.Id, events);
+
+    stateSubject.next({IsOpen: true});
 
     return result;
   }
 }
 
 export interface IClientId {
+  readonly Id: string;
+}
+
+export interface IClientConnected {
   readonly Id: string;
 }

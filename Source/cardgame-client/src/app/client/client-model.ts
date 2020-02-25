@@ -3,7 +3,8 @@ import { shareReplay } from 'rxjs/operators';
 
 export class ClientModel {
     readonly stateObservable: Observable<IStateChanged>;
-    constructor(private events: IClientConnection) {
+    constructor(readonly Id: string,
+                private events: IClientConnection) {
         this.stateObservable = this.events.StateChange
             .pipe(shareReplay(1));
         this.stateObservable.subscribe(); // kick off the replay
