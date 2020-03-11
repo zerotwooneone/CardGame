@@ -2,6 +2,7 @@ import { CommonStateModel, ICommonStateChanged } from './common-state-model';
 import { IOpenConnection } from '../hub/IOpenConnection';
 import { Observable, Subject } from 'rxjs';
 import { timeout, take } from 'rxjs/operators';
+import { testproperty } from 'src/pipes/testproperty';
 
 class MockOpenConnection implements IOpenConnection {
   registerSubject: Subject<ICommonStateChanged> = new Subject<ICommonStateChanged>();
@@ -25,8 +26,7 @@ describe('CommonStateModel', () => {
 
     mockConnection.registerSubject.next({StateId: expected});
     const actual = await model.StateId.pipe(
-      timeout(1),
-      take(1)).toPromise();
+      testproperty).toPromise();
 
     expect(expected).toEqual(actual);
   });

@@ -1,6 +1,6 @@
 import { IOpenConnection } from '../hub/IOpenConnection';
 import { Observable } from 'rxjs';
-import { map, shareReplay } from 'rxjs/operators';
+import { property } from 'src/pipes/property';
 
 export class CommonStateModel {
     private readonly stateChangedObservable: Observable<ICommonStateChanged>;
@@ -9,10 +9,8 @@ export class CommonStateModel {
         this.stateChangedObservable = connection.register<ICommonStateChanged>('changed');
 
         this.StateId = this.stateChangedObservable.pipe(
-            map(s => s.StateId),
-            shareReplay(1)
+            property(m => m.StateId)
         );
-        this.StateId.subscribe();
      }
 
     onCommonStateChanged(onCommonStateChanged: ICommonStateChanged) {
