@@ -1,8 +1,10 @@
 import { IOpenConnection } from '../hub/IOpenConnection';
+import { Observable } from 'rxjs';
 
 export class CommonStateModel {
+    private readonly stateChangedObservable: Observable<ICommonStateChanged>;
     constructor(private connection: IOpenConnection) {
-        connection.register<ICommonStateChanged>('changed', this.onCommonStateChanged);
+        this.stateChangedObservable = connection.register<ICommonStateChanged>('changed');
      }
 
     onCommonStateChanged(onCommonStateChanged: ICommonStateChanged) {
@@ -13,4 +15,5 @@ export class CommonStateModel {
 
 export interface ICommonStateChanged {
     readonly StateId: string;
+    [key: string]: any;
 }

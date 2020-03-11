@@ -1,7 +1,8 @@
+import { Observable } from 'rxjs';
 
 export type RegisterCallback<T>= (data: T) => void;
 
 export interface IOpenConnection {
-  register<TCallback>(methodName: string, callback: RegisterCallback<TCallback>): void;
+  register<TResult>(methodName: string): Observable<TResult>;
   send(methodName: string, data: any): Promise<any>;
 }
