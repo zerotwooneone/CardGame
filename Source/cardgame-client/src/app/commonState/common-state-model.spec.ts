@@ -1,7 +1,6 @@
 import { CommonStateModel, ICommonStateChanged } from './common-state-model';
 import { IOpenConnection } from '../hub/IOpenConnection';
 import { Observable, Subject } from 'rxjs';
-import { timeout, take } from 'rxjs/operators';
 import { testproperty } from 'src/pipes/testproperty';
 
 class MockOpenConnection implements IOpenConnection {
