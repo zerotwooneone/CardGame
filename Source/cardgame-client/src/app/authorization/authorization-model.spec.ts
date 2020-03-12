@@ -52,5 +52,24 @@ describe('AuthorizationModel', () => {
 
       expect(actual).toBeTruthy();
     });
+
+    it('should fail when allready authorized', async () => {
+      const model = new AuthorizationModel(httpClient);
+      ((model as any).authorizedSubject as Subject<boolean>).next(true);
+      const promise = model
+        .login({username: 'username', password: 'password'})
+        .pipe(testproperty)
+        .toPromise();
+
+      httpTestingController.expectNone('/login');
+
+      let actual = false;
+      await promise
+        .catch(r => {
+          actual = true;
+        });
+
+      expect(actual).toBeTrue();
+    });
   });
 });

@@ -3,7 +3,7 @@ import { Subject, Observable, BehaviorSubject, throwError } from 'rxjs';
 import { catchError, map } from 'rxjs/operators';
 
 export class AuthorizationModel {
-    private readonly authorizedSubject: Subject<boolean>;
+    private readonly authorizedSubject: BehaviorSubject<boolean>;
     public readonly authorized: Observable<boolean>;
     private readonly defaultHttpOptions = {
         headers: new HttpHeaders({
@@ -16,6 +16,9 @@ export class AuthorizationModel {
      }
 
      login(param: ILoginParam): Observable<ILoginResponse> {
+        if (this.authorizedSubject.value) {
+            return throwError('allready authorized');
+        }
         return this
             .httpClient
             .post<IApiLoginResponse>('/login', param, this.defaultHttpOptions)
