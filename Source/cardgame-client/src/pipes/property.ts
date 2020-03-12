@@ -1,5 +1,5 @@
 import { Observable, Subscription } from 'rxjs';
-import { map, shareReplay } from 'rxjs/operators';
+import { map, shareReplay, filter } from 'rxjs/operators';
 
 export function property<TSource, TResult>(
     mapper: (s: TSource) => TResult,
@@ -7,6 +7,7 @@ export function property<TSource, TResult>(
     return (source: Observable<TSource>) => {
         const result = source.pipe(
             map(mapper),
+            filter(value => value !== undefined),
             shareReplay(1)
         );
         const subscription = result.subscribe();

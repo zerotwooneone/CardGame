@@ -24,7 +24,7 @@ describe('CommonStateModel', () => {
     const expected = 'test';
     const model = new CommonStateModel(mockConnection);
 
-    mockConnection.registerSubject.next({StateId: expected});
+    mockConnection.registerSubject.next({StateId: expected} as any);
     const actual = await model.StateId.pipe(
       testproperty).toPromise();
 
