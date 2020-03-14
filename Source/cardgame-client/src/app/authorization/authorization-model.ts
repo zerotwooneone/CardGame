@@ -1,6 +1,6 @@
 import { HttpClient, HttpHeaders, HttpErrorResponse } from '@angular/common/http';
 import { Subject, Observable, BehaviorSubject, throwError } from 'rxjs';
-import { catchError, map } from 'rxjs/operators';
+import { catchError, map, shareReplay } from 'rxjs/operators';
 
 export class AuthorizationModel {
     private readonly authorizedSubject: BehaviorSubject<boolean>;
@@ -24,7 +24,8 @@ export class AuthorizationModel {
             .post<IApiLoginResponse>('/login', param, this.defaultHttpOptions)
             .pipe(
                 map(this.mapLogin),
-                catchError(this.handleError)
+                catchError(this.handleError),
+                shareReplay()
                 );
      }
      private handleError(error: HttpErrorResponse) {
@@ -53,7 +54,8 @@ export interface ILoginParam {
 }
 
 interface IApiLoginResponse {
-
+  readonly UserToken: string;
+  readonly RefreshUserToken: string;
 }
 
 interface ILoginResponse {

@@ -42,7 +42,6 @@ describe('AuthorizationModel', () => {
       const model = new AuthorizationModel(httpClient);
       const promise = model
         .login({username: 'username', password: 'password'})
-        .pipe(testproperty)
         .toPromise();
 
       const mockRequest = httpTestingController.expectOne('/login');
@@ -70,6 +69,22 @@ describe('AuthorizationModel', () => {
         });
 
       expect(actual).toBeTrue();
+    });
+
+    it('should not make multiple api calls from multiple subscriptions', async () => {
+      const model = new AuthorizationModel(httpClient);
+      const observable = model
+        .login({username: 'username', password: 'password'});
+
+      const promises = [
+        observable.toPromise(),
+        observable.toPromise()];
+
+      const mockRequest = httpTestingController.expectOne('/login');
+
+      mockRequest.flush({});
+
+      await Promise.all(promises);
     });
   });
 });
