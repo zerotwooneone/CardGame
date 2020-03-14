@@ -1,4 +1,4 @@
-import { AuthorizationModel } from './authorization-model';
+import { AuthorizationModel, ILoginResponse } from './authorization-model';
 // Http testing module and mocking controller
 import { HttpClientTestingModule, HttpTestingController } from '@angular/common/http/testing';
 
@@ -6,7 +6,8 @@ import { HttpClientTestingModule, HttpTestingController } from '@angular/common/
 import { TestBed } from '@angular/core/testing';
 import { HttpClient, HttpErrorResponse } from '@angular/common/http';
 import { testproperty } from 'src/pipes/testproperty';
-import { Subject } from 'rxjs';
+import { Subject, empty } from 'rxjs';
+import { catchError } from 'rxjs/operators';
 
 describe('AuthorizationModel', () => {
   let httpClient: HttpClient;
@@ -46,7 +47,7 @@ describe('AuthorizationModel', () => {
 
       const mockRequest = httpTestingController.expectOne('/login');
 
-      mockRequest.flush({});
+      mockRequest.flush(createSuccessfulLoginResponse());
       const actual = await promise;
 
       expect(actual).toBeTruthy();
@@ -82,9 +83,58 @@ describe('AuthorizationModel', () => {
 
       const mockRequest = httpTestingController.expectOne('/login');
 
-      mockRequest.flush({});
+      mockRequest.flush(createSuccessfulLoginResponse());
 
       await Promise.all(promises);
     });
+
+    it('should become authorized after successful login', async () => {
+      const model = new AuthorizationModel(httpClient);
+
+      const promise = model
+        .login({ username: 'username', password: 'password' })
+        .toPromise();
+      httpTestingController
+        .expectOne('/login')
+        .flush(createSuccessfulLoginResponse());
+      await promise;
+
+      const actual = await model
+        .authorized
+        .pipe(testproperty)
+        .toPromise();
+
+      expect(actual).toBeTrue();
+    });
+
+    it('should become unauthorized after error', async () => {
+      const model = new AuthorizationModel(httpClient);
+
+      const promise = model
+        .login({ username: 'username', password: 'password' })
+        .pipe(catchError(c => empty()))
+        .toPromise();
+
+      (model as any).authorizedSubject.next(true);
+
+      httpTestingController
+        .expectOne('/login')
+        .error(new ErrorEvent('error type'));
+
+      await promise;
+      const actual = await model
+        .authorized
+        .pipe(testproperty)
+        .toPromise();
+
+      expect(actual).toBeFalse();
+    });
   });
 });
+
+function createSuccessfulLoginResponse(): ILoginResponse {
+  return {
+    Success: true,
+    ErrorCode: 0
+  };
+}
