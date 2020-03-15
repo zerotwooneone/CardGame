@@ -1,7 +1,8 @@
 import { Component, OnInit } from '@angular/core';
 import { Observable, of } from 'rxjs';
 import { IPlayer } from 'src/app/otherPlayer/other-player/IPlayer';
-import { ICurrentPlayer } from 'src/app/currentPlayer/current-player/ICurrentPlayer';
+import { CurrentPlayerModel } from 'src/app/currentPlayer/current-player-model';
+import { CurrentPlayerModelFactoryService } from 'src/app/currentPlayer/current-player-model-factory.service';
 
 @Component({
   selector: 'cgc-game-board',
@@ -10,12 +11,15 @@ import { ICurrentPlayer } from 'src/app/currentPlayer/current-player/ICurrentPla
 })
 export class GameBoardComponent implements OnInit {
 
-  constructor() { }
+  constructor(private currentPlayerModelFactory: CurrentPlayerModelFactoryService) { }
 
   public readonly otherPlayers: Observable<IPlayer[]> = of([{ Id: '1' }, { Id: '2' }]);
-  public readonly currentPlayer: ICurrentPlayer = { Id: 'some id', Name: 'some player name'};
+  public currentPlayer: Observable<CurrentPlayerModel>;
 
   ngOnInit(): void {
+    const currentPlayerId = 'some player id';
+    this.currentPlayer = this.currentPlayerModelFactory
+      .getById(currentPlayerId);
   }
 
   public trackByPlayerId(player: IPlayer): string {

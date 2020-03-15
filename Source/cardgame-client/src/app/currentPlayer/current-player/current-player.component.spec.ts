@@ -1,6 +1,7 @@
 import { async, ComponentFixture, TestBed } from '@angular/core/testing';
 
 import { CurrentPlayerComponent } from './current-player.component';
+import { CurrentPlayerModel } from '../current-player-model';
 
 describe('CurrentPlayerComponent', () => {
   let component: CurrentPlayerComponent;
@@ -16,6 +17,8 @@ describe('CurrentPlayerComponent', () => {
   beforeEach(() => {
     fixture = TestBed.createComponent(CurrentPlayerComponent);
     component = fixture.componentInstance;
+
+    component.player = createMockPlayerModel();
     fixture.detectChanges();
   });
 
@@ -23,3 +26,7 @@ describe('CurrentPlayerComponent', () => {
     expect(component).toBeTruthy();
   });
 });
+
+function createMockPlayerModel(): CurrentPlayerModel {
+  return new CurrentPlayerModel('some test id');
+}
