@@ -7,7 +7,7 @@ import { TestBed } from '@angular/core/testing';
 import { HttpClient, HttpErrorResponse } from '@angular/common/http';
 import { testproperty } from 'src/pipes/testproperty';
 import { Subject, empty } from 'rxjs';
-import { catchError } from 'rxjs/operators';
+import { catchError, tap } from 'rxjs/operators';
 
 describe('AuthorizationModel', () => {
   let httpClient: HttpClient;
