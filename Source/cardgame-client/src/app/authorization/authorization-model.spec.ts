@@ -6,8 +6,8 @@ import { HttpClientTestingModule, HttpTestingController } from '@angular/common/
 import { TestBed } from '@angular/core/testing';
 import { HttpClient, HttpErrorResponse } from '@angular/common/http';
 import { testproperty } from 'src/pipes/testproperty';
-import { Subject, empty } from 'rxjs';
-import { catchError, tap } from 'rxjs/operators';
+import { Subject, EMPTY } from 'rxjs';
+import { catchError } from 'rxjs/operators';
 
 describe('AuthorizationModel', () => {
   let httpClient: HttpClient;
@@ -112,7 +112,7 @@ describe('AuthorizationModel', () => {
 
       const promise = model
         .login({ username: 'username', password: 'password' })
-        .pipe(catchError(c => empty()))
+        .pipe(catchError(c => EMPTY))
         .toPromise();
 
       (model as any).authorizedSubject.next(true);
