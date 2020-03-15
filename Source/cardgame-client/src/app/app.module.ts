@@ -9,12 +9,14 @@ import { ServiceWorkerModule } from '@angular/service-worker';
 import { environment } from '../environments/environment';
 import { GameBoardComponent } from './gameBoard/game-board/game-board.component';
 import { OtherPlayerComponent } from './otherPlayer/other-player/other-player.component';
+import { CurrentPlayerComponent } from './currentPlayer/current-player/current-player.component';
 
 @NgModule({
   declarations: [
     AppComponent,
     GameBoardComponent,
-    OtherPlayerComponent
+    OtherPlayerComponent,
+    CurrentPlayerComponent
   ],
   imports: [
     BrowserModule,
