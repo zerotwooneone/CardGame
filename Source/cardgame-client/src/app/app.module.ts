@@ -7,10 +7,14 @@ import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { HttpClientModule } from '@angular/common/http';
 import { ServiceWorkerModule } from '@angular/service-worker';
 import { environment } from '../environments/environment';
+import { GameBoardComponent } from './gameBoard/game-board/game-board.component';
+import { OtherPlayerComponent } from './otherPlayer/other-player/other-player.component';
 
 @NgModule({
   declarations: [
-    AppComponent
+    AppComponent,
+    GameBoardComponent,
+    OtherPlayerComponent
   ],
   imports: [
     BrowserModule,
