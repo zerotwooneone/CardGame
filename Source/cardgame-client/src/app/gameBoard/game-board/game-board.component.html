@@ -10,17 +10,45 @@
         <div class="discard">
             Discard
             <div class="cards">
-                <div class="card card1"></div>
-                <div class="card card2"></div>
-                <div class="card card3"></div>
+                <div class="card card1"
+                    [hidden]="!showDiscard1()">
+                    <div *ngIf="showDiscard1Contents()">
+                        <p>Count: {{discardCount}}</p>
+                        <p>Value: {{discardTop?.Value}}</p>
+                    </div>                    
+                </div>
+                <div class="card card2" [hidden]="!showDiscard2()">
+                    <div *ngIf="showDiscard2Contents()">
+                        <p>Count: {{discardCount}}</p>
+                        <p>Value: {{discardTop?.Value}}</p>
+                    </div>
+                </div>
+                <div class="card card3" [hidden]="!showDiscard3()">
+                    <div *ngIf="showDiscard3Contents()">
+                        <p>Count: {{discardCount}}</p>
+                        <p>Value: {{discardTop?.Value}}</p>
+                    </div>
+                </div>
             </div>
         </div>
         <div class="draw">
             Draw
             <div class="cards">
-                <div class="card card1"></div>
-                <div class="card card2"></div>
-                <div class="card card3"></div>
+                <div class="card card1" [hidden]="!showDraw1()">
+                    <div *ngIf="showDraw1Contents()">
+                        <p>Remaining: {{drawCount}}</p>
+                    </div>
+                </div>
+                <div class="card card2" [hidden]="!showDraw2()">
+                    <div *ngIf="showDraw2Contents()">
+                        <p>Remaining: {{drawCount}}</p>
+                    </div>
+                </div>
+                <div class="card card3" [hidden]="!showDraw3()">
+                    <div *ngIf="showDraw3Contents()">
+                        <p>Remaining: {{drawCount}}</p>
+                    </div>
+                </div>
             </div>
         </div>
     </div>

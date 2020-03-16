@@ -65,4 +65,5 @@ export interface ICommonStateChanged {
 
 export interface ICard {
     readonly Id: string;
+    readonly Value: number;
 }
