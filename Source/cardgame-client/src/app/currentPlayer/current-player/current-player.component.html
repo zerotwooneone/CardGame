@@ -1,10 +1,12 @@
 <div class="container">
     <div class="card"
         [hidden]="!(card1 | async)">
-        <cgc-playable-card class="card-1"></cgc-playable-card>
+        <cgc-playable-card class="card-1"
+          [card]="(card1 | async)"></cgc-playable-card>
     </div>
     <div class="card"
         [hidden]="!(card2 | async)">
-        <cgc-playable-card class="card-2"></cgc-playable-card>
+        <cgc-playable-card class="card-2"
+          [card]="(card2 | async)"></cgc-playable-card>
     </div>
 </div>

@@ -1,9 +1,10 @@
 import { Component, OnInit, Input, OnChanges, SimpleChanges } from '@angular/core';
-import { IPlayableCard } from './IPlayableCard';
 import { CurrentPlayerModel } from '../current-player-model';
 import { property } from 'src/pipes/property';
 import { Observable } from 'rxjs';
 import { map } from 'rxjs/operators';
+import { CardModel } from 'src/app/card/card-model';
+import { CardModelFactoryService } from 'src/app/card/card-model-factory.service';
 
 @Component({
   selector: 'cgc-current-player',
@@ -15,16 +16,15 @@ export class CurrentPlayerComponent implements OnInit, OnChanges {
   player: CurrentPlayerModel;
   Name: Observable<string>;
 
-  card1: Observable<IPlayableCard>;
-  card2: Observable<IPlayableCard>;
+  card1: Observable<CardModel>;
+  card2: Observable<CardModel>;
 
-  constructor() { }
+  constructor(private cardModelFactory: CardModelFactoryService) { }
 
   ngOnInit(): void {  }
 
   ngOnChanges(changes: SimpleChanges): void {
     if (!!changes.player) {
-      console.warn('player changed');
       this.Name = this.player
         .Name
         .pipe(property(m => m));
@@ -32,21 +32,20 @@ export class CurrentPlayerComponent implements OnInit, OnChanges {
       this.card1 = this.player
         .Card1
         .pipe(
-          map(this.mapToPlayableCard),
+          map(m => this.mapToPlayableCard(m)),
           property(m => m)
         );
       this.card2 = this.player
         .Card2
         .pipe(
-          map(this.mapToPlayableCard),
+          map(m => this.mapToPlayableCard(m)),
           property(m => m)
         );
     }
   }
 
-  mapToPlayableCard(cardId: string): IPlayableCard {
-    // todo: need method (service?) to provide details about a card given an id
-    return { Id: cardId, Value: 9 };
+  mapToPlayableCard(cardId: string): CardModel {
+    return this.cardModelFactory.createPlayable(cardId);
   }
 }
 

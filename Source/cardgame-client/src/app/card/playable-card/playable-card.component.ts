@@ -1,4 +1,5 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, Input } from '@angular/core';
+import { CardModel } from '../card-model';
 
 @Component({
   selector: 'cgc-playable-card',
@@ -7,6 +8,12 @@ import { Component, OnInit } from '@angular/core';
 })
 export class PlayableCardComponent implements OnInit {
 
+  @Input()
+  card: CardModel;
+
+  get value(): number {
+    return this.card?.value;
+  }
   constructor() { }
 
   ngOnInit(): void {
