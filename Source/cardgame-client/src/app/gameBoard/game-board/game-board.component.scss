@@ -2,6 +2,10 @@
     .other-players {
         display: flex;
         justify-content: center;
+        .player {
+            padding-left: 15px;
+            padding-right: 15px;
+        }
     }
     .play-area {
         display: flex;
