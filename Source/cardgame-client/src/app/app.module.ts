@@ -10,13 +10,15 @@ import { environment } from '../environments/environment';
 import { GameBoardComponent } from './gameBoard/game-board/game-board.component';
 import { OtherPlayerComponent } from './otherPlayer/other-player/other-player.component';
 import { CurrentPlayerComponent } from './currentPlayer/current-player/current-player.component';
+import { PlayableCardComponent } from './card/playable-card/playable-card.component';
 
 @NgModule({
   declarations: [
     AppComponent,
     GameBoardComponent,
     OtherPlayerComponent,
-    CurrentPlayerComponent
+    CurrentPlayerComponent,
+    PlayableCardComponent
   ],
   imports: [
     BrowserModule,

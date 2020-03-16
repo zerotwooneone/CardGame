@@ -20,34 +20,33 @@ export class CurrentPlayerComponent implements OnInit, OnChanges {
 
   constructor() { }
 
-  ngOnInit(): void {
-    this.Name = this.player
-      .Name
-      .pipe(property(m => m));
-
-    this.card1 = this.player
-      .Card1
-      .pipe(
-        map(this.mapToPlayableCard),
-        property(m => m)
-      );
-
-    this.card2 = this.player
-      .Card2
-      .pipe(
-        map(this.mapToPlayableCard),
-        property(m => m)
-      );
-  }
-  mapToPlayableCard(cardId: string): IPlayableCard {
-    // todo: need method (service?) to provide details about a card given an id
-    return {Id: cardId, Value: 9};
-  }
+  ngOnInit(): void {  }
 
   ngOnChanges(changes: SimpleChanges): void {
     if (!!changes.player) {
-      console.error('player changed');
+      console.warn('player changed');
+      this.Name = this.player
+        .Name
+        .pipe(property(m => m));
+
+      this.card1 = this.player
+        .Card1
+        .pipe(
+          map(this.mapToPlayableCard),
+          property(m => m)
+        );
+      this.card2 = this.player
+        .Card2
+        .pipe(
+          map(this.mapToPlayableCard),
+          property(m => m)
+        );
     }
+  }
+
+  mapToPlayableCard(cardId: string): IPlayableCard {
+    // todo: need method (service?) to provide details about a card given an id
+    return { Id: cardId, Value: 9 };
   }
 }
 
