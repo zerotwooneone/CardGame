@@ -11,5 +11,8 @@
             width: 20px;
             height: 60px;
         }
+        &[hidden] {
+           display: none;
+        }
     }
 }

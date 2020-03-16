@@ -1,6 +1,7 @@
 <div class="container">
-    <p>other-player works!</p>
-    <div class="cards">
+    <p>{{name}}</p>
+    <div class="cards"
+         [hidden]="!isInRound">
         <div class="card"></div>
     </div>
 </div>

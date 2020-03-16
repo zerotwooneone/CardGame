@@ -1,5 +1,4 @@
 import { Component, OnInit, Input } from '@angular/core';
-import { IPlayer } from './IPlayer';
 
 @Component({
   selector: 'cgc-other-player',
@@ -8,7 +7,8 @@ import { IPlayer } from './IPlayer';
 })
 export class OtherPlayerComponent implements OnInit {
 
-  @Input() player: IPlayer;
+  @Input() name: string;
+  @Input() isInRound: boolean;
   constructor() { }
 
   ngOnInit(): void {
