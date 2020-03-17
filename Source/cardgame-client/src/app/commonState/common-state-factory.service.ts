@@ -28,7 +28,8 @@ export class CommonStateFactoryService {
               StateId: 'dummy state id',
               DrawCount: 4,
               PlayerIds: [],
-              Discard: [{Id: 'some code id', Value: 11}],
+              Discard: [{Id: 'some card id', Value: 11},
+                { Id: 'some other card id', Value: 12 }],
               CurrentPlayerId: '',
               PlayersInRound: []
             };

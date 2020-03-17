@@ -1,10 +1,10 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, Input } from '@angular/core';
 import { Observable, of } from 'rxjs';
 import { CurrentPlayerModel } from 'src/app/currentPlayer/current-player-model';
 import { CurrentPlayerModelFactoryService } from 'src/app/currentPlayer/current-player-model-factory.service';
 import { CommonStateFactoryService } from 'src/app/commonState/common-state-factory.service';
 import { CommonStateModel, ICard } from 'src/app/commonState/common-state-model';
-import { property } from 'src/pipes/property';
+import { withLatestFrom, map } from 'rxjs/operators';
 
 @Component({
   selector: 'cgc-game-board',
@@ -13,27 +13,26 @@ import { property } from 'src/pipes/property';
 })
 export class GameBoardComponent implements OnInit {
 
-  constructor(private readonly currentPlayerModelFactory: CurrentPlayerModelFactoryService,
-              private readonly commonStateFactory: CommonStateFactoryService) { }
-
-  public readonly otherPlayers: Observable<any[]> = of([
-    { Id: '1', name: 'player 1', isInRound: true },
-    { Id: '2', name: 'player 2', isInRound: true },
-    { Id: '3', name: 'player 3', isInRound: false }]);
+  @Input()
+  public gameId: string;
+  get otherPlayers(): Observable<IOtherPlayer[]> {
+    return this.otherPlayersObservable;
+  }
+  private otherPlayersObservable: Observable<IOtherPlayer[]>;
   public currentPlayer: Observable<CurrentPlayerModel>;
   private commonState: CommonStateModel;
   drawCount: number;
   discardTop: ICard | null;
   discardCount: number;
+  constructor(private readonly currentPlayerModelFactory: CurrentPlayerModelFactoryService,
+              private readonly commonStateFactory: CommonStateFactoryService) { }
 
   async ngOnInit(): Promise<void> {
     const currentPlayerId = 'some player id';
     this.currentPlayer = this.currentPlayerModelFactory
       .getById(currentPlayerId);
 
-    const gameId = 'some game id';
-    this.commonState = await this.commonStateFactory.get(gameId);
-
+    this.commonState = await this.commonStateFactory.get(this.gameId);
     this.commonState
       .DrawCount
       .subscribe(v => this.drawCount = v);
@@ -44,6 +43,23 @@ export class GameBoardComponent implements OnInit {
         this.discardCount = array.length;
         this.discardTop = array.length ? array[array.length - 1] : null;
       });
+
+    this.otherPlayersObservable = this.commonState
+      .PlayersInRound
+      .pipe(
+        withLatestFrom(this.commonState.PlayerIds),
+        map(([playersInRound, playerIds]) => {
+          const inRound = new Map(playersInRound.map((i): [string, string] => [i, i]));
+          return playerIds.map(p => {
+            const result: IOtherPlayer = {
+              Id: p,
+              name: 'some name',
+              isInRound: inRound.has(p)
+            };
+            return result;
+          });
+        })
+      );
   }
 
   public trackByPlayerId(player: any): string {
@@ -92,6 +108,12 @@ export class GameBoardComponent implements OnInit {
     return this.drawCount > 2;
   }
 
+}
+
+export interface IOtherPlayer {
+  Id: string;
+  name: string;
+  isInRound: boolean;
 }
 
 

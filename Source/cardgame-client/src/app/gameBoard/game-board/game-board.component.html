@@ -8,24 +8,21 @@
     </div>
     <div class="play-area">
         <div class="discard">
-            Discard
+            Discard <span> Count: {{discardCount}}</span>
             <div class="cards">
                 <div class="card card1"
                     [hidden]="!showDiscard1()">
                     <div *ngIf="showDiscard1Contents()">
-                        <p>Count: {{discardCount}}</p>
                         <p>Value: {{discardTop?.Value}}</p>
                     </div>                    
                 </div>
                 <div class="card card2" [hidden]="!showDiscard2()">
                     <div *ngIf="showDiscard2Contents()">
-                        <p>Count: {{discardCount}}</p>
                         <p>Value: {{discardTop?.Value}}</p>
                     </div>
                 </div>
                 <div class="card card3" [hidden]="!showDiscard3()">
                     <div *ngIf="showDiscard3Contents()">
-                        <p>Count: {{discardCount}}</p>
                         <p>Value: {{discardTop?.Value}}</p>
                     </div>
                 </div>
