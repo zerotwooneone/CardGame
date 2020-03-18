@@ -4,7 +4,8 @@ import { CurrentPlayerModel } from 'src/app/currentPlayer/current-player-model';
 import { CurrentPlayerModelFactoryService } from 'src/app/currentPlayer/current-player-model-factory.service';
 import { CommonStateFactoryService } from 'src/app/commonState/common-state-factory.service';
 import { CommonStateModel, ICard } from 'src/app/commonState/common-state-model';
-import { withLatestFrom, map } from 'rxjs/operators';
+import { withLatestFrom, map, tap } from 'rxjs/operators';
+import { property } from 'src/pipes/property';
 
 @Component({
   selector: 'cgc-game-board',
@@ -15,10 +16,7 @@ export class GameBoardComponent implements OnInit {
 
   @Input()
   public gameId: string;
-  get otherPlayers(): Observable<IOtherPlayer[]> {
-    return this.otherPlayersObservable;
-  }
-  private otherPlayersObservable: Observable<IOtherPlayer[]>;
+  otherPlayers: Observable<IOtherPlayer[]>;
   public currentPlayer: Observable<CurrentPlayerModel>;
   private commonState: CommonStateModel;
   drawCount: number;
@@ -44,7 +42,7 @@ export class GameBoardComponent implements OnInit {
         this.discardTop = array.length ? array[array.length - 1] : null;
       });
 
-    this.otherPlayersObservable = this.commonState
+    this.otherPlayers = this.commonState
       .PlayersInRound
       .pipe(
         withLatestFrom(this.commonState.PlayerIds),
@@ -58,7 +56,8 @@ export class GameBoardComponent implements OnInit {
             };
             return result;
           });
-        })
+        }),
+        property(m => m)
       );
   }
 

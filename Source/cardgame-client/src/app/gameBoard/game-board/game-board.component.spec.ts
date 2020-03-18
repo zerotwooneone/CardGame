@@ -38,8 +38,8 @@ describe('GameBoardComponent', () => {
 
   describe('ngOnInit', () => {
     it('should create otherPlayers', async () => {
-      const commonStateFactory = spectator.get(CommonStateFactoryService, true);
-      const commonStateModel = spectator.get(CommonStateModel, true);
+      const commonStateFactory = spectator.inject(CommonStateFactoryService, true);
+      const commonStateModel = spectator.inject(CommonStateModel, true);
       addPlayerIds(commonStateModel, '1', '2');
       addPlayersInRound(commonStateModel, '1');
       addDrawCount(commonStateModel);

@@ -27,11 +27,11 @@ export class CommonStateFactoryService {
             const changed: ICommonStateChanged =  {
               StateId: 'dummy state id',
               DrawCount: 4,
-              PlayerIds: [],
+              PlayerIds: ['1', '2', '3'],
               Discard: [{Id: 'some card id', Value: 11},
                 { Id: 'some other card id', Value: 12 }],
               CurrentPlayerId: '',
-              PlayersInRound: []
+              PlayersInRound: ['1', '2']
             };
             return of(changed as unknown as TResult);
             break;
