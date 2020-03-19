@@ -1,12 +1,12 @@
 import { Component, OnInit, Input } from '@angular/core';
-import { Observable, of } from 'rxjs';
+import { Observable, of, forkJoin } from 'rxjs';
 import { CurrentPlayerModel } from 'src/app/currentPlayer/current-player-model';
 import { CurrentPlayerModelFactoryService } from 'src/app/currentPlayer/current-player-model-factory.service';
 import { CommonStateFactoryService } from 'src/app/commonState/common-state-factory.service';
 import { CommonStateModel, ICard } from 'src/app/commonState/common-state-model';
-import { withLatestFrom, map, tap } from 'rxjs/operators';
+import { withLatestFrom, map, tap, switchMap, concatMap } from 'rxjs/operators';
 import { property } from 'src/pipes/property';
-import { PlayerService, PlayerCache } from 'src/app/player/player.service';
+import { PlayerService, PlayerCache, IPlayerInfo } from 'src/app/player/player.service';
 
 @Component({
   selector: 'cgc-game-board',
@@ -23,7 +23,7 @@ export class GameBoardComponent implements OnInit {
   drawCount: number;
   discardTop: ICard | null;
   discardCount: number;
-  private playerCache: PlayerCache = {};
+  private readonly playerCache: PlayerCache = {};
   constructor(private readonly currentPlayerModelFactory: CurrentPlayerModelFactoryService,
               private readonly commonStateFactory: CommonStateFactoryService,
               private readonly playerService: PlayerService) { }
@@ -45,23 +45,46 @@ export class GameBoardComponent implements OnInit {
         this.discardTop = array.length ? array[array.length - 1] : null;
       });
 
+    const playerInfos = this.commonState
+      .PlayerIds
+      .pipe(
+        map(allPlayerIds => {
+          const cachedPlayerIds = Object.keys(this.playerCache);
+          const idsToQuery = this.findNotCached(cachedPlayerIds, allPlayerIds);
+          if (idsToQuery.length) {
+            this.playerService.updatePlayerCache(this.playerCache, this.gameId, ...idsToQuery);
+          }
+          const obs: Observable<IPlayerInfo>[] = [];
+          const result = allPlayerIds.reduce((obsArray, id) => {
+            obsArray.push(this.playerCache[id]);
+            return obsArray;
+          }, obs);
+          return result;
+        }),
+        concatMap(a => forkJoin(a))
+      );
+
     this.otherPlayers = this.commonState
       .PlayersInRound
       .pipe(
-        withLatestFrom(this.commonState.PlayerIds),
-        map(([playersInRound, playerIds]) => {
+        withLatestFrom(playerInfos),
+        map(([playersInRound, playerInfoArray]) => {
           const inRound = new Map(playersInRound.map((i): [string, string] => [i, i]));
-          return playerIds.map(p => {
+
+          return playerInfoArray.map(p => {
             const result: IOtherPlayer = {
-              Id: p,
-              name: 'some name',
-              isInRound: inRound.has(p)
+              Id: p.id,
+              name: p.name,
+              isInRound: inRound.has(p.id)
             };
             return result;
           });
         }),
         property(m => m)
       );
+  }
+  findNotCached(cachedKeys: string[], allKeys: string[]): string[] {
+    return allKeys.filter(a => !cachedKeys.some(c => c === a));
   }
 
   public trackByPlayerId(player: any): string {
