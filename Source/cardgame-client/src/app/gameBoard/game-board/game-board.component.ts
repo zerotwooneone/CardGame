@@ -6,6 +6,7 @@ import { CommonStateFactoryService } from 'src/app/commonState/common-state-fact
 import { CommonStateModel, ICard } from 'src/app/commonState/common-state-model';
 import { withLatestFrom, map, tap } from 'rxjs/operators';
 import { property } from 'src/pipes/property';
+import { PlayerService, PlayerCache } from 'src/app/player/player.service';
 
 @Component({
   selector: 'cgc-game-board',
@@ -22,8 +23,10 @@ export class GameBoardComponent implements OnInit {
   drawCount: number;
   discardTop: ICard | null;
   discardCount: number;
+  private playerCache: PlayerCache = {};
   constructor(private readonly currentPlayerModelFactory: CurrentPlayerModelFactoryService,
-              private readonly commonStateFactory: CommonStateFactoryService) { }
+              private readonly commonStateFactory: CommonStateFactoryService,
+              private readonly playerService: PlayerService) { }
 
   async ngOnInit(): Promise<void> {
     const currentPlayerId = 'some player id';

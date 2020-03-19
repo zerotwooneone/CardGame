@@ -1,47 +1,51 @@
-import { TestBed } from '@angular/core/testing';
-import { createServiceFactory, SpectatorService } from '@ngneat/spectator';
+import { SpectatorHttp, createHttpFactory, HttpMethod } from '@ngneat/spectator';
 
-import { PlayerService, IPlayerInfo, PlayerCache, ApiPlayerInfo } from './player.service';
-import { HttpClientTestingModule, HttpTestingController } from '@angular/common/http/testing';
-import { HttpClient } from '@angular/common/http';
+import { PlayerService, PlayerCache, ApiPlayerInfo, IPlayerInfo } from './player.service';
 import { EMPTY } from 'rxjs';
 
 describe('PlayerService', () => {
-  let spectator: SpectatorService<PlayerService>;
-  let httpClient: HttpClient;
-  let httpTestingController: HttpTestingController;
-  const createService = createServiceFactory({
-    service: PlayerService,
-    imports: [HttpClientTestingModule],
-    mocks: [HttpClient]
+  let spectator: SpectatorHttp<PlayerService>;
+  const createService = createHttpFactory({
+    service: PlayerService
   });
 
   beforeEach(() => {
     spectator = createService();
-    httpClient = spectator.inject(HttpClient);
-    httpTestingController = spectator.inject(HttpTestingController);
   });
 
   describe('updatePlayerCache', async () => {
-    const gameId = 'game Id';
-    const playerId = 'player Id';
-    const returnedPlayer: ApiPlayerInfo = {
-      id: playerId,
-      name: 'some player name'
-    };
-    httpTestingController
-      .expectOne(`/api/game/${gameId}/player?id=${playerId}`)
-      .flush([returnedPlayer]);
-    const existingCache: PlayerCache = {
-      'some player': EMPTY
-    };
+    it('should set the players', async () => {
+      const gameId = 'gameId';
+      const playerId = 'playerId';
+      const playerName = 'some player name';
+      const returnedPlayer: ApiPlayerInfo = {
+        id: playerId,
+        name: playerName
+      };
 
-    spectator.service
-      .updatePlayerCache(existingCache, gameId, playerId);
-    const result = await existingCache[playerId].toPromise();
+      const existingCache: PlayerCache = {
+        'some player': EMPTY
+      };
 
-    expect(existingCache['some player']).toBeTruthy();
-    expect(result).toBeTruthy();
-    expect(result.id).toEqual(playerId);
+      spectator.service
+        .updatePlayerCache(existingCache, gameId, playerId);
+      const ob = existingCache[playerId];
+      ob.subscribe();
+      spectator
+        .expectOne(`/api/game/${gameId}/player`, HttpMethod.GET)
+        .flush([returnedPlayer]);
+      const result = await ob.toPromise();
+
+      expect(existingCache['some player']).toBeTruthy();
+      expect(result).toEqual(jasmine.objectContaining({id: playerId, name: playerName} as IPlayerInfo));
+    });
+  });
+  describe('getPlayersById', async () => {
+    it('should work', async () => {
+      spectator.service.getPlayersById('gameId', 'playerId').subscribe();
+
+      const req = spectator.expectOne(`/api/game/gameId/player`, HttpMethod.GET);
+      expect(true).toBeTruthy();
+    });
   });
 });

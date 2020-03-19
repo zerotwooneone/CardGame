@@ -22,17 +22,17 @@ export class PlayerService {
   }
 
   updatePlayerCache(existing: PlayerCache, gameId: string, ...ids: string[]): void {
-    const requestedKeys = Object.keys(existing);
+    const existingKeys = Object.keys(existing);
     const maxQuerySize = 3;
-    if (requestedKeys.length >= maxQuerySize
+    if (ids.length >= maxQuerySize
+        || existingKeys.length >= maxQuerySize
         || !ids
-        || !ids.length
-        || requestedKeys.length + ids.length >= (maxQuerySize * 2)) { return; }
+        || !ids.length) { return; }
 
     const params = new HttpParams();
     ids.forEach(id => params.set('id', id));
     const observable = this.getPlayersById(gameId, ...ids);
-    const result = requestedKeys.reduce(
+    const result = ids.reduce(
       (cache, i) => {
         cache[i] = observable.pipe(map(a => {
           const r = a.find(p => p.id === i);
