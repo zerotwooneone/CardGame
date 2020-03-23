@@ -10,8 +10,10 @@ export class PlayerService {
 
   constructor(private httpClient: HttpClient) { }
   getPlayersById(gameId: string, ...ids: string[]): Observable<IPlayerInfo[]> {
-    const params = new HttpParams();
-    ids.forEach(id => params.set('id', id));
+    let params = new HttpParams();
+    ids.forEach(id => {
+      params = params.append('id', id);
+    });
     const result = this.httpClient
       .get<ApiPlayerInfo[]>(`/api/game/${gameId}/player`, { params: params})
       .pipe(

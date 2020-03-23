@@ -32,7 +32,7 @@ describe('PlayerService', () => {
       const ob = existingCache[playerId];
       ob.subscribe();
       spectator
-        .expectOne(`/api/game/${gameId}/player`, HttpMethod.GET)
+        .expectOne(`/api/game/${gameId}/player?id=${playerId}`, HttpMethod.GET)
         .flush([returnedPlayer]);
       const result = await ob.toPromise();
 
@@ -41,10 +41,10 @@ describe('PlayerService', () => {
     });
   });
   describe('getPlayersById', async () => {
-    it('should work', async () => {
+    it('should call api', async () => {
       spectator.service.getPlayersById('gameId', 'playerId').subscribe();
 
-      const req = spectator.expectOne(`/api/game/gameId/player`, HttpMethod.GET);
+      const req = spectator.expectOne(`/api/game/gameId/player?id=playerId`, HttpMethod.GET);
       expect(true).toBeTruthy();
     });
   });
