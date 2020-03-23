@@ -16,8 +16,8 @@ describe('PlayerService', () => {
   describe('updatePlayerCache', async () => {
     it('should set the players', async () => {
       const gameId = 'gameId';
-      const playerId = 'playerId';
-      const playerName = 'some player name';
+      const playerId = '1';
+      const playerName = 'Player 1';
       const returnedPlayer: ApiPlayerInfo = {
         id: playerId,
         name: playerName
@@ -42,9 +42,9 @@ describe('PlayerService', () => {
   });
   describe('getPlayersById', async () => {
     it('should call api', async () => {
-      spectator.service.getPlayersById('gameId', 'playerId').subscribe();
+      spectator.service.getPlayersById('gameId', '1').subscribe();
 
-      const req = spectator.expectOne(`/api/game/gameId/player?id=playerId`, HttpMethod.GET);
+      const req = spectator.expectOne(`/api/game/gameId/player?id=1`, HttpMethod.GET);
       expect(true).toBeTruthy();
     });
   });
