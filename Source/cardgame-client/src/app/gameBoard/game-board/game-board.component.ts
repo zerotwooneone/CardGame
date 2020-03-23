@@ -1,4 +1,4 @@
-import { Component, OnInit, Input } from '@angular/core';
+import { Component, OnInit, Input, Inject } from '@angular/core';
 import { Observable, of, forkJoin } from 'rxjs';
 import { CurrentPlayerModel } from 'src/app/currentPlayer/current-player-model';
 import { CurrentPlayerModelFactoryService } from 'src/app/currentPlayer/current-player-model-factory.service';
@@ -6,7 +6,7 @@ import { CommonStateFactoryService } from 'src/app/commonState/common-state-fact
 import { CommonStateModel, ICard } from 'src/app/commonState/common-state-model';
 import { withLatestFrom, map, tap, switchMap, concatMap } from 'rxjs/operators';
 import { property } from 'src/pipes/property';
-import { PlayerService, PlayerCache, IPlayerInfo } from 'src/app/player/player.service';
+import { PlayerCache, IPlayerInfo, IPlayerService } from 'src/app/player/player.service';
 
 @Component({
   selector: 'cgc-game-board',
@@ -26,7 +26,7 @@ export class GameBoardComponent implements OnInit {
   private readonly playerCache: PlayerCache = {};
   constructor(private readonly currentPlayerModelFactory: CurrentPlayerModelFactoryService,
               private readonly commonStateFactory: CommonStateFactoryService,
-              private readonly playerService: PlayerService) { }
+              @Inject('IPlayerService') private readonly playerService: IPlayerService) { }
 
   async ngOnInit(): Promise<void> {
     const currentPlayerId = 'some player id';

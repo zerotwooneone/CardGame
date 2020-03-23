@@ -9,8 +9,8 @@ import { OtherPlayerComponent } from 'src/app/otherPlayer/other-player/other-pla
 import { CurrentPlayerComponent } from 'src/app/currentPlayer/current-player/current-player.component';
 import { testproperty } from 'src/pipes/testproperty';
 import { CurrentPlayerModelFactoryService } from 'src/app/currentPlayer/current-player-model-factory.service';
-import { isNumber } from 'util';
 import { PlayerService, PlayerCache } from 'src/app/player/player.service';
+import { MockPlayerService } from 'src/app/player/mockPlayerService';
 
 describe('GameBoardComponent', () => {
   let spectator: Spectator<GameBoardComponent>;
@@ -25,12 +25,18 @@ describe('GameBoardComponent', () => {
     declarations: [
       MockComponent(OtherPlayerComponent),
       MockComponent(CurrentPlayerComponent)
+    ],
+    providers: [
+      {
+        provide: 'IPlayerService',
+        useClass: MockPlayerService
+      }
     ]
   });
   const gameId = 'some game id';
   beforeEach(() => spectator = createComponent({
     props: {
-      gameId: gameId
+      gameId
     }
   }));
 
@@ -53,8 +59,8 @@ describe('GameBoardComponent', () => {
       const playerService = spectator.inject(PlayerService);
       playerService.updatePlayerCache
         .and.callFake((existing: PlayerCache, gId, ids) => {
-          existing['1'] = of({id: '1', name: 'player 1'});
-          existing['2'] = of({ id: '2', name: 'player 2' });
+          existing['1'] = of({id: '1', name: 'Player 1'});
+          existing['2'] = of({ id: '2', name: 'Player 2' });
         });
 
       await spectator.component.ngOnInit();
@@ -64,8 +70,8 @@ describe('GameBoardComponent', () => {
         .pipe(testproperty)
         .toPromise();
 
-      expect(players).toContain(jasmine.objectContaining({Id: '1', name: 'player 1', isInRound: true}));
-      expect(players).toContain(jasmine.objectContaining({ Id: '2', name: 'player 2', isInRound: false }));
+      expect(players).toContain(jasmine.objectContaining({Id: '1', name: 'Player 1', isInRound: true}));
+      expect(players).toContain(jasmine.objectContaining({ Id: '2', name: 'Player 2', isInRound: false }));
     });
   });
 });

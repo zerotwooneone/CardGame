@@ -1,12 +1,10 @@
-import { Injectable } from '@angular/core';
 import { Observable, of } from 'rxjs';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { map, shareReplay } from 'rxjs/operators';
+import { Injectable } from '@angular/core';
 
-@Injectable({
-  providedIn: 'root'
-})
-export class PlayerService {
+@Injectable()
+export class PlayerService implements IPlayerService {
 
   constructor(private httpClient: HttpClient) { }
   getPlayersById(gameId: string, ...ids: string[]): Observable<IPlayerInfo[]> {
@@ -18,12 +16,7 @@ export class PlayerService {
         map<ApiPlayerInfo[], IPlayerInfo[]>(a => a.map(p => ({ id: p.id, name: p.name }))),
         shareReplay()
       );
-    // return result;
-    result.subscribe();
-    return of([
-        { id: '1', name: 'Player 1'},
-        { id: '2', name: 'Player 2' },
-        { id: '3', name: 'Player 3' } ] as IPlayerInfo[]);
+    return result;
   }
 
   updatePlayerCache(existing: PlayerCache, gameId: string, ...ids: string[]): void {
@@ -61,4 +54,9 @@ export interface PlayerCache {
 export interface IPlayerInfo {
   readonly id: string;
   readonly name: string;
+}
+
+export interface IPlayerService {
+  getPlayersById(gameId: string, ...ids: string[]): Observable<IPlayerInfo[]>;
+  updatePlayerCache(existing: PlayerCache, gameId: string, ...ids: string[]): void;
 }

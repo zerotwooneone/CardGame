@@ -27,7 +27,12 @@ import { PlayableCardComponent } from './card/playable-card/playable-card.compon
     BrowserAnimationsModule,
     ServiceWorkerModule.register('ngsw-worker.js', { enabled: environment.production })
   ],
-  providers: [],
+  providers: [
+    {
+      provide: 'IPlayerService',
+      useClass: environment.playerService
+    }
+  ],
   bootstrap: [AppComponent]
 })
 export class AppModule { }
