@@ -13,7 +13,7 @@ export class PlayerService {
     const params = new HttpParams();
     ids.forEach(id => params.set('id', id));
     const result = this.httpClient
-      .get<ApiPlayerInfo[]>(`/api/game/${gameId}/player`, {params})
+      .get<ApiPlayerInfo[]>(`/api/game/${gameId}/player`, { params: params})
       .pipe(
         map<ApiPlayerInfo[], IPlayerInfo[]>(a => a.map(p => ({ id: p.id, name: p.name }))),
         shareReplay()
@@ -22,15 +22,11 @@ export class PlayerService {
   }
 
   updatePlayerCache(existing: PlayerCache, gameId: string, ...ids: string[]): void {
-    const existingKeys = Object.keys(existing);
     const maxQuerySize = 3;
-    if (ids.length >= maxQuerySize
-        || existingKeys.length >= maxQuerySize
-        || !ids
-        || !ids.length) { return; }
+    if (!ids
+        || !ids.length
+        || ids.length > maxQuerySize) { return; }
 
-    const params = new HttpParams();
-    ids.forEach(id => params.set('id', id));
     const observable = this.getPlayersById(gameId, ...ids);
     const result = ids.reduce(
       (cache, i) => {

@@ -10,6 +10,7 @@ import { take, first, timeout } from 'rxjs/operators';
 })
 export class AppComponent implements OnInit {
   title = 'cardgame-client';
+  gameId = 'app conponent game id';
 
   constructor(private commonStateFactory: CommonStateFactoryService,
               private clientFactory: ClientFactoryService) {}

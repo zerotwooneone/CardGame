@@ -30,7 +30,7 @@ describe('GameBoardComponent', () => {
   const gameId = 'some game id';
   beforeEach(() => spectator = createComponent({
     props: {
-      gameId
+      gameId: gameId
     }
   }));
 
