@@ -2,11 +2,11 @@
 // `ng build --prod` replaces `environment.ts` with `environment.prod.ts`.
 // The list of file replacements can be found in `angular.json`.
 
-import { PlayerService } from 'src/app/player/player.service';
+import { MockPlayerService } from 'src/app/player/mockPlayerService';
 
 export const environment = {
   production: false,
-  playerService: PlayerService
+  playerService: MockPlayerService
 };
 
 /*

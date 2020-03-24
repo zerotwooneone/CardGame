@@ -64,6 +64,14 @@
               ],
               "serviceWorker": true,
               "ngswConfigPath": "ngsw-config.json"
+            },
+            "nb": {
+              "fileReplacements": [
+                {
+                  "replace": "src/environments/environment.ts",
+                  "with": "src/environments/environment.nb.ts"
+                }
+              ]
             }
           }
         },
@@ -75,6 +83,9 @@
           "configurations": {
             "production": {
               "browserTarget": "cardgame-client:build:production"
+            },
+            "nb": {
+              "browserTarget": "cardgame-client:build:nb"
             }
           }
         },
