@@ -1,41 +1,19 @@
-import { EntityResult } from '../../core/entity/entity-result';
-import { Round } from '../Round/round';
-import { Card, UpdatedState } from './card';
-import { CardStrength } from './CardStrength';
-import { Player } from '../player/player';
-import { Deck } from './deck';
+import { Card, PlayContext } from './card';
 import { CompareToResult } from './CompareToResult';
-import { CardId } from './card-id';
+import { PlayerId } from '../player/player-id';
 
 export class Baron extends Card {
-    public Play(player?: Player,
-                round?: Round,
-                targetPlayer?: Player,
-                deck?: Deck,
-                targetCard?: Card,
-                targetStrength?: CardStrength,
-                drawCard?: () => CardId): EntityResult<UpdatedState> {
-        if (!round) { return EntityResult.CreateError('round is required'); }
-        if (!player) { return EntityResult.CreateError('player is required'); }
-        if (!targetPlayer) { return EntityResult.CreateError('target player is required'); }
-        if (targetPlayer.id.Equals(player.id)) { return EntityResult.CreateError('cannot target self'); }
+    protected async PlayImplementation(playContext: PlayContext): Promise<any> {
+        const target = await playContext.getOtherPlayer(playContext.player);
 
-        const basePlayResult = super.Play(player, round, targetPlayer, deck, targetCard, targetStrength, drawCard);
-        if (!basePlayResult.success) {
-            return EntityResult.CreateError(basePlayResult.reason as string, basePlayResult.exception);
+        if (!target.aborted) {
+            const targetCard = await playContext.getHand(target.value as PlayerId);
+            const comparison = this.id.compareStrength(targetCard);
+            if (comparison === CompareToResult.SourceGreaterThan) {
+                await playContext.eliminate(target.value as PlayerId);
+            } else if (comparison === CompareToResult.SourceLessThan) {
+                await playContext.eliminate(playContext.player);
+            }
         }
-
-        const comparison = targetPlayer.Hand.compareTo(player.Hand);
-        if (comparison === CompareToResult.Equals) {
-            return EntityResult.CreateSuccess({});
-        }
-        const eliminated = comparison === CompareToResult.SourceGreaterThan
-            ? player.id
-            : targetPlayer.id;
-        const newRound = round.eliminate(eliminated);
-        if (!newRound.success) {
-            return EntityResult.CreateError(`error eliminating ${newRound.reason}`, newRound.exception);
-        }
-        return EntityResult.CreateSuccess({ newRound: newRound.value as Round });
     }
 }
