@@ -1,5 +1,3 @@
-using CardGame.Application.Client;
-using CardGame.Application.CommonState;
 using CardGame.Server.DependencyInjection;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
@@ -11,6 +9,8 @@ namespace CardGame.Server
 {
     public class Startup
     {
+        private StartupRegistry _registry;
+
         public Startup(IConfiguration configuration)
         {
             Configuration = configuration;
@@ -27,9 +27,9 @@ namespace CardGame.Server
             {
                 configuration.RootPath = "ClientApp/dist";
             });
-            var registry = new StartupRegistry();
-            registry.Initialize();
-            registry.RegisterDi(services);
+            _registry = new StartupRegistry();
+            _registry.Initialize();
+            _registry.ConfigureServices(services);
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
@@ -54,15 +54,8 @@ namespace CardGame.Server
             }
 
             app.UseRouting();
-
-            app.UseEndpoints(endpoints =>
-            {
-                endpoints.MapControllerRoute(
-                    name: "default",
-                    pattern: "{controller}/{action=Index}/{id?}");
-                endpoints.MapHub<CommonStateHub>("/commonState");
-                endpoints.MapHub<ClientHub>("/client");
-            });
+            _registry.Configure(app);
+            
 
             app.UseSpa(spa =>
             {

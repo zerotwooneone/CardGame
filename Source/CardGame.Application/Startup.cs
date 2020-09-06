@@ -3,6 +3,7 @@ using CardGame.Application.Client;
 using CardGame.Application.CommonState;
 using CardGame.CommonModel.CommonState;
 using CardGame.Utils.Abstractions.DependencyInjection;
+using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace CardGame.Application
@@ -18,6 +19,11 @@ namespace CardGame.Application
             serviceCollection.AddTransient<ICommonStateModelFactory, CommonStateModelFactory>();
 
             serviceCollection.AddTransient<ClientHub>();
+        }
+
+        public void Configure(IApplicationBuilder app)
+        {
+            // need to configure routing here
         }
     }
 }
