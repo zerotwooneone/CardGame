@@ -1,6 +1,6 @@
-using System;
-using CardGame.Server.Client;
-using CardGame.Server.CommonState;
+using CardGame.Application.Client;
+using CardGame.Application.CommonState;
+using CardGame.Server.DependencyInjection;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Configuration;
@@ -27,13 +27,9 @@ namespace CardGame.Server
             {
                 configuration.RootPath = "ClientApp/dist";
             });
-            services.AddSignalR();
-
-            services.AddTransient<CommonStateHub>();
-            services.AddTransient<Func<CommonStateHub>>(sp => sp.GetRequiredService<CommonStateHub>);
-            services.AddTransient<ICommonStateModelFactory, CommonStateModelFactory>();
-
-            services.AddTransient<ClientHub>();
+            var registry = new StartupRegistry();
+            registry.Initialize();
+            registry.RegisterDi(services);
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.

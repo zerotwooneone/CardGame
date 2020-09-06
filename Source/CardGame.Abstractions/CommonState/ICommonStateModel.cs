@@ -1,6 +1,6 @@
 ﻿using System.Threading.Tasks;
 
-namespace CardGame.Server.CommonState
+namespace CardGame.CommonModel.CommonState
 {
     public interface ICommonStateModel
     {

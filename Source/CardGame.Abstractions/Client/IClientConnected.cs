@@ -1,4 +1,4 @@
-﻿namespace CardGame.Abstractions.Client
+﻿namespace CardGame.CommonModel.Client
 {
     public interface IClientConnected 
     {

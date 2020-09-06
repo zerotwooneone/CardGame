@@ -1,4 +1,4 @@
-﻿namespace CardGame.Server.CommonState
+﻿namespace CardGame.CommonModel.CommonState
 {
     public class CommonStateChanged
     {

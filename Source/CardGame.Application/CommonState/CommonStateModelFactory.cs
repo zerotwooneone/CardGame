@@ -1,6 +1,7 @@
 ﻿using System;
+using CardGame.CommonModel.CommonState;
 
-namespace CardGame.Server.CommonState
+namespace CardGame.Application.CommonState
 {
     public class CommonStateModelFactory : ICommonStateModelFactory
     {

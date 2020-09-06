@@ -10,7 +10,15 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution 
 		..\README.md = ..\README.md
 	EndProjectSection
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CardGame.Abstractions", "CardGame.Abstractions\CardGame.Abstractions.csproj", "{8286456E-CDBF-4340-94FF-34F5E63B65AD}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "CardGame.CommonModel", "CardGame.Abstractions\CardGame.CommonModel.csproj", "{8286456E-CDBF-4340-94FF-34F5E63B65AD}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "CardGame.Utils", "CardGame.Utils\CardGame.Utils.csproj", "{3241C611-367A-4F2E-A647-A87EFB93192B}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "CardGame.Utils.Abstractions", "CardGame.Utils.Abstractions\CardGame.Utils.Abstractions.csproj", "{C80650A4-8D18-4996-AE7D-CD1552D2622B}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "CardGame.Application", "CardGame.Application\CardGame.Application.csproj", "{3927C45C-3793-43E2-ABFF-DDF665399C7B}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "CardGame.Domain.Abstractions", "CardGame.Domain.Abstractions\CardGame.Domain.Abstractions.csproj", "{6F184408-45CE-470A-8B1D-82867B30BCCE}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -26,6 +34,22 @@ Global
 		{8286456E-CDBF-4340-94FF-34F5E63B65AD}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{8286456E-CDBF-4340-94FF-34F5E63B65AD}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{8286456E-CDBF-4340-94FF-34F5E63B65AD}.Release|Any CPU.Build.0 = Release|Any CPU
+		{3241C611-367A-4F2E-A647-A87EFB93192B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{3241C611-367A-4F2E-A647-A87EFB93192B}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{3241C611-367A-4F2E-A647-A87EFB93192B}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{3241C611-367A-4F2E-A647-A87EFB93192B}.Release|Any CPU.Build.0 = Release|Any CPU
+		{C80650A4-8D18-4996-AE7D-CD1552D2622B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{C80650A4-8D18-4996-AE7D-CD1552D2622B}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{C80650A4-8D18-4996-AE7D-CD1552D2622B}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{C80650A4-8D18-4996-AE7D-CD1552D2622B}.Release|Any CPU.Build.0 = Release|Any CPU
+		{3927C45C-3793-43E2-ABFF-DDF665399C7B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{3927C45C-3793-43E2-ABFF-DDF665399C7B}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{3927C45C-3793-43E2-ABFF-DDF665399C7B}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{3927C45C-3793-43E2-ABFF-DDF665399C7B}.Release|Any CPU.Build.0 = Release|Any CPU
+		{6F184408-45CE-470A-8B1D-82867B30BCCE}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{6F184408-45CE-470A-8B1D-82867B30BCCE}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{6F184408-45CE-470A-8B1D-82867B30BCCE}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{6F184408-45CE-470A-8B1D-82867B30BCCE}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

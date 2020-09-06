@@ -2,11 +2,12 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using CardGame.Server.CommonState;
+using CardGame.Application.DTO;
+using CardGame.CommonModel.CommonState;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 
-namespace CardGame.Server.Controllers
+namespace CardGame.Application.Controllers
 {
     [ApiController]
     [Route("[controller]")]

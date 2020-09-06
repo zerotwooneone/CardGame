@@ -1,8 +1,8 @@
-﻿using System;
-using System.Threading.Tasks;
+﻿using System.Threading.Tasks;
+using CardGame.CommonModel.CommonState;
 using Microsoft.AspNetCore.SignalR;
 
-namespace CardGame.Server.CommonState
+namespace CardGame.Application.CommonState
 {
     public class CommonStateHub : Hub
     {

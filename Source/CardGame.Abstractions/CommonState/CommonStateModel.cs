@@ -1,13 +1,13 @@
 ﻿using System;
 using System.Threading.Tasks;
 
-namespace CardGame.Server.CommonState
+namespace CardGame.CommonModel.CommonState
 {
     public class CommonStateModel : ICommonStateModel
     {
-        private readonly Func<CommonStateHub> _hubFactory;
+        private readonly Func<IOpenClient> _hubFactory;
 
-        public CommonStateModel(Func<CommonStateHub> hubFactory)
+        public CommonStateModel(Func<IOpenClient> hubFactory)
         {
             _hubFactory = hubFactory;
         }
@@ -15,7 +15,7 @@ namespace CardGame.Server.CommonState
         public async Task ChangeSomething()
         {
             var commonStateHub = _hubFactory();
-            await commonStateHub.SendChanged1();
+            await commonStateHub.Call("changed", new CommonStateChanged {StateId = "two"});
         }
     }
 }

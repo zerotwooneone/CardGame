@@ -1,10 +1,9 @@
 ﻿using System;
-using System.Security.Principal;
 using System.Threading.Tasks;
-using CardGame.Abstractions.Client;
+using CardGame.CommonModel.Client;
 using Microsoft.AspNetCore.SignalR;
 
-namespace CardGame.Server.Client
+namespace CardGame.Application.Client
 {
     public class ClientHub : Hub
     {

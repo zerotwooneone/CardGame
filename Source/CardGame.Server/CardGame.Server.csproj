@@ -25,7 +25,10 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\CardGame.Abstractions\CardGame.Abstractions.csproj" />
+    <ProjectReference Include="..\CardGame.Abstractions\CardGame.CommonModel.csproj" />
+    <ProjectReference Include="..\CardGame.Application\CardGame.Application.csproj" />
+    <ProjectReference Include="..\CardGame.Utils.Abstractions\CardGame.Utils.Abstractions.csproj" />
+    <ProjectReference Include="..\CardGame.Utils\CardGame.Utils.csproj" />
   </ItemGroup>
 
   <Target Name="DebugEnsureNodeEnv" BeforeTargets="Build" Condition=" '$(Configuration)' == 'Debug' And !Exists('$(SpaRoot)node_modules') ">
