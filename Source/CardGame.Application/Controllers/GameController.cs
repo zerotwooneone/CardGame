@@ -15,7 +15,6 @@ namespace CardGame.Application.Controllers
         private readonly ILogger<GameController> _logger;
         private readonly IGameRepository _gameRepository;
         private readonly IGameConverter _gameConverter;
-        private readonly ICommonStateModelFactory _commonStateModelFactory;
 
         public GameController(ILogger<GameController> logger,
             IGameRepository gameRepository,
