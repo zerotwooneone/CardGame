@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Reactive.Linq;
 using System.Reactive.Subjects;
 using System.Threading;
@@ -52,14 +53,32 @@ namespace CardGame.Utils.Bus
                 Topic = topic
             });
         }
-
-        public Task<TResponse> Request<TRequest, TResponse>(string service, 
-            string method, 
-            string responseTopic,
+        private static readonly IReadOnlyDictionary<string, RequestRegistration> RequestRegistry = new Dictionary<string, RequestRegistration>
+        {
+            {"CardGame.Domain.Abstractions.Game.IGameService:NextRound", new RequestRegistration
+                {
+                    Service = "CardGame.Domain.Abstractions.Game.IGameService", 
+                    Method = "NextRound", 
+                    ResponseTopic = "RoundStarted"
+                }
+            },
+            {"CardGame.Domain.Abstractions.Game.IPlayService:Play", new RequestRegistration
+                {
+                    Service = "CardGame.Domain.Abstractions.Game.IPlayService", 
+                    Method = "Play", 
+                    ResponseTopic = "CardPlayed"
+                }
+            }
+        };
+        public Task<TResponse> Request<TRequest, TResponse>(string requestTopic,
             Guid correlationId,
             TRequest value,
             CancellationToken cancellationToken = default)
         {
+            if (!RequestRegistry.TryGetValue(requestTopic, out var registration))
+            {
+                throw new ArgumentException($"request topic not found: {requestTopic}", nameof(requestTopic));
+            }
             var serviceResponseTimeout = TimeSpan.FromMinutes(1); //todo: make this configurable
             var timeoutSource = new CancellationTokenSource(serviceResponseTimeout);
             var cts = CancellationTokenSource.CreateLinkedTokenSource(timeoutSource.Token, cancellationToken);
@@ -74,8 +93,7 @@ namespace CardGame.Utils.Bus
                 }
             });
             
-            var converted = CreateConvertedObservable<TResponse>(responseTopic);
-            
+            var converted = CreateConvertedObservable<TResponse>(registration.ResponseTopic);
 
             void OnNext(TResponse response)
             {
@@ -110,8 +128,8 @@ namespace CardGame.Utils.Bus
 
             Publish("ServiceCall", new ServiceCall
             {
-                Service = service,
-                Method = method,
+                Service = registration.Service,
+                Method = registration.Method,
                 Param = value,
             }, correlationId);
 
@@ -145,6 +163,13 @@ namespace CardGame.Utils.Bus
                 .Where(ce => ce.Topic == topic)
                 .Select(Convert);
             return converted;
+        }
+
+        internal class RequestRegistration
+        {
+            public string Service { get; set; }
+            public string Method { get; set; } 
+            public string ResponseTopic { get; set; }
         }
     }
 }

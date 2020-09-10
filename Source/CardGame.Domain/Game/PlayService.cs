@@ -18,7 +18,7 @@ namespace CardGame.Domain.Game
         {
             var correlationId = request.CorrelationId ?? request.EventId;
             //todo fill this out
-            var response = await _bus.Request<NextRoundRequest, RoundStarted>("CardGame.Domain.Abstractions.Game.IGameService", "NextRound", "RoundStarted", request.EventId, new NextRoundRequest
+            var response = await _bus.Request<NextRoundRequest, RoundStarted>("CardGame.Domain.Abstractions.Game.IGameService:NextRound", request.EventId, new NextRoundRequest
             {
                 GameId = request.GameId,
                 CorrelationId = correlationId,

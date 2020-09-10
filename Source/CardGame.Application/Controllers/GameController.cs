@@ -41,7 +41,7 @@ namespace CardGame.Application.Controllers
         public async Task<PlayResponse> Post(string gameId, PlayRequest request)
         {
             var response =
-                await _bus.Request<PlayRequest, PlayResponse>("CardGame.Domain.Abstractions.Game.IPlayService", "Play", "CardPlayed", request.EventId, request);
+                await _bus.Request<PlayRequest, PlayResponse>("CardGame.Domain.Abstractions.Game.IPlayService:Play", request.EventId, request);
             return response;
         }
     }

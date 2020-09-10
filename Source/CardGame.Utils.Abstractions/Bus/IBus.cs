@@ -7,9 +7,7 @@ namespace CardGame.Utils.Abstractions.Bus
     public interface IBus
     {
         void Publish<T>(string topic, T value, Guid correlationId = default, Guid eventId = default);
-        Task<TResponse> Request<TRequest, TResponse>(string service, 
-            string method,  
-            string responseTopic,
+        Task<TResponse> Request<TRequest, TResponse>(string requestTopic,
             Guid correlationId,
             TRequest value, 
             CancellationToken cancellationToken = default);
