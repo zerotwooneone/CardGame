@@ -31,6 +31,10 @@ namespace CardGame.Utils.Bus
             Guid correlationId = default, 
             Guid eventId = default)
         {
+            if (!_eventConverter.CanConvert(topic))
+            {
+                throw new Exception($"topic not registered:{topic}");
+            }
             if (eventId == default(Guid))
             {
                 eventId = Guid.NewGuid();
@@ -126,6 +130,10 @@ namespace CardGame.Utils.Bus
 
         private IObservable<T> CreateConvertedObservable<T>(string topic)
         {
+            if (!_eventConverter.CanConvert(topic))
+            {
+                throw new Exception($"topic not registered:{topic}");
+            }
             T Convert(ICommonEvent commonEvent)
             {
                 var obj = _eventConverter.GetObject<T>(topic, commonEvent.Values, commonEvent.EventId,

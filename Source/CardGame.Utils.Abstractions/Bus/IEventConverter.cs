@@ -10,5 +10,7 @@ namespace CardGame.Utils.Abstractions.Bus
             IReadOnlyDictionary<string, string> commonEventValues, 
             Guid eventId, 
             Guid? correlationId);
+
+        bool CanConvert(string topic);
     }
 }

@@ -36,6 +36,11 @@ namespace CardGame.Utils.Bus
             return registration.GetType<T>(commonEventValues, eventId, correlationId);
         }
 
+        public bool CanConvert(string topic)
+        {
+            return Registry.ContainsKey(topic);
+        }
+
         internal class Registration
         {
             public Type EventType { get; set; }
