@@ -5,8 +5,9 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\CardGame.Abstractions\CardGame.CommonModel.csproj" />
+    <ProjectReference Include="..\CardGame.Domain.Abstractions\CardGame.Domain.Abstractions.csproj" />
     <ProjectReference Include="..\CardGame.Utils.Abstractions\CardGame.Utils.Abstractions.csproj" />
+    <ProjectReference Include="..\CardGame.Utils\CardGame.Utils.csproj" />
   </ItemGroup>
 
 </Project>

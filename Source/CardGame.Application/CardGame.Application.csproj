@@ -13,6 +13,11 @@
   <ItemGroup>
     <ProjectReference Include="..\CardGame.Abstractions\CardGame.CommonModel.csproj" />
     <ProjectReference Include="..\CardGame.Domain.Abstractions\CardGame.Domain.Abstractions.csproj" />
+    <ProjectReference Include="..\CardGame.Domain\CardGame.Domain.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Folder Include="Game\" />
   </ItemGroup>
 
 </Project>

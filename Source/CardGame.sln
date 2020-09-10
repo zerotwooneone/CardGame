@@ -20,6 +20,8 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "CardGame.Application", "Car
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "CardGame.Domain.Abstractions", "CardGame.Domain.Abstractions\CardGame.Domain.Abstractions.csproj", "{6F184408-45CE-470A-8B1D-82867B30BCCE}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CardGame.Domain", "CardGame.Domain\CardGame.Domain.csproj", "{61F87E5A-7097-406E-8716-8C8E8B90CF6F}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -50,6 +52,10 @@ Global
 		{6F184408-45CE-470A-8B1D-82867B30BCCE}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{6F184408-45CE-470A-8B1D-82867B30BCCE}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{6F184408-45CE-470A-8B1D-82867B30BCCE}.Release|Any CPU.Build.0 = Release|Any CPU
+		{61F87E5A-7097-406E-8716-8C8E8B90CF6F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{61F87E5A-7097-406E-8716-8C8E8B90CF6F}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{61F87E5A-7097-406E-8716-8C8E8B90CF6F}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{61F87E5A-7097-406E-8716-8C8E8B90CF6F}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
