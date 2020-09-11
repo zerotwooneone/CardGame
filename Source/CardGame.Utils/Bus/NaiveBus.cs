@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Reactive;
 using System.Reactive.Linq;
 using System.Reactive.Subjects;
 using System.Threading;
@@ -12,6 +13,7 @@ namespace CardGame.Utils.Bus
     public class NaiveBus: IBus
     {
         private readonly ISubject<ICommonEvent> _eventSubject;
+        private readonly IServiceCallRouter _serviceCallRouter;
         private readonly IEventConverter _eventConverter;
 
         public NaiveBus(ISubject<ICommonEvent> eventSubject,
@@ -19,14 +21,30 @@ namespace CardGame.Utils.Bus
             IEventConverter eventConverter)
         {
             _eventSubject = eventSubject;
+            _serviceCallRouter = serviceCallRouter;
             _eventConverter = eventConverter;
 
             //todo: register service calls somewhere else
-            var serviceCallSubscription = Subscribe<ServiceCall>("ServiceCall", sc =>
-            {
-                serviceCallRouter.Route(sc);
-            });
+            var converted = CreateConvertedObservable<ServiceCall>("ServiceCall");
+            var handled = converted.SelectMany(OnServiceCall);
+            handled.Subscribe();
         }
+
+        private async Task<Unit> OnServiceCall(ServiceCall sc)
+        {
+            //todo: need to handle errors in the observable
+            var task = _serviceCallRouter.Route(sc);
+            try
+            {
+                await task.ConfigureAwait(false);
+            }
+            catch (Exception e)
+            {
+                Publish("ServiceCallFailed", ServiceCallFailed.Factory(sc, task.Exception), sc.CorrelationId);
+            }
+            return Unit.Default;
+        }
+
         public void Publish<T>(string topic, 
             T obj, 
             Guid correlationId = default, 
@@ -36,7 +54,7 @@ namespace CardGame.Utils.Bus
             {
                 throw new Exception($"topic not registered:{topic}");
             }
-            if (eventId == default(Guid))
+            if (eventId == default)
             {
                 eventId = Guid.NewGuid();
             }
@@ -126,12 +144,23 @@ namespace CardGame.Utils.Bus
                 .Take(1)
                 .Subscribe(OnNext, OnCompleted, token);
 
+            var publishId = Guid.NewGuid();
+
+            var failObservable = CreateConvertedObservable<ServiceCallFailed>("ServiceCallFailed")
+                .Where(sc => sc.ServiceCallEventId == publishId && sc.CorrelationId == correlationId)
+                .Take(1);
+            failObservable.Subscribe(sc => tcs.TrySetException(new Exception("ServiceCallFailed", new Exception(sc.Exception))));
+
             Publish("ServiceCall", new ServiceCall
-            {
-                Service = registration.Service,
-                Method = registration.Method,
-                Param = value,
-            }, correlationId);
+                {
+                    Service = registration.Service,
+                    Method = registration.Method,
+                    Param = value,
+                    CorrelationId = correlationId,
+                    EventId = publishId
+                }, 
+                correlationId: correlationId,
+                eventId: publishId);
 
             return tcs.Task;
         }

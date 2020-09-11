@@ -24,7 +24,12 @@ namespace CardGame.Application.Bus
             
             var method = serviceType.GetMethod(serviceCall.Method);
             var result = method.Invoke(service, new object[]{serviceCall.Param});
-            //todo: need to handle tasks here
+            
+            var task = result as Task;
+            if (task != null)
+            {
+                await task;
+            }
         }
     }
 }
