@@ -30,10 +30,10 @@ namespace CardGame.Application.Controllers
         }
 
         [HttpGet]
-        public async Task<Game> Get([FromQuery]string gameId)
+        public async Task<CommonKnowledgeGame> Get([FromQuery]string gameId)
         {
             var gameDao = await _gameDal.GetById(gameId).ConfigureAwait(false);
-            return _gameConverter.ConvertGame(gameDao);
+            return _gameConverter.ConvertToCommonKnowledgeGame(gameDao);
         }
 
         [HttpPost]

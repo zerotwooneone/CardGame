@@ -11,24 +11,25 @@ namespace CardGame.Domain.Game
 {
     public class Game : Entity<GameId>
     {
-        public IEnumerable<PlayerId> Players { get; }
+        public IEnumerable<Player> Players { get; }
         public Round.Round Round { get; protected set; }
 
         protected Game(GameId id,
-            IEnumerable<PlayerId> players,
+            IEnumerable<Player> players,
             Round.Round round) : base(id)
         {
             Players = players;
             Round = round;
         }
 
-        public static FactoryResult<Game> Factory(GameId id,
-            IEnumerable<PlayerId> players,
+        public static FactoryResult<Game> Factory(Guid id,
+            IEnumerable<Player> players,
             Round.Round round)
         {
-            if (id is null)
+            var idResult = GameId.Factory(id);
+            if (idResult.IsError)
             {
-                return FactoryResult<Game>.Error("Id is required");
+                return FactoryResult<Game>.Error("invalid id");
             }
 
             if (round is null)
@@ -36,11 +37,12 @@ namespace CardGame.Domain.Game
                 return FactoryResult<Game>.Error("Round is required");
             }
 
-            if (players.IsNullOrEmpty())
+            var pa = players as Player[] ?? players.ToArray();
+            if (pa.IsNullOrEmpty())
             {
                 return FactoryResult<Game>.Error("players are required");
             }
-            var ps = players.Distinct().ToArray();
+            var ps = pa.Distinct().ToArray();
             const int playerMin = 2;
             const int playerMax = 4;
             if (ps.Length < playerMin || ps.Length > playerMax)
@@ -48,13 +50,13 @@ namespace CardGame.Domain.Game
                 return FactoryResult<Game>.Error($"player count must be between {playerMin} and {playerMax} inclusive");
             }
 
-            return FactoryResult<Game>.Success(new Game(id, ps, round));
+            return FactoryResult<Game>.Success(new Game(idResult.Value, ps, round));
         }
 
         public Task NextRound(PlayerId firstPlayer)
         {
             //todo: check out why IEnumerable.Contains does not work
-            if (Players.FirstOrDefault(p => p.Equals(firstPlayer)) is null)
+            if (Players.FirstOrDefault(p => p.Id.Equals(firstPlayer)) is null)
             {
                 throw new Exception("Player does not exist in game");
             }

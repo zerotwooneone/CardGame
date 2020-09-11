@@ -19,7 +19,15 @@ namespace CardGame.Application.DTO
             Player1 = "9b644228-6c7e-4caa-becf-89e093ee299f",
             Player2 = "5e96fafb-83b2-4e72-8afa-0e6a8f12345f",
             Player3 = null,
-            Player4 = null
+            Player4 = null,
+            Player1Score = 1,
+            Player2Score = 3,
+            Player3Score = null,
+            Player4Score = null,
+            Player1Hand = "10",
+            Player2Hand = "20",
+            Player3Hand = null,
+            Player4Hand = null,
         };
         public Task<GameDao> GetById(string id)
         {

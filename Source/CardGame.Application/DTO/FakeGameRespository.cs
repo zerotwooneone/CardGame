@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using CardGame.Domain.Abstractions.Game;
@@ -14,7 +15,7 @@ namespace CardGame.Application.DTO
         private readonly IGameConverter _gameConverter;
         
         //todo: replace this hack
-        private Domain.Game.Game _game;
+        private static Game _game;
 
         public FakeGameRespository(IGameDal gameDal,
             IGameConverter gameConverter)
@@ -22,18 +23,19 @@ namespace CardGame.Application.DTO
             _gameDal = gameDal;
             _gameConverter = gameConverter;
         }
-        public async Task<Domain.Game.Game> GetById(GameId id)
+        public async Task<Game> GetById(GameId id)
         {
-            return Convert(await _gameDal.GetById(id.ToString()));
+            var gameDao = await _gameDal.GetById(id.ToString());
+            return Convert(gameDao);
         }
 
-        private Domain.Game.Game Convert(GameDao gameDao)
+        private Game Convert(GameDao gameDao)
         {
             if (_game is null)
             {
-                var converted = _gameConverter.ConvertGame(gameDao);
-                _game = Domain.Game.Game.Factory(GameId.Factory(Guid.Parse(converted.Id)).Value,
-                    converted.Players.Select(p => PlayerId.Factory(Guid.Parse(p)).Value),
+                var converted = _gameConverter.ConvertToCommonKnowledgeGame(gameDao);
+                _game = Game.Factory(Guid.Parse(converted.Id),
+                    ConvertPlayers(gameDao),
                     Domain.Round.Round.Factory(int.Parse(converted.Round.Id),
                         Domain.Round.Turn.Factory(int.Parse(converted.Round.Turn.Id),
                             PlayerId.Factory(Guid.Parse(converted.Round.Turn.CurrentPlayer)).Value).Value,
@@ -46,7 +48,28 @@ namespace CardGame.Application.DTO
             return _game;
         }
 
-        public async Task SetById(Domain.Game.Game game)
+        private IEnumerable<Player> ConvertPlayers(GameDao gameDao)
+        {
+            var p = new[]
+            {
+                new {PlayerId = gameDao.Player1, Score = (int?) gameDao.Player1Score, Hand = gameDao.Player1Hand},
+                new {PlayerId = gameDao.Player2, Score = (int?) gameDao.Player2Score, Hand = gameDao.Player2Hand},
+                new {PlayerId = gameDao.Player3, Score = gameDao.Player3Score, Hand = gameDao.Player3Hand},
+                new {PlayerId = gameDao.Player4, Score = gameDao.Player4Score, Hand = gameDao.Player4Hand}
+            };
+            return p
+                .Select(po =>
+                {
+                    if (string.IsNullOrWhiteSpace(po.PlayerId)) return null;
+                    //todo: maybe handle converting hands
+                    var player = Player.Factory(Guid.Parse(po.PlayerId), Hand.Factory().Value,
+                        Score.Factory(po.Score ?? 0).Value).Value;
+                    return player;
+                })
+                .Where(p => p != null);
+        }
+
+        public async Task SetById(Game game)
         {
             _game = game;
         }

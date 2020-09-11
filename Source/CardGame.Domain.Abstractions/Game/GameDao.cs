@@ -17,5 +17,15 @@ namespace CardGame.Domain.Abstractions.Game
         public string TurnId { get; set; }
         public string CurrentPlayer { get; set; }
         public IEnumerable<string> Discard { get; set; }
+        public int Player1Score { get; set; }
+        public int Player2Score { get; set; }
+        public int? Player3Score { get; set; }
+        public int? Player4Score { get; set; }
+        public string Player1Hand { get; set; }
+        public string Player2Hand { get; set; }
+        public string Player3Hand { get; set; }
+        public string Player4Hand { get; set; }
     }
+
+
 }

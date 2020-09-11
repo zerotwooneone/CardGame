@@ -5,9 +5,9 @@ namespace CardGame.Application.DTO
 {
     public class GameConverter : IGameConverter
     {
-        public Game ConvertGame(GameDao gameDao)
+        public CommonKnowledgeGame ConvertToCommonKnowledgeGame(GameDao gameDao)
         {
-            return new Game
+            return new CommonKnowledgeGame
             {
                 Id = gameDao.Id,
                 Players = (new[] { gameDao.Player1, gameDao.Player2, gameDao.Player3, gameDao.Player4 }).Where(p => p != null),

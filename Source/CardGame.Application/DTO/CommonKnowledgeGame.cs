@@ -2,7 +2,7 @@ using System.Collections.Generic;
 
 namespace CardGame.Application.DTO
 {
-    public class Game
+    public class CommonKnowledgeGame
     {
         public string Id { get; set; }
         public IEnumerable<string> Players { get; set; }

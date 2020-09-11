@@ -4,6 +4,6 @@ namespace CardGame.Application.DTO
 {
     public interface IGameConverter
     {
-        Game ConvertGame(GameDao gameDao);
+        CommonKnowledgeGame ConvertToCommonKnowledgeGame(GameDao gameDao);
     }
 }
