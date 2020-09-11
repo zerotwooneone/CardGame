@@ -38,11 +38,19 @@ namespace CardGame.Application.Controllers
 
         [HttpPost]
         [Route("{gameId}/Play")]
-        public async Task<PlayResponse> Post(string gameId, PlayRequest request)
+        public async Task<ActionResult> Post(string gameId, PlayRequest request)
         {
+            //todo: use separate model for controller param from service param
+            if (!Guid.TryParse(gameId, out var gid)) return new BadRequestResult();
+            if (request.GameId != gid)
+            {
+                _logger.LogWarning($"Url Game Id does not match request game id url:{gameId} request:{request.GameId}");
+            }
+            request.GameId = gid;
+            
             var response =
                 await _bus.Request<PlayRequest, PlayResponse>("CardGame.Domain.Abstractions.Game.IPlayService:Play", request.EventId, request);
-            return response;
+            return new JsonResult(response);
         }
     }
 }
