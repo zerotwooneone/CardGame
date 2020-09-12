@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Reactive;
 using System.Reactive.Linq;
 using System.Reactive.Subjects;
@@ -15,14 +14,17 @@ namespace CardGame.Utils.Bus
         private readonly ISubject<ICommonEvent> _eventSubject;
         private readonly IServiceCallRouter _serviceCallRouter;
         private readonly IEventConverter _eventConverter;
+        private readonly IResponseRegistry _responseRegistry;
 
         public NaiveBus(ISubject<ICommonEvent> eventSubject,
             IServiceCallRouter serviceCallRouter, 
-            IEventConverter eventConverter)
+            IEventConverter eventConverter,
+            IResponseRegistry responseRegistry)
         {
             _eventSubject = eventSubject;
             _serviceCallRouter = serviceCallRouter;
             _eventConverter = eventConverter;
+            _responseRegistry = responseRegistry;
 
             //todo: register service calls somewhere else
             var converted = CreateConvertedObservable<ServiceCall>("ServiceCall");
@@ -38,15 +40,35 @@ namespace CardGame.Utils.Bus
             {
                 await task.ConfigureAwait(false);
             }
-            catch (Exception e)
+            catch
             {
                 Publish("ServiceCallFailed", ServiceCallFailed.Factory(sc, task.Exception), sc.CorrelationId);
+            }
+            ResponseRegistration responseRegistration = null;
+            try
+            {
+                if (_responseRegistry.ResponseRegistry.TryGetValue(sc.RequestTopic, out responseRegistration))
+                {
+                    var taskType = task.GetType();
+                    if (taskType.IsGenericType)
+                    {
+                        var result = taskType.GetProperty("Result")?.GetValue(task);
+                        //danger: result may be Task<VoidTaskResult>, which should still be treated as not having a result
+                        //todo: figure out how we want to handle service results. Should services be REQUIRED to publish a response? or should they just return their response?
+                        //Publish(responseRegistration.ResponseTopic, result, sc.CorrelationId);
+                    }
+                    //todo: handle more service return types
+                }
+            }
+            catch (Exception e)
+            {
+                Publish("ServiceCallFailed", ServiceCallFailed.Factory(sc, e, responseRegistration?.ServiceType.ToString(), responseRegistration?.Method), sc.CorrelationId);
             }
             return Unit.Default;
         }
 
-        public void Publish<T>(string topic, 
-            T obj, 
+        public void Publish(string topic, 
+            object obj, 
             Guid correlationId = default, 
             Guid eventId = default)
         {
@@ -71,29 +93,12 @@ namespace CardGame.Utils.Bus
                 Topic = topic
             });
         }
-        private static readonly IReadOnlyDictionary<string, RequestRegistration> RequestRegistry = new Dictionary<string, RequestRegistration>
-        {
-            {"CardGame.Domain.Abstractions.Game.IGameService:NextRound", new RequestRegistration
-                {
-                    Service = "CardGame.Domain.Abstractions.Game.IGameService", 
-                    Method = "NextRound", 
-                    ResponseTopic = "RoundStarted"
-                }
-            },
-            {"CardGame.Domain.Abstractions.Game.IPlayService:Play", new RequestRegistration
-                {
-                    Service = "CardGame.Domain.Abstractions.Game.IPlayService", 
-                    Method = "Play", 
-                    ResponseTopic = "CardPlayed"
-                }
-            }
-        };
         public Task<TResponse> Request<TRequest, TResponse>(string requestTopic,
             Guid correlationId,
             TRequest value,
             CancellationToken cancellationToken = default)
         {
-            if (!RequestRegistry.TryGetValue(requestTopic, out var registration))
+            if (!_responseRegistry.ResponseRegistry.TryGetValue(requestTopic, out var responseRegistration))
             {
                 throw new ArgumentException($"request topic not found: {requestTopic}", nameof(requestTopic));
             }
@@ -110,8 +115,8 @@ namespace CardGame.Utils.Bus
                     tcs.SetCanceled();
                 }
             });
-            
-            var converted = CreateConvertedObservable<TResponse>(registration.ResponseTopic);
+
+            var converted = CreateConvertedObservable<TResponse>(responseRegistration.ResponseTopic);
 
             void OnNext(TResponse response)
             {
@@ -153,11 +158,10 @@ namespace CardGame.Utils.Bus
 
             Publish("ServiceCall", new ServiceCall
                 {
-                    Service = registration.Service,
-                    Method = registration.Method,
+                    RequestTopic = requestTopic,
                     Param = value,
                     CorrelationId = correlationId,
-                    EventId = publishId
+                    EventId = publishId,
                 }, 
                 correlationId: correlationId,
                 eventId: publishId);
@@ -192,13 +196,6 @@ namespace CardGame.Utils.Bus
                 .Where(ce => ce.Topic == topic)
                 .Select(Convert);
             return converted;
-        }
-
-        internal class RequestRegistration
-        {
-            public string Service { get; set; }
-            public string Method { get; set; } 
-            public string ResponseTopic { get; set; }
         }
     }
 }

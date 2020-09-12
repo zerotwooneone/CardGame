@@ -1,6 +1,4 @@
-﻿using System;
-using System.Linq;
-using System.Threading.Tasks;
+﻿using System.Threading.Tasks;
 using CardGame.CommonModel.Bus;
 using CardGame.Utils.Abstractions.Bus;
 
@@ -8,27 +6,29 @@ namespace CardGame.Application.Bus
 {
     public class ServiceCallRouter : IServiceCallRouter
     {
-        private readonly IServiceProvider _serviceProvider;
+        private readonly IResponseRegistry _responseRegistry;
 
-        public ServiceCallRouter(IServiceProvider serviceProvider)
+        public ServiceCallRouter(IResponseRegistry responseRegistry)
         {
-            _serviceProvider = serviceProvider;
+            _responseRegistry = responseRegistry;
         }
-        public async Task Route(ServiceCall serviceCall)
+        public Task Route(ServiceCall serviceCall)
         {
-            var serviceType = AppDomain.CurrentDomain
-                .GetAssemblies()
-                .Select(a => a.GetType(serviceCall.Service))
-                .FirstOrDefault(t => t != null);
-            var service = _serviceProvider.GetService(serviceType);
-            
-            var method = serviceType.GetMethod(serviceCall.Method);
+            var responseRegistration = _responseRegistry.ResponseRegistry[serviceCall.RequestTopic];
+            var serviceType = responseRegistration.ServiceType;
+            var service = responseRegistration.Resolve();
+
+            var method = serviceType.GetMethod(responseRegistration.Method);
             var result = method.Invoke(service, new object[]{serviceCall.Param});
             
             var task = result as Task;
             if (task != null)
             {
-                await task;
+                return task;
+            }
+            else
+            {
+                return Task.FromResult(result);
             }
         }
     }
