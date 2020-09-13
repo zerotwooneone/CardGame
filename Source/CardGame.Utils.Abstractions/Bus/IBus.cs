@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Threading;
 using System.Threading.Tasks;
+using CardGame.CommonModel.Bus;
 
 namespace CardGame.Utils.Abstractions.Bus
 {
@@ -28,7 +29,7 @@ namespace CardGame.Utils.Abstractions.Bus
         Task<TResponse> Request<TRequest, TResponse>(string requestTopic,
             Guid correlationId,
             TRequest value, 
-            CancellationToken cancellationToken = default);
+            CancellationToken cancellationToken = default) where TRequest: IRequest;
         /// <summary>
         /// Register a handler method which will be called each time a publish is made to the topic
         /// </summary>

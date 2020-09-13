@@ -16,21 +16,21 @@ namespace CardGame.Domain.Game
         }
         public async Task Play(PlayRequest request)
         {
-            var correlationId = request.CorrelationId ?? request.EventId;
             //todo fill this out
-            var response = await _bus.Request<NextRoundRequest, RoundStarted>("CardGame.Domain.Abstractions.Game.IGameService:NextRound", request.EventId, new NextRoundRequest
-            {
-                GameId = request.GameId,
-                CorrelationId = correlationId,
-                EventId = Guid.NewGuid(),
-                WinningPlayer = request.PlayerId
-            });
+            var response = await _bus.Request<NextRoundRequest, RoundStarted>("CardGame.Domain.Abstractions.Game.IGameService:NextRound", 
+                correlationId: request.CorrelationId, 
+                new NextRoundRequest
+                {
+                    GameId = request.GameId,
+                    CorrelationId = request.CorrelationId,
+                    WinningPlayer = request.PlayerId
+                });
             _bus.Publish("CardPlayed", new PlayResponse
             {
-                CorrelationId = correlationId,
+                CorrelationId = request.CorrelationId,
                 EventId = Guid.NewGuid(),
             },
-                correlationId);
+                request.CorrelationId);
         }
     }
 }

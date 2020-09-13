@@ -46,10 +46,15 @@ namespace CardGame.Application.Controllers
             {
                 _logger.LogWarning($"Url Game Id does not match request game id url:{gameId} request:{request.GameId}");
             }
+
+            if (request.CorrelationId == default)
+            {
+                request.CorrelationId = Guid.NewGuid();
+            }
             request.GameId = gid;
             
             var response =
-                await _bus.Request<PlayRequest, PlayResponse>("CardGame.Domain.Abstractions.Game.IPlayService:Play", request.EventId, request);
+                await _bus.Request<PlayRequest, PlayResponse>("CardGame.Domain.Abstractions.Game.IPlayService:Play", correlationId: request.CorrelationId, request);
             return new JsonResult(response);
         }
     }

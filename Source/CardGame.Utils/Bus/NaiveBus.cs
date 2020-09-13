@@ -54,7 +54,7 @@ namespace CardGame.Utils.Bus
         public Task<TResponse> Request<TRequest, TResponse>(string requestTopic,
             Guid correlationId,
             TRequest value,
-            CancellationToken cancellationToken = default)
+            CancellationToken cancellationToken = default) where TRequest: IRequest
         {
             if (!_responseRegistry.ResponseRegistry.TryGetValue(requestTopic, out var responseRegistration))
             {
