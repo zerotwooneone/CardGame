@@ -5,6 +5,6 @@ namespace CardGame.Utils.Abstractions.Bus
 {
     public interface IServiceCallRouter
     {
-        Task Route(ServiceCall serviceCall);
+        void Configure();
     }
 }

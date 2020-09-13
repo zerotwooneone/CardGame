@@ -12,59 +12,17 @@ namespace CardGame.Utils.Bus
     public class NaiveBus: IBus
     {
         private readonly ISubject<ICommonEvent> _eventSubject;
-        private readonly IServiceCallRouter _serviceCallRouter;
         private readonly IEventConverter _eventConverter;
         private readonly IResponseRegistry _responseRegistry;
 
         public NaiveBus(ISubject<ICommonEvent> eventSubject,
-            IServiceCallRouter serviceCallRouter, 
             IEventConverter eventConverter,
             IResponseRegistry responseRegistry)
         {
             _eventSubject = eventSubject;
-            _serviceCallRouter = serviceCallRouter;
             _eventConverter = eventConverter;
             _responseRegistry = responseRegistry;
-
-            //todo: register service calls somewhere else
-            var converted = CreateConvertedObservable<ServiceCall>("ServiceCall");
-            var handled = converted.SelectMany(OnServiceCall);
-            handled.Subscribe();
-        }
-
-        private async Task<Unit> OnServiceCall(ServiceCall sc)
-        {
-            //todo: need to handle errors in the observable
-            var task = _serviceCallRouter.Route(sc);
-            try
-            {
-                await task.ConfigureAwait(false);
-            }
-            catch
-            {
-                Publish("ServiceCallFailed", ServiceCallFailed.Factory(sc, task.Exception), sc.CorrelationId);
-            }
-            ResponseRegistration responseRegistration = null;
-            try
-            {
-                if (_responseRegistry.ResponseRegistry.TryGetValue(sc.RequestTopic, out responseRegistration))
-                {
-                    var taskType = task.GetType();
-                    if (taskType.IsGenericType)
-                    {
-                        var result = taskType.GetProperty("Result")?.GetValue(task);
-                        //danger: result may be Task<VoidTaskResult>, which should still be treated as not having a result
-                        //todo: figure out how we want to handle service results. Should services be REQUIRED to publish a response? or should they just return their response?
-                        //Publish(responseRegistration.ResponseTopic, result, sc.CorrelationId);
-                    }
-                    //todo: handle more service return types
-                }
-            }
-            catch (Exception e)
-            {
-                Publish("ServiceCallFailed", ServiceCallFailed.Factory(sc, e, responseRegistration?.ServiceType.ToString(), responseRegistration?.Method), sc.CorrelationId);
-            }
-            return Unit.Default;
+            
         }
 
         public void Publish(string topic, 
@@ -175,6 +133,17 @@ namespace CardGame.Utils.Bus
             var converted = CreateConvertedObservable<T>(topic);
             var subscription = converted 
                 .Subscribe(handler);
+            var result = new SubscriptionWrapper(subscription);
+            return result;
+        }
+
+        public ISubscription Subscribe<T>(string topic, 
+            Func<T, Task> handler)
+        {
+            var converted = CreateConvertedObservable<T>(topic);
+            var subscription = converted 
+                .SelectMany(c => handler(c).ContinueWith(t => Unit.Default)) //we explicitly ignore the return of the handler value here
+                .Subscribe();
             var result = new SubscriptionWrapper(subscription);
             return result;
         }
