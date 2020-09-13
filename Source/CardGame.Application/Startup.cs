@@ -61,6 +61,7 @@ namespace CardGame.Application
                 logger.LogTrace($"Common Event topic:{e.Topic} eventId:{e.EventId} correlationId:{e.CorrelationId} values:{string.Join($",{Environment.NewLine}",e.Values.Select(kvp=>$"{kvp.Key}:{kvp.Value}"))}");
             });
 
+            //todo: move this to a config file
             var requestRegistry = new Dictionary<string, RequestConfiguration>
             {
                 {"CardGame.Domain.Abstractions.Game.IGameService:NextRound", new RequestConfiguration
