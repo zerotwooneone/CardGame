@@ -7,8 +7,7 @@ namespace CardGame.Utils.Bus
 {
     public class RequestRegistry : IRequestRegistryBuilder, IResponseRegistry
     {
-        private IReadOnlyDictionary<string, ResponseRegistration> _responseRegistry;
-        public IReadOnlyDictionary<string, ResponseRegistration> ResponseRegistry => _responseRegistry ?? new Dictionary<string, ResponseRegistration>();
+        public IReadOnlyDictionary<string, ResponseRegistration> ResponseRegistry { get; private set; } = new Dictionary<string, ResponseRegistration>();
 
         public void Configure(IReadOnlyDictionary<string, RequestConfiguration> registry, Func<Type, object> resolve)
         {
@@ -50,7 +49,7 @@ namespace CardGame.Utils.Bus
                 return responseRegistrations;
             });
 
-            _responseRegistry = sr;
+            ResponseRegistry = sr;
         }
 
         private static Type GetTypeFromTypeName(string serviceName)
