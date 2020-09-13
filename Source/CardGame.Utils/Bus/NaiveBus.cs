@@ -51,10 +51,10 @@ namespace CardGame.Utils.Bus
                 Topic = topic
             });
         }
-        public Task<TResponse> Request<TRequest, TResponse>(string requestTopic,
+        public Task<TResponse> Request<TResponse>(string requestTopic,
+            object value,
             Guid correlationId,
-            TRequest value,
-            CancellationToken cancellationToken = default) where TRequest: IRequest
+            CancellationToken cancellationToken = default)
         {
             if (!_responseRegistry.ResponseRegistry.TryGetValue(requestTopic, out var responseRegistration))
             {
@@ -121,7 +121,7 @@ namespace CardGame.Utils.Bus
                     CorrelationId = correlationId,
                     EventId = publishId,
                 }, 
-                correlationId: correlationId,
+                correlationId,
                 eventId: publishId);
 
             return tcs.Task;

@@ -52,7 +52,7 @@ namespace CardGame.Application.Bus
             }
             catch
             {
-                _bus.Publish("ServiceCallFailed", ServiceCallFailed.Factory(sc, task.Exception), sc.CorrelationId);
+                _bus.PublishEvent("ServiceCallFailed", ServiceCallFailed.Factory(sc, task.Exception));
                 return Unit.Default;
             }
             ResponseRegistration responseRegistration = null;
@@ -72,7 +72,7 @@ namespace CardGame.Application.Bus
             }
             catch (Exception e)
             {
-                _bus.Publish("ServiceCallFailed", ServiceCallFailed.Factory(sc, e, responseRegistration?.ServiceType.ToString(), responseRegistration?.Method), sc.CorrelationId);
+                _bus.PublishEvent("ServiceCallFailed", ServiceCallFailed.Factory(sc, e, responseRegistration?.ServiceType.ToString(), responseRegistration?.Method));
             }
             return Unit.Default;
         }

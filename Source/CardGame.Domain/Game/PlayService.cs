@@ -18,19 +18,16 @@ namespace CardGame.Domain.Game
         {
             //todo fill this out
             var response = await _bus.Request<NextRoundRequest, RoundStarted>("CardGame.Domain.Abstractions.Game.IGameService:NextRound", 
-                correlationId: request.CorrelationId, 
                 new NextRoundRequest
                 {
                     GameId = request.GameId,
                     CorrelationId = request.CorrelationId,
                     WinningPlayer = request.PlayerId
                 });
-            _bus.Publish("CardPlayed", new PlayResponse
+            _bus.PublishEvent("CardPlayed", new CardPlayed
             {
                 CorrelationId = request.CorrelationId,
-                EventId = Guid.NewGuid(),
-            },
-                request.CorrelationId);
+            });
         }
     }
 }

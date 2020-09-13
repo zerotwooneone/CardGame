@@ -2,8 +2,12 @@
 
 namespace CardGame.CommonModel.Bus
 {
-    public class ServiceCallFailed : ServiceCall
+    public class ServiceCallFailed: IEvent
     {
+        public object Param { get; set; }
+        public Guid EventId { get; set; }
+        public Guid CorrelationId { get; set; }
+        public string RequestTopic { get; set; }
         public string Exception { get; set; }
         public Guid ServiceCallEventId { get; set; }
         public string Method { get; set; }

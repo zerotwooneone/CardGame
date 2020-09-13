@@ -37,7 +37,8 @@ namespace CardGame.Domain.Game
             await game.NextRound(playerIdResult.Value);
             await _gameRepository.SetById(game);
 
-            _bus.Publish("RoundStarted",new RoundStarted(game.Id.Value, game.Round.Id), correlationId: request.CorrelationId);
+            var roundStarted = new RoundStarted(game.Id.Value, game.Round.Id, request.CorrelationId);
+            _bus.PublishEvent("RoundStarted",roundStarted);
         }
     }
 }

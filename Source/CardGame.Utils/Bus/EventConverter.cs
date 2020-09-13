@@ -12,7 +12,7 @@ namespace CardGame.Utils.Bus
             {"RoundStarted", new JsonRegistration("CardGame.CommonModel.Bus.RoundStarted")},
             {"ServiceCall", new JsonRegistration("CardGame.CommonModel.Bus.ServiceCall")},
             {"ServiceCallFailed", new JsonRegistration("CardGame.CommonModel.Bus.ServiceCallFailed")},
-            {"CardPlayed", new JsonRegistration("CardGame.CommonModel.Bus.PlayResponse")},
+            {"CardPlayed", new JsonRegistration("CardGame.CommonModel.Bus.CardPlayed")},
         };
 
         public IReadOnlyDictionary<string, string> GetValues(string topic, object obj)

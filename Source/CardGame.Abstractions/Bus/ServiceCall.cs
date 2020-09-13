@@ -2,7 +2,7 @@
 
 namespace CardGame.CommonModel.Bus
 {
-    public class ServiceCall
+    public class ServiceCall : IRequest
     {
         public object Param { get; set; }
         public Guid EventId { get; set; }

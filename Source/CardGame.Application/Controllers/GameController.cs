@@ -54,7 +54,7 @@ namespace CardGame.Application.Controllers
             request.GameId = gid;
             
             var response =
-                await _bus.Request<PlayRequest, PlayResponse>("CardGame.Domain.Abstractions.Game.IPlayService:Play", correlationId: request.CorrelationId, request);
+                await _bus.Request<PlayRequest, CardPlayed>("CardGame.Domain.Abstractions.Game.IPlayService:Play", request);
             return new JsonResult(response);
         }
     }

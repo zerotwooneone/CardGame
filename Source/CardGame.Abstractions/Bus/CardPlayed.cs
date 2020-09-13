@@ -2,9 +2,8 @@
 
 namespace CardGame.CommonModel.Bus
 {
-    public class PlayResponse
+    public class CardPlayed: IEvent
     {
         public Guid CorrelationId { get; set; }
-        public Guid EventId { get; set; }
     }
 }
