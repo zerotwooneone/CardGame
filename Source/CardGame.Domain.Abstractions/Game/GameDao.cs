@@ -25,6 +25,10 @@ namespace CardGame.Domain.Abstractions.Game
         public string Player2Hand { get; set; }
         public string Player3Hand { get; set; }
         public string Player4Hand { get; set; }
+        public bool Player1Protected { get; set; }
+        public bool Player2Protected { get; set; }
+        public bool Player3Protected { get; set; }
+        public bool Player4Protected { get; set; }
     }
 
 

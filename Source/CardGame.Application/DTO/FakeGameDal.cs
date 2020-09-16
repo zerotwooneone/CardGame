@@ -28,6 +28,10 @@ namespace CardGame.Application.DTO
             Player2Hand = "20",
             Player3Hand = null,
             Player4Hand = null,
+            Player1Protected = false,
+            Player2Protected = false,
+            Player3Protected = false,
+            Player4Protected = false,
         };
         public Task<GameDao> GetById(string id)
         {

@@ -7,12 +7,14 @@ namespace CardGame.Utils.Bus
 {
     public class EventConverter : IEventConverter
     {
+        //todo: move this to startup and config file
         private static readonly IDictionary<string, Registration> Registry = new Dictionary<string,Registration>
         {
             {"RoundStarted", new JsonRegistration("CardGame.CommonModel.Bus.RoundStarted")},
             {"ServiceCall", new JsonRegistration("CardGame.CommonModel.Bus.ServiceCall")},
             {"ServiceCallFailed", new JsonRegistration("CardGame.CommonModel.Bus.ServiceCallFailed")},
             {"CardPlayed", new JsonRegistration("CardGame.CommonModel.Bus.CardPlayed")},
+            {"TurnChanged", new JsonRegistration("CardGame.CommonModel.Bus.TurnChanged") },
         };
 
         public IReadOnlyDictionary<string, string> GetValues(string topic, object obj)

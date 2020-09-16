@@ -2,7 +2,7 @@
 using CardGame.Utils.Factory;
 using CardGame.Utils.Value;
 
-namespace CardGame.Domain.Game
+namespace CardGame.Domain.Player
 {
     public class PlayerId : StructValue<Guid>, IEquatable<PlayerId>
     {
@@ -14,7 +14,7 @@ namespace CardGame.Domain.Game
         {
             if (Guid.Empty.Equals(id))
             {
-                return FactoryResult<PlayerId>.Error("id is required");
+                return FactoryResult<PlayerId>.Error("player id is required");
             }
             return FactoryResult<PlayerId>.Success(new PlayerId(id));
         }

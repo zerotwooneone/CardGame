@@ -2,36 +2,43 @@
 using System.Collections.Generic;
 using System.Linq;
 using CardGame.Domain.Card;
-using CardGame.Domain.Game;
+using CardGame.Domain.Player;
 using CardGame.Utils.Factory;
+using CardGame.Utils.Validation;
 using CardGame.Utils.Value;
 
 namespace CardGame.Domain.Round
 {
     public class Round : Value, IEquatable<Round>
     {
+        private readonly IEnumerator<PlayerId> _turnOrder;
         public int Id { get; }
-        public IEnumerable<PlayerId> EliminatedPlayers { get; }
+        public IEnumerable<PlayerId> RemainingPlayers { get; }
         public Turn Turn { get; }
-        public DrawDeckCount DrawDeckCount { get; }
+        public Deck Deck { get; }
         public IEnumerable<CardId> Discard { get; }
-        protected Round(int id, IEnumerable<PlayerId> eliminatedPlayers, Turn turn, DrawDeckCount drawDeckCount, IEnumerable<CardId> discard)
+        protected Round(int id, 
+            IEnumerable<PlayerId> remainingPlayers, 
+            Turn turn, Deck deck, 
+            IEnumerable<CardId> discard,
+            IEnumerator<PlayerId> turnOrder)
         {
+            _turnOrder = turnOrder;
             Id = id;
-            EliminatedPlayers = eliminatedPlayers;
+            RemainingPlayers = remainingPlayers;
             Turn = turn;
-            DrawDeckCount = drawDeckCount;
+            Deck = deck;
             Discard = discard;
         }
 
         public override int GetHashCode()
         {
-            var eliminated = EliminatedPlayers.ToArray();
+            var eliminated = RemainingPlayers.ToArray();
             var discard = Discard.ToArray();
             return ((magicAdd * magicFactor) +
                     (Id.GetHashCode() * magicFactor) +
                     (Turn.GetHashCode() * magicFactor) +
-                    (DrawDeckCount.GetHashCode() * magicFactor) +
+                    (Deck.GetHashCode() * magicFactor) +
                     GetHashCode(eliminated) +
                     GetHashCode(discard));
 
@@ -49,22 +56,42 @@ namespace CardGame.Domain.Round
             {
                 return true;
             }
-            var eliminated = EliminatedPlayers.ToArray();
+            var eliminated = RemainingPlayers.ToArray();
             var discard = Discard.ToArray();
 
-            var otherElim = other.EliminatedPlayers.ToArray();
+            var otherElim = other.RemainingPlayers.ToArray();
             var otherDiscard = other.Discard.ToArray();
             return Id == other.Id &&
                     Turn.Equals(other.Turn) &&
-                    DrawDeckCount.Equals(other.DrawDeckCount) &&
+                    Deck.Equals(other.Deck) &&
                     eliminated.SequenceEqual(otherElim) &&
                     discard.SequenceEqual(otherDiscard);
         }
 
         public static FactoryResult<Round> Factory(int id,
             Turn turn,
-            DrawDeckCount drawDeckCount = null,
-            IEnumerable<PlayerId> eliminated = null,
+            IDeckBuilder deckBuilder,
+            IEnumerable<PlayerId> remaining,
+            Deck deck = null,
+            IEnumerable<CardId> discard = null)
+        {
+            if (deck is null)
+            {
+                var result = Deck.Factory(deckBuilder);
+                if (result.IsError)
+                {
+                    return FactoryResult<Round>.Error("Error creating new deck");
+                }
+
+                deck = result.Value;
+            }
+            return Factory(id, turn, deck, remaining, discard);
+        }
+
+        public static FactoryResult<Round> Factory(int id,
+            Turn turn,
+            Deck deck,
+            IEnumerable<PlayerId> remaining,
             IEnumerable<CardId> discard = null)
         {
             if (turn is null)
@@ -72,35 +99,157 @@ namespace CardGame.Domain.Round
                 return FactoryResult<Round>.Error("Turn is required");
             }
 
-            if (drawDeckCount is null)
+            if (deck is null)
             {
-                var result = DrawDeckCount.Factory();
-                if (result.IsError)
-                {
-                    return FactoryResult<Round>.Error("Error creating new deck");
-                }
-
-                drawDeckCount = result.Value;
+                return FactoryResult<Round>.Error("Deck is required");
             }
-            eliminated = eliminated ?? new PlayerId[0];
+
+            var playerIds = remaining as PlayerId[] ?? remaining.ToArray();
+            const int minPlayers = 2;
+            if (playerIds.Length < minPlayers)
+            {
+                return FactoryResult<Round>.Error($"minimum players {minPlayers} required. but got {playerIds.Count()}");
+            }
             discard = discard ?? new CardId[0];
-            return FactoryResult<Round>.Success(new Round(id, eliminated, turn, drawDeckCount, discard));
+            var turnOrder = GetTurnOrder(playerIds, turn.CurrentPlayer);
+            if (turnOrder == null)
+            {
+                return FactoryResult<Round>.Error($"Could not find player {turn.CurrentPlayer} to start the round");
+            }
+            return FactoryResult<Round>.Success(new Round(id, playerIds, turn, deck, discard, turnOrder));
         }
 
-        public Round GetNext(Turn turn)
+        private static IEnumerator<PlayerId> GetTurnOrder(IEnumerable<PlayerId> playerIds, PlayerId currentPlayer)
         {
-            var result = Factory(Id + 1, turn);
+            var turnOrder = GetTurnOrder(playerIds);
+            turnOrder.MoveNext();
+            const int maxPlayers = 4;
+            for (int i = 0; i < maxPlayers; i++)
+            {
+                if (turnOrder.Current.Equals(currentPlayer))
+                {
+                    return turnOrder;
+                }
+                turnOrder.MoveNext();
+            }
+
+            return null;
+        }
+
+        private static IEnumerator<PlayerId> GetTurnOrder(IEnumerable<PlayerId> playerIds)
+        {
+            while (true)
+            {
+                foreach (var player in playerIds)
+                {
+                    yield return player;
+                }
+            }
+        }
+
+        public bool Ended()
+        {
+            return Deck.IsEmpty() || RemainingPlayers.Count() == 1;
+        }
+
+        public Round NextRound(PlayerId winningPlayer, Notification note)
+        {
+            return NextTurn(note, 1, Id+1, winningPlayer);
+        }
+
+        public Round NextTurn(Notification note)
+        {
+            var nextTurnPlayer = GetNextPlayer();
+            var turnId = Turn.Id + 1;
+
+            return NextTurn(note, turnId, Id, nextTurnPlayer);
+        }
+
+        private PlayerId GetNextPlayer()
+        {
+            _turnOrder.MoveNext();
+            return _turnOrder.Current;
+        }
+
+        private Round NextTurn(Notification note, int turnId, int roundId, PlayerId nextTurnPlayer)
+        {
+            var turnResult = Turn.Factory(turnId, nextTurnPlayer);
+            if (turnResult.IsError)
+            {
+                note.AddError(turnResult.ErrorMessage);
+                return this;
+            }
+
+            note.AddStateChange(nameof(Turn));
+
+            var result = Factory(roundId, turnResult.Value, Deck, RemainingPlayers);
             if (result.IsError)
             {
-                throw new Exception(result.ErrorMessage);
+                note.AddError(result.ErrorMessage);
+                return this;
             }
 
+            note.AddStateChange(nameof(Round));
             return result.Value;
         }
+
         bool IEquatable<Round>.Equals(Round other)
         {
             if (other is null) return false;
             return Equals(other);
+        }
+
+        public bool IsTurn(PlayerId playerId)
+        {
+            return Turn.CurrentPlayer.Equals(playerId);
+        }
+
+        public Round DiscardThis(CardId cardId, Notification note)
+        {
+            var newDiscard = Discard.Append(cardId).ToArray();
+            var result = Factory(Id, Turn, Deck, RemainingPlayers, newDiscard);
+            if (result.IsError)
+            {
+                note.AddError(result.ErrorMessage);
+                return this;
+            }
+
+            note.AddStateChange(nameof(Round));
+            return result.Value;
+        }
+
+        public Round Draw(Notification note, out CardId cardId)
+        {
+            var newDrawDeckCount = Deck.Draw(note, out cardId);
+            var result = Factory(Id, Turn, newDrawDeckCount, RemainingPlayers, Discard);
+            if (result.IsError)
+            {
+                note.AddError(result.ErrorMessage);
+                return this;
+            }
+            note.AddStateChange(nameof(Round));
+            return result.Value;
+        }
+
+        public Round Eliminate(PlayerId targetId, Notification note)
+        {
+            if (RemainingPlayers.Any(e => e.Equals(targetId)))
+            {
+                note.AddError("Player already remaining");
+                return this;
+            }
+            else
+            {
+                var eliminated = RemainingPlayers.Append(targetId);
+                var result = Factory(Id, Turn, Deck, eliminated, Discard);
+                if (result.IsError)
+                {
+                    note.AddError(result.ErrorMessage);
+                    return this;
+                }
+
+                return result.Value;
+            }
         }
     }
 }

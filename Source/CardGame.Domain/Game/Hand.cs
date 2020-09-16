@@ -1,7 +1,9 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using CardGame.Domain.Card;
 using CardGame.Utils.Factory;
+using CardGame.Utils.Validation;
 using CardGame.Utils.Value;
 
 namespace CardGame.Domain.Game
@@ -60,6 +62,72 @@ namespace CardGame.Domain.Game
                 ? ca[1]
                 : null;
             return FactoryResult<Hand>.Success(new Hand(card1, card2, ca));
+        }
+
+        public bool HasCard(CardId cardId)
+        {
+            return cardId.Equals(Card1) || cardId.Equals(Card2);
+        }
+        public bool HasCard(CardStrength cardStrength)
+        {
+            return Cards.Any(c => c.CardValue.Value == cardStrength);
+        }
+
+        public Hand Discard(CardId cardId, Notification note)
+        {
+            if (!HasCard(cardId))
+            {
+                note.AddError($"Hand does not contain card:{cardId}");
+                return this;
+            }
+
+            var cards = Cards.ToArray();
+            const int minCards = 2;
+            if (cards.Length < minCards)
+            {
+                note.AddError($"Cannot discard the last card in hand card:{cardId}");
+            }
+
+            var newCards = cards.Where(c => !c.Equals(cardId));
+            var result = Factory(newCards);
+            if (result.IsError)
+            {
+                note.AddError(result.ErrorMessage);
+                return this;
+            }
+
+            note.AddStateChange(nameof(Hand));
+            return result.Value;
+        }
+
+
+        public Hand Replace(CardId cardId, Notification note)
+        {
+            var result = Factory(new[] {cardId});
+            if (result.IsError)
+            {
+                note.AddError(result.ErrorMessage);
+                return this;
+            }
+            note.AddStateChange(nameof(Hand));
+            return result.Value;
+        }
+
+        public bool IsWeaker(Hand targetHand, Notification note)
+        {
+            if (Card2 != null || targetHand.Card2 != null)
+            {
+                note.AddError("Cant compare hands with more than one card");
+                return false;
+            }
+
+            if (Card1 == null || targetHand.Card1 == null)
+            {
+                note.AddError("Cant compare empty hands");
+                return false;
+            }
+
+            return Card1.IsWeaker(targetHand.Card1, note);
         }
     }
 }

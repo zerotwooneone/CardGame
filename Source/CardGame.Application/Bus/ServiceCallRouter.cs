@@ -23,6 +23,7 @@ namespace CardGame.Application.Bus
             var serviceType = responseRegistration.ServiceType;
             var service = responseRegistration.Resolve();
 
+            //todo: need to check to make sure param type matches method, we dont get an exception when we send the wrong param type
             var method = serviceType.GetMethod(responseRegistration.Method);
             var result = method.Invoke(service, new object[]{serviceCall.Param});
             
@@ -50,9 +51,10 @@ namespace CardGame.Application.Bus
             {
                 await task.ConfigureAwait(false);
             }
-            catch
+            catch(Exception ex)
             {
-                _bus.PublishEvent("ServiceCallFailed", ServiceCallFailed.Factory(sc, task.Exception));
+                //todo: try to get rid of the aggregate exception which might contain a null task.exception
+                _bus.PublishEvent("ServiceCallFailed", ServiceCallFailed.Factory(sc, new AggregateException(task.Exception, ex)));
                 return Unit.Default;
             }
             ResponseRegistration responseRegistration = null;

@@ -5,6 +5,6 @@ namespace CardGame.Domain.Abstractions.Game
 {
     public interface IGameService
     {
-        Task NextRound(NextRoundRequest request);
+        Task Play(PlayRequest request);
     }
 }

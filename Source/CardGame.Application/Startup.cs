@@ -64,20 +64,33 @@ namespace CardGame.Application
             //todo: move this to a config file
             var requestRegistry = new Dictionary<string, RequestConfiguration>
             {
-                {"CardGame.Domain.Abstractions.Game.IGameService:NextRound", new RequestConfiguration
+                //{"CardGame.Domain.Abstractions.Game.IGameService:NextRound", new RequestConfiguration
+                //    (
+                //        "CardGame.Domain.Abstractions.Game.IGameService", 
+                //        "NextRound", 
+                //        "RoundStarted"
+                //    )
+                //},
+                //{"CardGame.Domain.Abstractions.Game.IPlayService:Play", new RequestConfiguration
+                //    (
+                //        "CardGame.Domain.Abstractions.Game.IPlayService", 
+                //        "Play", 
+                //        "CardPlayed"
+                //    )
+                //},
+                //{"CardGame.Domain.Abstractions.Game.IGameService:NextTurn", new RequestConfiguration(
+                //    "CardGame.Domain.Abstractions.Game.IGameService", 
+                //    "NextTurn", 
+                //    "TurnChanged"
+                //    )
+                //},
+                {"CardGame.Domain.Abstractions.Game.IGameService:Play", new RequestConfiguration
                     (
                         "CardGame.Domain.Abstractions.Game.IGameService", 
-                        "NextRound", 
-                        "RoundStarted"
-                    )
-                },
-                {"CardGame.Domain.Abstractions.Game.IPlayService:Play", new RequestConfiguration
-                    (
-                        "CardGame.Domain.Abstractions.Game.IPlayService", 
                         "Play", 
                         "CardPlayed"
                     )
-                }
+                },
             };
 
             object Resolve(Type type)

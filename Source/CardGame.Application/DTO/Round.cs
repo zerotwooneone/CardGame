@@ -7,7 +7,7 @@ namespace CardGame.Application.DTO
         public string Id { get; set; }
         public IEnumerable<string> EliminatedPlayers { get; set; }
         public Turn Turn { get; set; }
-        public int DeckCount { get; set; }
         public IEnumerable<string> Discard { get; set; }
+        public int DeckCount { get; set; }
     }
 }

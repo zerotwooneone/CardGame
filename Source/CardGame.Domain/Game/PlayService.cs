@@ -17,13 +17,26 @@ namespace CardGame.Domain.Game
         public async Task Play(PlayRequest request)
         {
             //todo fill this out
-            var response = await _bus.Request<NextRoundRequest, RoundStarted>("CardGame.Domain.Abstractions.Game.IGameService:NextRound", 
-                new NextRoundRequest
+            
+            //note("fix service method name")
+            var turnResponse = await _bus.Request<NextTurnRequest, TurnChanged>("CardGame.Domain.Abstractions.Game.IGameService:NextTurn",
+                new NextTurnRequest
                 {
-                    GameId = request.GameId,
                     CorrelationId = request.CorrelationId,
-                    WinningPlayer = request.PlayerId
+                    GameId = request.GameId,
                 });
+
+            if (turnResponse.NextRoundFirstPlayer.HasValue)
+            {
+                var response = await _bus.Request<NextRoundRequest, RoundStarted>("CardGame.Domain.Abstractions.Game.IGameService:NextRound", 
+                    new NextRoundRequest
+                    {
+                        GameId = request.GameId,
+                        CorrelationId = request.CorrelationId,
+                        WinningPlayer = turnResponse.NextRoundFirstPlayer.Value
+                    });
+            }
+            
             _bus.PublishEvent("CardPlayed", new CardPlayed
             {
                 CorrelationId = request.CorrelationId,
