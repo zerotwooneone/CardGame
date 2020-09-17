@@ -6,6 +6,7 @@ using CardGame.Domain.Abstractions.Game;
 using CardGame.Utils.Abstractions.Bus;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
+using PlayRequest = CardGame.Application.DTO.PlayRequest;
 
 namespace CardGame.Application.Controllers
 {
@@ -38,24 +39,27 @@ namespace CardGame.Application.Controllers
 
         [HttpPost]
         [Route("{gameId}/Play")]
-        public async Task<ActionResult> Post(string gameId, PlayRequest request)
+        public async Task<ActionResult> Post(Guid gameId, PlayRequest request)
         {
-            //todo: use separate model for controller param from service param
-            if (!Guid.TryParse(gameId, out var gid)) return new BadRequestResult();
-            if (request.GameId != gid)
+            var serviceRequest = new CommonModel.Bus.PlayRequest
             {
-                _logger.LogWarning($"Url Game Id does not match request game id url:{gameId} request:{request.GameId}");
-            }
-
-            if (request.CorrelationId == default)
-            {
-                request.CorrelationId = Guid.NewGuid();
-            }
-            request.GameId = gid;
+                CorrelationId = Guid.NewGuid(),
+                GameId = gameId,
+                CardStrength = request.CardStrength,
+                PlayerId = request.PlayerId,
+                GuessValue = request.GuessValue,
+                TargetId = request.TargetId,
+                CardVarient = request.CardVarient
+            };
             
             var response =
-                await _bus.Request<PlayRequest, CardPlayed>("CardGame.Domain.Abstractions.Game.IGameService:Play", request);
-            return new JsonResult(response);
+                await _bus.Request<CommonModel.Bus.PlayRequest, CardPlayed>("CardGame.Domain.Abstractions.Game.IGameService:Play", serviceRequest);
+            if (string.IsNullOrWhiteSpace(response.ErrorMessage))
+            {
+                return new JsonResult(response);
+            }
+
+            return BadRequest(response.ErrorMessage);
         }
     }
 }
