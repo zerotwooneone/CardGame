@@ -36,9 +36,15 @@ namespace CardGame.Domain.Game
 
             var notification = game.Play(playerId, cardId, targetId, guessValue);
 
+            if (!notification.HasErrors())
+            {
+                await _gameRepository.SetById(game);
+            }
+
             _bus.PublishEvent("CardPlayed", new CardPlayed
             {
                 CorrelationId = request.CorrelationId,
+                ErrorMessage = notification.ErrorMessage()
             });
         }
     }

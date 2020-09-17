@@ -51,7 +51,7 @@ namespace CardGame.Utils.Validation
 
             public override string ToString()
             {
-                return string.Join(Environment.NewLine, Message, Exception.ToString());
+                return string.Join(Environment.NewLine, Message, Exception?.ToString());
             }
         }
 
