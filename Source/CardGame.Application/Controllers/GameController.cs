@@ -62,5 +62,13 @@ namespace CardGame.Application.Controllers
 
             return BadRequest(response.ErrorMessage);
         }
+
+        [HttpGet]
+        [Route("{gameId}/Player/{playerId}")]
+        public async Task<PlayerDto> GetPlayer(Guid gameId, Guid playerId)
+        {
+            var gameDao = await _gameDal.GetById(gameId.ToString()).ConfigureAwait(false);
+            return _gameConverter.ConvertToPlayer(gameDao, playerId);
+        }
     }
 }
