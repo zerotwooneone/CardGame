@@ -1,10 +1,12 @@
-﻿using System;
+﻿using System.Linq;
 using System.Threading.Tasks;
 using CardGame.CommonModel.Bus;
 using CardGame.Domain.Abstractions.Game;
 using CardGame.Domain.Card;
 using CardGame.Domain.Player;
 using CardGame.Utils.Abstractions.Bus;
+using CardGame.Utils.Factory;
+using CardGame.Utils.Validation;
 
 namespace CardGame.Domain.Game
 {
@@ -12,31 +14,57 @@ namespace CardGame.Domain.Game
     {
         private readonly IGameRepository _gameRepository;
         private readonly IBus _bus;
-        private readonly ValidationEngine _validationEngine;
 
         public GameService(IGameRepository gameRepository,
             IBus bus)
         {
             _gameRepository = gameRepository;
             _bus = bus;
-            
-            //todo: interface and inject
-            _validationEngine = new ValidationEngine();
         }
 
         public async Task Play(PlayRequest request)
         {
-            var gameId = _validationEngine.GetGameId(request.GameId);
-            var playerId = _validationEngine.GetPlayerId(request.PlayerId);
-            var targetId = _validationEngine.GetPlayerId(request.TargetId);
-            var cardId = _validationEngine.GetCardId(request.CardStrength, request.CardVarient);
-            var guessValue = _validationEngine.GetCardValue(request.GuessValue);
-            
-            var game = await _gameRepository.GetById(gameId);
+            var note = new Notification();
 
-            var notification = game.Play(playerId, cardId, targetId, guessValue);
+            //todo: reduce duplication and figure out where this validation lives
+            var gid = GameId.Factory(request.GameId);
+            var cardId = CardId.Factory(request.CardStrength,request.CardVarient);
+            var playerId = PlayerId.Factory(request.PlayerId);
+            var targetId = request.TargetId.HasValue
+                ? PlayerId.Factory(request.TargetId.Value)
+                : null;
+            var guessValue = request.GuessValue.HasValue
+                ? CardValue.Factory(request.GuessValue.Value)
+                : null;
+            var results = new FactoryResult[] {gid, cardId, playerId, targetId, guessValue}
+                .Where(r => r != null)
+                .ToArray();
+            var errors = results
+                .Where(r => r.IsError)
+                .ToArray();
 
-            if (!notification.HasErrors())
+            foreach (var error in errors)
+            {
+                note.AddError(error.ErrorMessage);
+            }
+
+            var game = await _gameRepository.GetById(gid.Value);
+
+            if (game is null)
+            {
+                note.AddError($"Game not found {request.GameId}");
+            }
+
+            if (!note.HasErrors())
+            {
+                game.Play(playerId.Value, 
+                    cardId.Value, 
+                    targetId?.Value, 
+                    guessValue?.Value,
+                    note);
+            }
+
+            if (!note.HasErrors())
             {
                 await _gameRepository.SetById(game);
             }
@@ -44,61 +72,8 @@ namespace CardGame.Domain.Game
             _bus.PublishEvent("CardPlayed", new CardPlayed
             {
                 CorrelationId = request.CorrelationId,
-                ErrorMessage = notification.ErrorMessage()
+                ErrorMessage = note.ErrorMessage()
             });
-        }
-    }
-
-    public class ValidationEngine
-    {
-        public GameId GetGameId(Guid id)
-        {
-            var result = GameId.Factory(id);
-            if (result.IsError)
-            {
-                throw new Exception(result.ErrorMessage);
-            }
-
-            return result.Value;
-        }
-
-        public PlayerId GetPlayerId(Guid id)
-        {
-            var result = PlayerId.Factory(id);
-            if (result.IsError)
-            {
-                throw new Exception(result.ErrorMessage);
-            }
-
-            return result.Value;
-        }
-
-        public CardId GetCardId(int cardStrength, int cardVarient)
-        {
-            var valueResult = CardValue.Factory(cardStrength);
-            if (valueResult.IsError)
-            {
-                throw new Exception(valueResult.ErrorMessage);
-            }
-
-            var result = CardId.Factory(valueResult.Value, cardVarient);
-            if (result.IsError)
-            {
-                throw new Exception(result.ErrorMessage);
-            }
-
-            return result.Value;
-        }
-
-        public CardValue GetCardValue(int guessValue)
-        {
-            var result = CardValue.Factory(guessValue);
-            if (result.IsError)
-            {
-                throw new Exception($"invalid card value {guessValue}");
-            }
-
-            return result.Value;
         }
     }
 }

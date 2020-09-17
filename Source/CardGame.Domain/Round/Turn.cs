@@ -2,6 +2,7 @@
 using CardGame.Utils.Factory;
 using CardGame.Utils.Value;
 using System;
+using CardGame.Domain.Abstractions.Game;
 using CardGame.Domain.Player;
 
 namespace CardGame.Domain.Round
@@ -9,8 +10,8 @@ namespace CardGame.Domain.Round
     public class Turn : Value, IEquatable<Turn>
     {
         public int Id { get; }
-        public PlayerId CurrentPlayer { get; }
-        protected Turn(int id, PlayerId currentPlayer)
+        public IPlayerId CurrentPlayer { get; }
+        protected Turn(int id, IPlayerId currentPlayer)
         {
             Id = id;
             CurrentPlayer = currentPlayer;
@@ -26,6 +27,11 @@ namespace CardGame.Domain.Round
         public override bool Equals(object obj)
         {
             var other = obj as Turn;
+            return Equals(other);
+        }
+
+        public bool Equals(Turn other)
+        {
             if (other == null)
             {
                 return false;
@@ -39,7 +45,7 @@ namespace CardGame.Domain.Round
             return Id == other.Id && CurrentPlayer.Equals(other.CurrentPlayer);
         }
 
-        public static FactoryResult<Turn> Factory(int id, PlayerId player)
+        public static FactoryResult<Turn> Factory(int id, IPlayerId player)
         {
             if (id == default)
             {
@@ -51,11 +57,6 @@ namespace CardGame.Domain.Round
                 return FactoryResult<Turn>.Error("Player is required");
             }
             return FactoryResult<Turn>.Success(new Turn(id, player));
-        }
-        bool IEquatable<Turn>.Equals(Turn other)
-        {
-            if (other is null) return false;
-            return Equals(other);
         }
     }
 }

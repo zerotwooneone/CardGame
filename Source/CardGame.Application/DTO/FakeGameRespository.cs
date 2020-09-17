@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using CardGame.Domain.Abstractions.Card;
 using CardGame.Domain.Abstractions.Game;
 using CardGame.Domain.Card;
 using CardGame.Domain.Game;
@@ -24,7 +25,7 @@ namespace CardGame.Application.DTO
             _gameDal = gameDal;
             _gameConverter = gameConverter;
         }
-        public async Task<Game> GetById(GameId id)
+        public async Task<Game> GetById(IGameId id)
         {
             var gameDao = await _gameDal.GetById(id.ToString());
             return Convert(gameDao);

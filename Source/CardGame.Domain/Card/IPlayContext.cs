@@ -1,4 +1,6 @@
-﻿namespace CardGame.Domain.Card
+﻿using CardGame.Domain.Abstractions.Card;
+
+namespace CardGame.Domain.Card
 {
     //todo: move this to abstractions
     public interface IPlayContext
@@ -11,7 +13,7 @@
         void TargetDiscardAndDraw();
         void TradeHandsWithTarget();
         bool IsTargetOtherPlayer();
-        bool GuessIsNot(CardValue cardValue);
+        bool GuessIsNot(ICardValue cardValue);
         bool TargetHandMatchesGuess();
         bool PlayerHandWeaker();
         bool TargetHandWeaker();

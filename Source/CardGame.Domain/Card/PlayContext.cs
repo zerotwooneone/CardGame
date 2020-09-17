@@ -1,4 +1,5 @@
-﻿using CardGame.Utils.Validation;
+﻿using CardGame.Domain.Abstractions.Card;
+using CardGame.Utils.Validation;
 
 namespace CardGame.Domain.Card
 {
@@ -6,7 +7,7 @@ namespace CardGame.Domain.Card
     {
         private readonly Player.Player _player;
         private readonly Player.Player _target;
-        private readonly CardValue _guessValue;
+        private readonly ICardValue _guessValue;
         private readonly Game.Game _game;
         private readonly Notification _note;
         private readonly Card _targetCard;
@@ -14,7 +15,7 @@ namespace CardGame.Domain.Card
 
         public PlayContext(Player.Player player,
             Player.Player target,
-            CardValue guessValue,
+            ICardValue guessValue,
             Game.Game game,
             Card targetCard,
             Notification note)
@@ -72,7 +73,7 @@ namespace CardGame.Domain.Card
             return !_player.Id.Equals(_target.Id);
         }
 
-        public bool GuessIsNot(CardValue cardValue)
+        public bool GuessIsNot(ICardValue cardValue)
         {
             return !_guessValue.Equals(cardValue);
         }

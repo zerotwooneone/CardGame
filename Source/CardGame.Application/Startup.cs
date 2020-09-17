@@ -35,7 +35,6 @@ namespace CardGame.Application
             serviceCollection.AddTransient<IGameConverter, GameConverter>();
             serviceCollection.AddTransient<IGameDal, FakeGameDal>();
             serviceCollection.AddTransient<IGameService, GameService>();
-            serviceCollection.AddTransient<IPlayService, PlayService>();
             serviceCollection.AddTransient<IGameRepository, FakeGameRespository>();
             
             //bus config

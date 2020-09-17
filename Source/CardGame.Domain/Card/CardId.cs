@@ -1,13 +1,14 @@
 ﻿using System;
+using CardGame.Domain.Abstractions.Card;
 using CardGame.Utils.Factory;
 using CardGame.Utils.Validation;
 using CardGame.Utils.Value;
 
 namespace CardGame.Domain.Card
 {
-    public class CardId : Value, IEquatable<CardId>
+    public class CardId : Value, ICardId
     {
-        public CardValue CardValue { get; }
+        public ICardValue CardValue { get; }
         public int Variant { get; }
         protected CardId(CardValue cardValue, int variant)
         {
@@ -28,7 +29,12 @@ namespace CardGame.Domain.Card
 
         public override bool Equals(object obj)
         {
-            var other = obj as CardId;
+            var other = obj as ICardId;
+            return Equals(other);
+        }
+
+        public bool Equals(ICardId other)
+        {
             if (other is null)
             {
                 return false;
@@ -57,17 +63,12 @@ namespace CardGame.Domain.Card
             return FactoryResult<CardId>.Success(new CardId(cardValue, varient));
         } public static FactoryResult<CardId> Factory(CardStrength cardStrength, int varient = default)
         {
-            var result = CardValue.Factory(cardStrength);
+            var result = Domain.Card.CardValue.Factory(cardStrength);
             if (result.IsError)
             {
                 return FactoryResult<CardId>.Error(result.ErrorMessage);
             }
             return FactoryResult<CardId>.Success(new CardId(result.Value, varient));
-        }
-        bool IEquatable<CardId>.Equals(CardId other)
-        {
-            if (other is null) return false;
-            return Equals(other);
         }
 
         public bool IsWeaker(CardId targeCard, Notification note)

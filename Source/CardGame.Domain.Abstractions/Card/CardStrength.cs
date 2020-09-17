@@ -1,4 +1,4 @@
-﻿namespace CardGame.Domain.Card
+﻿namespace CardGame.Domain.Abstractions.Card
 {
     public enum CardStrength {
         Princess = 8,

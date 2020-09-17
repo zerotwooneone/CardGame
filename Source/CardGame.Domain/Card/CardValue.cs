@@ -1,11 +1,12 @@
 ﻿using System;
+using CardGame.Domain.Abstractions.Card;
 using CardGame.Utils.Factory;
 using CardGame.Utils.Validation;
 using CardGame.Utils.Value;
 
 namespace CardGame.Domain.Card
 {
-    public class CardValue : StructValue<CardStrength>, IEquatable<CardValue>
+    public class CardValue : StructValue<CardStrength>, ICardValue
     {
         protected CardValue(CardStrength value) : base(value)
         {
@@ -29,13 +30,13 @@ namespace CardGame.Domain.Card
             var strength = (CardStrength) cardStrength;
             return Factory(strength);
         }
-        bool IEquatable<CardValue>.Equals(CardValue other)
+        public bool Equals(ICardValue other)
         {
             if (other is null) return false;
-            return Equals(other);
+            return base.Equals(other);
         }
 
-        public bool IsWeaker(CardValue targeValue, Notification note)
+        public bool IsWeaker(ICardValue targeValue, Notification note)
         {
             return Value < targeValue.Value;
         }

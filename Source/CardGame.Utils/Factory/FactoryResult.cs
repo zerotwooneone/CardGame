@@ -1,10 +1,8 @@
 ﻿namespace CardGame.Utils.Factory
 {
-    public class FactoryResult<T>
+    public class FactoryResult<T>: FactoryResult 
     {
         public T Value { get; }
-        public string ErrorMessage { get; }
-        public bool IsError { get; }
         protected FactoryResult(T value,
             string errorMessage = default)
         {
@@ -25,5 +23,11 @@
                 : errorMessage;
             return new FactoryResult<T>(default(T), errorMessage);
         }
+    }
+
+    public abstract class FactoryResult
+    {
+        public string ErrorMessage { get; protected set; }
+        public bool IsError { get; protected set; }
     }
 }

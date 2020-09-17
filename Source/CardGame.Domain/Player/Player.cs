@@ -1,4 +1,5 @@
 ﻿using System;
+using CardGame.Domain.Abstractions.Card;
 using CardGame.Domain.Card;
 using CardGame.Domain.Game;
 using CardGame.Utils.Entity;
@@ -34,7 +35,7 @@ namespace CardGame.Domain.Player
             return FactoryResult<Player>.Success(new Player(idResult.Value, hand, score, prot));
         }
 
-        public void Discard(CardId cardId, Notification note)
+        public void Discard(ICardId cardId, Notification note)
         {
             var newHand = Hand.Discard(cardId, note);
             if (Hand.Equals(newHand))

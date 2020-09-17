@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using CardGame.Domain.Abstractions.Card;
+using CardGame.Domain.Abstractions.Game;
 using CardGame.Domain.Card;
 using CardGame.Domain.Player;
 using CardGame.Utils.Factory;
@@ -11,17 +13,17 @@ namespace CardGame.Domain.Round
 {
     public class Round : Value, IEquatable<Round>
     {
-        private readonly IEnumerator<PlayerId> _turnOrder;
+        private readonly IEnumerator<IPlayerId> _turnOrder;
         public int Id { get; }
         public IEnumerable<PlayerId> RemainingPlayers { get; }
         public Turn Turn { get; }
         public Deck Deck { get; }
-        public IEnumerable<CardId> Discard { get; }
+        public IEnumerable<ICardId> Discard { get; }
         protected Round(int id, 
             IEnumerable<PlayerId> remainingPlayers, 
             Turn turn, Deck deck, 
-            IEnumerable<CardId> discard,
-            IEnumerator<PlayerId> turnOrder)
+            IEnumerable<ICardId> discard,
+            IEnumerator<IPlayerId> turnOrder)
         {
             _turnOrder = turnOrder;
             Id = id;
@@ -47,6 +49,11 @@ namespace CardGame.Domain.Round
         public override bool Equals(object obj)
         {
             var other = obj as Round;
+            return Equals(other);
+        }
+
+        public bool Equals(Round other)
+        {
             if (other is null)
             {
                 return false;
@@ -62,10 +69,10 @@ namespace CardGame.Domain.Round
             var otherElim = other.RemainingPlayers.ToArray();
             var otherDiscard = other.Discard.ToArray();
             return Id == other.Id &&
-                    Turn.Equals(other.Turn) &&
-                    Deck.Equals(other.Deck) &&
-                    eliminated.SequenceEqual(otherElim) &&
-                    discard.SequenceEqual(otherDiscard);
+                   Turn.Equals(other.Turn) &&
+                   Deck.Equals(other.Deck) &&
+                   eliminated.SequenceEqual(otherElim) &&
+                   discard.SequenceEqual(otherDiscard);
         }
 
         public static FactoryResult<Round> Factory(int id,
@@ -92,7 +99,7 @@ namespace CardGame.Domain.Round
             Turn turn,
             Deck deck,
             IEnumerable<PlayerId> remaining,
-            IEnumerable<CardId> discard = null)
+            IEnumerable<ICardId> discard = null)
         {
             if (turn is null)
             {
@@ -119,7 +126,7 @@ namespace CardGame.Domain.Round
             return FactoryResult<Round>.Success(new Round(id, playerIds, turn, deck, discard, turnOrder));
         }
 
-        private static IEnumerator<PlayerId> GetTurnOrder(IEnumerable<PlayerId> playerIds, PlayerId currentPlayer)
+        private static IEnumerator<IPlayerId> GetTurnOrder(IEnumerable<IPlayerId> playerIds, IPlayerId currentPlayer)
         {
             var turnOrder = GetTurnOrder(playerIds);
             turnOrder.MoveNext();
@@ -136,7 +143,7 @@ namespace CardGame.Domain.Round
             return null;
         }
 
-        private static IEnumerator<PlayerId> GetTurnOrder(IEnumerable<PlayerId> playerIds)
+        private static IEnumerator<IPlayerId> GetTurnOrder(IEnumerable<IPlayerId> playerIds)
         {
             while (true)
             {
@@ -165,13 +172,13 @@ namespace CardGame.Domain.Round
             return NextTurn(note, turnId, Id, nextTurnPlayer);
         }
 
-        private PlayerId GetNextPlayer()
+        private IPlayerId GetNextPlayer()
         {
             _turnOrder.MoveNext();
             return _turnOrder.Current;
         }
 
-        private Round NextTurn(Notification note, int turnId, int roundId, PlayerId nextTurnPlayer)
+        private Round NextTurn(Notification note, int turnId, int roundId, IPlayerId nextTurnPlayer)
         {
             var turnResult = Turn.Factory(turnId, nextTurnPlayer);
             if (turnResult.IsError)
@@ -193,18 +200,12 @@ namespace CardGame.Domain.Round
             return result.Value;
         }
 
-        bool IEquatable<Round>.Equals(Round other)
-        {
-            if (other is null) return false;
-            return Equals(other);
-        }
-
-        public bool IsTurn(PlayerId playerId)
+        public bool IsTurn(IPlayerId playerId)
         {
             return Turn.CurrentPlayer.Equals(playerId);
         }
 
-        public Round DiscardThis(CardId cardId, Notification note)
+        public Round DiscardThis(ICardId cardId, Notification note)
         {
             var newDiscard = Discard.Append(cardId).ToArray();
             var result = Factory(Id, Turn, Deck, RemainingPlayers, newDiscard);

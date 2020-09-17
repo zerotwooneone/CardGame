@@ -1,4 +1,5 @@
-﻿using CardGame.Utils.Factory;
+﻿using CardGame.Domain.Abstractions.Card;
+using CardGame.Utils.Factory;
 
 namespace CardGame.Domain.Card
 {

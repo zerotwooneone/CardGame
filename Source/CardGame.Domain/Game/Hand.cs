@@ -1,6 +1,6 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Linq;
+using CardGame.Domain.Abstractions.Card;
 using CardGame.Domain.Card;
 using CardGame.Utils.Factory;
 using CardGame.Utils.Validation;
@@ -64,7 +64,7 @@ namespace CardGame.Domain.Game
             return FactoryResult<Hand>.Success(new Hand(card1, card2, ca));
         }
 
-        public bool HasCard(CardId cardId)
+        public bool HasCard(ICardId cardId)
         {
             return cardId.Equals(Card1) || cardId.Equals(Card2);
         }
@@ -73,7 +73,7 @@ namespace CardGame.Domain.Game
             return Cards.Any(c => c.CardValue.Value == cardStrength);
         }
 
-        public Hand Discard(CardId cardId, Notification note)
+        public Hand Discard(ICardId cardId, Notification note)
         {
             if (!HasCard(cardId))
             {

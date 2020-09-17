@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using CardGame.Domain.Abstractions.Card;
+using CardGame.Domain.Abstractions.Game;
 using CardGame.Domain.Card;
 using CardGame.Domain.Player;
 using CardGame.Utils.Entity;
@@ -54,23 +56,31 @@ namespace CardGame.Domain.Game
             return FactoryResult<Game>.Success(new Game(idResult.Value, ps, round));
         }
 
-        public Notification Play(PlayerId playerId, 
-            CardId cardId,
-            PlayerId target,
-            CardValue guessValue)
+        public void Play(IPlayerId playerId, 
+            ICardId cardId,
+            IPlayerId target,
+            ICardValue guessValue,
+            Notification note)
         {
+            if (cardId is null)
+            {
+                note.AddError("Card is required to play");
+            }
             var player = GetPlayerById(playerId);
-            var targetPlayer = GetPlayerById(target);
-
-            var note = new Notification();
+            if (player is null)
+            {
+                note.AddError($"Player not found {playerId}");
+                return;
+            }
 
             if (!Round.IsTurn(playerId))
             {
                 note.AddError($"not player's turn {playerId}");
-                return note;
+                return;
             }
 
             //discard
+            var targetPlayer = GetPlayerById(target);
             var targetCard = GetCard(targetPlayer.Hand.Card1, note);
             var playContext = new PlayContext(player, targetPlayer, guessValue,this, targetCard, note);
             var card = GetCard(cardId, note);
@@ -107,7 +117,6 @@ namespace CardGame.Domain.Game
             nextPlayer.ClearProtection(note);
 
             Round = newRound;
-            return note;
         }
 
         private PlayerId GetRoundWinner()
@@ -132,12 +141,12 @@ namespace CardGame.Domain.Game
             return winner.player;
         }
 
-        private Player.Player GetPlayerById(PlayerId playerId)
+        private Player.Player GetPlayerById(IPlayerId playerId)
         {
             return Players.FirstOrDefault(p => p.Id.Equals(playerId));
         }
 
-        private Card.Card GetCard(CardId cardId, Notification note)
+        private Card.Card GetCard(ICardId cardId, Notification note)
         {
             FactoryResult<Card.Card> result;
             switch (cardId.CardValue.Value)

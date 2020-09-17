@@ -41,19 +41,19 @@ namespace CardGame.Application.Controllers
         [Route("{gameId}/Play")]
         public async Task<ActionResult> Post(Guid gameId, PlayRequest request)
         {
-            var serviceRequest = new CommonModel.Bus.PlayRequest
+            var serviceRequest = new Domain.Abstractions.Game.PlayRequest
             {
                 CorrelationId = Guid.NewGuid(),
                 GameId = gameId,
                 CardStrength = request.CardStrength,
+                CardVarient = request.CardVarient,
                 PlayerId = request.PlayerId,
                 GuessValue = request.GuessValue,
-                TargetId = request.TargetId,
-                CardVarient = request.CardVarient
+                TargetId = request.TargetId
             };
             
             var response =
-                await _bus.Request<CommonModel.Bus.PlayRequest, CardPlayed>("CardGame.Domain.Abstractions.Game.IGameService:Play", serviceRequest);
+                await _bus.Request<Domain.Abstractions.Game.PlayRequest, CardPlayed>("CardGame.Domain.Abstractions.Game.IGameService:Play", serviceRequest);
             if (string.IsNullOrWhiteSpace(response.ErrorMessage))
             {
                 return new JsonResult(response);

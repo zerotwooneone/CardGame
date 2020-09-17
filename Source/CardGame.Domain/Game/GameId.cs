@@ -1,10 +1,11 @@
 ﻿using System;
+using CardGame.Domain.Abstractions.Game;
 using CardGame.Utils.Factory;
 using CardGame.Utils.Value;
 
 namespace CardGame.Domain.Game
 {
-    public class GameId : StructValue<Guid>, IEquatable<GameId>
+    public class GameId : StructValue<Guid>, IGameId
     {
         protected GameId(Guid value) : base(value)
         {
@@ -18,10 +19,10 @@ namespace CardGame.Domain.Game
             }
             return FactoryResult<GameId>.Success(new GameId(id));
         }
-        bool IEquatable<GameId>.Equals(GameId other)
+        public bool Equals(IGameId other)
         {
             if (other is null) return false;
-            return Equals(other);
+            return base.Equals(other);
         }
     }
 
