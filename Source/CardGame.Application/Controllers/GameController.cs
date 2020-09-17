@@ -31,7 +31,8 @@ namespace CardGame.Application.Controllers
         }
 
         [HttpGet]
-        public async Task<CommonKnowledgeGame> Get([FromQuery]string gameId)
+        [Route("{gameId}")]
+        public async Task<CommonKnowledgeGame> Get(string gameId)
         {
             var gameDao = await _gameDal.GetById(gameId).ConfigureAwait(false);
             return _gameConverter.ConvertToCommonKnowledgeGame(gameDao);

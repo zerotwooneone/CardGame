@@ -89,7 +89,60 @@ namespace CardGame.Application.DTO
 
         public async Task SetById(Game game)
         {
+            var eliminated = game.Players.Select(p=>p.Id).Except(game.Round.RemainingPlayers);
+            var player1 = game.Players.FirstOrDefault();
+            var player2 = game.Players.Skip(1).FirstOrDefault();
+            var player3 = game.Players.Skip(2).FirstOrDefault();
+            var player4 = game.Players.Skip(3).FirstOrDefault();
+            await _gameDal.SetById(new GameDao
+            {
+                Id = game.Id.Value.ToString(),
+                CurrentPlayer = game.Round.Turn.CurrentPlayer.ToString(),
+                Discard = game.Round.Discard.Select(GetCardIdString),
+                DeckCount = game.Round.Deck.Cards.Count(),
+
+                Player1 = player1?.Id.ToString(),
+                Player1Protected = player1?.Protected.Value ?? false,
+                Player1Score = player1?.Score.Value ?? 0,
+                Player1Hand = GetHandString(player1?.Hand),
+
+                Player2 = player2?.Id.ToString(),
+                Player2Protected = player2?.Protected.Value ?? false,
+                Player2Score = player2?.Score.Value ?? 0,
+                Player2Hand = GetHandString(player2?.Hand),
+
+                Player3 = player3?.Id.ToString(),
+                Player3Protected = player3?.Protected.Value ?? false,
+                Player3Score = player3?.Score.Value ?? 0,
+                Player3Hand = GetHandString(player3?.Hand),
+
+                Player4 = player4?.Id.ToString(),
+                Player4Protected = player4?.Protected.Value ?? false,
+                Player4Score = player4?.Score.Value ?? 0,
+                Player4Hand = GetHandString(player4?.Hand),
+
+                EliminatedPlayer1 = eliminated.FirstOrDefault()?.ToString(),
+                EliminatedPlayer2 = eliminated.Skip(1).FirstOrDefault()?.ToString(),
+                EliminatedPlayer3 = eliminated.Skip(2).FirstOrDefault()?.ToString(),
+
+                RoundId = game.Round.Id.ToString(),
+                TurnId = game.Round.Turn.Id.ToString()
+
+            });
             _game = game;
+        }
+
+        private string GetHandString(Hand hand)
+        {
+            if (hand is null) return null;
+            return string.Join(";",
+                new[] {GetCardIdString(hand.Card1), GetCardIdString(hand.Card2)}.Where(c => c != null));
+        }
+
+        private string GetCardIdString(ICardId c)
+        {
+            if (c is null) return null;
+            return $"{c.CardValue.Value}{c.Variant}";
         }
     }
 
