@@ -42,13 +42,18 @@ namespace CardGame.Application.DTO
                     Domain.Round.Round.Factory(int.Parse(converted.Round.Id),
                         Domain.Round.Turn.Factory(int.Parse(converted.Round.Turn.Id),
                             PlayerId.Factory(Guid.Parse(converted.Round.Turn.CurrentPlayer)).Value).Value,
-                        Deck.Factory(GetTestDeck()).Value,
+                        GetDeckBuilder(),
                         convertPlayers.Select(p=>p.Id).Except(converted.Round.EliminatedPlayers.Select(p2 => PlayerId.Factory(Guid.Parse(p2)).Value)),
-                        Enumerable.Empty<CardId>()
+                        discard: Enumerable.Empty<CardId>()
                     ).Value).Value;
             }
 
             return _game;
+        }
+
+        private IDeckBuilder GetDeckBuilder()
+        {
+            return new DummyDeckBuilder(new Random(5));
         }
 
         private IEnumerable<CardId> GetTestDeck()
@@ -88,5 +93,49 @@ namespace CardGame.Application.DTO
         }
     }
 
-    
+    internal class DummyDeckBuilder : IDeckBuilder
+    {
+        private readonly Random _random;
+
+        public DummyDeckBuilder(Random random)
+        {
+            _random = random;
+            DeckComposition = new DeckComposition
+            {
+                {CardId.Factory(CardStrength.Princess, 0).Value, 1},
+                {CardId.Factory(CardStrength.Countess, 0).Value, 1},
+                {CardId.Factory(CardStrength.King, 0).Value, 1},
+                {CardId.Factory(CardStrength.Prince, 0).Value, 2},
+                {CardId.Factory(CardStrength.Handmaid, 0).Value, 2},
+                {CardId.Factory(CardStrength.Baron, 0).Value, 2},
+                {CardId.Factory(CardStrength.Priest, 0).Value, 2},
+                {CardId.Factory(CardStrength.Guard, 0).Value, 5},
+            };
+        }
+
+        public IDeckComposition DeckComposition { get; }
+        public IEnumerable<CardId> Shuffle(IEnumerable<CardId> cards)
+        {
+            if (cards == null) throw new ArgumentNullException(nameof(cards));
+
+            return ShuffleIterator(cards, _random);
+        }
+
+        private static IEnumerable<T> ShuffleIterator<T>(
+            IEnumerable<T> source, Random rng)
+        {
+            var buffer = source.ToList();
+            for (int i = 0; i < buffer.Count; i++)
+            {
+                int j = rng.Next(i, buffer.Count);
+                yield return buffer[j];
+
+                buffer[j] = buffer[i];
+            }
+        }
+    }
+
+    internal class DeckComposition : Dictionary<CardId, int>, IDeckComposition
+    {
+    }
 }
