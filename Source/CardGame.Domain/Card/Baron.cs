@@ -8,20 +8,21 @@ namespace CardGame.Domain.Card
         protected Baron(CardId cardId) : base(cardId)
         {
         }
-
+        protected override void CheckPreconditions(IPlayContext playContext)
+        {
+            playContext.HasTarget();
+            playContext.TargetIsNotSelf();
+        }
         protected override void OnPlayed(IPlayContext playContext)
         {
-            if (playContext.IsTargetOtherPlayer())
+            if (playContext.PlayerHandWeaker())
             {
-                if (playContext.PlayerHandWeaker())
-                {
-                    playContext.EliminatePlayer();
-                } else if (playContext.TargetHandWeaker())
-                {
-                    playContext.EliminateTarget();
-                }
-                // dont eliminate if they match!
+                playContext.EliminatePlayer();
+            } else if (playContext.TargetHandWeaker())
+            {
+                playContext.EliminateTarget();
             }
+            // dont eliminate if they match!
         }
 
         public static FactoryResult<Card> Factory(int variant)

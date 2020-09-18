@@ -8,16 +8,18 @@ namespace CardGame.Domain.Card
         protected Guard(CardId cardId) : base(cardId)
         {
         }
-
+        protected override void CheckPreconditions(IPlayContext playContext)
+        {
+            playContext.HasTarget();
+            playContext.TargetIsNotSelf();
+            playContext.HasGuessValue();
+            playContext.GuessIsNot(CardStrength.Guard);
+        }
         protected override void OnPlayed(IPlayContext playContext)
         {
-            //todo: check to make sure target is not current player
-            if (playContext.GuessIsNot(CardId.CardValue))
+            if (playContext.TargetHandMatchesGuess())
             {
-                if (playContext.TargetHandMatchesGuess())
-                {
-                    playContext.EliminateTarget();
-                }
+                playContext.EliminateTarget();
             }
         }
 

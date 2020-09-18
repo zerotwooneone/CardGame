@@ -19,11 +19,14 @@ namespace CardGame.Domain.Round
         public Turn Turn { get; }
         public Deck Deck { get; }
         public IEnumerable<ICardId> Discard { get; }
-        protected Round(int id, 
-            IEnumerable<PlayerId> remainingPlayers, 
-            Turn turn, Deck deck, 
+        public PlayerId WinningPlayer { get; }
+
+        protected Round(int id,
+            IEnumerable<PlayerId> remainingPlayers,
+            Turn turn, Deck deck,
             IEnumerable<ICardId> discard,
-            IEnumerator<IPlayerId> turnOrder)
+            IEnumerator<IPlayerId> turnOrder, 
+            PlayerId winningPlayer)
         {
             _turnOrder = turnOrder;
             Id = id;
@@ -31,6 +34,7 @@ namespace CardGame.Domain.Round
             Turn = turn;
             Deck = deck;
             Discard = discard;
+            WinningPlayer = winningPlayer;
         }
 
         public override int GetHashCode()
@@ -112,7 +116,7 @@ namespace CardGame.Domain.Round
             }
 
             var playerIds = remaining as PlayerId[] ?? remaining.ToArray();
-            const int minPlayers = 2;
+            const int minPlayers = 1;
             if (playerIds.Length < minPlayers)
             {
                 return FactoryResult<Round>.Error($"minimum players {minPlayers} required. but got {playerIds.Count()}");
@@ -123,7 +127,11 @@ namespace CardGame.Domain.Round
             {
                 return FactoryResult<Round>.Error($"Could not find player {turn.CurrentPlayer} to start the round");
             }
-            return FactoryResult<Round>.Success(new Round(id, playerIds, turn, deck, discard, turnOrder));
+
+            var winningPlayer = playerIds.Count() == 1
+                ? playerIds.First()
+                : null;
+            return FactoryResult<Round>.Success(new Round(id, playerIds, turn, deck, discard, turnOrder, winningPlayer));
         }
 
         private static IEnumerator<IPlayerId> GetTurnOrder(IEnumerable<IPlayerId> playerIds, IPlayerId currentPlayer)
@@ -154,22 +162,24 @@ namespace CardGame.Domain.Round
             }
         }
 
-        public bool Ended()
+        public Round NextRound(PlayerId winningPlayer,
+            IEnumerable<PlayerId> players,
+            Notification note)
         {
-            return Deck.IsEmpty() || RemainingPlayers.Count() == 1;
-        }
-
-        public Round NextRound(PlayerId winningPlayer, Notification note)
-        {
-            return NextTurn(note, 1, Id+1, winningPlayer);
+            //dont do an end of round check here
+            return NextTurn(note, 1, Id + 1, winningPlayer, players);
         }
 
         public Round NextTurn(Notification note)
         {
+            if (Ended())
+            {
+                return RoundEndedError(note);
+            }
             var nextTurnPlayer = GetNextPlayer();
             var turnId = Turn.Id + 1;
 
-            return NextTurn(note, turnId, Id, nextTurnPlayer);
+            return NextTurn(note, turnId, Id, nextTurnPlayer, RemainingPlayers);
         }
 
         private IPlayerId GetNextPlayer()
@@ -178,7 +188,11 @@ namespace CardGame.Domain.Round
             return _turnOrder.Current;
         }
 
-        private Round NextTurn(Notification note, int turnId, int roundId, IPlayerId nextTurnPlayer)
+        private Round NextTurn(Notification note, 
+            int turnId, 
+            int roundId, 
+            IPlayerId nextTurnPlayer,
+            IEnumerable<PlayerId> remainingPlayers)
         {
             var turnResult = Turn.Factory(turnId, nextTurnPlayer);
             if (turnResult.IsError)
@@ -189,7 +203,7 @@ namespace CardGame.Domain.Round
 
             note.AddStateChange(nameof(Turn));
 
-            var result = Factory(roundId, turnResult.Value, Deck, RemainingPlayers);
+            var result = Factory(roundId, turnResult.Value, Deck, remainingPlayers);
             if (result.IsError)
             {
                 note.AddError(result.ErrorMessage);
@@ -207,6 +221,10 @@ namespace CardGame.Domain.Round
 
         public Round DiscardThis(ICardId cardId, Notification note)
         {
+            if (Ended())
+            {
+                return RoundEndedError(note);
+            }
             var newDiscard = Discard.Append(cardId).ToArray();
             var result = Factory(Id, Turn, Deck, RemainingPlayers, newDiscard);
             if (result.IsError)
@@ -221,6 +239,11 @@ namespace CardGame.Domain.Round
 
         public Round Draw(Notification note, out CardId cardId)
         {
+            if (Ended())
+            {
+                cardId = null; //todo: this seems fishy
+                return RoundEndedError(note);
+            }
             var newDrawDeckCount = Deck.Draw(note, out cardId);
             var result = Factory(Id, Turn, newDrawDeckCount, RemainingPlayers, Discard);
             if (result.IsError)
@@ -234,15 +257,14 @@ namespace CardGame.Domain.Round
 
         public Round Eliminate(PlayerId targetId, Notification note)
         {
+            if (Ended())
+            {
+                return RoundEndedError(note);
+            }
             if (RemainingPlayers.Any(e => e.Equals(targetId)))
             {
-                note.AddError("Player already remaining");
-                return this;
-            }
-            else
-            {
-                var eliminated = RemainingPlayers.Append(targetId);
-                var result = Factory(Id, Turn, Deck, eliminated, Discard);
+                var remaining = RemainingPlayers.Except(new []{targetId});
+                var result = Factory(Id, Turn, Deck, remaining, Discard);
                 if (result.IsError)
                 {
                     note.AddError(result.ErrorMessage);
@@ -251,6 +273,22 @@ namespace CardGame.Domain.Round
 
                 return result.Value;
             }
+            else
+            {
+                note.AddError("Player already eliminated");
+                return this;
+            }
+        }
+
+        private Round RoundEndedError(Notification note)
+        {
+            note.AddError("the round has ended");
+            return this;
+        }
+
+        public bool Ended()
+        {
+            return Deck.IsEmpty() || WinningPlayer != null;
         }
     }
 }

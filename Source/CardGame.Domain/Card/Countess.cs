@@ -8,11 +8,6 @@ namespace CardGame.Domain.Card
         protected Countess(CardId cardId) : base(cardId)
         {
         }
-
-        protected override void OnPlayed(IPlayContext playContext)
-        {
-            // do nothing
-        }
         public static FactoryResult<Card> Factory(int variant)
         {
             var result = CardId.Factory(CardStrength.Countess, variant);

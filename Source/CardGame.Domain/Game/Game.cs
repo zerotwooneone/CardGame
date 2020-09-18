@@ -79,11 +79,11 @@ namespace CardGame.Domain.Game
                 return;
             }
 
-            //discard
             var targetPlayer = GetPlayerById(target);
             var targetCard = GetCard(targetPlayer.Hand.Card1, note);
             var playContext = new PlayContext(player, targetPlayer, guessValue,this, targetCard, note);
             var card = GetCard(cardId, note);
+            
             Discard(player, card, playContext, note);
 
             //change state of round
@@ -109,14 +109,14 @@ namespace CardGame.Domain.Game
             
             //next round
             var newRound = Round.Ended()
-                ? Round.NextRound(GetRoundWinner(),note)
+                ? Round.NextRound(GetRoundWinner(), Players.Select(p => p.Id), note)
                 : Round.NextTurn(note);
             
             var nextPlayerId = newRound.Turn.CurrentPlayer;
             var nextPlayer = GetPlayerById(nextPlayerId);
             nextPlayer.ClearProtection(note);
 
-            var drawnRound = Round.Draw(note, out var drawCard);
+            var drawnRound = newRound.Draw(note, out var drawCard);
             nextPlayer.Draw(drawCard, note);
 
             Round = drawnRound;

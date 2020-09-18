@@ -68,14 +68,12 @@ namespace CardGame.Domain.Card
             _player.Replace(targetCard, _note);
         }
 
-        public bool IsTargetOtherPlayer()
+        public void GuessIsNot(CardStrength cardValue)
         {
-            return !_player.Id.Equals(_target.Id);
-        }
-
-        public bool GuessIsNot(ICardValue cardValue)
-        {
-            return !_guessValue.Equals(cardValue);
+            if (_guessValue.Value == cardValue)
+            {
+                _note.AddError($"Cannot guess {cardValue}");
+            }
         }
 
         public bool TargetHandMatchesGuess()
@@ -101,6 +99,30 @@ namespace CardGame.Domain.Card
                 return false;
             }
             return _target.HandIsWeaker(_player, _note);;
+        }
+
+        public void HasTarget()
+        {
+            if (_target is null)
+            {
+                _note.AddError("Target is required");
+            }
+        }
+
+        public void TargetIsNotSelf()
+        {
+            if (_player.Equals(_target))
+            {
+                _note.AddError("Cannot target yourself");
+            }
+        }
+
+        public void HasGuessValue()
+        {
+            if (_guessValue is null)
+            {
+                _note.AddError("Guess Value is required");
+            }
         }
     }
 }

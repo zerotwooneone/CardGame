@@ -8,7 +8,6 @@ namespace CardGame.Domain.Card
         protected Handmaid(CardId cardId) : base(cardId)
         {
         }
-
         protected override void OnPlayed(IPlayContext playContext)
         {
             playContext.ProtectPlayer();

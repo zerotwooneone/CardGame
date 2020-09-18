@@ -8,13 +8,14 @@ namespace CardGame.Domain.Card
         protected Priest(CardId cardId) : base(cardId)
         {
         }
-
+        protected override void CheckPreconditions(IPlayContext playContext)
+        {
+            playContext.HasTarget();
+            playContext.TargetIsNotSelf();
+        }
         protected override void OnPlayed(IPlayContext playContext)
         {
-            if (playContext.IsTargetOtherPlayer())
-            {
-                playContext.RevealTargetHand();
-            }
+            playContext.RevealTargetHand();
         }
 
         public static FactoryResult<Card> Factory(int variant)

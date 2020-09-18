@@ -9,12 +9,6 @@ namespace CardGame.Domain.Card
         {
         }
 
-        protected override void OnPlayed(IPlayContext playContext)
-        {
-            // Discard(playContext);
-            // we dont call discard or eliminate here because the card gets discarded as part of the turn
-        }
-
         public override void Discard(IPlayContext playContext)
         {
             playContext.EliminatePlayer();

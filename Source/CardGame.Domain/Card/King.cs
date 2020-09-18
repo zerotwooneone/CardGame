@@ -9,6 +9,12 @@ namespace CardGame.Domain.Card
         {
         }
 
+        protected override void CheckPreconditions(IPlayContext playContext)
+        {
+            playContext.HasTarget();
+            playContext.TargetIsNotSelf();
+        }
+
         protected override void OnPlayed(IPlayContext playContext)
         {
             playContext.TradeHandsWithTarget();

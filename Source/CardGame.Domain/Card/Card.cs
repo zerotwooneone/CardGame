@@ -22,6 +22,11 @@ namespace CardGame.Domain.Card
 
         public void Play(IPlayContext playContext, Notification note)
         {
+            CheckPreconditions(playContext);
+            if (note.HasErrors())
+            {
+                return;
+            }
             if (PreventPlay(playContext))
             {
                 note.AddError($"Cannot play {CardId}");
@@ -38,8 +43,15 @@ namespace CardGame.Domain.Card
             return false;
         }
 
-        protected abstract void OnPlayed(IPlayContext playContext);
+        protected virtual void CheckPreconditions(IPlayContext playContext)
+        {
+            //do nothing
+        }
 
+        protected virtual void OnPlayed(IPlayContext playContext)
+        {
+            // do nothing
+        }
         public virtual void Discard(IPlayContext playContext)
         {
             // do nothing

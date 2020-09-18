@@ -8,7 +8,10 @@ namespace CardGame.Domain.Card
         protected Prince(CardId cardId) : base(cardId)
         {
         }
-
+        protected override void CheckPreconditions(IPlayContext playContext)
+        {
+            playContext.HasTarget();
+        }
         protected override void OnPlayed(IPlayContext playContext)
         {
             playContext.TargetDiscardAndDraw();
