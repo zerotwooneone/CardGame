@@ -12,6 +12,10 @@ namespace CardGame.Application.DTO
             {
                 Id = gameDao.Id,
                 Players = (new[] { gameDao.Player1, gameDao.Player2, gameDao.Player3, gameDao.Player4 }).Where(p => p != null),
+                Player1Score = gameDao.Player1Score,
+                Player2Score = gameDao.Player2Score,
+                Player3Score = gameDao.Player3Score,
+                Player4Score = gameDao.Player4Score,
                 Round = new Round
                 {
                     Id = gameDao.RoundId,
@@ -22,7 +26,7 @@ namespace CardGame.Application.DTO
                         CurrentPlayer = gameDao.CurrentPlayer
                     },
                     Discard = gameDao.Discard.Split(";"),
-                    EliminatedPlayers = (new[] { gameDao.EliminatedPlayer1, gameDao.EliminatedPlayer2, gameDao.EliminatedPlayer3 }).Where(p => p != null)
+                    EliminatedPlayers = (new[] { gameDao.EliminatedPlayer1, gameDao.EliminatedPlayer2, gameDao.EliminatedPlayer3 }).Where(p => p != null),
                 }
             };
         }
