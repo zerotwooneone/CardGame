@@ -13,7 +13,7 @@ namespace CardGame.Domain.Abstractions.Game
         public string EliminatedPlayer1 { get; set; }
         public string EliminatedPlayer2 { get; set; }
         public string EliminatedPlayer3 { get; set; }
-        public int DeckCount { get; set; }
+        public string Deck { get; set; }
         public string TurnId { get; set; }
         public string CurrentPlayer { get; set; }
         public IEnumerable<string> Discard { get; set; }

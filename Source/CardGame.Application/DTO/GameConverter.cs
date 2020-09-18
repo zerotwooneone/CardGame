@@ -15,7 +15,7 @@ namespace CardGame.Application.DTO
                 Round = new Round
                 {
                     Id = gameDao.RoundId,
-                    DeckCount = gameDao.DeckCount,
+                    DeckCount = gameDao.Deck.Split(";").Count(s => !string.IsNullOrWhiteSpace(s)),
                     Turn = new Turn
                     {
                         Id = gameDao.TurnId,

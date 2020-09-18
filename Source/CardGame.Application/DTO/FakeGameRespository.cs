@@ -37,14 +37,18 @@ namespace CardGame.Application.DTO
             {
                 var converted = _gameConverter.ConvertToCommonKnowledgeGame(gameDao);
                 var convertPlayers = ConvertPlayers(gameDao).ToArray();
+                var roundId = int.Parse(converted.Round.Id);
+                var turnId = int.Parse(converted.Round.Turn.Id);
+                PlayerId playerId = PlayerId.Factory(Guid.Parse(converted.Round.Turn.CurrentPlayer)).Value;
+                var turn = Domain.Round.Turn.Factory(turnId,
+                    playerId).Value;
                 _game = Game.Factory(Guid.Parse(converted.Id),
                     convertPlayers,
-                    Domain.Round.Round.Factory(int.Parse(converted.Round.Id),
-                        Domain.Round.Turn.Factory(int.Parse(converted.Round.Turn.Id),
-                            PlayerId.Factory(Guid.Parse(converted.Round.Turn.CurrentPlayer)).Value).Value,
-                        GetDeckBuilder(),
+                    Domain.Round.Round.Factory(roundId,
+                        turn,
+                        GetTestDeck(),
                         convertPlayers.Select(p=>p.Id).Except(converted.Round.EliminatedPlayers.Select(p2 => PlayerId.Factory(Guid.Parse(p2)).Value)),
-                        discard: Enumerable.Empty<CardId>()
+                        discard: Enumerable.Empty<ICardId>()
                     ).Value).Value;
             }
 
@@ -56,14 +60,14 @@ namespace CardGame.Application.DTO
             return new DummyDeckBuilder(new Random(5));
         }
 
-        private IEnumerable<CardId> GetTestDeck()
+        private Deck GetTestDeck()
         {
-            return new[]
+            return Deck.Factory(new[]
             {
                 CardId.Factory(CardStrength.Baron).Value,
                 CardId.Factory(CardStrength.Countess).Value,
                 CardId.Factory(CardStrength.Guard).Value,
-            };
+            }).Value;
         }
 
         private IEnumerable<Player> ConvertPlayers(GameDao gameDao)
@@ -80,11 +84,21 @@ namespace CardGame.Application.DTO
                 {
                     if (string.IsNullOrWhiteSpace(po.PlayerId)) return null;
                     //todo: maybe handle converting hands
-                    var player = Player.Factory(Guid.Parse(po.PlayerId), Hand.Factory(new []{CardId.Factory(CardStrength.Guard).Value, CardId.Factory(CardStrength.Handmaid).Value}).Value,
+                    var player = Player.Factory(Guid.Parse(po.PlayerId), Hand.Factory(GetCards(po.Hand)).Value,
                         Score.Factory(po.Score ?? 0).Value, po.Protected ? ProtectState.Protected : ProtectState.UnProtected).Value;
                     return player;
                 })
                 .Where(p => p != null);
+        }
+
+        private IEnumerable<CardId> GetCards(string hand)
+        {
+            var cs = hand
+                .Split(";")
+                .Where(s => !string.IsNullOrWhiteSpace(s))
+                .Select(s => CardId.Factory((CardStrength)int.Parse(s.Substring(0,1)), int.Parse(s.Substring(1))).Value)
+                .ToArray();
+            return cs;
         }
 
         public async Task SetById(Game game)
@@ -99,7 +113,8 @@ namespace CardGame.Application.DTO
                 Id = game.Id.Value.ToString(),
                 CurrentPlayer = game.Round.Turn.CurrentPlayer.ToString(),
                 Discard = game.Round.Discard.Select(GetCardIdString),
-                DeckCount = game.Round.Deck.Cards.Count(),
+                Deck = string.Join(";", game.Round.Deck.Cards
+                    .Select(c => ((int) c.CardValue.Value)+ c.Variant.ToString())),
 
                 Player1 = player1?.Id.ToString(),
                 Player1Protected = player1?.Protected.Value ?? false,
