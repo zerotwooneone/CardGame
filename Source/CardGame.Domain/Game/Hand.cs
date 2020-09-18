@@ -129,5 +129,17 @@ namespace CardGame.Domain.Game
 
             return Card1.IsWeaker(targetHand.Card1, note);
         }
+
+        public Hand Draw(CardId cardId, Notification note)
+        {
+            var result = Factory(Cards.Append(cardId));
+            if (result.IsError)
+            {
+                note.AddError(result.ErrorMessage);
+                return this;
+            }
+            note.AddStateChange(nameof(Hand));
+            return result.Value;
+        }
     }
 }

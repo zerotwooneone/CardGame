@@ -84,9 +84,7 @@ namespace CardGame.Domain.Game
             var targetCard = GetCard(targetPlayer.Hand.Card1, note);
             var playContext = new PlayContext(player, targetPlayer, guessValue,this, targetCard, note);
             var card = GetCard(cardId, note);
-            card.Discard(playContext);
-            player.Discard(cardId, note);
-            Round = Round.DiscardThis(cardId, note);
+            Discard(player, card, playContext, note);
 
             //change state of round
             if (targetPlayer != null && targetPlayer.Protected.Value)
@@ -106,6 +104,8 @@ namespace CardGame.Domain.Game
                  
             }
 
+
+            //todo: if game not over
             
             //next round
             var newRound = Round.Ended()
@@ -116,7 +116,17 @@ namespace CardGame.Domain.Game
             var nextPlayer = GetPlayerById(nextPlayerId);
             nextPlayer.ClearProtection(note);
 
-            Round = newRound;
+            var drawnRound = Round.Draw(note, out var drawCard);
+            nextPlayer.Draw(drawCard, note);
+
+            Round = drawnRound;
+        }
+
+        private void Discard(Player.Player player, Card.Card card, PlayContext playContext, Notification note)
+        {
+            card.Discard(playContext);
+            player.Discard(card.CardId, note);
+            Round = Round.DiscardThis(card.CardId, note);
         }
 
         private PlayerId GetRoundWinner()

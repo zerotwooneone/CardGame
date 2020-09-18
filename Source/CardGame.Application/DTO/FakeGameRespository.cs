@@ -46,9 +46,9 @@ namespace CardGame.Application.DTO
                     convertPlayers,
                     Domain.Round.Round.Factory(roundId,
                         turn,
-                        GetTestDeck(),
+                        GetTestDeck(gameDao.Deck),
                         convertPlayers.Select(p=>p.Id).Except(converted.Round.EliminatedPlayers.Select(p2 => PlayerId.Factory(Guid.Parse(p2)).Value)),
-                        discard: Enumerable.Empty<ICardId>()
+                        discard: GetCards(gameDao.Discard)
                     ).Value).Value;
             }
 
@@ -60,14 +60,9 @@ namespace CardGame.Application.DTO
             return new DummyDeckBuilder(new Random(5));
         }
 
-        private Deck GetTestDeck()
+        private Deck GetTestDeck(string deck)
         {
-            return Deck.Factory(new[]
-            {
-                CardId.Factory(CardStrength.Baron).Value,
-                CardId.Factory(CardStrength.Countess).Value,
-                CardId.Factory(CardStrength.Guard).Value,
-            }).Value;
+            return Deck.Factory(GetCards(deck)).Value;
         }
 
         private IEnumerable<Player> ConvertPlayers(GameDao gameDao)
@@ -112,7 +107,7 @@ namespace CardGame.Application.DTO
             {
                 Id = game.Id.Value.ToString(),
                 CurrentPlayer = game.Round.Turn.CurrentPlayer.ToString(),
-                Discard = game.Round.Discard.Select(GetCardIdString),
+                Discard = string.Join(";",game.Round.Discard.Select(GetCardIdString)),
                 Deck = string.Join(";", game.Round.Deck.Cards
                     .Select(c => ((int) c.CardValue.Value)+ c.Variant.ToString())),
 
@@ -157,7 +152,7 @@ namespace CardGame.Application.DTO
         private string GetCardIdString(ICardId c)
         {
             if (c is null) return null;
-            return $"{c.CardValue.Value}{c.Variant}";
+            return $"{(int)c.CardValue.Value}{c.Variant}";
         }
     }
 

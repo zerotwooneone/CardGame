@@ -12,7 +12,7 @@ namespace CardGame.Application.DTO
             TurnId = "2",
             RoundId = "3",
             Deck = "80;70;60;50;30;20;10;10;10;10",
-            Discard = new[] {"30", "40"},
+            Discard = "30;40",
             EliminatedPlayer1 = null,
             EliminatedPlayer2 = null,
             EliminatedPlayer3 = null,

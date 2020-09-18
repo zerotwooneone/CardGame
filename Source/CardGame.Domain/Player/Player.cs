@@ -77,5 +77,10 @@ namespace CardGame.Domain.Player
                 note.AddStateChange(nameof(Player));
             }
         }
+
+        public void Draw(CardId cardId, Notification note)
+        {
+            Hand = Hand.Draw(cardId, note);
+        }
     }
 }

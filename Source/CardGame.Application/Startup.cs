@@ -33,9 +33,9 @@ namespace CardGame.Application
             serviceCollection.AddTransient<ClientHub>();
 
             serviceCollection.AddTransient<IGameConverter, GameConverter>();
-            serviceCollection.AddTransient<IGameDal, FakeGameDal>();
+            serviceCollection.AddSingleton<IGameDal, FakeGameDal>();
             serviceCollection.AddTransient<IGameService, GameService>();
-            serviceCollection.AddTransient<IGameRepository, FakeGameRespository>();
+            serviceCollection.AddSingleton<IGameRepository, FakeGameRespository>();
             
             //bus config
             _commonEventSubject = new Subject<ICommonEvent>();
