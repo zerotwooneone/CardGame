@@ -175,9 +175,11 @@ namespace CardGame.Domain.Game
 
         private void Discard(Player.Player player, Card.Card card, PlayContext playContext, Notification note)
         {
-            card.Discard(playContext);
             player.Discard(card.CardId, note);
             Round = Round.DiscardThis(card.CardId, note);
+            
+            //need to call this after Round.Discard because this can end the round
+            card.Discard(playContext);
         }
 
         private PlayerId GetRoundWinner()

@@ -259,15 +259,19 @@ namespace CardGame.Domain.Round
             }
             if (RemainingPlayers.Any(e => e.Equals(targetId)))
             {
-                var remaining = RemainingPlayers.Except(new []{targetId});
-                var result = Factory(Id, Turn, _deckBuilder, Deck, remaining, Discard);
-                if (result.IsError)
+                var remaining = RemainingPlayers.Except(new []{targetId}).ToArray();
+                const int maxSanityCounter = 4;
+                for (int sanityCounter = 0; sanityCounter < maxSanityCounter; sanityCounter++)
                 {
-                    note.AddError(result.ErrorMessage);
-                    return this;
-                }
+                    if (remaining.Contains(_turnOrder.Current))
+                    {
+                        break;
+                    }
 
-                return result.Value;
+                    _turnOrder.MoveNext();
+                }
+                var round = CreateRound(note, Turn.Id, Id, _turnOrder.Current, remaining, Discard, Deck);
+                return round;
             }
             else
             {

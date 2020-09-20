@@ -81,15 +81,16 @@ namespace CardGame.Domain.Game
                 return this;
             }
 
-            var cards = Cards.ToArray();
+            var cards = Cards.ToList();
             const int minCards = 2;
-            if (cards.Length < minCards)
+            if (cards.Count < minCards)
             {
                 note.AddError($"Cannot discard the last card in hand card:{cardId}");
             }
 
-            var newCards = cards.Where(c => !c.Equals(cardId));
-            var result = Factory(newCards);
+            var match = cards.FirstOrDefault(c => c.Equals(cardId));
+            cards.Remove(match);
+            var result = Factory(cards);
             if (result.IsError)
             {
                 note.AddError(result.ErrorMessage);
