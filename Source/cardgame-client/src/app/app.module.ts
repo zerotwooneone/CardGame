@@ -11,6 +11,7 @@ import { GameBoardComponent } from './gameBoard/game-board/game-board.component'
 import { OtherPlayerComponent } from './otherPlayer/other-player/other-player.component';
 import { CurrentPlayerComponent } from './currentPlayer/current-player/current-player.component';
 import { PlayableCardComponent } from './card/playable-card/playable-card.component';
+import { PlayerService } from './player/player.service';
 
 @NgModule({
   declarations: [
@@ -30,7 +31,7 @@ import { PlayableCardComponent } from './card/playable-card/playable-card.compon
   providers: [
     {
       provide: 'IPlayerService',
-      useClass: environment.playerService
+      useClass: PlayerService
     }
   ],
   bootstrap: [AppComponent]

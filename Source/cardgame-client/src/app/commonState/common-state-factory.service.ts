@@ -19,28 +19,28 @@ export class CommonStateFactoryService {
   }
 
   private async createNew(gameId: string): Promise<CommonStateModel> {
-    // const connection = await this.openConnectionFactory.open('https://localhost:44379/commonState');
-    const connection: IOpenConnection = {
-      register: <TResult>(methodName: string) => {
-        switch (methodName) {
-          case 'changed':
-            const changed: ICommonStateChanged =  {
-              StateId: 'dummy state id',
-              DrawCount: 4,
-              PlayerIds: ['1', '2', '3'],
-              Discard: [{Id: 'some card id', Value: 11},
-                { Id: 'some other card id', Value: 12 }],
-              CurrentPlayerId: '',
-              PlayersInRound: ['1', '2']
-            };
-            return of(changed as unknown as TResult);
-            break;
-          default:
-            throw new Error('unknow method name in register');
-        }
-      },
-      send: (methodName: string, data: any) => Promise.reject('not set up to send')
-    };
+    const connection = await this.openConnectionFactory.open('https://localhost:44379/commonState');
+    // const connection: IOpenConnection = {
+    //   register: <TResult>(methodName: string) => {
+    //     switch (methodName) {
+    //       case 'changed':
+    //         const changed: ICommonStateChanged =  {
+    //           StateId: 'dummy state id',
+    //           DrawCount: 4,
+    //           PlayerIds: ['1', '2', '3'],
+    //           Discard: [{Id: 'some card id', Value: 11},
+    //             { Id: 'some other card id', Value: 12 }],
+    //           CurrentPlayerId: '',
+    //           PlayersInRound: ['1', '2']
+    //         };
+    //         return of(changed as unknown as TResult);
+    //         break;
+    //       default:
+    //         throw new Error('unknow method name in register');
+    //     }
+    //   },
+    //   send: (methodName: string, data: any) => Promise.reject('not set up to send')
+    // };
     const result = new CommonStateModel(connection);
     return result;
   }
