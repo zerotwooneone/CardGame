@@ -43,10 +43,9 @@ namespace CardGame.Application.DTO
                 Domain.Round.Round.Factory(roundId,
                     turn,
                     GetDeckBuilder(),
-                    convertPlayers.Select(p=>p.Id).Except(converted.Round.EliminatedPlayers.Select(p2 => PlayerId.Factory(Guid.Parse(p2)).Value)),
-                    discard: GetCards(gameDao.Discard),
-                    deck: GetTestDeck(gameDao.Deck)
-                ).Value,
+                    deck: GetTestDeck(gameDao.Deck), 
+                    remaining: convertPlayers.Select(p=>p.Id).Except(converted.Round.EliminatedPlayers.Select(p2 => PlayerId.Factory(Guid.Parse(p2)).Value)), 
+                    discard: GetCards(gameDao.Discard)).Value,
                 winningPlayer).Value;
             return game;
         }

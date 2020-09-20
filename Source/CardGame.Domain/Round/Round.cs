@@ -82,10 +82,11 @@ namespace CardGame.Domain.Round
         public static FactoryResult<Round> Factory(int id,
             Turn turn,
             IDeckBuilder deckBuilder,
+            Deck deck,
             IEnumerable<PlayerId> remaining,
-            Deck deck = null,
-            IEnumerable<ICardId> discard = null)
+            IEnumerable<ICardId> discard)
         {
+            //todo: if id < 0
             if (remaining is null)
             {
                 return FactoryResult<Round>.Error("remaining is required");
@@ -112,27 +113,6 @@ namespace CardGame.Domain.Round
                 }
 
                 deck = result.Value;
-            }
-
-            return Factory(id, turn, deck, remainingPlayers, deckBuilder, discard: discard);
-        }
-
-        private static FactoryResult<Round> Factory(int id,
-            Turn turn,
-            Deck deck,
-            IEnumerable<PlayerId> remaining,
-            IDeckBuilder deckBuilder,
-            IEnumerable<ICardId> discard = null)
-        {
-            //todo: if id < 0
-            if (turn is null)
-            {
-                return FactoryResult<Round>.Error("Turn is required");
-            }
-
-            if (deck is null)
-            {
-                return FactoryResult<Round>.Error("Deck is required");
             }
 
             var playerIds = remaining as PlayerId[] ?? remaining.ToArray();
@@ -219,7 +199,7 @@ namespace CardGame.Domain.Round
             }
 
             note.AddStateChange(nameof(Turn));
-            var result = Factory(roundId, turnResult.Value, _deckBuilder, remainingPlayers, deck: deck, discard: discard);
+            var result = Factory(roundId, turnResult.Value, _deckBuilder, deck: deck, remaining: remainingPlayers, discard: discard);
             if (result.IsError)
             {
                 note.AddError(result.ErrorMessage);
@@ -242,7 +222,7 @@ namespace CardGame.Domain.Round
                 return RoundEndedError(note);
             }
             var newDiscard = Discard.Append(cardId).ToArray();
-            var result = Factory(Id, Turn, Deck, RemainingPlayers, _deckBuilder, newDiscard);
+            var result = Factory(Id, Turn, _deckBuilder, Deck, RemainingPlayers, discard: newDiscard);
             if (result.IsError)
             {
                 note.AddError(result.ErrorMessage);
@@ -261,7 +241,7 @@ namespace CardGame.Domain.Round
                 return RoundEndedError(note);
             }
             var newDeck = Deck.Draw(note, out cardId);
-            var result = Factory(Id, Turn, newDeck, RemainingPlayers, _deckBuilder, Discard);
+            var result = Factory(Id, Turn, _deckBuilder, newDeck, RemainingPlayers, Discard);
             if (result.IsError)
             {
                 note.AddError(result.ErrorMessage);
@@ -280,7 +260,7 @@ namespace CardGame.Domain.Round
             if (RemainingPlayers.Any(e => e.Equals(targetId)))
             {
                 var remaining = RemainingPlayers.Except(new []{targetId});
-                var result = Factory(Id, Turn, Deck, remaining, _deckBuilder, Discard);
+                var result = Factory(Id, Turn, _deckBuilder, Deck, remaining, Discard);
                 if (result.IsError)
                 {
                     note.AddError(result.ErrorMessage);
