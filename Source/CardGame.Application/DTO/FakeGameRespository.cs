@@ -16,9 +16,6 @@ namespace CardGame.Application.DTO
         private readonly IGameDal _gameDal;
         private readonly IGameConverter _gameConverter;
         
-        //todo: replace this hack
-        private static Game _game;
-
         public FakeGameRespository(IGameDal gameDal,
             IGameConverter gameConverter)
         {
@@ -27,32 +24,29 @@ namespace CardGame.Application.DTO
         }
         public async Task<Game> GetById(IGameId id)
         {
-            var gameDao = await _gameDal.GetById(id.ToString());
+            var gameDao = await _gameDal.GetById(id.Value);
             return Convert(gameDao);
         }
 
         private Game Convert(GameDao gameDao)
         {
-            if (_game is null)
-            {
-                var converted = _gameConverter.ConvertToCommonKnowledgeGame(gameDao);
-                var convertPlayers = ConvertPlayers(gameDao).ToArray();
-                var roundId = int.Parse(converted.Round.Id);
-                var turnId = int.Parse(converted.Round.Turn.Id);
-                PlayerId playerId = PlayerId.Factory(Guid.Parse(converted.Round.Turn.CurrentPlayer)).Value;
-                var turn = Domain.Round.Turn.Factory(turnId,
-                    playerId).Value;
-                _game = Game.Factory(Guid.Parse(converted.Id),
-                    convertPlayers,
-                    Domain.Round.Round.Factory(roundId,
-                        turn,
-                        GetTestDeck(gameDao.Deck),
-                        convertPlayers.Select(p=>p.Id).Except(converted.Round.EliminatedPlayers.Select(p2 => PlayerId.Factory(Guid.Parse(p2)).Value)),
-                        discard: GetCards(gameDao.Discard)
-                    ).Value).Value;
-            }
-
-            return _game;
+            var converted = _gameConverter.ConvertToCommonKnowledgeGame(gameDao);
+            var convertPlayers = ConvertPlayers(gameDao).ToArray();
+            var roundId = int.Parse(converted.Round.Id);
+            var turnId = int.Parse(converted.Round.Turn.Id);
+            PlayerId playerId = PlayerId.Factory(Guid.Parse(converted.Round.Turn.CurrentPlayer)).Value;
+            var turn = Domain.Round.Turn.Factory(turnId,
+                playerId).Value;
+            var game = Game.Factory(Guid.Parse(converted.Id),
+                convertPlayers,
+                Domain.Round.Round.Factory(roundId,
+                    turn,
+                    GetDeckBuilder(),
+                    convertPlayers.Select(p=>p.Id).Except(converted.Round.EliminatedPlayers.Select(p2 => PlayerId.Factory(Guid.Parse(p2)).Value)),
+                    discard: GetCards(gameDao.Discard),
+                    deck: GetTestDeck(gameDao.Deck)
+                ).Value).Value;
+            return game;
         }
 
         private IDeckBuilder GetDeckBuilder()
@@ -103,7 +97,7 @@ namespace CardGame.Application.DTO
             var player2 = game.Players.Skip(1).FirstOrDefault();
             var player3 = game.Players.Skip(2).FirstOrDefault();
             var player4 = game.Players.Skip(3).FirstOrDefault();
-            await _gameDal.SetById(new GameDao
+            var gameDao = new GameDao
             {
                 Id = game.Id.Value.ToString(),
                 CurrentPlayer = game.Round.Turn.CurrentPlayer.ToString(),
@@ -138,8 +132,8 @@ namespace CardGame.Application.DTO
                 RoundId = game.Round.Id.ToString(),
                 TurnId = game.Round.Turn.Id.ToString()
 
-            });
-            _game = game;
+            };
+            await _gameDal.SetById(gameDao);
         }
 
         private string GetHandString(Hand hand)

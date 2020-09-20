@@ -32,7 +32,7 @@ namespace CardGame.Application.Controllers
 
         [HttpGet]
         [Route("{gameId}")]
-        public async Task<CommonKnowledgeGame> Get(string gameId)
+        public async Task<CommonKnowledgeGame> Get(Guid gameId)
         {
             var gameDao = await _gameDal.GetById(gameId).ConfigureAwait(false);
             return _gameConverter.ConvertToCommonKnowledgeGame(gameDao);
@@ -67,8 +67,17 @@ namespace CardGame.Application.Controllers
         [Route("{gameId}/Player/{playerId}")]
         public async Task<PlayerDto> GetPlayer(Guid gameId, Guid playerId)
         {
-            var gameDao = await _gameDal.GetById(gameId.ToString()).ConfigureAwait(false);
+            var gameDao = await _gameDal.GetById(gameId).ConfigureAwait(false);
             return _gameConverter.ConvertToPlayer(gameDao, playerId);
+        }
+
+        [HttpPost]
+        [Route("{gameId}/reset")]
+        public async Task<ActionResult> Post(Guid gameId)
+        {
+            await ((FakeGameDal) _gameDal).Reset();
+            var result = await Get(gameId);
+            return Ok(result);
         }
     }
 }
