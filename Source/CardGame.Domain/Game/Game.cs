@@ -16,18 +16,22 @@ namespace CardGame.Domain.Game
     {
         public IEnumerable<Player.Player> Players { get; }
         public Round.Round Round { get; protected set; }
+        public PlayerId WinningPlayer { get; protected set; }
 
         protected Game(GameId id,
             IEnumerable<Player.Player> players,
-            Round.Round round) : base(id)
+            Round.Round round,
+            PlayerId winningPlayer) : base(id)
         {
             Players = players;
             Round = round;
+            WinningPlayer = winningPlayer;
         }
 
         public static FactoryResult<Game> Factory(Guid id,
             IEnumerable<Player.Player> players,
-            Round.Round round)
+            Round.Round round,
+            Guid? winningPlayer)
         {
             var idResult = GameId.Factory(id);
             if (idResult.IsError)
@@ -39,21 +43,41 @@ namespace CardGame.Domain.Game
             {
                 return FactoryResult<Game>.Error("Round is required");
             }
-
             var pa = players as Player.Player[] ?? players.ToArray();
             if (pa.IsNullOrEmpty())
             {
                 return FactoryResult<Game>.Error("players are required");
             }
-            var ps = pa.Distinct().ToArray();
+
+            PlayerId winningPlayerId;
+            if (winningPlayer.HasValue)
+            {
+                var winningResult = PlayerId.Factory(winningPlayer.Value);
+                if (winningResult.IsError)
+                {
+                    return FactoryResult<Game>.Error("Invalid winning player id");
+                }
+                var pids = pa.Select(p => p.Id);
+                if (!pids.Contains(winningResult.Value))
+                {
+                    return FactoryResult<Game>.Error("Winning player does not exist in player list");
+                }
+
+                winningPlayerId = winningResult.Value;
+            }
+            else
+            {
+                winningPlayerId = null;
+            }
+
             const int playerMin = 2;
             const int playerMax = 4;
-            if (ps.Length < playerMin || ps.Length > playerMax)
+            if (pa.Length < playerMin || pa.Length > playerMax)
             {
                 return FactoryResult<Game>.Error($"player count must be between {playerMin} and {playerMax} inclusive");
             }
 
-            return FactoryResult<Game>.Success(new Game(idResult.Value, ps, round));
+            return FactoryResult<Game>.Success(new Game(idResult.Value, pa, round, winningPlayerId));
         }
 
         public void Play(IPlayerId playerId, 
@@ -62,9 +86,15 @@ namespace CardGame.Domain.Game
             ICardValue guessValue,
             Notification note)
         {
+            if (WinningPlayer != null)
+            {
+                note.AddError($"Game Over. Player {WinningPlayer} won.");
+                return;
+            }
             if (cardId is null)
             {
                 note.AddError("Card is required to play");
+                return;
             }
             var player = GetPlayerById(playerId);
             if (player is null)
@@ -105,13 +135,21 @@ namespace CardGame.Domain.Game
             }
 
 
-            //todo: if game not over
-            
             //next round
-            var newRound = Round.Ended()
-                ? Round.NextRound(GetRoundWinner(), Players.Select(p => p.Id), note)
-                : Round.NextTurn(note);
-            
+            Round.Round newRound;
+            if (Round.Ended())
+            {
+                var winningPlayerId = GetRoundWinner();
+                var winningPlayer = GetPlayerById(winningPlayerId);
+                winningPlayer.AddWin(note);
+                CheckForWinner();
+                newRound = Round.NextRound(winningPlayerId, Players.Select(p => p.Id), note);
+            }
+            else
+            {
+                newRound = Round.NextTurn(note);
+            }
+
             var nextPlayerId = newRound.Turn.CurrentPlayer;
             var nextPlayer = GetPlayerById(nextPlayerId);
             nextPlayer.ClearProtection(note);
@@ -120,6 +158,19 @@ namespace CardGame.Domain.Game
             nextPlayer.Draw(drawCard, note);
 
             Round = drawnRound;
+        }
+
+        private void CheckForWinner()
+        {
+            const int winningScore = 7;
+            var player = Players
+                .Where(p => p.Score.Value >= winningScore)
+                .OrderByDescending(p=>p.Score.Value)
+                .FirstOrDefault();
+            if (player != null)
+            {
+                WinningPlayer = player.Id;
+            }
         }
 
         private void Discard(Player.Player player, Card.Card card, PlayContext playContext, Notification note)

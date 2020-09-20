@@ -82,5 +82,10 @@ namespace CardGame.Domain.Player
         {
             Hand = Hand.Draw(cardId, note);
         }
+
+        public void AddWin(Notification note)
+        {
+            Score = Score.AddWin(note);
+        }
     }
 }

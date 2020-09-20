@@ -37,6 +37,7 @@ namespace CardGame.Application.DTO
             PlayerId playerId = PlayerId.Factory(Guid.Parse(converted.Round.Turn.CurrentPlayer)).Value;
             var turn = Domain.Round.Turn.Factory(turnId,
                 playerId).Value;
+            Guid? winningPlayer = gameDao.WinningPlayer;
             var game = Game.Factory(Guid.Parse(converted.Id),
                 convertPlayers,
                 Domain.Round.Round.Factory(roundId,
@@ -45,7 +46,8 @@ namespace CardGame.Application.DTO
                     convertPlayers.Select(p=>p.Id).Except(converted.Round.EliminatedPlayers.Select(p2 => PlayerId.Factory(Guid.Parse(p2)).Value)),
                     discard: GetCards(gameDao.Discard),
                     deck: GetTestDeck(gameDao.Deck)
-                ).Value).Value;
+                ).Value,
+                winningPlayer).Value;
             return game;
         }
 
@@ -130,8 +132,8 @@ namespace CardGame.Application.DTO
                 EliminatedPlayer3 = eliminated.Skip(2).FirstOrDefault()?.ToString(),
 
                 RoundId = game.Round.Id.ToString(),
-                TurnId = game.Round.Turn.Id.ToString()
-
+                TurnId = game.Round.Turn.Id.ToString(),
+                WinningPlayer = game.WinningPlayer?.Value
             };
             await _gameDal.SetById(gameDao);
         }

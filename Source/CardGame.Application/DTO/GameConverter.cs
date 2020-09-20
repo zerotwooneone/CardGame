@@ -16,6 +16,7 @@ namespace CardGame.Application.DTO
                 Player2Score = gameDao.Player2Score,
                 Player3Score = gameDao.Player3Score,
                 Player4Score = gameDao.Player4Score,
+                WinningPlayer = gameDao.WinningPlayer,
                 Round = new Round
                 {
                     Id = gameDao.RoundId,

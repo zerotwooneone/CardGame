@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 
 namespace CardGame.Application.DTO
@@ -11,5 +12,6 @@ namespace CardGame.Application.DTO
         public int Player2Score { get; set; }
         public int? Player3Score { get; set; }
         public int? Player4Score { get; set; }
+        public Guid? WinningPlayer { get; set; }
     }
 }

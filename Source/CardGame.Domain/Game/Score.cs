@@ -1,4 +1,5 @@
 ﻿using CardGame.Utils.Factory;
+using CardGame.Utils.Validation;
 using CardGame.Utils.Value;
 
 namespace CardGame.Domain.Game
@@ -17,6 +18,18 @@ namespace CardGame.Domain.Game
                 return FactoryResult<Score>.Error($"Score cannot be less than zero or greater than {MaxScore}");
             }
             return FactoryResult<Score>.Success(new Score(score));
+        }
+
+        public Score AddWin(Notification note)
+        {
+            var result = Factory(Value + 1);
+            if (result.IsError)
+            {
+                note.AddError(result.ErrorMessage);
+                return this;
+            }
+            note.AddStateChange(nameof(Score));
+            return result.Value;
         }
     }
 }

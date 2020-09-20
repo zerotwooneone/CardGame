@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 
 namespace CardGame.Domain.Abstractions.Game
 {
@@ -29,6 +30,7 @@ namespace CardGame.Domain.Abstractions.Game
         public bool Player2Protected { get; set; }
         public bool Player3Protected { get; set; }
         public bool Player4Protected { get; set; }
+        public Guid? WinningPlayer { get; set; }
     }
 
 
