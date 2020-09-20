@@ -10,6 +10,9 @@ This is a educational project to implement a simple card game. There will be a c
 - Update npm to version 6.13.7 or greater
   - npm install -g npm
 
+- Angular 9 or higher
+  - This project was generated with [Angular CLI](https://github.com/angular/angular-cli) version 9.0.3.
+
 ## To build
 
 - Compile the client
