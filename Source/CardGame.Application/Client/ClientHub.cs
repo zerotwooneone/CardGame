@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Threading.Tasks;
-using CardGame.CommonModel.Client;
 using Microsoft.AspNetCore.SignalR;
 
 namespace CardGame.Application.Client
@@ -13,18 +12,18 @@ namespace CardGame.Application.Client
             _context = context;
         }
 
-        public async Task<IClientConnected> Connect(ClientIdentifier clientIdentifier)
+        public async Task<ClientConnected> Connect(ClientIdentifier clientIdentifier)
         {
             return new ClientConnected { Id = Guid.NewGuid().ToString()};
         }
     }
 
-    public class ClientIdentifier : IClientIdentifier
+    public class ClientIdentifier
     {
-        private string Id { get; set; }
+        public Guid? GameId { get; set; }
     }
 
-    public class ClientConnected : IClientConnected
+    public class ClientConnected
     {
         public string Id { get; set; }
     }

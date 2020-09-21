@@ -34,7 +34,7 @@ export class ClientFactoryService {
 }
 
 export interface IClientId {
-  readonly Id: string;
+  readonly GameId: string;
 }
 
 export interface IClientConnected {

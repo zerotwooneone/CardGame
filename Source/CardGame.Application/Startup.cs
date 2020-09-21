@@ -10,11 +10,12 @@ using CardGame.CommonModel.CommonState;
 using CardGame.Domain.Abstractions.Game;
 using CardGame.Domain.Game;
 using CardGame.Utils.Abstractions.Bus;
-using CardGame.Utils.Abstractions.DependencyInjection;
 using CardGame.Utils.Bus;
 using Microsoft.AspNetCore.Builder;
+using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using IStartup = CardGame.Utils.Abstractions.DependencyInjection.IStartup;
 
 namespace CardGame.Application
 {
@@ -49,10 +50,26 @@ namespace CardGame.Application
             serviceCollection.AddTransient<IServiceCallRouter, ServiceCallRouter>();
 
             serviceCollection.AddSingleton<IServiceProvider>(serviceCollection.BuildServiceProvider());
+
+            // Add service and create Policy with options
+            serviceCollection.AddCors(options =>
+            {
+                options.AddPolicy("DevPolicy",
+                    builder => builder.WithOrigins("http://localhost:4200/", "http://localhost:4200")
+                        .AllowAnyMethod()
+                        .AllowAnyHeader()
+                        .AllowCredentials());
+            });
         }
 
         public void Configure(IApplicationBuilder app)
         {
+            var env = app.ApplicationServices.GetService<IHostingEnvironment>();
+            if (env.IsDevelopment())
+            {
+                app.UseCors("DevPolicy");
+            }
+
             // need to configure routing here
             var logger = app.ApplicationServices.GetService<ILogger<Subject<ICommonEvent>>>();
             _commonEventSubject.Subscribe(e =>
@@ -63,26 +80,6 @@ namespace CardGame.Application
             //todo: move this to a config file
             var requestRegistry = new Dictionary<string, RequestConfiguration>
             {
-                //{"CardGame.Domain.Abstractions.Game.IGameService:NextRound", new RequestConfiguration
-                //    (
-                //        "CardGame.Domain.Abstractions.Game.IGameService", 
-                //        "NextRound", 
-                //        "RoundStarted"
-                //    )
-                //},
-                //{"CardGame.Domain.Abstractions.Game.IPlayService:Play", new RequestConfiguration
-                //    (
-                //        "CardGame.Domain.Abstractions.Game.IPlayService", 
-                //        "Play", 
-                //        "CardPlayed"
-                //    )
-                //},
-                //{"CardGame.Domain.Abstractions.Game.IGameService:NextTurn", new RequestConfiguration(
-                //    "CardGame.Domain.Abstractions.Game.IGameService", 
-                //    "NextTurn", 
-                //    "TurnChanged"
-                //    )
-                //},
                 {"CardGame.Domain.Abstractions.Game.IGameService:Play", new RequestConfiguration
                     (
                         "CardGame.Domain.Abstractions.Game.IGameService", 
@@ -100,6 +97,7 @@ namespace CardGame.Application
 
             var serviceCallRouter = app.ApplicationServices.GetService<IServiceCallRouter>();
             serviceCallRouter.Configure();
+
         }
     }
 }
