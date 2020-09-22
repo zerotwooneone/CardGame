@@ -22,10 +22,14 @@ export class ClientFactoryService {
 
     const connection = await this.openConnectionFactory.open('https://localhost:44379/client', onClose);
     const connectResult = await connection.send<IClientConnected>('Connect', clientId);
+    connection.register<IClientEvent>('OnClientEvent')
+      .subscribe(e => {
+        return console.log(e);
+      });
     console.log(`connection result: ${connectResult}`);
     console.log(connectResult);
 
-    const result = new ClientModel(connectResult.Id, events);
+    const result = new ClientModel(connectResult.PlayerId, events);
 
     stateSubject.next({IsOpen: true});
 
@@ -38,5 +42,10 @@ export interface IClientId {
 }
 
 export interface IClientConnected {
-  readonly Id: string;
+  readonly PlayerId: string;
+}
+
+export interface IClientEvent {
+  correlationId: string;
+  data: {};
 }

@@ -51,6 +51,8 @@ namespace CardGame.Application
 
             serviceCollection.AddSingleton<IServiceProvider>(serviceCollection.BuildServiceProvider());
 
+            serviceCollection.AddSingleton<ClientRouter>();
+
             // Add service and create Policy with options
             serviceCollection.AddCors(options =>
             {
@@ -95,8 +97,13 @@ namespace CardGame.Application
             }
             _requestRegistry.Configure(requestRegistry, Resolve);
 
+            //todo find a way to avoid calling these setup methods in configure
+
             var serviceCallRouter = app.ApplicationServices.GetService<IServiceCallRouter>();
             serviceCallRouter.Configure();
+
+            var clientRouter = app.ApplicationServices.GetService<ClientRouter>();
+            clientRouter.Init();
 
         }
     }

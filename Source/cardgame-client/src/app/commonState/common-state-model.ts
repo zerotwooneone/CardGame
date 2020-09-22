@@ -12,7 +12,7 @@ export class CommonStateModel {
     public readonly PlayersInRound: Observable<string[]>;
     constructor(private connection: IOpenConnection) {
         this.stateChangedObservable = connection.register<ICommonStateChanged>('changed');
-
+        
         this.StateId = this
             .stateChangedObservable
             .pipe(

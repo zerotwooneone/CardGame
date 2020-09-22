@@ -43,7 +43,7 @@ namespace CardGame.Application.Bus
             var serviceCallSubscription = _bus.Subscribe<ServiceCall>("ServiceCall", OnServiceCall);
         }
 
-        private async Task<Unit> OnServiceCall(ServiceCall sc)
+        private async Task OnServiceCall(ServiceCall sc)
         {
             //todo: need to handle errors in the observable
             var task = Invoke(sc);
@@ -55,7 +55,7 @@ namespace CardGame.Application.Bus
             {
                 //todo: try to get rid of the aggregate exception which might contain a null task.exception
                 _bus.PublishEvent("ServiceCallFailed", ServiceCallFailed.Factory(sc, new AggregateException(task.Exception, ex)));
-                return Unit.Default;
+                return;
             }
             ResponseRegistration responseRegistration = null;
             try
@@ -76,7 +76,6 @@ namespace CardGame.Application.Bus
             {
                 _bus.PublishEvent("ServiceCallFailed", ServiceCallFailed.Factory(sc, e, responseRegistration?.ServiceType.ToString(), responseRegistration?.Method));
             }
-            return Unit.Default;
         }
     }
 }

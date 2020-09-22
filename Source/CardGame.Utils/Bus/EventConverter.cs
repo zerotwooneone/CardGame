@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using CardGame.CommonModel.Bus;
 using CardGame.Utils.Abstractions.Bus;
 using Newtonsoft.Json;
 
@@ -15,6 +16,8 @@ namespace CardGame.Utils.Bus
             {"ServiceCallFailed", new JsonRegistration("CardGame.CommonModel.Bus.ServiceCallFailed")},
             {"CardPlayed", new JsonRegistration("CardGame.CommonModel.Bus.CardPlayed")},
             {"TurnChanged", new JsonRegistration("CardGame.CommonModel.Bus.TurnChanged") },
+            {nameof(GameStateChanged), new JsonRegistration("CardGame.CommonModel.Bus.GameStateChanged") },
+            {nameof(CommonGameStateChanged), new JsonRegistration("CardGame.CommonModel.Bus.CommonGameStateChanged") },
         };
 
         public IReadOnlyDictionary<string, string> GetValues(string topic, object obj)

@@ -1,5 +1,7 @@
 ﻿using System;
 using System.Threading.Tasks;
+using CardGame.CommonModel.Bus;
+using CardGame.Utils.Abstractions.Bus;
 using Microsoft.AspNetCore.SignalR;
 
 namespace CardGame.Application.Client
@@ -7,14 +9,27 @@ namespace CardGame.Application.Client
     public class ClientHub : Hub
     {
         private readonly IHubContext<ClientHub> _context;
-        public ClientHub(IHubContext<ClientHub> context)
+        private readonly IBus _bus;
+
+        public ClientHub(IHubContext<ClientHub> context,
+            IBus bus)
         {
             _context = context;
+            _bus = bus;
         }
 
         public async Task<ClientConnected> Connect(ClientIdentifier clientIdentifier)
         {
-            return new ClientConnected { Id = Guid.NewGuid().ToString()};
+            return new ClientConnected { PlayerId = Guid.NewGuid().ToString()};
+        }
+
+        public async Task SendClientEvent(ClientEvent clientEvent)
+        {
+            if (_context.Clients != null)
+            {
+                //await Clients.All.SendAsync("OnClientEvent", clientEvent);
+                await _context.Clients.All.SendAsync("OnClientEvent", clientEvent);
+            }
         }
     }
 
@@ -25,6 +40,6 @@ namespace CardGame.Application.Client
 
     public class ClientConnected
     {
-        public string Id { get; set; }
+        public string PlayerId { get; set; }
     }
 }

@@ -1,5 +1,6 @@
 import { IOpenConnection } from './IOpenConnection';
 import { Observable, bindCallback, Subject } from 'rxjs';
+import { take } from 'rxjs/operators';
 export class HubConnectionWrapper implements IOpenConnection {
     async send<TResponse>(methodName: string, data: any): Promise<TResponse> {
         return await this.connection.invoke(methodName, data);
@@ -10,7 +11,11 @@ export class HubConnectionWrapper implements IOpenConnection {
     }
     register<TResult>(methodName: string): Observable<TResult> {
         const subject = new Subject<TResult>();
-        const func: RegisterCallback<TResult> = data => subject.next(data);
+        const func: RegisterCallback<TResult> = data => {
+            //console.warn(methodName, data);
+            subject.asObservable().pipe(take(1)).subscribe(d => console.warn(methodName, d));
+            return subject.next(data);
+        };
         this.innerRegister(methodName, func);
         return subject.asObservable();
     }

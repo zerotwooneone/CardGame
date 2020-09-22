@@ -67,6 +67,11 @@ namespace CardGame.Domain.Game
             if (!note.HasErrors())
             {
                 await _gameRepository.SetById(game);
+                _bus.PublishEvent(nameof(GameStateChanged), new GameStateChanged
+                {
+                    CorrelationId = request.CorrelationId,
+                    GameId = gid.Value.Value
+                });
             }
 
             _bus.PublishEvent("CardPlayed", new CardPlayed
