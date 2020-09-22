@@ -12,8 +12,6 @@ export class HubConnectionWrapper implements IOpenConnection {
     register<TResult>(methodName: string): Observable<TResult> {
         const subject = new Subject<TResult>();
         const func: RegisterCallback<TResult> = data => {
-            //console.warn(methodName, data);
-            subject.asObservable().pipe(take(1)).subscribe(d => console.warn(methodName, d));
             return subject.next(data);
         };
         this.innerRegister(methodName, func);
