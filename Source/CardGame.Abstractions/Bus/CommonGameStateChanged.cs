@@ -19,5 +19,6 @@ namespace CardGame.CommonModel.Bus
         public IEnumerable<string> Discard { get; set; }
         public Guid? WinningPlayer { get; set; }
         public Guid CorrelationId { get; set; }
+        public Guid GameId { get; set; }
     }
 }

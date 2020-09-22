@@ -1,6 +1,5 @@
 import { IOpenConnection } from './IOpenConnection';
-import { Observable, bindCallback, Subject } from 'rxjs';
-import { take } from 'rxjs/operators';
+import { Observable, Subject } from 'rxjs';
 export class HubConnectionWrapper implements IOpenConnection {
     async send<TResponse>(methodName: string, data: any): Promise<TResponse> {
         return await this.connection.invoke(methodName, data);

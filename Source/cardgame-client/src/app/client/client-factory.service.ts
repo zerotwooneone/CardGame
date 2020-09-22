@@ -46,6 +46,7 @@ export interface IClientConnected {
 }
 
 export interface IClientEvent {
-  correlationId: string;
-  data: {};
+  readonly correlationId: string;
+  readonly data: {};
+  readonly gameId: string;
 }

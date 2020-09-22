@@ -20,6 +20,7 @@ namespace CardGame.Application.Client
 
         public async Task<ClientConnected> Connect(ClientIdentifier clientIdentifier)
         {
+            //todo: use gameid to group connections together
             return new ClientConnected { PlayerId = Guid.NewGuid().ToString()};
         }
 

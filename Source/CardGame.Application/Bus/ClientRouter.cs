@@ -35,6 +35,7 @@ namespace CardGame.Application.Bus
             var clientEvent = new ClientEvent
             {
                 CorrelationId = arg.CorrelationId,
+                GameId = arg.GameId,
                 Data = new Dictionary<string, object>
                 {
                     {nameof(CommonGameStateChanged.Round), arg.Round},
@@ -84,7 +85,8 @@ namespace CardGame.Application.Bus
                 Player2InRound = roundRemainingPlayers.Contains(player2?.Id),
                 Player3InRound = roundRemainingPlayers.Contains(player3?.Id),
                 Player4InRound = roundRemainingPlayers.Contains(player4?.Id),
-                CorrelationId = gameStateChanged.CorrelationId
+                CorrelationId = gameStateChanged.CorrelationId,
+                GameId = game.Id.Value,
             });
         }
     }
