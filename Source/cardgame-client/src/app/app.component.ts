@@ -1,8 +1,8 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonStateFactoryService } from './commonState/common-state-factory.service';
 import { ClientFactoryService } from './client/client-factory.service';
-import { take, first, timeout } from 'rxjs/operators';
-import { Guid } from './domain/core/id/guid';
+import { first, timeout } from 'rxjs/operators';
+import { ClientRouterService } from './client/client-router.service';
 
 @Component({
   selector: 'cgc-root',
@@ -11,20 +11,22 @@ import { Guid } from './domain/core/id/guid';
 })
 export class AppComponent implements OnInit {
   title = 'cardgame-client';
-  gameId = 'app conponent game id';
+  gameId = '96a8f4b0-7800-4c26-80b6-fd66f286140f';
 
   constructor(private commonStateFactory: CommonStateFactoryService,
-              private clientFactory: ClientFactoryService) {}
+    private clientFactory: ClientFactoryService,
+    private clientRouter: ClientRouterService) { }
 
   async ngOnInit(): Promise<void> {
+    this.clientRouter.init();
     try {
-      const commonState = await this.commonStateFactory.create('some id');
+      const commonState = await this.commonStateFactory.create(this.gameId);
     } catch (error) {
       console.error(error);
     }
 
     try {
-      const c = await this.clientFactory.Create({ GameId: '96a8f4b0-7800-4c26-80b6-fd66f286140f' });
+      const c = await this.clientFactory.Create({ GameId: this.gameId });
       console.log('created client');
       const state = await c.State.pipe(first(), timeout(100)).toPromise();
       console.log(state);

@@ -20,5 +20,6 @@ namespace CardGame.CommonModel.Bus
         public Guid? WinningPlayer { get; set; }
         public Guid CorrelationId { get; set; }
         public Guid GameId { get; set; }
+        public int? DrawCount { get; set; }
     }
 }

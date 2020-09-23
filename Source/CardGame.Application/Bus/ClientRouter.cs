@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using CardGame.Application.Client;
@@ -34,28 +35,13 @@ namespace CardGame.Application.Bus
             //todo come up with a generic way to publish events to the client
             var clientEvent = new ClientEvent
             {
+                EventId = Guid.NewGuid(),
                 CorrelationId = arg.CorrelationId,
                 GameId = arg.GameId,
-                Data = new Dictionary<string, object>
-                {
-                    {nameof(CommonGameStateChanged.Round), arg.Round},
-                    {nameof(CommonGameStateChanged.Discard), arg.Discard.ToArray() },
-                    {nameof(CommonGameStateChanged.CurrentPlayer), arg.CurrentPlayer.ToString() },
-                    {nameof(CommonGameStateChanged.Turn), arg.Turn},
-                    {nameof(CommonGameStateChanged.WinningPlayer), arg.WinningPlayer.ToString() },
-
-                    {nameof(CommonGameStateChanged.Player1Score), arg.Player1Score},
-                    {nameof(CommonGameStateChanged.Player2Score), arg.Player2Score},
-                    {nameof(CommonGameStateChanged.Player3Score), arg.Player3Score},
-                    {nameof(CommonGameStateChanged.Player4Score), arg.Player4Score},
-
-                    {nameof(CommonGameStateChanged.Player1InRound), arg.Player1InRound},
-                    {nameof(CommonGameStateChanged.Player2InRound), arg.Player2InRound},
-                    {nameof(CommonGameStateChanged.Player3InRound), arg.Player3InRound},
-                    {nameof(CommonGameStateChanged.Player4InRound), arg.Player4InRound},
-                }
+                Type = typeof(CommonGameStateChanged).ToString(),
+                Topic = nameof(OnCommonGameStateChanged),
+                Data = arg
             };
-            //_bus.Publish(nameof(ClientEvent), clientEvent);
             await _clientHub.SendClientEvent(clientEvent);
         }
 
@@ -87,6 +73,7 @@ namespace CardGame.Application.Bus
                 Player4InRound = roundRemainingPlayers.Contains(player4?.Id),
                 CorrelationId = gameStateChanged.CorrelationId,
                 GameId = game.Id.Value,
+                DrawCount = game.Round.Deck.Cards.Count(),
             });
         }
     }

@@ -10,7 +10,9 @@ import { EventMap } from './EventMap';
   providedIn: 'root'
 })
 export class BusFactoryService {
-  constructor(protected readonly eventMap: EventMap) {
+  private readonly eventMap: EventMap;
+  constructor() {
+    this.eventMap = new EventMap();
     this.commonBus = new Subject<CommonEvent>();
    }
 

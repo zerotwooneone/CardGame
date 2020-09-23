@@ -19,4 +19,6 @@ export class TopicTokens {
     static readonly discardAndDrawResponse = 'discardAndDrawResponse';
     static readonly discardRequest = 'discardRequest';
     static readonly discardResponse = 'discardResponse';
+    static readonly clientEvent = 'clientEvent';
+    static GameStateChanged = 'OnCommonGameStateChanged';
 }

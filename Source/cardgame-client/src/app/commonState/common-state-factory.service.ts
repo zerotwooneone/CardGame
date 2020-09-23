@@ -1,8 +1,9 @@
 import { Injectable } from '@angular/core';
-import { OpenConnectionFactoryService } from '../hub/open-connection-factory.service';
-import { CommonStateModel, ICommonStateChanged } from './common-state-model';
-import { IOpenConnection } from '../hub/IOpenConnection';
-import { of } from 'rxjs';
+import { CommonStateModel } from './common-state-model';
+import { of, Subject } from 'rxjs';
+import { BusFactoryService } from '../domain/core/bus/bus-factory.service';
+import { TopicTokens } from '../domain/core/bus/topic-tokens';
+import { CommonGameStateChanged } from './CommonGameStateChanged';
 
 @Injectable({
   providedIn: 'root'
@@ -10,7 +11,7 @@ import { of } from 'rxjs';
 export class CommonStateFactoryService {
 
   private previous: IAttempt;
-  constructor(private openConnectionFactory: OpenConnectionFactoryService) { }
+  constructor(private bus: BusFactoryService) { }
 
   async create(gameId: string): Promise<CommonStateModel> {
     const result = this.createNew(gameId);
@@ -19,7 +20,6 @@ export class CommonStateFactoryService {
   }
 
   private async createNew(gameId: string): Promise<CommonStateModel> {
-    const connection = await this.openConnectionFactory.open('https://localhost:44379/commonState');
     // const connection: IOpenConnection = {
     //   register: <TResult>(methodName: string) => {
     //     switch (methodName) {
@@ -41,7 +41,16 @@ export class CommonStateFactoryService {
     //   },
     //   send: (methodName: string, data: any) => Promise.reject('not set up to send')
     // };
-    const result = new CommonStateModel(connection);
+    const eventSubject = new Subject<CommonGameStateChanged>();
+    function OnCommonGameStateChanged(e: CommonGameStateChanged) {
+      if (e.gameId === gameId) {
+        eventSubject.next(e);
+      }
+    }
+    // todo handle this subscription
+    const stateObservable = this.bus
+      .registerToReceive<CommonGameStateChanged>(TopicTokens.GameStateChanged, OnCommonGameStateChanged.bind(this));
+    const result = new CommonStateModel(eventSubject.asObservable());
     return result;
   }
 
@@ -56,3 +65,5 @@ interface IAttempt {
   readonly id: string;
   promise: Promise<CommonStateModel>;
 }
+
+

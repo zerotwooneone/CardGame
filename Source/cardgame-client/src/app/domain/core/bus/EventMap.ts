@@ -17,6 +17,8 @@ import { EliminateRequest } from '../../game/event/EliminateRequest';
 import { Eliminated } from '../../game/event/Eliminated';
 import { DiscardAndDrawRequest } from '../../game/event/DiscardAndDrawRequest';
 import { DiscardAndDrawed } from '../../game/event/DiscardAndDrawed';
+import { ClientEvent } from 'src/app/client/client-factory.service';
+import { CommonGameStateChanged } from "src/app/commonState/CommonGameStateChanged";
 
 export class EventMap {
   private static readonly mappers: { [token: string]: MapDefinition; } = {
@@ -264,7 +266,24 @@ export class EventMap {
       } as EventPayload),
       type: typeof DiscardAndDrawed
     },
+    [TopicTokens.clientEvent]: EventMap.GetJsonMapDefinition(typeof ClientEvent),
+    [TopicTokens.GameStateChanged]: EventMap.GetJsonMapDefinition(typeof CommonGameStateChanged),
   };
+  static GetJsonMapDefinition(type: string): MapDefinition {
+    return {
+      type,
+      receiveMap: (t, ep) => {
+        const x = ((ep as EventPayload).JSON as { value: string });
+        return JSON.parse(x.value);
+      },
+      requestMap: (e, eid, cid) => ({
+        type,
+        correlationId: cid,
+        eventId: eid,
+        JSON: { value: JSON.stringify(e) }
+      } as EventPayload)
+    };
+  }
   public Receive<T>(token: string, type: string, event?: EventPayload): T {
     const mapper = EventMap.mappers[token];
     if (!mapper) {

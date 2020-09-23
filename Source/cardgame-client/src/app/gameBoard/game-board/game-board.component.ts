@@ -3,7 +3,7 @@ import { Observable, of, forkJoin } from 'rxjs';
 import { CurrentPlayerModel } from 'src/app/currentPlayer/current-player-model';
 import { CurrentPlayerModelFactoryService } from 'src/app/currentPlayer/current-player-model-factory.service';
 import { CommonStateFactoryService } from 'src/app/commonState/common-state-factory.service';
-import { CommonStateModel, ICard } from 'src/app/commonState/common-state-model';
+import { CommonStateModel, ICardId } from 'src/app/commonState/common-state-model';
 import { withLatestFrom, map, tap, switchMap, concatMap } from 'rxjs/operators';
 import { property } from 'src/pipes/property';
 import { PlayerCache, IPlayerInfo, IPlayerService } from 'src/app/player/player.service';
@@ -21,7 +21,7 @@ export class GameBoardComponent implements OnInit {
   public currentPlayer: Observable<CurrentPlayerModel>;
   private commonState: CommonStateModel;
   drawCount: number;
-  discardTop: ICard | null;
+  discardTop: ICardId | null;
   discardCount: number;
   private readonly playerCache: PlayerCache = {};
   constructor(private readonly currentPlayerModelFactory: CurrentPlayerModelFactoryService,

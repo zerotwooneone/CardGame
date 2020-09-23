@@ -13,7 +13,7 @@
                 <div class="card card1"
                     [hidden]="!showDiscard1()">
                     <div *ngIf="showDiscard1Contents()">
-                        <p>Value: {{discardTop?.Value}}</p>
+                        <p>Value: {{discardTop?.strength}}</p>
                         <p>
                             <input type="button" value="Inspect" />
                         </p>
@@ -21,7 +21,7 @@
                 </div>
                 <div class="card card2" [hidden]="!showDiscard2()">
                     <div *ngIf="showDiscard2Contents()">
-                        <p>Value: {{discardTop?.Value}}</p>
+                        <p>Value: {{discardTop?.strength}}</p>
                         <p>
                             <input type="button" value="Inspect" />
                         </p>
@@ -29,7 +29,7 @@
                 </div>
                 <div class="card card3" [hidden]="!showDiscard3()">
                     <div *ngIf="showDiscard3Contents()">
-                        <p>Value: {{discardTop?.Value}}</p>
+                        <p>Value: {{discardTop?.strength}}</p>
                         <p>
                             <input type="button" value="Inspect" />
                         </p>
