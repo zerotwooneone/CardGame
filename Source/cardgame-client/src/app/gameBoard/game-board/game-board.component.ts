@@ -7,6 +7,7 @@ import { CommonStateModel, ICardId } from 'src/app/commonState/common-state-mode
 import { withLatestFrom, map, tap, switchMap, concatMap } from 'rxjs/operators';
 import { property } from 'src/pipes/property';
 import { PlayerCache, IPlayerInfo, IPlayerService } from 'src/app/player/player.service';
+import { connect } from 'http2';
 
 @Component({
   selector: 'cgc-game-board',
@@ -15,8 +16,14 @@ import { PlayerCache, IPlayerInfo, IPlayerService } from 'src/app/player/player.
 })
 export class GameBoardComponent implements OnInit {
 
+  private _gameId: string;
   @Input()
-  public gameId: string;
+  get gameId(): string { return this._gameId; }
+  set gameId(gameId: string) {
+    if (!!gameId && !!(gameId.trim())) {
+      this.connect(gameId);
+    }
+  }
   otherPlayers: Observable<IOtherPlayer[]>;
   public currentPlayer: Observable<CurrentPlayerModel>;
   private commonState: CommonStateModel;
@@ -32,56 +39,6 @@ export class GameBoardComponent implements OnInit {
     const currentPlayerId = 'some player id';
     this.currentPlayer = this.currentPlayerModelFactory
       .getById(currentPlayerId);
-
-    this.commonState = await this.commonStateFactory.get(this.gameId);
-    this.commonState
-      .DrawCount
-      .subscribe(v => this.drawCount = v);
-
-    this.commonState
-      .Discard
-      .subscribe(array => {
-        this.discardCount = array.length;
-        this.discardTop = array.length ? array[array.length - 1] : null;
-      });
-
-    const playerInfos = this.commonState
-      .PlayerIds
-      .pipe(
-        map(allPlayerIds => {
-          const cachedPlayerIds = Object.keys(this.playerCache);
-          const idsToQuery = this.findNotCached(cachedPlayerIds, allPlayerIds);
-          if (idsToQuery.length) {
-            this.playerService.updatePlayerCache(this.playerCache, this.gameId, ...idsToQuery);
-          }
-          const obs: Observable<IPlayerInfo>[] = [];
-          const result = allPlayerIds.reduce((obsArray, id) => {
-            obsArray.push(this.playerCache[id]);
-            return obsArray;
-          }, obs);
-          return result;
-        }),
-        concatMap(a => forkJoin(a))
-      );
-
-    this.otherPlayers = this.commonState
-      .PlayersInRound
-      .pipe(
-        withLatestFrom(playerInfos),
-        map(([playersInRound, playerInfoArray]) => {
-          const inRound = new Map(playersInRound.map((i): [string, string] => [i, i]));
-
-          return playerInfoArray.map(p => {
-            const result: IOtherPlayer = {
-              Id: p.id,
-              name: p.name,
-              isInRound: inRound.has(p.id)
-            };
-            return result;
-          });
-        }),
-        property(m => m)
-      );
   }
   findNotCached(cachedKeys: string[], allKeys: string[]): string[] {
     return allKeys.filter(a => !cachedKeys.some(c => c === a));
@@ -131,6 +88,59 @@ export class GameBoardComponent implements OnInit {
   }
   showDraw3(): boolean {
     return this.drawCount > 2;
+  }
+  async connect(gameId: string) {
+    this.commonState = await this.commonStateFactory.get(gameId);
+    this._gameId = gameId;
+
+    this.commonState
+      .DrawCount
+      .subscribe(v => this.drawCount = v);
+
+    this.commonState
+      .Discard
+      .subscribe(array => {
+        this.discardCount = array.length;
+        this.discardTop = array.length ? array[array.length - 1] : null;
+      });
+
+    const playerInfos = this.commonState
+      .PlayerIds
+      .pipe(
+        map(allPlayerIds => {
+          const cachedPlayerIds = Object.keys(this.playerCache);
+          const idsToQuery = this.findNotCached(cachedPlayerIds, allPlayerIds);
+          if (idsToQuery.length) {
+            this.playerService.updatePlayerCache(this.playerCache, this.gameId, ...idsToQuery);
+          }
+          const obs: Observable<IPlayerInfo>[] = [];
+          const result = allPlayerIds.reduce((obsArray, id) => {
+            obsArray.push(this.playerCache[id]);
+            return obsArray;
+          }, obs);
+          return result;
+        }),
+        concatMap(a => forkJoin(a))
+      );
+
+    this.otherPlayers = this.commonState
+      .PlayersInRound
+      .pipe(
+        withLatestFrom(playerInfos),
+        map(([playersInRound, playerInfoArray]) => {
+          const inRound = new Map(playersInRound.map((i): [string, string] => [i, i]));
+
+          return playerInfoArray.map(p => {
+            const result: IOtherPlayer = {
+              Id: p.id,
+              name: p.name,
+              isInRound: inRound.has(p.id)
+            };
+            return result;
+          });
+        }),
+        property(m => m)
+      );
   }
 
 }

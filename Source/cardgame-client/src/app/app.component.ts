@@ -11,28 +11,24 @@ import { ClientRouterService } from './client/client-router.service';
 })
 export class AppComponent implements OnInit {
   title = 'cardgame-client';
-  gameId = '96a8f4b0-7800-4c26-80b6-fd66f286140f';
-
+  gameIdX: string;
   constructor(private commonStateFactory: CommonStateFactoryService,
-    private clientFactory: ClientFactoryService,
-    private clientRouter: ClientRouterService) { }
+              private clientFactory: ClientFactoryService,
+              private clientRouter: ClientRouterService) { }
 
   async ngOnInit(): Promise<void> {
     this.clientRouter.init();
-    try {
-      const commonState = await this.commonStateFactory.create(this.gameId);
-    } catch (error) {
-      console.error(error);
-    }
+  }
 
+  async connect(gameId: string) {
+    this.gameIdX = gameId;
     try {
-      const c = await this.clientFactory.Create({ GameId: this.gameId });
+      const c = await this.clientFactory.Create({ GameId: gameId });
       console.log('created client');
       const state = await c.State.pipe(first(), timeout(100)).toPromise();
       console.log(state);
     } catch (error) {
       console.error(error);
     }
-
   }
 }

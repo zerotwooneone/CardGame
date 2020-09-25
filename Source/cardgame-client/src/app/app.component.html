@@ -299,7 +299,12 @@
 </style>
 
 <div class="content" role="main">
-  <cgc-game-board [gameId]="gameId"></cgc-game-board>
+  <div>
+    <label for="gameid">Game Id:</label>
+    <input id="gameid" #gameId value="96a8f4b0-7800-4c26-80b6-fd66f286140f">
+    <button (click)="connect(gameId.value)">Connect</button>
+  </div>
+  <cgc-game-board [gameId]="gameIdX"></cgc-game-board>
 </div>
 
 <router-outlet></router-outlet>

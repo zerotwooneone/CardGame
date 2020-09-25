@@ -48,7 +48,7 @@ export class CommonStateFactoryService {
       }
     }
     // todo handle this subscription
-    const stateObservable = this.bus
+    const stateSubscription = this.bus
       .registerToReceive<CommonGameStateChanged>(TopicTokens.GameStateChanged, OnCommonGameStateChanged.bind(this));
     const result = new CommonStateModel(eventSubject.asObservable());
     return result;
