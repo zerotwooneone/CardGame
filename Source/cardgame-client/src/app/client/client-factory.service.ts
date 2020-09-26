@@ -11,7 +11,7 @@ import { TopicTokens } from '../domain/core/bus/topic-tokens';
 export class ClientFactoryService {
 
   constructor(private openConnectionFactory: OpenConnectionFactoryService,
-    private busFactoryService: BusFactoryService) { }
+              private busFactoryService: BusFactoryService) { }
 
   async Create(clientId: IClientId): Promise<ClientModel> {
     const stateSubject = new Subject<IStateChanged>();
