@@ -1,10 +1,10 @@
 import { Injectable } from '@angular/core';
 import { Subject, Observable } from 'rxjs';
 import { CommonEvent, EventPayload } from './common-event';
-import { Guid } from '../id/guid';
 import { map, filter, take, switchMap } from 'rxjs/operators';
 import { BusSubscription } from './BusSubscription';
 import { EventMap } from './EventMap';
+import { Guid } from '../id/guid';
 
 @Injectable({
   providedIn: 'root'
