@@ -29,8 +29,7 @@ export class ClientFactoryService {
       .subscribe(clientEvent => {
         this.busFactoryService.publish<ClientEvent>(TopicTokens.clientEvent, clientEvent, clientEvent.correlationId, clientEvent.eventId);
       });
-    console.log(`connection result: ${connectResult}`);
-    console.log(connectResult);
+    console.log(`connection result:`, connectResult);
 
     const result = new ClientModel(connectResult.PlayerId, events);
 
