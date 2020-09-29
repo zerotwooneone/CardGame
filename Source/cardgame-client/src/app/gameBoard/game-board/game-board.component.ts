@@ -4,10 +4,8 @@ import { CurrentPlayerModel } from 'src/app/currentPlayer/current-player-model';
 import { CurrentPlayerModelFactoryService } from 'src/app/currentPlayer/current-player-model-factory.service';
 import { CommonStateFactoryService } from 'src/app/commonState/common-state-factory.service';
 import { CommonStateModel, ICardId } from 'src/app/commonState/common-state-model';
-import { withLatestFrom, map, tap, switchMap, concatMap } from 'rxjs/operators';
+import { withLatestFrom, map, tap, switchMap, concatMap, filter } from 'rxjs/operators';
 import { property } from 'src/pipes/property';
-import { PlayerCache, IPlayerInfo, IPlayerService } from 'src/app/player/player.service';
-import { connect } from 'http2';
 
 @Component({
   selector: 'cgc-game-board',
@@ -30,10 +28,8 @@ export class GameBoardComponent implements OnInit {
   drawCount: number;
   discardTop: ICardId | null;
   discardCount: number;
-  private readonly playerCache: PlayerCache = {};
   constructor(private readonly currentPlayerModelFactory: CurrentPlayerModelFactoryService,
-              private readonly commonStateFactory: CommonStateFactoryService,
-              @Inject('IPlayerService') private readonly playerService: IPlayerService) { }
+    private readonly commonStateFactory: CommonStateFactoryService) { }
 
   async ngOnInit(): Promise<void> {
     const currentPlayerId = 'some player id';
@@ -92,6 +88,7 @@ export class GameBoardComponent implements OnInit {
   async connect(gameId: string) {
     this.commonState = await this.commonStateFactory.get(gameId);
     this._gameId = gameId;
+    const playerId = '9b644228-6c7e-4caa-becf-89e093ee299f';
 
     this.commonState
       .DrawCount
@@ -105,23 +102,7 @@ export class GameBoardComponent implements OnInit {
       });
 
     const playerInfos = this.commonState
-      .PlayerIds
-      .pipe(
-        map(allPlayerIds => {
-          const cachedPlayerIds = Object.keys(this.playerCache);
-          const idsToQuery = this.findNotCached(cachedPlayerIds, allPlayerIds);
-          if (idsToQuery.length) {
-            this.playerService.updatePlayerCache(this.playerCache, this.gameId, ...idsToQuery);
-          }
-          const obs: Observable<IPlayerInfo>[] = [];
-          const result = allPlayerIds.reduce((obsArray, id) => {
-            obsArray.push(this.playerCache[id]);
-            return obsArray;
-          }, obs);
-          return result;
-        }),
-        concatMap(a => forkJoin(a))
-      );
+      .PlayerIds;
 
     this.otherPlayers = this.commonState
       .PlayersInRound
@@ -130,11 +111,14 @@ export class GameBoardComponent implements OnInit {
         map(([playersInRound, playerInfoArray]) => {
           const inRound = new Map(playersInRound.map((i): [string, string] => [i, i]));
 
-          return playerInfoArray.map(p => {
+          // todo: fix play info
+          return playerInfoArray
+            .filter(s => s !== playerId)
+            .map(p => {
             const result: IOtherPlayer = {
-              Id: p.id,
-              name: p.name,
-              isInRound: inRound.has(p.id)
+              Id: p,
+              name: p,
+              isInRound: true,
             };
             return result;
           });

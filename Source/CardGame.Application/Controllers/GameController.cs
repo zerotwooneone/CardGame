@@ -47,7 +47,7 @@ namespace CardGame.Application.Controllers
                 CorrelationId = Guid.NewGuid(),
                 GameId = gameId,
                 CardStrength = request.CardStrength,
-                CardVarient = request.CardVarient,
+                CardVarient = request.CardVariant,
                 PlayerId = request.PlayerId,
                 GuessValue = request.GuessValue,
                 TargetId = request.TargetId

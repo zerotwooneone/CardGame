@@ -32,13 +32,13 @@ namespace CardGame.Application.DTO
         {
             var converted = _gameConverter.ConvertToCommonKnowledgeGame(gameDao);
             var convertPlayers = ConvertPlayers(gameDao).ToArray();
-            var roundId = int.Parse(converted.Round.Id);
-            var turnId = int.Parse(converted.Round.Turn.Id);
+            var roundId = converted.Round.Id;
+            var turnId = converted.Round.Turn.Id;
             PlayerId playerId = PlayerId.Factory(Guid.Parse(converted.Round.Turn.CurrentPlayer)).Value;
             var turn = Domain.Round.Turn.Factory(turnId,
                 playerId).Value;
             Guid? winningPlayer = gameDao.WinningPlayer;
-            var game = Game.Factory(Guid.Parse(converted.Id),
+            var game = Game.Factory(converted.Id,
                 convertPlayers,
                 Domain.Round.Round.Factory(roundId,
                     turn,
@@ -130,8 +130,8 @@ namespace CardGame.Application.DTO
                 EliminatedPlayer2 = eliminated.Skip(1).FirstOrDefault()?.ToString(),
                 EliminatedPlayer3 = eliminated.Skip(2).FirstOrDefault()?.ToString(),
 
-                RoundId = game.Round.Id.ToString(),
-                TurnId = game.Round.Turn.Id.ToString(),
+                RoundId = game.Round.Id,
+                TurnId = game.Round.Turn.Id,
                 WinningPlayer = game.WinningPlayer?.Value
             };
             await _gameDal.SetById(gameDao);

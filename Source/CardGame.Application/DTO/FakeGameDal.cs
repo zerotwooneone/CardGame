@@ -14,8 +14,8 @@ namespace CardGame.Application.DTO
             {
                 Id = "96a8f4b0-7800-4c26-80b6-fd66f286140f",
                 CurrentPlayer = "9b644228-6c7e-4caa-becf-89e093ee299f",
-                TurnId = "2",
-                RoundId = "3",
+                TurnId = 2,
+                RoundId = 3,
                 Deck = "80;70;60;50;30;20;10;10;10;10",
                 Discard = "30;40",
                 EliminatedPlayer1 = null,

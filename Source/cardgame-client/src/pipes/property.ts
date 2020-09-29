@@ -2,6 +2,7 @@ import { Observable, Subscription } from 'rxjs';
 import { map, shareReplay, filter } from 'rxjs/operators';
 
 export function property<TSource, TResult>(
+    // todo: add error handling
     mapper: (s: TSource) => TResult,
     subscriptionCallback?: (subscription: Subscription) => void): (source: Observable<TSource>) => Observable<TResult> {
     return (source: Observable<TSource>) => {
@@ -15,3 +16,5 @@ export function property<TSource, TResult>(
         return result;
     };
 }
+
+

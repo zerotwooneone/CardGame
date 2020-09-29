@@ -7,7 +7,7 @@ namespace CardGame.Application.DTO
     {
         public Guid PlayerId { get; set; } 
         public CardStrength CardStrength { get; set; }
-        public int CardVarient { get; set; }
+        public int CardVariant { get; set; }
         public Guid? TargetId { get; set; }
         public CardStrength? GuessValue { get; set; }
     }

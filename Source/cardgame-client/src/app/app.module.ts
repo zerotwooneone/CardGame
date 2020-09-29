@@ -11,7 +11,6 @@ import { GameBoardComponent } from './gameBoard/game-board/game-board.component'
 import { OtherPlayerComponent } from './otherPlayer/other-player/other-player.component';
 import { CurrentPlayerComponent } from './currentPlayer/current-player/current-player.component';
 import { PlayableCardComponent } from './card/playable-card/playable-card.component';
-import { PlayerService } from './player/player.service';
 import { APIInterceptor } from './client/APIInterceptor';
 
 @NgModule({
@@ -30,10 +29,6 @@ import { APIInterceptor } from './client/APIInterceptor';
     ServiceWorkerModule.register('ngsw-worker.js', { enabled: environment.production })
   ],
   providers: [
-    {
-      provide: 'IPlayerService',
-      useClass: PlayerService
-    },
     {
       provide: HTTP_INTERCEPTORS,
       useClass: APIInterceptor,

@@ -10,7 +10,7 @@ namespace CardGame.Application.DTO
         {
             return new CommonKnowledgeGame
             {
-                Id = gameDao.Id,
+                Id = Guid.Parse(gameDao.Id),
                 Players = (new[] { gameDao.Player1, gameDao.Player2, gameDao.Player3, gameDao.Player4 }).Where(p => p != null),
                 Player1Score = gameDao.Player1Score,
                 Player2Score = gameDao.Player2Score,
@@ -42,28 +42,28 @@ namespace CardGame.Application.DTO
                 case 0:
                     return new PlayerDto
                     {
-                        Hand = gameDao.Player1Hand,
+                        Hand = CardDto.Create(gameDao.Player1Hand),
                         Score = gameDao.Player1Score,
                         Protected = gameDao.Player1Protected
                     };
                 case 1:
                     return new PlayerDto
                     {
-                        Hand = gameDao.Player2Hand,
+                        Hand = CardDto.Create(gameDao.Player2Hand),
                         Score = gameDao.Player2Score,
                         Protected = gameDao.Player2Protected
                     };
                 case 2:
                     return new PlayerDto
                     {
-                        Hand = gameDao.Player3Hand,
+                        Hand = CardDto.Create(gameDao.Player3Hand),
                         Score = gameDao.Player3Score,
                         Protected = gameDao.Player3Protected
                     };
                 case 3:
                     return new PlayerDto
                     {
-                        Hand = gameDao.Player4Hand,
+                        Hand = CardDto.Create(gameDao.Player4Hand),
                         Score = gameDao.Player4Score,
                         Protected = gameDao.Player4Protected
                     };

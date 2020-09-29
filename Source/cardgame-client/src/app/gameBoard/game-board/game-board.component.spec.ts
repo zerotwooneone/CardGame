@@ -9,8 +9,6 @@ import { OtherPlayerComponent } from 'src/app/otherPlayer/other-player/other-pla
 import { CurrentPlayerComponent } from 'src/app/currentPlayer/current-player/current-player.component';
 import { testproperty } from 'src/pipes/testproperty';
 import { CurrentPlayerModelFactoryService } from 'src/app/currentPlayer/current-player-model-factory.service';
-import { PlayerService, PlayerCache } from 'src/app/player/player.service';
-import { MockPlayerService } from 'src/app/player/mockPlayerService';
 
 describe('GameBoardComponent', () => {
   let spectator: Spectator<GameBoardComponent>;
@@ -20,18 +18,11 @@ describe('GameBoardComponent', () => {
       CommonStateFactoryService,
       CurrentPlayerModelFactoryService,
       CommonStateModel,
-      PlayerService
     ],
     declarations: [
       MockComponent(OtherPlayerComponent),
       MockComponent(CurrentPlayerComponent)
     ],
-    providers: [
-      {
-        provide: 'IPlayerService',
-        useClass: MockPlayerService
-      }
-    ]
   });
   const gameId = 'some game id';
   beforeEach(() => spectator = createComponent({
@@ -56,12 +47,6 @@ describe('GameBoardComponent', () => {
         .withArgs(gameId)
         .and
         .returnValue(Promise.resolve(commonStateModel));
-      const playerService = spectator.inject(PlayerService);
-      playerService.updatePlayerCache
-        .and.callFake((existing: PlayerCache, gId, ids) => {
-          existing['1'] = of({id: '1', name: 'Player 1'});
-          existing['2'] = of({ id: '2', name: 'Player 2' });
-        });
 
       await spectator.component.ngOnInit();
 
