@@ -1,6 +1,6 @@
 <div class="container">
     <p>Value: {{value}}</p>
     <div class="actions">
-        <input type="button" value="Play" [hidden]="!isTurn" />
+        <input type="button" (click)="onPlayClick()" value="Play" [hidden]="!isTurn" />
     </div>
 </div>

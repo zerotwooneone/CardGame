@@ -1,10 +1,10 @@
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
-import { api } from "src/pipes/api";
+import { api } from 'src/pipes/api';
 
 export class GameClient {
     constructor(readonly gameId: string,
-        private readonly httpClient: HttpClient) { }
+                private readonly httpClient: HttpClient) { }
     getCommonState(): Observable<CommonKnowledgeGame> {
         return this.httpClient
             .get<CommonKnowledgeGame>(`${this.getGameUrl()}`)
@@ -20,7 +20,11 @@ export class GameClient {
             );
     }
     play(request: PlayRequest): Observable<PlayResponse> {
-        return this.httpClient.post<PlayResponse>(`${this.getGameUrl()}`, request);
+        const response = this.httpClient.post<PlayResponse>(`${this.getGameUrl()}/play`, request)
+            .pipe(
+                api()
+            );
+        return response;
     }
     private getGameUrl(): string {
         return `/game/${this.gameId}`;

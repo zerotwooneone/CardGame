@@ -1,6 +1,7 @@
 import { Observable, of, Subject } from 'rxjs';
 import { map } from 'rxjs/operators';
 import { property } from 'src/pipes/property';
+import { CardModel } from '../card/card-model';
 import { CommonStateModel } from '../commonState/common-state-model';
 import { CardDto, GameClient, PlayerDto } from '../game/game-client';
 
@@ -11,9 +12,9 @@ export class CurrentPlayerModel {
     readonly IsTurn: Observable<boolean>;
     private readonly playerSubject: Subject<PlayerDto>;
     constructor(private readonly id: string,
-        playerPromise: Promise<PlayerDto>,
-        private gameClient: GameClient,
-        private commonState: CommonStateModel) {
+                playerPromise: Promise<PlayerDto>,
+                private gameClient: GameClient,
+                private commonState: CommonStateModel) {
         this.playerSubject = new Subject<PlayerDto>();
 
         // todo: get the player name from the dto
@@ -45,5 +46,17 @@ export class CurrentPlayerModel {
         const apiObservable = this.gameClient.getPlayer(this.id);
         apiObservable.subscribe(p => this.playerSubject.next(p));
         return apiObservable.toPromise();
+    }
+    async play(card: CardModel,
+        targetId?: string,
+        guessValue?: number): Promise<any> {
+        // todo: move this call?
+        const response = await this.gameClient.play({
+            cardStrength: card.value,
+            cardVariant: parseInt(card.id.substr(1, 1), 10),
+            playerId: this.id,
+            guessValue,
+            targetId
+        });
     }
 }

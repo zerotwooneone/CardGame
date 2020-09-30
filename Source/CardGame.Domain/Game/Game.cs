@@ -110,7 +110,7 @@ namespace CardGame.Domain.Game
             }
 
             var targetPlayer = GetPlayerById(target);
-            var targetCard = GetCard(targetPlayer.Hand.Card1, note);
+            var targetCard = GetCard(targetPlayer?.Hand.Card1, note);
             var playContext = new PlayContext(player, targetPlayer, guessValue,this, targetCard, note);
             var card = GetCard(cardId, note);
             
@@ -211,6 +211,7 @@ namespace CardGame.Domain.Game
 
         private Card.Card GetCard(ICardId cardId, Notification note)
         {
+            if (cardId is null) return null;
             FactoryResult<Card.Card> result;
             switch (cardId.CardValue.Value)
             {

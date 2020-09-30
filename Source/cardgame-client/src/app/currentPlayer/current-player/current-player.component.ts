@@ -2,7 +2,7 @@ import { Component, OnInit, Input, OnChanges, SimpleChanges } from '@angular/cor
 import { CurrentPlayerModel } from '../current-player-model';
 import { property } from 'src/pipes/property';
 import { Observable } from 'rxjs';
-import { map } from 'rxjs/operators';
+import { map, take } from 'rxjs/operators';
 import { CardModel } from 'src/app/card/card-model';
 import { CardModelFactoryService } from 'src/app/card/card-model-factory.service';
 
@@ -53,6 +53,16 @@ export class CurrentPlayerComponent implements OnInit, OnChanges {
   mapToPlayableCard(cardId: string): CardModel {
     const result = this.cardModelFactory.createPlayable(cardId);
     return result;
+  }
+
+  async play(cardObservable: Observable<CardModel>): Promise<any> {
+    if (!this.player) { return; }
+    const card = await cardObservable.pipe(take(1)).toPromise();
+
+    // todo dialog for target and strength?
+    const targetId = undefined;
+    const guessValue = undefined;
+    const response = await this.player.play(card, targetId, guessValue);
   }
 }
 
