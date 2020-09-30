@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 using CardGame.CommonModel.Bus;
 using CardGame.Utils.Abstractions.Bus;
@@ -13,8 +14,10 @@ namespace CardGame.Application.Client
         private readonly IHubContext<ClientHub> _context;
         private readonly IBus _bus;
 
-        private static readonly IDictionary<string, ConnectionDetails> _connectionRepo =
+        private static readonly IDictionary<string, ConnectionDetails> ConnectionRepoByConnectionId =
             new ConcurrentDictionary<string, ConnectionDetails>();
+        private static readonly IDictionary<Guid, PlayerDetails> ConnectionRepoByPlayerId =
+            new ConcurrentDictionary<Guid, PlayerDetails>();
 
         public ClientHub(IHubContext<ClientHub> context,
             IBus bus)
@@ -30,8 +33,12 @@ namespace CardGame.Application.Client
             if (clientIdentifier.GameId.HasValue)
             {
                 await Groups.AddToGroupAsync(Context.ConnectionId, GetGroupIdByGameId(clientIdentifier.GameId.Value));
-                _connectionRepo.Add(Context.ConnectionId,
+                ConnectionRepoByConnectionId.Add(Context.ConnectionId,
                     new ConnectionDetails(clientIdentifier.GameId.Value, playerId));
+                ConnectionRepoByPlayerId.Add(playerId, new PlayerDetails(Context.ConnectionId, clientIdentifier.GameId.Value));
+
+                var correlationId = Guid.NewGuid();
+                _bus.Publish(nameof(PlayerConnected), new PlayerConnected(clientIdentifier.GameId.Value, playerId, correlationId), correlationId: correlationId);
             }
 
             return new ClientConnected {PlayerId = playerId};
@@ -44,9 +51,14 @@ namespace CardGame.Application.Client
                 //todo: log this. this means the caller did not choose to quit
             }
 
-            if (_connectionRepo.TryGetValue(Context.ConnectionId, out var details))
+            if (ConnectionRepoByConnectionId.TryGetValue(Context.ConnectionId, out var details))
             {
                 await Groups.RemoveFromGroupAsync(Context.ConnectionId, GetGroupIdByGameId(details.GameId));
+                if (ConnectionRepoByConnectionId.TryGetValue(Context.ConnectionId, out var connectionDetails))
+                {
+                    ConnectionRepoByPlayerId.Remove(connectionDetails.PlayerId);
+                    ConnectionRepoByConnectionId.Remove(Context.ConnectionId);
+                }
             }
             else
             {
@@ -70,6 +82,32 @@ namespace CardGame.Application.Client
         {
             return $"Game:{gameId}";
         }
+
+        public async Task SendToPlayers(IReadOnlyList<Guid> playerIds, ClientEvent clientEvent)
+        {
+            var connectionIds = ConvertPlayerIdsToConnectionIds(playerIds);
+            if (connectionIds is null || connectionIds.Length == 0)
+            {
+                return;
+            }
+            await _context.Clients.Clients(connectionIds).SendAsync("OnClientEvent", clientEvent);
+        }
+
+        private string[] ConvertPlayerIdsToConnectionIds(IEnumerable<Guid> playerIds)
+        {
+            var pids = playerIds as Guid[] ?? playerIds.ToArray();
+            if(!pids.Any()) {return new string[0];}
+            var result = new List<string>();
+            foreach (var playerId in pids)
+            {
+                if (ConnectionRepoByPlayerId.TryGetValue(playerId, out var playerDetails))
+                {
+                    result.Add(playerDetails.ConnectionId);
+                }
+            }
+
+            return result.ToArray();
+        }
     }
 
     public class ClientIdentifier
@@ -91,6 +129,18 @@ namespace CardGame.Application.Client
         {
             GameId = gameId;
             PlayerId = playerId;
+        }
+    }
+
+    internal class PlayerDetails
+    {
+        public string ConnectionId { get; }
+        public Guid GameId { get; }
+
+        public PlayerDetails(string connectionId, Guid gameId)
+        {
+            ConnectionId = connectionId;
+            GameId = gameId;
         }
     }
 }

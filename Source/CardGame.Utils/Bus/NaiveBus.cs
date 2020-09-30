@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Reactive;
+using System.Reactive.Concurrency;
 using System.Reactive.Linq;
 using System.Reactive.Subjects;
 using System.Threading;
@@ -11,18 +12,19 @@ namespace CardGame.Utils.Bus
 {
     public class NaiveBus: IBus
     {
-        private readonly ISubject<ICommonEvent> _eventSubject;
+        private readonly ISubject<ICommonEvent> _publishSubject;
         private readonly IEventConverter _eventConverter;
         private readonly IResponseRegistry _responseRegistry;
 
-        public NaiveBus(ISubject<ICommonEvent> eventSubject,
+        public NaiveBus(ISubject<ICommonEvent> publishSubject,
             IEventConverter eventConverter,
             IResponseRegistry responseRegistry)
         {
-            _eventSubject = eventSubject;
+            _publishSubject = publishSubject;
             _eventConverter = eventConverter;
             _responseRegistry = responseRegistry;
-            
+            //_subscribeSubject = new Subject<ICommonEvent>();
+            //_thread = new Thread(() => { _publishSubject.Subscribe(e => { _publishSubject.OnNext(e); }); });
         }
 
         public void Publish(string topic, 
@@ -43,7 +45,7 @@ namespace CardGame.Utils.Bus
                 ? (Guid?)null
                 : correlationId;
             var values = _eventConverter.GetValues(topic, obj);
-            _eventSubject.OnNext(new CommonEvent
+            _publishSubject.OnNext(new CommonEvent
             {
                 EventId = eventId,
                 CorrelationId = cid,
@@ -161,7 +163,9 @@ namespace CardGame.Utils.Bus
                 return obj;
             }
 
-            var converted = _eventSubject
+            // todo: avoid using this obsolete scheduler option
+            var converted = _publishSubject
+                .ObserveOn(Scheduler.ThreadPool)
                 .Where(ce => ce.Topic == topic)
                 .Select(Convert);
             return converted;

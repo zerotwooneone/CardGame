@@ -3,7 +3,9 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using CardGame.Application.Client;
+using CardGame.Application.DTO;
 using CardGame.CommonModel.Bus;
+using CardGame.Domain.Abstractions.Game;
 using CardGame.Domain.Game;
 using CardGame.Utils.Abstractions.Bus;
 
@@ -28,11 +30,26 @@ namespace CardGame.Application.Bus
         {
             var gameStateSubscription = _bus.Subscribe<GameStateChanged>(nameof(GameStateChanged), OnGameStateChanged);
             var commonSubscription = _bus.Subscribe<CommonGameStateChanged>(nameof(CommonGameStateChanged), OnCommonGameStateChanged);
+            var playerConnectedSubscription =
+                _bus.Subscribe<PlayerConnected>(nameof(PlayerConnected), OnPlayerConnected);
+        }
+
+        private async Task OnPlayerConnected(PlayerConnected arg)
+        {
+            var commonGameStateChanged = await GetCommonGameStateChanged(arg.GameId, arg.CorrelationId);
+            var clientEvent = CreateClientEvent(commonGameStateChanged);
+            await _clientHub.SendToPlayers(new[] {arg.PlayerId}, clientEvent);
         }
 
         private async Task OnCommonGameStateChanged(CommonGameStateChanged arg)
         {
             //todo come up with a generic way to publish events to the client
+            var clientEvent = CreateClientEvent(arg);
+            await _clientHub.SendClientEvent(clientEvent);
+        }
+
+        private ClientEvent CreateClientEvent(CommonGameStateChanged arg)
+        {
             var clientEvent = new ClientEvent
             {
                 EventId = Guid.NewGuid(),
@@ -42,21 +59,27 @@ namespace CardGame.Application.Bus
                 Topic = nameof(OnCommonGameStateChanged),
                 Data = arg
             };
-            await _clientHub.SendClientEvent(clientEvent);
+            return clientEvent;
         }
 
         //todo: this probably belongs on the game service
         private async Task OnGameStateChanged(GameStateChanged gameStateChanged)
         {
+            var commonGameStateChanged = await GetCommonGameStateChanged(gameStateChanged.GameId, gameStateChanged.CorrelationId);
+            _bus.Publish(nameof(CommonGameStateChanged),commonGameStateChanged);
+        }
+
+        private async Task<CommonGameStateChanged> GetCommonGameStateChanged(Guid gameId, Guid correlationId)
+        {
             //todo what to do if gameid is not good?
-            var gameId = GameId.Factory(gameStateChanged.GameId);
-            var game = await _gameRepository.GetById(gameId.Value);
+            var gid = GameId.Factory(gameId);
+            var game = await _gameRepository.GetById(gid.Value);
             var roundRemainingPlayers = game.Round.RemainingPlayers.ToArray();
             var player1 = game.Players.Skip(0).FirstOrDefault();
             var player2 = game.Players.Skip(1).FirstOrDefault();
             var player3 = game.Players.Skip(2).FirstOrDefault();
             var player4 = game.Players.Skip(3).FirstOrDefault();
-            _bus.Publish(nameof(CommonGameStateChanged),new CommonGameStateChanged
+            var commonGameStateChanged = new CommonGameStateChanged
             {
                 Round = game.Round.Id,
                 Discard = game.Round.Discard.Select(cid => $"{cid.CardValue.Value}{cid.Variant}").ToArray(),
@@ -71,10 +94,11 @@ namespace CardGame.Application.Bus
                 Player2InRound = roundRemainingPlayers.Contains(player2?.Id),
                 Player3InRound = roundRemainingPlayers.Contains(player3?.Id),
                 Player4InRound = roundRemainingPlayers.Contains(player4?.Id),
-                CorrelationId = gameStateChanged.CorrelationId,
+                CorrelationId = correlationId,
                 GameId = game.Id.Value,
                 DrawCount = game.Round.Deck.Cards.Count(),
-            });
+            };
+            return commonGameStateChanged;
         }
     }
 }
