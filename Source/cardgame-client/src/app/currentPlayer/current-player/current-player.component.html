@@ -2,11 +2,13 @@
     <div class="card"
         [hidden]="(card1 | async) === (null||undefined)">
         <cgc-playable-card class="card-1"
-          [card]="(card1 | async)"></cgc-playable-card>
+          [card]="(card1 | async)"
+          [isTurn]="isTurn | async"></cgc-playable-card>
     </div>
     <div class="card"
         [hidden]="(card2 | async) === (null||undefined)">
         <cgc-playable-card class="card-2"
-          [card]="(card2 | async)"></cgc-playable-card>
+          [card]="(card2 | async)"
+          [isTurn]="isTurn | async"></cgc-playable-card>
     </div>
 </div>

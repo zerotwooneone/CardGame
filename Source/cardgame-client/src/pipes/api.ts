@@ -1,6 +1,6 @@
 import { Observable, Subscription } from 'rxjs';
 import { shareReplay, catchError } from 'rxjs/operators';
-import { handleError } from "./handleError";
+import { handleError } from './handleError';
 
 
 export function api<TSource>(

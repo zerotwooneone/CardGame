@@ -14,6 +14,8 @@ import { CardModelFactoryService } from 'src/app/card/card-model-factory.service
 export class CurrentPlayerComponent implements OnInit, OnChanges {
   @Input()
   player: CurrentPlayerModel;
+  @Input()
+  isTurn: Observable<boolean>;
   Name: Observable<string>;
 
   card1: Observable<CardModel>;

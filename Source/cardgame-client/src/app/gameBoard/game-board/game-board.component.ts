@@ -6,6 +6,7 @@ import { CommonStateFactoryService } from 'src/app/commonState/common-state-fact
 import { CommonStateModel, ICardId } from 'src/app/commonState/common-state-model';
 import { withLatestFrom, map, tap, switchMap, concatMap, filter } from 'rxjs/operators';
 import { property } from 'src/pipes/property';
+import { GameClientFactoryService } from 'src/app/game/game-client-factory.service';
 
 @Component({
   selector: 'cgc-game-board',
@@ -28,8 +29,10 @@ export class GameBoardComponent implements OnInit {
   drawCount: number;
   discardTop: ICardId | null;
   discardCount: number;
+  isTurn: Observable<boolean>;
   constructor(private readonly currentPlayerModelFactory: CurrentPlayerModelFactoryService,
-    private readonly commonStateFactory: CommonStateFactoryService) { }
+    private readonly commonStateFactory: CommonStateFactoryService,
+    private readonly gameClientFactory: GameClientFactoryService) { }
 
   async ngOnInit(): Promise<void> {
     const currentPlayerId = 'some player id';
@@ -88,8 +91,15 @@ export class GameBoardComponent implements OnInit {
   async connect(gameId: string) {
     this.commonState = await this.commonStateFactory.get(gameId);
     this._gameId = gameId;
+
+    const gameClient = this.gameClientFactory.create(gameId);
     const playerId = '9b644228-6c7e-4caa-becf-89e093ee299f';
 
+    this.isTurn = this.commonState
+      .CurrentPlayerId
+      .pipe(
+        property(id => id === playerId)
+      );
     this.commonState
       .DrawCount
       .subscribe(v => this.drawCount = v);
