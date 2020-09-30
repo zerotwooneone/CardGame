@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
-import { Observable, of } from 'rxjs';
 import { CurrentPlayerModel } from './current-player-model';
-import { property } from 'src/pipes/property';
+import { GameClient } from '../game/game-client';
+import { CommonStateModel } from '../commonState/common-state-model';
 
 @Injectable({
   providedIn: 'root'
@@ -9,8 +9,13 @@ import { property } from 'src/pipes/property';
 export class CurrentPlayerModelFactoryService {
   constructor() { }
 
-  getById(currentPlayerId: string): Observable<CurrentPlayerModel> {
-    return of(new CurrentPlayerModel(currentPlayerId))
-      .pipe(property(m => m));
+  async getById(currentPlayerId: string,
+    gameClient: GameClient,
+    commonState: CommonStateModel): Promise<CurrentPlayerModel> {
+    const playerObservable = gameClient.getPlayer(currentPlayerId);
+    return new CurrentPlayerModel(currentPlayerId,
+      playerObservable.toPromise(),
+      gameClient,
+      commonState);
   }
 }

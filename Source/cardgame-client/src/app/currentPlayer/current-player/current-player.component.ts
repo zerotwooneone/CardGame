@@ -14,7 +14,6 @@ import { CardModelFactoryService } from 'src/app/card/card-model-factory.service
 export class CurrentPlayerComponent implements OnInit, OnChanges {
   @Input()
   player: CurrentPlayerModel;
-  @Input()
   isTurn: Observable<boolean>;
   Name: Observable<string>;
 
@@ -27,27 +26,33 @@ export class CurrentPlayerComponent implements OnInit, OnChanges {
 
   ngOnChanges(changes: SimpleChanges): void {
     if (!!changes.player) {
-      this.Name = this.player
-        .Name
-        .pipe(property(m => m));
+      if (!!this.player) {
+        this.Name = this.player
+          .Name
+          .pipe(property(m => m));
 
-      this.card1 = this.player
-        .Card1
-        .pipe(
-          map(m => this.mapToPlayableCard(m)),
-          property(m => m)
+        this.card1 = this.player
+          .Card1
+          .pipe(
+            property(m => this.mapToPlayableCard(m)),
         );
-      this.card2 = this.player
-        .Card2
-        .pipe(
-          map(m => this.mapToPlayableCard(m)),
-          property(m => m)
-        );
+        this.card2 = this.player
+          .Card2
+          .pipe(
+            property(m => this.mapToPlayableCard(m))
+          );
+        this.isTurn = this.player
+          .IsTurn
+          .pipe(
+            property(p => p)
+          );
+      }
     }
   }
 
   mapToPlayableCard(cardId: string): CardModel {
-    return this.cardModelFactory.createPlayable(cardId);
+    const result = this.cardModelFactory.createPlayable(cardId);
+    return result;
   }
 }
 

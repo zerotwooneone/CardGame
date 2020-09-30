@@ -24,20 +24,16 @@ export class GameBoardComponent implements OnInit {
     }
   }
   otherPlayers: Observable<IOtherPlayer[]>;
-  public currentPlayer: Observable<CurrentPlayerModel>;
+  public currentPlayer: CurrentPlayerModel;
   private commonState: CommonStateModel;
   drawCount: number;
   discardTop: ICardId | null;
   discardCount: number;
-  isTurn: Observable<boolean>;
   constructor(private readonly currentPlayerModelFactory: CurrentPlayerModelFactoryService,
     private readonly commonStateFactory: CommonStateFactoryService,
     private readonly gameClientFactory: GameClientFactoryService) { }
 
   async ngOnInit(): Promise<void> {
-    const currentPlayerId = 'some player id';
-    this.currentPlayer = this.currentPlayerModelFactory
-      .getById(currentPlayerId);
   }
   findNotCached(cachedKeys: string[], allKeys: string[]): string[] {
     return allKeys.filter(a => !cachedKeys.some(c => c === a));
@@ -95,11 +91,8 @@ export class GameBoardComponent implements OnInit {
     const gameClient = this.gameClientFactory.create(gameId);
     const playerId = '9b644228-6c7e-4caa-becf-89e093ee299f';
 
-    this.isTurn = this.commonState
-      .CurrentPlayerId
-      .pipe(
-        property(id => id === playerId)
-      );
+    this.currentPlayer = await this.currentPlayerModelFactory
+      .getById(playerId, gameClient, this.commonState);
     this.commonState
       .DrawCount
       .subscribe(v => this.drawCount = v);
