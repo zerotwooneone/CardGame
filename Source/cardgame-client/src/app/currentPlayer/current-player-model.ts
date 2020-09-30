@@ -41,4 +41,9 @@ export class CurrentPlayerModel {
         const result = `${cards[index]?.cardStrength}${cards[index]?.variant}`;
         return result;
     }
+    async refresh(): Promise<any> {
+        const apiObservable = this.gameClient.getPlayer(this.id);
+        apiObservable.subscribe(p => this.playerSubject.next(p));
+        return apiObservable.toPromise();
+    }
 }

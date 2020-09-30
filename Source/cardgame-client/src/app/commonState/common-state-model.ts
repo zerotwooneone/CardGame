@@ -6,6 +6,7 @@ import { CommonGameStateChanged } from './CommonGameStateChanged';
 export class CommonStateModel {
     private readonly stateChangedObservable: Observable<CommonGameStateChanged>;
     public readonly DrawCount: Observable<number>;
+    public readonly Turn: Observable<number>;
     public readonly PlayerIds: Observable<string[]>;
     public readonly Discard: Observable<ICardId[]>;
     public readonly CurrentPlayerId: Observable<string>;
@@ -31,14 +32,18 @@ export class CommonStateModel {
         this.Discard = this
             .stateChangedObservable
             .pipe(
-                map(m => this.GetCards(m.discard)),
-                property(m => m)
+                property(m => this.GetCards(m.discard))
             );
         this.CurrentPlayerId = this
             .stateChangedObservable
             .pipe(
                 property(m => m.currentPlayer)
         );
+        this.Turn = this
+            .stateChangedObservable
+            .pipe(
+                property(s => s.turn)
+            );
      }
     GetCards(Discard: string[]): ICardId[] {
         return Discard.map(c => ({

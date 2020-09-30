@@ -94,6 +94,9 @@ export class GameBoardComponent implements OnInit {
     this.currentPlayer = await this.currentPlayerModelFactory
       .getById(playerId, gameClient, this.commonState);
     this.commonState
+      .Turn
+      .subscribe(t => this.currentPlayer.refresh());
+    this.commonState
       .DrawCount
       .subscribe(v => this.drawCount = v);
 
