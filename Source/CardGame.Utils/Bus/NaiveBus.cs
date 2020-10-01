@@ -163,9 +163,8 @@ namespace CardGame.Utils.Bus
                 return obj;
             }
 
-            // todo: avoid using this obsolete scheduler option
             var converted = _publishSubject
-                .ObserveOn(Scheduler.ThreadPool)
+                .ObserveOn(new TaskPoolScheduler(new TaskFactory()))
                 .Where(ce => ce.Topic == topic)
                 .Select(Convert);
             return converted;
