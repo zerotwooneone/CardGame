@@ -3,9 +3,11 @@ import { map } from 'rxjs/operators';
 import { property } from 'src/pipes/property';
 import { CardModel } from '../card/card-model';
 import { CommonStateModel } from '../commonState/common-state-model';
+import { CardStrength } from '../domain/card/CardStrength';
 import { CardDto, GameClient, PlayerDto } from '../game/game-client';
 
 export class CurrentPlayerModel {
+    readonly Id: string;
     readonly Name: Observable<string>;
     readonly Card1: Observable<string>;
     readonly Card2: Observable<string>;
@@ -19,6 +21,7 @@ export class CurrentPlayerModel {
 
         // todo: get the player name from the dto
         this.Name = of(id);
+        this.Id = id;
 
         this.Card1 = this.playerSubject
             .pipe(
@@ -48,15 +51,15 @@ export class CurrentPlayerModel {
         return apiObservable.toPromise();
     }
     async play(card: CardModel,
-        targetId?: string,
-        guessValue?: number): Promise<any> {
+        targetId: string | null,
+        guessValue: CardStrength | null): Promise<any> {
         // todo: move this call?
         const response = await this.gameClient.play({
             cardStrength: card.value,
             cardVariant: parseInt(card.id.substr(1, 1), 10),
             playerId: this.id,
-            guessValue,
-            targetId
+            guessValue: guessValue ?? undefined,
+            targetId: targetId ?? undefined
         });
     }
 }

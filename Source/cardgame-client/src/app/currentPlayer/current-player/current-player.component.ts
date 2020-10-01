@@ -5,6 +5,8 @@ import { Observable } from 'rxjs';
 import { map, take } from 'rxjs/operators';
 import { CardModel } from 'src/app/card/card-model';
 import { CardModelFactoryService } from 'src/app/card/card-model-factory.service';
+import { IOtherPlayer } from 'src/app/gameBoard/game-board/game-board.component';
+import { ChoiceOutput } from 'src/app/card/play-choice/play-choice.component';
 
 @Component({
   selector: 'cgc-current-player',
@@ -14,6 +16,8 @@ import { CardModelFactoryService } from 'src/app/card/card-model-factory.service
 export class CurrentPlayerComponent implements OnInit, OnChanges {
   @Input()
   player: CurrentPlayerModel;
+  @Input()
+  otherPlayers: readonly IOtherPlayer[];
   isTurn: Observable<boolean>;
   Name: Observable<string>;
 
@@ -55,13 +59,13 @@ export class CurrentPlayerComponent implements OnInit, OnChanges {
     return result;
   }
 
-  async play(cardObservable: Observable<CardModel>): Promise<any> {
+  async play(cardObservable: Observable<CardModel>, event: ChoiceOutput): Promise<any> {
     if (!this.player) { return; }
     const card = await cardObservable.pipe(take(1)).toPromise();
 
     // todo dialog for target and strength?
-    const targetId = undefined;
-    const guessValue = undefined;
+    const targetId = event.target;
+    const guessValue = event.strength;
     const response = await this.player.play(card, targetId, guessValue);
   }
 }

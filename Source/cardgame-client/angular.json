@@ -142,5 +142,8 @@
       }
     }
   },
-  "defaultProject": "cardgame-client"
+  "defaultProject": "cardgame-client",
+  "cli": {
+    "analytics": "b642ea7e-5061-4033-86e9-f03e186b3911"
+  }
 }

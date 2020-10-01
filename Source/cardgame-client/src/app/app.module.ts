@@ -12,6 +12,12 @@ import { OtherPlayerComponent } from './otherPlayer/other-player/other-player.co
 import { CurrentPlayerComponent } from './currentPlayer/current-player/current-player.component';
 import { PlayableCardComponent } from './card/playable-card/playable-card.component';
 import { APIInterceptor } from './client/APIInterceptor';
+import { PlayChoiceComponent } from './card/play-choice/play-choice.component';
+import { MatDialogModule } from '@angular/material/dialog';
+import { MatButtonModule } from '@angular/material/button';
+import { MatSelectModule } from '@angular/material/select';
+import { MatFormFieldModule } from '@angular/material/form-field';
+import { ReactiveFormsModule } from '@angular/forms';
 
 @NgModule({
   declarations: [
@@ -19,14 +25,20 @@ import { APIInterceptor } from './client/APIInterceptor';
     GameBoardComponent,
     OtherPlayerComponent,
     CurrentPlayerComponent,
-    PlayableCardComponent
+    PlayableCardComponent,
+    PlayChoiceComponent
   ],
   imports: [
     BrowserModule,
     HttpClientModule,
     AppRoutingModule,
     BrowserAnimationsModule,
-    ServiceWorkerModule.register('ngsw-worker.js', { enabled: environment.production })
+    ServiceWorkerModule.register('ngsw-worker.js', { enabled: environment.production }),
+    MatDialogModule,
+    MatButtonModule,
+    MatSelectModule,
+    MatFormFieldModule,
+    ReactiveFormsModule,
   ],
   providers: [
     {
