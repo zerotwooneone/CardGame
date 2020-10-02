@@ -45,11 +45,12 @@ export class CommonStateModel {
                 property(s => s.turn)
             );
      }
-    GetCards(Discard: string[]): ICardId[] {
-        return Discard.map(c => ({
+    GetCards(discard: string[]): ICardId[] {
+        const converted = discard.map(c => ({
             strength: parseInt(c.slice(0, 1), 10),
             varient: parseInt(c.slice(1, 1), 10)
         }));
+        return converted;
     }
 }
 

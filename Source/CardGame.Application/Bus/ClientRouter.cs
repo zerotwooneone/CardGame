@@ -82,7 +82,7 @@ namespace CardGame.Application.Bus
             var commonGameStateChanged = new CommonGameStateChanged
             {
                 Round = game.Round.Id,
-                Discard = game.Round.Discard.Select(cid => $"{cid.CardValue.Value}{cid.Variant}").ToArray(),
+                Discard = game.Round.Discard.Select(cid => $"{(int)cid.CardValue.Value}{cid.Variant}").ToArray(),
                 Turn = game.Round.Turn.Id,
                 WinningPlayer = game.WinningPlayer?.Value,
                 CurrentPlayer = game.Round.Turn.CurrentPlayer.Value,
