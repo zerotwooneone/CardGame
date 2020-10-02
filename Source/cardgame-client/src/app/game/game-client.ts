@@ -1,6 +1,7 @@
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { api } from 'src/pipes/api';
+import { CardStrength } from '../domain/card/CardStrength';
 
 export class GameClient {
     constructor(readonly gameId: string,
@@ -64,7 +65,7 @@ export interface PlayerDto {
 }
 
 export interface CardDto {
-    readonly cardStrength: number;
+    readonly cardStrength: CardStrength;
     readonly variant: number;
 }
 

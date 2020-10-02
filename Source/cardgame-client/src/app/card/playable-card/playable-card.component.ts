@@ -1,6 +1,6 @@
 import { Component, OnInit, Input, Output, EventEmitter } from '@angular/core';
 import { CardModel } from '../card-model';
-import { MatDialog, MatDialogRef } from '@angular/material/dialog';
+import { MatDialog } from '@angular/material/dialog';
 import { ChoiceOutput, PlayChoiceComponent, ChoiceInput } from '../play-choice/play-choice.component';
 import { CardStrength } from 'src/app/domain/card/CardStrength';
 import { IOtherPlayer } from 'src/app/gameBoard/game-board/game-board.component';
@@ -25,10 +25,6 @@ export class PlayableCardComponent implements OnInit {
 
   constructor(private matDialog: MatDialog) { }
 
-  get value(): number {
-    return this.card?.value;
-  }
-
   ngOnInit(): void {
   }
 
@@ -37,7 +33,7 @@ export class PlayableCardComponent implements OnInit {
     const targetPlayers = this.isPlayerRequired()
       ? [this.playerId, ...otherPlayers]
       : null;
-    const strengthRequired = CardStrength.Guard === this.card?.value;
+    const strengthRequired = CardStrength.Guard === this.card?.cardStrength;
     // todo handle not targeting self
     if (!strengthRequired && (!targetPlayers || !targetPlayers.length)) {
       this.playClick.emit({
@@ -61,7 +57,7 @@ export class PlayableCardComponent implements OnInit {
   }
 
   isPlayerRequired(): boolean {
-    switch (this.card?.value) {
+    switch (this.card?.cardStrength) {
       case CardStrength.Guard:
       case CardStrength.Priest:
       case CardStrength.Baron:

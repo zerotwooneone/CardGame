@@ -1,4 +1,5 @@
 import { Injectable } from '@angular/core';
+import { CardDto } from '../game/game-client';
 import { CardModel } from './card-model';
 
 @Injectable({
@@ -7,7 +8,7 @@ import { CardModel } from './card-model';
 export class CardModelFactoryService {
   constructor() { }
 
-  createPlayable(cardId: string): CardModel {
-    return new CardModel(cardId, parseInt(cardId.substr(0, 1), 10));
+  createPlayable(card: CardDto): CardModel {
+    return new CardModel(`${card.cardStrength}${card.variant}`, card.cardStrength);
   }
 }

@@ -7,6 +7,7 @@ import { CardModel } from 'src/app/card/card-model';
 import { CardModelFactoryService } from 'src/app/card/card-model-factory.service';
 import { IOtherPlayer } from 'src/app/gameBoard/game-board/game-board.component';
 import { ChoiceOutput } from 'src/app/card/play-choice/play-choice.component';
+import { CardDto } from 'src/app/game/game-client';
 
 @Component({
   selector: 'cgc-current-player',
@@ -21,8 +22,8 @@ export class CurrentPlayerComponent implements OnInit, OnChanges {
   isTurn: Observable<boolean>;
   Name: Observable<string>;
 
-  card1: Observable<CardModel>;
-  card2: Observable<CardModel>;
+  card1: CardModel | null;
+  card2: CardModel | null;
 
   constructor(private cardModelFactory: CardModelFactoryService) { }
 
@@ -35,16 +36,8 @@ export class CurrentPlayerComponent implements OnInit, OnChanges {
           .Name
           .pipe(property(m => m));
 
-        this.card1 = this.player
-          .Card1
-          .pipe(
-            property(m => this.mapToPlayableCard(m)),
-        );
-        this.card2 = this.player
-          .Card2
-          .pipe(
-            property(m => this.mapToPlayableCard(m))
-          );
+        this.player.Card1.subscribe(c => this.card1 = this.mapToPlayableCard(c));
+        this.player.Card2.subscribe(c => this.card2 = this.mapToPlayableCard(c));
         this.isTurn = this.player
           .IsTurn
           .pipe(
@@ -54,15 +47,15 @@ export class CurrentPlayerComponent implements OnInit, OnChanges {
     }
   }
 
-  mapToPlayableCard(cardId: string): CardModel {
-    const result = this.cardModelFactory.createPlayable(cardId);
+  mapToPlayableCard(card: CardDto | null): CardModel | null {
+    if (!card) { return null; }
+    const result = this.cardModelFactory.createPlayable(card);
     return result;
   }
 
-  async play(cardObservable: Observable<CardModel>, event: ChoiceOutput): Promise<any> {
+  async play(card: CardModel | null, event: ChoiceOutput): Promise<any> {
     if (!this.player) { return; }
-    const card = await cardObservable.pipe(take(1)).toPromise();
-
+    if (card === null) { return; }
     // todo dialog for target and strength?
     const targetId = event.target;
     const guessValue = event.strength;

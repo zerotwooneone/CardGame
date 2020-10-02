@@ -1,5 +1,5 @@
 <div class="container">
-    <p>Value: {{value}}</p>
+    <p>{{card?.id}} {{card?.cardStrength}}</p>
     <div class="actions">
         <input type="button" (click)="onPlayClick()" value="Play" [hidden]="!isTurn" />
     </div>

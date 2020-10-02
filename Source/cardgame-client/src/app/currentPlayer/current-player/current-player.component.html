@@ -1,17 +1,17 @@
 <div class="container">
     <div class="card"
-        [hidden]="(card1 | async) === (null||undefined)">
+        [hidden]="!card1">
         <cgc-playable-card class="card-1"
-          [card]="(card1 | async)"
+          [card]="card1"
           [isTurn]="isTurn | async"
           (playClick)="play(card1, $event)"
           [playerId]="player?.Id"
           [otherPlayers]="otherPlayers"></cgc-playable-card>
     </div>
     <div class="card"
-        [hidden]="(card2 | async) === (null||undefined)">
+        [hidden]="!card2">
         <cgc-playable-card class="card-2"
-          [card]="(card2 | async)"
+          [card]="card2"
           [isTurn]="isTurn | async"
           (playClick)="play(card2, $event)"
           [playerId]="player?.Id"
