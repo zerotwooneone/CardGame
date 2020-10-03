@@ -43,22 +43,11 @@ export class GameBoardComponent implements OnInit {
     return player.Id;
   }
 
-  showDiscard1Contents(): boolean {
-    return this.discardCount === 1;
-  }
   showDiscard1(): boolean {
     return this.discardCount >= 1;
   }
-
-  showDiscard2Contents(): boolean {
-    return this.discardCount === 2;
-  }
   showDiscard2(): boolean {
     return this.discardCount >= 2;
-  }
-
-  showDiscard3Contents(): boolean {
-    return this.discardCount > 2;
   }
   showDiscard3(): boolean {
     return this.discardCount > 2;

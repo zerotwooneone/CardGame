@@ -6,33 +6,18 @@
               [isInRound]="player.isInRound"></cgc-other-player>
         </div>
     </div>
-    <div class="play-area">
+    <div class="play-area" *ngIf="!!discardCount">
         <div class="discard">
             Discard <span> Count: {{discardCount}}</span>
             <div class="cards">
-                <div class="card card1"
-                    [hidden]="!showDiscard1()">
-                    <div *ngIf="showDiscard1Contents()">
-                        <p>Value: {{discardTop?.strength}}</p>
-                        <p>
-                            <input type="button" value="Inspect" />
-                        </p>
-                    </div>                    
-                </div>
-                <div class="card card2" [hidden]="!showDiscard2()">
-                    <div *ngIf="showDiscard2Contents()">
-                        <p>Value: {{discardTop?.strength}}</p>
-                        <p>
-                            <input type="button" value="Inspect" />
-                        </p>
-                    </div>
-                </div>
-                <div class="card card3" [hidden]="!showDiscard3()">
-                    <div *ngIf="showDiscard3Contents()">
-                        <p>Value: {{discardTop?.strength}}</p>
-                        <p>
-                            <input type="button" value="Inspect" />
-                        </p>
+                <div class="card" [ngClass]="{ card1: showDiscard1() }">
+                    <div class="card" [ngClass]="{ card2: showDiscard2() }">
+                        <div class="card" [ngClass]="{ card3: showDiscard3() }">
+                            <p>Value: {{discardTop?.strength}}</p>
+                            <p>
+                                <button mat-raised-button>Inspect</button>
+                            </p>                  
+                        </div>
                     </div>
                 </div>
             </div>

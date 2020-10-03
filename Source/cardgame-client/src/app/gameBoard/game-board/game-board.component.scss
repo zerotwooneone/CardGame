@@ -18,11 +18,34 @@
             width: 100px;
             height: 200px;
             background-color: white;
-            overflow: hidden;
             word-wrap: break-word;
         }
 
-        .discard, .draw {
+        .discard {
+            border-width: 1px;
+            border-style: dashed;
+            padding: 15px;
+            .cards {
+                margin-bottom: 20px;
+                .card {
+                    &.card1 {
+                        position: relative;
+                    }
+                    &.card1,
+                    &.card2,
+                    &.card3 {
+                        @extend %card-placeholder;
+                    }
+                    &.card2,
+                    &.card3 {
+                        position: absolute;
+                        top: 5px;
+                        left: 5px;
+                    }              
+                }
+            }
+        }
+        .draw {
             border-width: 1px;
             border-style: dashed;
             padding: 15px;
