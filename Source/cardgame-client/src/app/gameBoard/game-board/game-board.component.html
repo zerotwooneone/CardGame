@@ -2,8 +2,7 @@
     <div class="other-players">
         <div *ngFor="let player of otherPlayers | async; trackBy: trackByPlayerId"
         class="player">
-            <cgc-other-player [name]="player.name"
-              [isInRound]="player.isInRound"></cgc-other-player>
+            <cgc-other-player [player]="player"></cgc-other-player>
         </div>
     </div>
     <div class="play-area" *ngIf="!!discardCount">
@@ -15,7 +14,7 @@
                         <div class="card" [ngClass]="{ card3: showDiscard3() }">
                             <p>Value: {{discardTop?.strength}}</p>
                             <p>
-                                <button mat-raised-button>Inspect</button>
+                                <button mat-raised-button>Show</button>
                             </p>                  
                         </div>
                     </div>

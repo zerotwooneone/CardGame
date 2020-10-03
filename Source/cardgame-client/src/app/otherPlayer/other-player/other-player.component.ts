@@ -1,4 +1,5 @@
 import { Component, OnInit, Input } from '@angular/core';
+import { IOtherPlayer } from 'src/app/gameBoard/game-board/game-board.component';
 
 @Component({
   selector: 'cgc-other-player',
@@ -7,8 +8,7 @@ import { Component, OnInit, Input } from '@angular/core';
 })
 export class OtherPlayerComponent implements OnInit {
 
-  @Input() name: string;
-  @Input() isInRound: boolean;
+  @Input() player: IOtherPlayer;
   constructor() { }
 
   ngOnInit(): void {

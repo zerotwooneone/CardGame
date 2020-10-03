@@ -125,9 +125,9 @@ export class GameBoardComponent implements OnInit {
 }
 
 export interface IOtherPlayer {
-  Id: string;
-  name: string;
-  isInRound: boolean;
+  readonly Id: string;
+  readonly name: string;
+  readonly isInRound: boolean;
 }
 
 
