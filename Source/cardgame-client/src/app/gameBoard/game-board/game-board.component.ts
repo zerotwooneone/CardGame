@@ -4,9 +4,11 @@ import { CurrentPlayerModel } from 'src/app/currentPlayer/current-player-model';
 import { CurrentPlayerModelFactoryService } from 'src/app/currentPlayer/current-player-model-factory.service';
 import { CommonStateFactoryService } from 'src/app/commonState/common-state-factory.service';
 import { CommonStateModel, ICardId } from 'src/app/commonState/common-state-model';
-import { withLatestFrom, map, tap, switchMap, concatMap, filter } from 'rxjs/operators';
+import { withLatestFrom, map } from 'rxjs/operators';
 import { property } from 'src/pipes/property';
 import { GameClientFactoryService } from 'src/app/game/game-client-factory.service';
+import { GameModelFactoryService } from 'src/app/game/game-model-factory.service';
+import { GameModel } from 'src/app/game/game-model';
 
 @Component({
   selector: 'cgc-game-board',
@@ -25,13 +27,14 @@ export class GameBoardComponent implements OnInit {
   }
   otherPlayers: Observable<IOtherPlayer[]>;
   public currentPlayer: CurrentPlayerModel;
-  private commonState: CommonStateModel;
+  private gameModel: GameModel;
   drawCount: number;
   discardTop: ICardId | null;
   discardCount: number;
   constructor(private readonly currentPlayerModelFactory: CurrentPlayerModelFactoryService,
-    private readonly commonStateFactory: CommonStateFactoryService,
-    private readonly gameClientFactory: GameClientFactoryService) { }
+              private readonly commonStateFactory: CommonStateFactoryService,
+    private readonly gameClientFactory: GameClientFactoryService,
+    private readonly gameModelFactory: GameModelFactoryService) { }
 
   async ngOnInit(): Promise<void> {
   }
@@ -74,32 +77,33 @@ export class GameBoardComponent implements OnInit {
     return this.drawCount > 2;
   }
   async connect(gameId: string) {
-    this.commonState = await this.commonStateFactory.get(gameId);
+    const commonState = await this.commonStateFactory.get(gameId);
+    this.gameModel = await this.gameModelFactory.create(commonState, gameId);
     this._gameId = gameId;
 
     const gameClient = this.gameClientFactory.create(gameId);
     const playerId = '9b644228-6c7e-4caa-becf-89e093ee299f';
 
     this.currentPlayer = await this.currentPlayerModelFactory
-      .getById(playerId, gameClient, this.commonState);
-    this.commonState
+      .getById(playerId, gameClient, commonState);
+    this.gameModel
       .Turn
       .subscribe(t => this.currentPlayer.refresh());
-    this.commonState
+    this.gameModel
       .DrawCount
       .subscribe(v => this.drawCount = v);
 
-    this.commonState
+    this.gameModel
       .Discard
       .subscribe(array => {
         this.discardCount = array.length;
         this.discardTop = array.length ? array[array.length - 1] : null;
       });
 
-    this.otherPlayers = this.commonState
+    this.otherPlayers = this.gameModel
       .PlayersInRound
       .pipe(
-        withLatestFrom(this.commonState.PlayerIds),
+        withLatestFrom(this.gameModel.PlayerIds),
         map(([playersInRound, allPlayerIds]) => {
           const inRound = new Map(playersInRound.map((i): [string, string] => [i, i]));
           // todo: fix play info

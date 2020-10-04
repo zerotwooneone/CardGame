@@ -1,5 +1,4 @@
 import { Observable } from 'rxjs';
-import { map } from 'rxjs/operators';
 import { property } from 'src/pipes/property';
 import { CommonGameStateChanged } from './CommonGameStateChanged';
 
@@ -20,12 +19,6 @@ export class CommonStateModel {
                 property(m => m.drawCount)
             );
 
-        // todo fix player ids
-        this.PlayerIds = this
-            .stateChangedObservable
-            .pipe(
-                property(m => ['9b644228-6c7e-4caa-becf-89e093ee299f', '5e96fafb-83b2-4e72-8afa-0e6a8f12345f'])
-            );
         this.PlayersInRound = this
             .stateChangedObservable
             .pipe(
