@@ -12,7 +12,7 @@ export class GameModelFactoryService {
   constructor(private readonly gameClientFactory: GameClientFactoryService) { }
 
   public async create(commonModel: CommonStateModel,
-    gameId: string): Promise<GameModel> {
+                      gameId: string): Promise<GameModel> {
     const gameClient = this.gameClientFactory.create(gameId);
     const gameState = await gameClient.getCommonState().toPromise();
     return new GameModel(commonModel, gameState);
