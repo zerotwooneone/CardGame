@@ -96,24 +96,20 @@ export class GameBoardComponent implements OnInit {
         this.discardTop = array.length ? array[array.length - 1] : null;
       });
 
-    const playerInfos = this.commonState
-      .PlayerIds;
-
     this.otherPlayers = this.commonState
       .PlayersInRound
       .pipe(
-        withLatestFrom(playerInfos),
-        map(([playersInRound, playerInfoArray]) => {
+        withLatestFrom(this.commonState.PlayerIds),
+        map(([playersInRound, allPlayerIds]) => {
           const inRound = new Map(playersInRound.map((i): [string, string] => [i, i]));
-
           // todo: fix play info
-          return playerInfoArray
+          return allPlayerIds
             .filter(s => s !== playerId)
-            .map(p => {
+            .map((p, i) => {
             const result: IOtherPlayer = {
               Id: p,
               name: p,
-              isInRound: true,
+              isInRound: inRound.has(p),
             };
             return result;
           });
