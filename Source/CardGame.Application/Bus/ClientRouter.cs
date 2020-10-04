@@ -74,7 +74,7 @@ namespace CardGame.Application.Bus
             //todo what to do if gameid is not good?
             var gid = GameId.Factory(gameId);
             var game = await _gameRepository.GetById(gid.Value);
-            var roundRemainingPlayers = game.Round.RemainingPlayers.ToArray();
+            var roundRemainingPlayers = game.Round.RemainingPlayers.Select(p => p.Value.ToString()).ToArray();
             var player1 = game.Players.Skip(0).FirstOrDefault();
             var player2 = game.Players.Skip(1).FirstOrDefault();
             var player3 = game.Players.Skip(2).FirstOrDefault();
@@ -85,15 +85,11 @@ namespace CardGame.Application.Bus
                 Discard = game.Round.Discard.Select(cid => $"{(int)cid.CardValue.Value}{cid.Variant}").ToArray(),
                 Turn = game.Round.Turn.Id,
                 WinningPlayer = game.WinningPlayer?.Value,
-                CurrentPlayer = game.Round.Turn.CurrentPlayer.Value,
                 Player1Score = player1?.Score?.Value,
                 Player2Score = player2?.Score?.Value,
                 Player3Score = player3?.Score?.Value,
                 Player4Score = player4?.Score?.Value,
-                Player1InRound = roundRemainingPlayers.Contains(player1?.Id),
-                Player2InRound = roundRemainingPlayers.Contains(player2?.Id),
-                Player3InRound = roundRemainingPlayers.Contains(player3?.Id),
-                Player4InRound = roundRemainingPlayers.Contains(player4?.Id),
+                PlayerOrder = roundRemainingPlayers,
                 CorrelationId = correlationId,
                 GameId = game.Id.Value,
                 DrawCount = game.Round.Deck.Cards.Count(),

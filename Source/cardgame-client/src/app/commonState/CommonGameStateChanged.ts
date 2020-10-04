@@ -1,10 +1,6 @@
 
 export class CommonGameStateChanged {
-    readonly currentPlayer: string;
-    readonly player1InRound: boolean;
-    readonly Player2InRound: boolean;
-    readonly player3InRound: boolean;
-    readonly player4InRound: boolean;
+    readonly playerOrder: readonly string[];
     readonly player1Score: number;
     readonly player2Score: number;
     readonly player3Score: number;

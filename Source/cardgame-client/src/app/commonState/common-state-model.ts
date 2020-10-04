@@ -7,10 +7,10 @@ export class CommonStateModel {
     private readonly stateChangedObservable: Observable<CommonGameStateChanged>;
     public readonly DrawCount: Observable<number>;
     public readonly Turn: Observable<number>;
-    public readonly PlayerIds: Observable<string[]>;
-    public readonly Discard: Observable<ICardId[]>;
+    public readonly PlayerIds: Observable<readonly string[]>;
+    public readonly Discard: Observable<readonly ICardId[]>;
     public readonly CurrentPlayerId: Observable<string>;
-    public readonly PlayersInRound: Observable<string[]>;
+    public readonly PlayersInRound: Observable<readonly string[]>;
     constructor(private stateObservable: Observable<CommonGameStateChanged>) {
         this.stateChangedObservable = stateObservable;
 
@@ -27,7 +27,10 @@ export class CommonStateModel {
                 property(m => ['9b644228-6c7e-4caa-becf-89e093ee299f', '5e96fafb-83b2-4e72-8afa-0e6a8f12345f'])
             );
         this.PlayersInRound = this
-            .PlayerIds;
+            .stateChangedObservable
+            .pipe(
+                property(m => m.playerOrder)
+            );
 
         this.Discard = this
             .stateChangedObservable
@@ -37,7 +40,7 @@ export class CommonStateModel {
         this.CurrentPlayerId = this
             .stateChangedObservable
             .pipe(
-                property(m => m.currentPlayer)
+                property(m => m.playerOrder[0])
         );
         this.Turn = this
             .stateChangedObservable

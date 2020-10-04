@@ -5,8 +5,7 @@ namespace CardGame.CommonModel.Bus
 {
     public class CommonGameStateChanged : IEvent
     {
-        public Guid? CurrentPlayer { get; set; }
-        public bool? Player1InRound { get; set; }
+        public IEnumerable<string> PlayerOrder { get; set; }
         public bool? Player2InRound { get; set; }
         public bool? Player3InRound { get; set; }
         public bool? Player4InRound { get; set; }
