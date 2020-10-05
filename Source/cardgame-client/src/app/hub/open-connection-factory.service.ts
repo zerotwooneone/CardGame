@@ -22,10 +22,8 @@ export class OpenConnectionFactoryService {
 
     await hubConnection
       .start()
-      .then(() => console.log(`Connection started ${url}`))
       .catch(err => console.error(`error while connecting ${url}`));
 
     return new HubConnectionWrapper(hubConnection);
-    //return Promise.reject('OpenConnectionFactoryService dummy call');
   }
 }

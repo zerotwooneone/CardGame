@@ -300,11 +300,18 @@
 
 <div class="content" role="main">
   <div>
-    <label for="gameid">Game Id:</label>
-    <input id="gameid" #gameId value="96a8f4b0-7800-4c26-80b6-fd66f286140f">
-    <button (click)="connect(gameId.value)">Connect</button>
+    <mat-form-field appearance="fill">
+      <mat-label>Player Token</mat-label>
+      <input matInput [formControl]="playerTokenControl">
+    </mat-form-field>
+    <mat-form-field appearance="fill">
+      <mat-label>Game Token</mat-label>
+      <input matInput [formControl]="gameTokenControl">
+    </mat-form-field>
+    <button (click)="connect(gameTokenControl.value, playerTokenControl.value)">Connect</button>
   </div>
-  <cgc-game-board [gameId]="gameIdX"></cgc-game-board>
+  <cgc-game-board *ngIf="!!currentPlayer && !!gameModel" [currentPlayer]="currentPlayer" [gameModel]="gameModel">
+  </cgc-game-board>
 </div>
 
 <router-outlet></router-outlet>

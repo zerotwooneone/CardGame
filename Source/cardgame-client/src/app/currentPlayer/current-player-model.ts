@@ -1,9 +1,9 @@
 import { Observable, of, Subject } from 'rxjs';
 import { property } from 'src/pipes/property';
 import { CardModel } from '../card/card-model';
-import { CommonStateModel } from '../commonState/common-state-model';
 import { CardStrength } from '../domain/card/CardStrength';
 import { CardDto, GameClient, PlayerDto } from '../game/game-client';
+import { GameModel } from '../game/game-model';
 
 export class CurrentPlayerModel {
     readonly Id: string;
@@ -15,7 +15,7 @@ export class CurrentPlayerModel {
     constructor(private readonly id: string,
                 playerPromise: Promise<PlayerDto>,
                 private gameClient: GameClient,
-                private commonState: CommonStateModel) {
+        private gameModel: GameModel) {
         this.playerSubject = new Subject<PlayerDto>();
 
         // todo: get the player name from the dto
@@ -30,7 +30,7 @@ export class CurrentPlayerModel {
             .pipe(
                 property(p => p.hand.length > 1 ? p.hand[1] : null)
             );
-        this.IsTurn = this.commonState
+        this.IsTurn = this.gameModel
             .CurrentPlayerId
             .pipe(
                 property(cp => cp === id)

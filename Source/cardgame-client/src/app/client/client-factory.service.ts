@@ -4,6 +4,7 @@ import { OpenConnectionFactoryService } from '../hub/open-connection-factory.ser
 import { Subject } from 'rxjs';
 import { BusFactoryService } from '../domain/core/bus/bus-factory.service';
 import { TopicTokens } from '../domain/core/bus/topic-tokens';
+import { ClientEvent } from './ClientEvent';
 
 @Injectable({
   providedIn: 'root'
@@ -29,7 +30,6 @@ export class ClientFactoryService {
       .subscribe(clientEvent => {
         this.busFactoryService.publish<ClientEvent>(TopicTokens.clientEvent, clientEvent, clientEvent.correlationId, clientEvent.eventId);
       });
-    console.log(`connection result:`, connectResult);
 
     const result = new ClientModel(connectResult.PlayerId, events);
 
@@ -47,11 +47,4 @@ export interface IClientConnected {
   readonly PlayerId: string;
 }
 
-export class ClientEvent {
-  readonly eventId: string;
-  readonly correlationId: string;
-  readonly topic: string;
-  readonly type: string;
-  readonly data: {};
-  readonly gameId: string;
-}
+

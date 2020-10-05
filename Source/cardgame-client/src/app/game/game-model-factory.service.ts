@@ -1,6 +1,5 @@
 import { Injectable } from '@angular/core';
 import { CommonStateModel } from '../commonState/common-state-model';
-import { CommonKnowledgeGame } from './game-client';
 import { GameClientFactoryService } from './game-client-factory.service';
 import { GameModel } from './game-model';
 

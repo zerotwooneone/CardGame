@@ -1,4 +1,5 @@
 import { Observable } from 'rxjs';
+import { map } from 'rxjs/operators';
 import { property } from 'src/pipes/property';
 import { CommonGameStateChanged } from './CommonGameStateChanged';
 

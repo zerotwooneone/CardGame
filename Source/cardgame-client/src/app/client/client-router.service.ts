@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
 import { BusFactoryService } from '../domain/core/bus/bus-factory.service';
 import { TopicTokens } from '../domain/core/bus/topic-tokens';
-import { ClientEvent } from './client-factory.service';
+import { ClientEvent } from "./ClientEvent";
 
 @Injectable({
   providedIn: 'root'

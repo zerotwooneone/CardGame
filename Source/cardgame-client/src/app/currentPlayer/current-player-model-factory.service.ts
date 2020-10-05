@@ -1,21 +1,22 @@
 import { Injectable } from '@angular/core';
 import { CurrentPlayerModel } from './current-player-model';
-import { GameClient } from '../game/game-client';
-import { CommonStateModel } from '../commonState/common-state-model';
+import { GameClientFactoryService } from '../game/game-client-factory.service';
+import { GameModel } from '../game/game-model';
 
 @Injectable({
   providedIn: 'root'
 })
 export class CurrentPlayerModelFactoryService {
-  constructor() { }
+  constructor(private readonly gameClientFactory: GameClientFactoryService) { }
 
   async getById(currentPlayerId: string,
-    gameClient: GameClient,
-    commonState: CommonStateModel): Promise<CurrentPlayerModel> {
+    gameId: string,
+    gameModel: GameModel): Promise<CurrentPlayerModel> {
+    const gameClient = this.gameClientFactory.create(gameId);
     const playerObservable = gameClient.getPlayer(currentPlayerId);
     return new CurrentPlayerModel(currentPlayerId,
       playerObservable.toPromise(),
       gameClient,
-      commonState);
+      gameModel);
   }
 }

@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
 import { Subject, Observable } from 'rxjs';
-import { CommonEvent, EventPayload } from './common-event';
-import { map, filter, take, switchMap } from 'rxjs/operators';
+import { CommonEvent } from './common-event';
+import { map, filter, take } from 'rxjs/operators';
 import { BusSubscription } from './BusSubscription';
 import { EventMap } from './EventMap';
 import { Guid } from '../id/guid';

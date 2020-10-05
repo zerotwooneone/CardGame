@@ -1,6 +1,6 @@
 import { EventPayload } from './common-event';
 import { TopicTokens } from './topic-tokens';
-import { ClientEvent } from 'src/app/client/client-factory.service';
+import { ClientEvent } from "src/app/client/ClientEvent";
 import { CommonGameStateChanged } from 'src/app/commonState/CommonGameStateChanged';
 
 export class EventMap {
