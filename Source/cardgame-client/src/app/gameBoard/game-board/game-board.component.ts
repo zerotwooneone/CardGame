@@ -24,8 +24,6 @@ export class GameBoardComponent implements OnInit {
   constructor() { }
 
   async ngOnInit(): Promise<void> {
-    const playerId = '9b644228-6c7e-4caa-becf-89e093ee299f';
-
     this.gameModel
       .Turn
       .subscribe(t => this.currentPlayer.refresh());
@@ -48,7 +46,7 @@ export class GameBoardComponent implements OnInit {
           const inRound = new Map(playersInRound.map((i): [string, string] => [i, i]));
           // todo: fix play info
           return allPlayerIds
-            .filter(s => s !== playerId)
+            .filter(s => s !== this.currentPlayer.Id)
             .map((p, i) => {
               const result: IOtherPlayer = {
                 Id: p,
