@@ -27,7 +27,7 @@ namespace CardGame.Application.DTO
                         CurrentPlayer = gameDao.CurrentPlayer
                     },
                     Discard = gameDao.Discard.Split(";"),
-                    EliminatedPlayers = (new[] { gameDao.EliminatedPlayer1, gameDao.EliminatedPlayer2, gameDao.EliminatedPlayer3 }).Where(p => p != null),
+                    PlayerOrder = gameDao.PlayerOrder.Split(";"),
                 }
             };
         }

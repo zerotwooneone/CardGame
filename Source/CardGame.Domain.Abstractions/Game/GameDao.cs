@@ -11,9 +11,7 @@ namespace CardGame.Domain.Abstractions.Game
         public string Player3 { get; set; }
         public string Player4 { get; set; }
         public int RoundId { get; set; }
-        public string EliminatedPlayer1 { get; set; }
-        public string EliminatedPlayer2 { get; set; }
-        public string EliminatedPlayer3 { get; set; }
+        public string PlayerOrder { get; set; }
         public string Deck { get; set; }
         public int TurnId { get; set; }
         public string CurrentPlayer { get; set; }

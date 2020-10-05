@@ -74,7 +74,7 @@ namespace CardGame.Application.Bus
             //todo what to do if gameid is not good?
             var gid = GameId.Factory(gameId);
             var game = await _gameRepository.GetById(gid.Value);
-            var roundRemainingPlayers = game.Round.RemainingPlayers.Select(p => p.Value.ToString()).ToArray();
+            var roundRemainingPlayers = game.Round.PlayerOrder.Select(p => p.Value.ToString()).ToArray();
             var player1 = game.Players.Skip(0).FirstOrDefault();
             var player2 = game.Players.Skip(1).FirstOrDefault();
             var player3 = game.Players.Skip(2).FirstOrDefault();

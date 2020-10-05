@@ -47,7 +47,7 @@ export interface CommonKnowledgeGame {
 
 export interface CommonKnowledgeRound {
     readonly id: number;
-    readonly eliminatedPlayers: readonly string[];
+    readonly playerOrder: readonly string[];
     readonly turn: CommonKnowledgeTurn;
     readonly discard: readonly string[];
     readonly deckCount: number;

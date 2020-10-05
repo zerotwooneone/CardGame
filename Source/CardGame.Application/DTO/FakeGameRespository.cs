@@ -44,7 +44,8 @@ namespace CardGame.Application.DTO
                     turn,
                     GetDeckBuilder(),
                     deck: GetTestDeck(gameDao.Deck), 
-                    remaining: convertPlayers.Select(p=>p.Id).Except(converted.Round.EliminatedPlayers.Select(p2 => PlayerId.Factory(Guid.Parse(p2)).Value)), 
+                    playerOrder: gameDao.PlayerOrder.Split(";").Select(p => (IPlayerId)
+                        (PlayerId.Factory(Guid.Parse(p)).Value)), 
                     discard: GetCards(gameDao.Discard)).Value,
                 winningPlayer).Value;
             return game;
@@ -93,7 +94,6 @@ namespace CardGame.Application.DTO
 
         public async Task SetById(Game game)
         {
-            var eliminated = game.Players.Select(p=>p.Id).Except(game.Round.RemainingPlayers);
             var player1 = game.Players.FirstOrDefault();
             var player2 = game.Players.Skip(1).FirstOrDefault();
             var player3 = game.Players.Skip(2).FirstOrDefault();
@@ -126,9 +126,7 @@ namespace CardGame.Application.DTO
                 Player4Score = player4?.Score.Value ?? 0,
                 Player4Hand = GetHandString(player4?.Hand),
 
-                EliminatedPlayer1 = eliminated.FirstOrDefault()?.ToString(),
-                EliminatedPlayer2 = eliminated.Skip(1).FirstOrDefault()?.ToString(),
-                EliminatedPlayer3 = eliminated.Skip(2).FirstOrDefault()?.ToString(),
+                PlayerOrder = string.Join(";", game.Round.PlayerOrder),
 
                 RoundId = game.Round.Id,
                 TurnId = game.Round.Turn.Id,

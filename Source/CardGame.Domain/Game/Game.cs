@@ -143,7 +143,13 @@ namespace CardGame.Domain.Game
                 var winningPlayer = GetPlayerById(winningPlayerId);
                 winningPlayer.AddWin(note);
                 CheckForWinner();
-                newRound = Round.NextRound(winningPlayerId, Players.Select(p => p.Id), note);
+                var players = GetPlayerOrder(Players.Select(p => (IPlayerId)p.Id), winningPlayerId);
+                var playerOrder = new List<IPlayerId>();
+                do
+                {
+                    playerOrder.Add(players.Current);
+                } while (players.MoveNext());
+                newRound = Round.NextRound(playerOrder, note);
             }
             else
             {
@@ -158,6 +164,32 @@ namespace CardGame.Domain.Game
             nextPlayer.Draw(drawCard, note);
 
             Round = drawnRound;
+        }
+
+        private static IEnumerator<IPlayerId> GetPlayerOrder(IEnumerable<IPlayerId> playerIds, IPlayerId firstPlayer)
+        {
+            var ids = playerIds as IPlayerId[] ?? playerIds.ToArray();
+            var turnOrder = GetInfiniteEnumerable(ids).GetEnumerator();
+            for (int i = 0; i < ids.Length; i++)
+            {
+                if (turnOrder.Current.Equals(firstPlayer))
+                {
+                    return turnOrder;
+                }
+            }
+
+            return null;
+        }
+
+        private static IEnumerable<T> GetInfiniteEnumerable<T>(IEnumerable<T> playerIds)
+        {
+            while (true)
+            {
+                foreach (var player in playerIds)
+                {
+                    yield return player;
+                }
+            }
         }
 
         private void CheckForWinner()
@@ -182,9 +214,9 @@ namespace CardGame.Domain.Game
             card.Discard(playContext);
         }
 
-        private PlayerId GetRoundWinner()
+        private IPlayerId GetRoundWinner()
         {
-            var remainingPlayers = Round.RemainingPlayers.ToArray();
+            var remainingPlayers = Round.PlayerOrder.ToArray();
             if (remainingPlayers.Count() == 1)
             {
                 return remainingPlayers.First();
