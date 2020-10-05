@@ -300,15 +300,17 @@
 
 <div class="content" role="main">
   <div>
-    <mat-form-field appearance="fill">
-      <mat-label>Player Token</mat-label>
-      <input matInput [formControl]="playerTokenControl">
-    </mat-form-field>
+    <div>
+      <mat-form-field appearance="fill">
+        <mat-label>Player Token</mat-label>
+        <input matInput [formControl]="playerTokenControl" required>
+      </mat-form-field>
+    </div>
     <mat-form-field appearance="fill">
       <mat-label>Game Token</mat-label>
-      <input matInput [formControl]="gameTokenControl">
+      <input matInput [formControl]="gameTokenControl" required>
     </mat-form-field>
-    <button (click)="connect(gameTokenControl.value, playerTokenControl.value)">Connect</button>
+    <button (click)="connect(gameTokenControl.value, playerTokenControl.value)" mat-raised-button>Connect</button>
   </div>
   <cgc-game-board *ngIf="!!currentPlayer && !!gameModel" [currentPlayer]="currentPlayer" [gameModel]="gameModel">
   </cgc-game-board>
