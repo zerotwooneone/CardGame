@@ -11,17 +11,19 @@ namespace CardGame.Application.DTO
             return new CommonKnowledgeGame
             {
                 Id = Guid.Parse(gameDao.Id),
-                Players = (new[] { gameDao.Player1, gameDao.Player2, gameDao.Player3, gameDao.Player4 }).Where(p => p != null),
-                Player1Score = gameDao.Player1Score,
-                Player2Score = gameDao.Player2Score,
-                Player3Score = gameDao.Player3Score,
-                Player4Score = gameDao.Player4Score,
+                Players = (new[]
+                {
+                    GetPlayer( id: gameDao.Player1, score: gameDao.Player1Score ),
+                    GetPlayer( id: gameDao.Player2, score: gameDao.Player2Score ),
+                    GetPlayer( id: gameDao.Player3, score: gameDao.Player3Score ), 
+                    GetPlayer( id: gameDao.Player4, score: gameDao.Player4Score ),
+                }).Where(p => p != null),
                 WinningPlayer = gameDao.WinningPlayer,
-                Round = new Round
+                Round = new CommonKnowledgeRound
                 {
                     Id = gameDao.RoundId,
                     DeckCount = gameDao.Deck.Split(";").Count(s => !string.IsNullOrWhiteSpace(s)),
-                    Turn = new Turn
+                    Turn = new CommonKnowledgeTurn
                     {
                         Id = gameDao.TurnId,
                         CurrentPlayer = gameDao.CurrentPlayer
@@ -32,10 +34,20 @@ namespace CardGame.Application.DTO
             };
         }
 
+        private CommonKnowledgePlayer GetPlayer(string id, in int? score)
+        {
+            if (string.IsNullOrWhiteSpace(id) || score == null) return null;
+            return new CommonKnowledgePlayer
+            {
+                Id = Guid.Parse(id),
+                Score = score.Value
+            };
+        }
+
         public PlayerDto ConvertToPlayer(GameDao gameDao, Guid playerId)
         {
             var converted = ConvertToCommonKnowledgeGame(gameDao);
-            var playerIndex = converted.Players.ToList().IndexOf(playerId.ToString());
+            var playerIndex = converted.Players.Select(p => p.Id).ToList().IndexOf(playerId);
             
             switch (playerIndex)
             {

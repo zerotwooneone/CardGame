@@ -34,15 +34,14 @@ export class GameClient {
 
 export interface CommonKnowledgeGame {
     readonly id: string;
-    readonly players: readonly string[];
+    readonly players: readonly CommonKnowledgePlayer[];
     readonly round: CommonKnowledgeRound;
-
-    readonly player1Score: number;
-    readonly player2Score: number;
-    readonly player3Score?: number;
-    readonly player4Score?: number;
-
     readonly winningPlayer?: string;
+}
+
+export interface CommonKnowledgePlayer {
+    readonly id: string;
+    readonly score: number;
 }
 
 export interface CommonKnowledgeRound {

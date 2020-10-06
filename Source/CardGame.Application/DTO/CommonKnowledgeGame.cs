@@ -6,12 +6,8 @@ namespace CardGame.Application.DTO
     public class CommonKnowledgeGame
     {
         public Guid Id { get; set; }
-        public IEnumerable<string> Players { get; set; }
-        public Round Round { get; set; }
-        public int Player1Score { get; set; }
-        public int Player2Score { get; set; }
-        public int? Player3Score { get; set; }
-        public int? Player4Score { get; set; }
+        public IEnumerable<CommonKnowledgePlayer> Players { get; set; }
+        public CommonKnowledgeRound Round { get; set; }
         public Guid? WinningPlayer { get; set; }
     }
 }

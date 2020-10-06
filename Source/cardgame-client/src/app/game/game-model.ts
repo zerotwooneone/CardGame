@@ -16,7 +16,7 @@ export class GameModel {
         this.gameSubject = new Subject<CommonKnowledgeGame>();
         this.PlayerIds = this.gameSubject
             .pipe(
-                property(g => g.players)
+                property(g => g.players.map(p => p.id))
             );
 
         // this needs to happen after the subscriptions
