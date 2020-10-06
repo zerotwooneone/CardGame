@@ -4,9 +4,7 @@ using System.Linq;
 using System.Reactive.Subjects;
 using CardGame.Application.Bus;
 using CardGame.Application.Client;
-using CardGame.Application.CommonState;
 using CardGame.Application.DTO;
-using CardGame.CommonModel.CommonState;
 using CardGame.Domain.Abstractions.Game;
 using CardGame.Domain.Game;
 using CardGame.Utils.Abstractions.Bus;
@@ -26,10 +24,7 @@ namespace CardGame.Application
         public void ConfigureServices(IServiceCollection serviceCollection)
         {
             serviceCollection.AddSignalR();
-
-            serviceCollection.AddTransient<CommonStateHub>();
-            serviceCollection.AddTransient<Func<CommonStateHub>>(sp => sp.GetRequiredService<CommonStateHub>);
-
+            
             serviceCollection.AddTransient<ClientHub>();
 
             serviceCollection.AddTransient<IGameConverter, GameConverter>();

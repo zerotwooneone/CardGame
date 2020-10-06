@@ -1,5 +1,4 @@
 using CardGame.Application.Client;
-using CardGame.Application.CommonState;
 using CardGame.Server.DependencyInjection;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
@@ -64,7 +63,6 @@ namespace CardGame.Server
                 endpoints.MapControllerRoute(
                     name: "default",
                     pattern: "{controller}/{action=Index}/{id?}");
-                endpoints.MapHub<CommonStateHub>("/commonState");
                 endpoints.MapHub<ClientHub>("/client");
             });
             
