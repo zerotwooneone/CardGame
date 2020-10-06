@@ -29,7 +29,6 @@ namespace CardGame.Application
 
             serviceCollection.AddTransient<CommonStateHub>();
             serviceCollection.AddTransient<Func<CommonStateHub>>(sp => sp.GetRequiredService<CommonStateHub>);
-            serviceCollection.AddTransient<ICommonStateModelFactory, CommonStateModelFactory>();
 
             serviceCollection.AddTransient<ClientHub>();
 
