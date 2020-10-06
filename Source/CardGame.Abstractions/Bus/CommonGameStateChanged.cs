@@ -6,9 +6,6 @@ namespace CardGame.CommonModel.Bus
     public class CommonGameStateChanged : IEvent
     {
         public IEnumerable<string> PlayerOrder { get; set; }
-        public bool? Player2InRound { get; set; }
-        public bool? Player3InRound { get; set; }
-        public bool? Player4InRound { get; set; }
         public int? Player1Score { get; set; }
         public int? Player2Score { get; set; }
         public int? Player3Score { get; set; }
