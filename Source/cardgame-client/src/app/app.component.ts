@@ -20,6 +20,7 @@ export class AppComponent implements OnInit {
   gameTokenControl: FormControl;
   gameModel: GameModel;
   currentPlayer: CurrentPlayerModel;
+  connected: boolean;
   constructor(private readonly clientFactory: ClientFactoryService,
     private readonly clientRouter: ClientRouterService,
     private readonly commonStateFactory: CommonStateFactoryService,
@@ -43,6 +44,7 @@ export class AppComponent implements OnInit {
 
       this.currentPlayer = await this.currentPlayerModelFactory
         .getById(playerId, gameId, this.gameModel);
+      this.connected = true;
     } catch (error) {
       console.error(error);
     }
