@@ -5,7 +5,7 @@
             <cgc-other-player [player]="player"></cgc-other-player>
         </div>
     </div>
-    <div class="play-area" *ngIf="!!discardCount">
+    <div class="play-area" *ngIf="!!gameModel">
         <div class="discard">
             Discard <span> Count: {{discardCount}}</span>
             <div class="cards">

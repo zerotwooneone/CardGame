@@ -1,11 +1,8 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using CardGame.Application.Client;
-using CardGame.Application.DTO;
 using CardGame.CommonModel.Bus;
-using CardGame.Domain.Abstractions.Game;
 using CardGame.Domain.Game;
 using CardGame.Utils.Abstractions.Bus;
 

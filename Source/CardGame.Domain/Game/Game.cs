@@ -143,13 +143,27 @@ namespace CardGame.Domain.Game
                 var winningPlayer = GetPlayerById(winningPlayerId);
                 winningPlayer.AddWin(note);
                 CheckForWinner();
-                var players = GetPlayerOrder(Players.Select(p => (IPlayerId)p.Id), winningPlayerId);
-                var playerOrder = new List<IPlayerId>();
-                do
+                var playerOrder = Players.Select(p => (IPlayerId) p.Id).ToList(); 
+                int iterationCount = 0;
+                while (!playerOrder.First().Equals(winningPlayerId) &&
+                       iterationCount <= Players.Count())
                 {
-                    playerOrder.Add(players.Current);
-                } while (players.MoveNext());
-                newRound = Round.NextRound(playerOrder, note);
+                    var first = playerOrder.First();
+                    playerOrder.RemoveAt(0);
+                    playerOrder.Add(first);
+                    iterationCount++;
+                }
+
+                if (iterationCount > Players.Count())
+                {
+                    note.AddError("Could not find winning player in player list");
+                    return;
+                }
+                else
+                {
+                    newRound = Round.NextRound(playerOrder, note);
+                }
+                
             }
             else
             {
@@ -164,32 +178,6 @@ namespace CardGame.Domain.Game
             nextPlayer.Draw(drawCard, note);
 
             Round = drawnRound;
-        }
-
-        private static IEnumerator<IPlayerId> GetPlayerOrder(IEnumerable<IPlayerId> playerIds, IPlayerId firstPlayer)
-        {
-            var ids = playerIds as IPlayerId[] ?? playerIds.ToArray();
-            var turnOrder = GetInfiniteEnumerable(ids).GetEnumerator();
-            for (int i = 0; i < ids.Length; i++)
-            {
-                if (turnOrder.Current.Equals(firstPlayer))
-                {
-                    return turnOrder;
-                }
-            }
-
-            return null;
-        }
-
-        private static IEnumerable<T> GetInfiniteEnumerable<T>(IEnumerable<T> playerIds)
-        {
-            while (true)
-            {
-                foreach (var player in playerIds)
-                {
-                    yield return player;
-                }
-            }
         }
 
         private void CheckForWinner()

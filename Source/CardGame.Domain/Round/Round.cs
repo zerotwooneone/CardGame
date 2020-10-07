@@ -211,7 +211,7 @@ namespace CardGame.Domain.Round
             return result.Value;
         }
 
-        public Round Eliminate(PlayerId targetId, Notification note)
+        public Round Eliminate(IPlayerId targetId, Notification note)
         {
             if (Ended())
             {
@@ -219,7 +219,7 @@ namespace CardGame.Domain.Round
             }
             if (PlayerOrder.Any(e => e.Equals(targetId)))
             {
-                var playerOrder = PlayerOrder.Except(new []{targetId}).ToArray();
+                var playerOrder = PlayerOrder.Where(p => !p.Equals(targetId)).ToArray();
                 var round = CreateRound(note, Turn.Id, Id, playerOrder, Discard, Deck);
                 return round;
             }

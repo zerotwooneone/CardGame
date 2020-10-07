@@ -1,5 +1,5 @@
 import { Observable } from 'rxjs';
-import { map } from 'rxjs/operators';
+import { distinctUntilChanged, map } from 'rxjs/operators';
 import { property } from 'src/pipes/property';
 import { CommonGameStateChanged } from './CommonGameStateChanged';
 
@@ -11,6 +11,10 @@ export class CommonStateModel {
     public readonly Discard: Observable<readonly ICardId[]>;
     public readonly CurrentPlayerId: Observable<string>;
     public readonly PlayersInRound: Observable<readonly string[]>;
+    public Player1Score: Observable<number>;
+    public Player2Score: Observable<number>;
+    public Player3Score: Observable<number>;
+    public Player4Score: Observable<number>;
     constructor(private stateObservable: Observable<CommonGameStateChanged>) {
         this.stateChangedObservable = stateObservable;
 
@@ -40,6 +44,26 @@ export class CommonStateModel {
             .stateChangedObservable
             .pipe(
                 property(s => s.turn)
+            );
+        this.Player1Score = this.stateChangedObservable
+            .pipe(
+                map(s => s.player1Score),
+                distinctUntilChanged()
+            );
+        this.Player2Score = this.stateChangedObservable
+            .pipe(
+                map(s => s.player2Score),
+                distinctUntilChanged()
+            );
+        this.Player3Score = this.stateChangedObservable
+            .pipe(
+                map(s => s.player3Score),
+                distinctUntilChanged()
+            );
+        this.Player4Score = this.stateChangedObservable
+            .pipe(
+                map(s => s.player4Score),
+                distinctUntilChanged()
             );
      }
     GetCards(discard: string[]): ICardId[] {
