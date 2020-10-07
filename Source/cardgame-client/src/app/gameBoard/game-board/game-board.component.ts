@@ -1,10 +1,13 @@
 import { Component, OnInit, Input } from '@angular/core';
 import { Observable } from 'rxjs';
 import { CurrentPlayerModel } from 'src/app/currentPlayer/current-player-model';
-import { withLatestFrom, map } from 'rxjs/operators';
+import { withLatestFrom, map, shareReplay } from 'rxjs/operators';
 import { property } from 'src/pipes/property';
 import { GameModel } from 'src/app/game/game-model';
 import { ICardId } from 'src/app/commonState/common-state-model';
+import { MatBottomSheet } from '@angular/material/bottom-sheet';
+import { ScoreCardComponent, ScoreCardInput } from '../score-card/score-card.component';
+import { CommonKnowledgePlayer } from 'src/app/game/game-client';
 
 @Component({
   selector: 'cgc-game-board',
@@ -21,7 +24,7 @@ export class GameBoardComponent implements OnInit {
   drawCount: number;
   discardTop: ICardId | null;
   discardCount: number;
-  constructor() { }
+  constructor(private bottomSheet: MatBottomSheet) { }
 
   async ngOnInit(): Promise<void> {
     this.gameModel
@@ -96,6 +99,12 @@ export class GameBoardComponent implements OnInit {
   }
   showDraw3(): boolean {
     return this.drawCount > 2;
+  }
+  scoreClick(): void {
+    const data: ScoreCardInput = {
+      playerScores: this.gameModel.PlayerScores,
+    };
+    this.bottomSheet.open(ScoreCardComponent, { data });
   }
 }
 

@@ -1,5 +1,5 @@
 import { Observable } from 'rxjs';
-import { distinctUntilChanged, map } from 'rxjs/operators';
+import { distinctUntilChanged, filter, map } from 'rxjs/operators';
 import { property } from 'src/pipes/property';
 import { CommonGameStateChanged } from './CommonGameStateChanged';
 
@@ -58,11 +58,13 @@ export class CommonStateModel {
         this.Player3Score = this.stateChangedObservable
             .pipe(
                 map(s => s.player3Score),
+                filter(s => s !== undefined && s !== null),
                 distinctUntilChanged()
             );
         this.Player4Score = this.stateChangedObservable
             .pipe(
                 map(s => s.player4Score),
+                filter(s => s !== undefined && s !== null),
                 distinctUntilChanged()
             );
      }

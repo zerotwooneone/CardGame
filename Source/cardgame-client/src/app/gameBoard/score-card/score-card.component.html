@@ -1,0 +1,3 @@
+<div>
+    <mat-card *ngFor="let player of scores | keyvalue; trackBy: trackPlayer">{{player.value}} {{player.key}}</mat-card>
+</div>

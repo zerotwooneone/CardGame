@@ -1,5 +1,5 @@
 import { merge, Observable, Subject } from 'rxjs';
-import { concatAll, filter, map, mergeMap, switchMap } from 'rxjs/operators';
+import { concatAll, filter, map, mergeMap, shareReplay, switchMap } from 'rxjs/operators';
 import { property } from 'src/pipes/property';
 import { CommonStateModel, ICardId } from '../commonState/common-state-model';
 import { CommonKnowledgeGame, CommonKnowledgePlayer } from './game-client';
@@ -24,6 +24,7 @@ export class GameModel {
             .pipe(
                 map(x => x.players.slice()),
             );
+        const maxPlayers = 4;
         this.PlayerScores = merge(
             players.pipe(
                 concatAll(),
@@ -36,20 +37,18 @@ export class GameModel {
             ),
             players.pipe(
                 switchMap(p => commonModel.Player3Score.pipe(
-                    filter(s => !!s),
                     map(s => this.getPlayer(p[2], s)))
                 )
             ),
             players.pipe(
                 switchMap(p => commonModel.Player4Score.pipe(
-                    filter(s => !!s),
                     map(s => this.getPlayer(p[3], s)))
                 )
             )
         ).pipe(
-            property(m => m)
+            shareReplay(maxPlayers)
         );
-        this.PlayerScores.subscribe(s => console.error(s));
+        this.PlayerScores.subscribe(); // todo: refactor play scores
 
         // this needs to happen after the subscriptions
         this.gameSubject.next(gameState);

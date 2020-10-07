@@ -19,6 +19,9 @@ import { MatSelectModule } from '@angular/material/select';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { ReactiveFormsModule } from '@angular/forms';
 import { MatInputModule } from '@angular/material/input';
+import { MatBottomSheetModule } from '@angular/material/bottom-sheet';
+import { ScoreCardComponent } from './gameBoard/score-card/score-card.component';
+import { MatCardModule } from '@angular/material/card';
 
 @NgModule({
   declarations: [
@@ -27,7 +30,8 @@ import { MatInputModule } from '@angular/material/input';
     OtherPlayerComponent,
     CurrentPlayerComponent,
     PlayableCardComponent,
-    PlayChoiceComponent
+    PlayChoiceComponent,
+    ScoreCardComponent
   ],
   imports: [
     BrowserModule,
@@ -41,6 +45,8 @@ import { MatInputModule } from '@angular/material/input';
     MatFormFieldModule,
     ReactiveFormsModule,
     MatInputModule,
+    MatBottomSheetModule,
+    MatCardModule,
   ],
   providers: [
     {
