@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Threading.Tasks;
 
 namespace CardGame.Utils.Abstractions.Bus
 {
@@ -12,5 +13,8 @@ namespace CardGame.Utils.Abstractions.Bus
             Guid? correlationId);
 
         bool CanConvert(string topic);
+
+        Task Publish(string topic, ICommonEvent commonEvent);
+        ISubscription Subscribe(string topic, Func<ICommonEvent, Task> handler);
     }
 }

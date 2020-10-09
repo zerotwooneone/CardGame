@@ -36,14 +36,6 @@ namespace CardGame.Utils.Abstractions.Bus
         /// </summary>
         /// <typeparam name="T"></typeparam>
         /// <param name="topic"></param>
-        /// <param name="handler"></param>
-        /// <returns></returns>
-        ISubscription Subscribe<T>(string topic, Action<T> handler);
-        /// <summary>
-        /// Register a handler method which will be called each time a publish is made to the topic
-        /// </summary>
-        /// <typeparam name="T"></typeparam>
-        /// <param name="topic"></param>
         /// <param name="handler">async method to be called when a response is received</param>
         /// <returns></returns>
         [Obsolete("need to improve async handling")]

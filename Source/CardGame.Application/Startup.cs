@@ -34,8 +34,7 @@ namespace CardGame.Application
             
             //bus config
             _commonEventSubject = new Subject<ICommonEvent>();
-            serviceCollection.AddSingleton<IBus, NaiveBus>(sp => 
-                new NaiveBus(_commonEventSubject, sp.GetService<IEventConverter>(), sp.GetService<IResponseRegistry>()));
+            serviceCollection.AddSingleton<IBus, NaiveBus>();
             serviceCollection.AddTransient<IEventConverter, EventConverter>();
             var requestRegistry = new RequestRegistry();
             _requestRegistry = requestRegistry;

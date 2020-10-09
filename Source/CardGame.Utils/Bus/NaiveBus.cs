@@ -12,19 +12,14 @@ namespace CardGame.Utils.Bus
 {
     public class NaiveBus: IBus
     {
-        private readonly ISubject<ICommonEvent> _publishSubject;
         private readonly IEventConverter _eventConverter;
         private readonly IResponseRegistry _responseRegistry;
 
-        public NaiveBus(ISubject<ICommonEvent> publishSubject,
-            IEventConverter eventConverter,
+        public NaiveBus(IEventConverter eventConverter,
             IResponseRegistry responseRegistry)
         {
-            _publishSubject = publishSubject;
             _eventConverter = eventConverter;
             _responseRegistry = responseRegistry;
-            //_subscribeSubject = new Subject<ICommonEvent>();
-            //_thread = new Thread(() => { _publishSubject.Subscribe(e => { _publishSubject.OnNext(e); }); });
         }
 
         public void Publish(string topic, 
@@ -45,7 +40,7 @@ namespace CardGame.Utils.Bus
                 ? (Guid?)null
                 : correlationId;
             var values = _eventConverter.GetValues(topic, obj);
-            _publishSubject.OnNext(new CommonEvent
+            _eventConverter.Publish(topic, new CommonEvent
             {
                 EventId = eventId,
                 CorrelationId = cid,
@@ -76,9 +71,12 @@ namespace CardGame.Utils.Bus
                 }
             });
 
-            var converted = CreateConvertedObservable<TResponse>(responseRegistration.ResponseTopic);
+            
 
-            void OnNext(TResponse response)
+            ISubscription subscription = null;
+            token.Register(() => { subscription?.Dispose(); });
+
+            Task HandleResponse(TResponse response)
             {
                 if (timeoutSource.IsCancellationRequested)
                 {
@@ -88,33 +86,29 @@ namespace CardGame.Utils.Bus
                 {
                     tcs.SetResult(response);
                 }
+                subscription?.Dispose();
+                return Task.CompletedTask;
             }
 
-            void OnCompleted()
-            {
-                if (!tcs.Task.IsCompleted)
-                {
-                    if (timeoutSource.IsCancellationRequested)
-                    {
-                        tcs.SetException(new Exception("service response timeout occurred"));
-                    }
-                    else
-                    {
-                        tcs.SetCanceled();
-                    }
-                }
-            }
-
-            converted
-                .Take(1)
-                .Subscribe(OnNext, OnCompleted, token);
+            subscription = Subscribe<TResponse>(responseRegistration.ResponseTopic, HandleResponse);
 
             var publishId = Guid.NewGuid();
 
-            var failObservable = CreateConvertedObservable<ServiceCallFailed>("ServiceCallFailed")
-                .Where(sc => sc.ServiceCallEventId == publishId && sc.CorrelationId == correlationId)
-                .Take(1);
-            failObservable.Subscribe(sc => tcs.TrySetException(new Exception("ServiceCallFailed", new Exception(sc.Exception))));
+            ISubscription failSubscription = null;
+            token.Register(() => failSubscription?.Dispose());
+
+            Task HandleFailure(ServiceCallFailed scf)
+            {
+                if (scf.ServiceCallEventId == publishId && scf.CorrelationId == correlationId)
+                {
+                    tcs.TrySetException(new Exception("ServiceCallFailed", new Exception(scf.Exception)));
+                    failSubscription?.Dispose();
+                }
+
+                return Task.CompletedTask;
+            }
+
+            failSubscription = Subscribe<ServiceCallFailed>("ServiceCallFailed", HandleFailure);
 
             Publish("ServiceCall", new ServiceCall
                 {
@@ -130,27 +124,7 @@ namespace CardGame.Utils.Bus
         }
 
         public ISubscription Subscribe<T>(string topic, 
-            Action<T> handler)
-        {
-            var converted = CreateConvertedObservable<T>(topic);
-            var subscription = converted 
-                .Subscribe(handler);
-            var result = new SubscriptionWrapper(subscription);
-            return result;
-        }
-
-        public ISubscription Subscribe<T>(string topic, 
             Func<T, Task> handler)
-        {
-            var converted = CreateConvertedObservable<T>(topic);
-            var subscription = converted 
-                .SelectMany(c => handler(c).ContinueWith(t => Unit.Default)) //we explicitly ignore the return of the handler value here
-                .Subscribe();
-            var result = new SubscriptionWrapper(subscription);
-            return result;
-        }
-
-        private IObservable<T> CreateConvertedObservable<T>(string topic)
         {
             if (!_eventConverter.CanConvert(topic))
             {
@@ -163,11 +137,11 @@ namespace CardGame.Utils.Bus
                 return obj;
             }
 
-            var converted = _publishSubject
-                .ObserveOn(new TaskPoolScheduler(new TaskFactory()))
-                .Where(ce => ce.Topic == topic)
-                .Select(Convert);
-            return converted;
+            return _eventConverter.Subscribe(topic, async commonEvent =>
+            {
+                var converted = Convert(commonEvent);
+                await handler(converted);
+            });
         }
     }
 }

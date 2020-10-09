@@ -1,5 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Reactive.Subjects;
+using System.Threading.Tasks;
 using CardGame.CommonModel.Bus;
 using CardGame.Utils.Abstractions.Bus;
 using Newtonsoft.Json;
@@ -47,25 +49,48 @@ namespace CardGame.Utils.Bus
             return Registry.ContainsKey(topic);
         }
 
+        public async Task Publish(string topic, ICommonEvent commonEvent)
+        {
+            if(!Registry.TryGetValue(topic, out var registration)) throw new ArgumentException($"Unknown Topic: ${topic}", nameof(topic));
+            await registration.QueueStrategy.Publish(commonEvent);
+        }
+
+        public ISubscription Subscribe(string topic, Func<ICommonEvent, Task> handler)
+        {
+            if(!Registry.TryGetValue(topic, out var registration)) throw new ArgumentException($"Unknown Topic: ${topic}", nameof(topic));
+            return registration.QueueStrategy.Subscribe(topic, handler);
+        }
+
         internal class Registration
         {
-            public string EventType { get; set; }
+            public Registration(string eventType, 
+                Func<object, IReadOnlyDictionary<string, string>> getValues, 
+                Func<IReadOnlyDictionary<string, string>, Guid, Guid?, object> getObject,
+                IQueueStrategy queueStrategy)
+            {
+                EventType = eventType;
+                GetValues = getValues;
+                GetObject = getObject;
+                QueueStrategy = queueStrategy;
+            }
 
-            public Func<object, IReadOnlyDictionary<string, string>> GetValues { get; set; }
-            public Func<IReadOnlyDictionary<string, string>, Guid, Guid?, object> GetObject { get; set; }
+            public string EventType { get; }
+
+            public Func<object, IReadOnlyDictionary<string, string>> GetValues { get; }
+            public Func<IReadOnlyDictionary<string, string>, Guid, Guid?, object> GetObject { get; }
+            public IQueueStrategy QueueStrategy { get; }
         }
 
         internal class JsonRegistration: Registration
         {
-            public JsonRegistration(string type)
+            //todo: remove static init, create strategy factory
+            private static readonly IQueueStrategy CommonStrategy = new SubjectThreadSubscriber(new Subject<ICommonEvent>());
+            public JsonRegistration(string type) : base(type, InnerGetValues, InnerGetObject, CommonStrategy)
             {
-                EventType = type;
-                GetValues = InnerGetValues;
-                GetObject = InnerGetObject;
             }
 
             private const string JsonKey = "JSON";
-            private object InnerGetObject(IReadOnlyDictionary<string, string> values, Guid eventId, Guid? correlationId)
+            private static object InnerGetObject(IReadOnlyDictionary<string, string> values, Guid eventId, Guid? correlationId)
             {
                 var obj = JsonConvert.DeserializeObject(values[JsonKey], JsonSerializerSettings);
                 return obj;
@@ -75,7 +100,7 @@ namespace CardGame.Utils.Bus
             {
                 TypeNameHandling = TypeNameHandling.All,
             }; //todo: make typenamehandling dependent upon isDevelopment
-            private IReadOnlyDictionary<string, string> InnerGetValues(object arg)
+            private static IReadOnlyDictionary<string, string> InnerGetValues(object arg)
             {
                 return new Dictionary<string, string>
                 {
