@@ -48,6 +48,7 @@ namespace CardGame.Application.Controllers
         public async Task<ActionResult> Post(Guid gameId, PlayRequest request)
         {
             var correlationId = Guid.NewGuid();
+            var eventId = Guid.NewGuid();
             var serviceRequest = new Domain.Abstractions.Game.PlayRequest
             {
                 CorrelationId = correlationId,
@@ -56,7 +57,8 @@ namespace CardGame.Application.Controllers
                 CardVarient = request.CardVariant,
                 PlayerId = request.PlayerId,
                 GuessValue = request.GuessValue,
-                TargetId = request.TargetId
+                TargetId = request.TargetId,
+                EventId = eventId,
             };
 
             var cancellationToken = GetRequestCancellationToken();
@@ -65,7 +67,8 @@ namespace CardGame.Application.Controllers
                 await _bus.Request<Domain.Abstractions.Game.PlayRequest, CardPlayed>(
                     "CardGame.Domain.Abstractions.Game.IGameService:Play", 
                     serviceRequest, 
-                    cancellationToken);
+                    eventId: eventId,
+                    cancellationToken: cancellationToken);
             if (_hostingEnvironment.IsDevelopment())
             {
                 var result = new JsonResult(response);

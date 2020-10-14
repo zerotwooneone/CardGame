@@ -38,7 +38,7 @@ namespace CardGame.Application.Client
                 ConnectionRepoByPlayerId.Add(playerId, new PlayerDetails(Context.ConnectionId, clientIdentifier.GameId.Value));
 
                 var correlationId = Guid.NewGuid();
-                _bus.Publish(nameof(PlayerConnected), new PlayerConnected(clientIdentifier.GameId.Value, playerId, correlationId), correlationId: correlationId);
+                await _bus.Publish(nameof(PlayerConnected), new PlayerConnected(clientIdentifier.GameId.Value, playerId, correlationId), correlationId: correlationId);
             }
 
             return new ClientConnected {PlayerId = playerId};

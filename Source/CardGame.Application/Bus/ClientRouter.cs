@@ -29,6 +29,21 @@ namespace CardGame.Application.Bus
             var commonSubscription = _bus.Subscribe<CommonGameStateChanged>(nameof(CommonGameStateChanged), OnCommonGameStateChanged);
             var playerConnectedSubscription =
                 _bus.Subscribe<PlayerConnected>(nameof(PlayerConnected), OnPlayerConnected);
+            var cardPlayedSub = _bus.Subscribe<CardPlayed>(nameof(CardPlayed), OnCardPlayed);
+        }
+
+        private async Task OnCardPlayed(CardPlayed arg)
+        {
+            var clientEvent = new ClientEvent
+            {
+                EventId = Guid.NewGuid(),
+                CorrelationId = arg.CorrelationId,
+                GameId = arg.GameId,
+                Type = typeof(CardPlayed).ToString(),
+                Topic = nameof(OnCommonGameStateChanged),
+                Data = arg
+            };
+            await _clientHub.SendClientEvent(clientEvent);
         }
 
         private async Task OnPlayerConnected(PlayerConnected arg)
@@ -63,7 +78,7 @@ namespace CardGame.Application.Bus
         private async Task OnGameStateChanged(GameStateChanged gameStateChanged)
         {
             var commonGameStateChanged = await GetCommonGameStateChanged(gameStateChanged.GameId, gameStateChanged.CorrelationId);
-            _bus.Publish(nameof(CommonGameStateChanged),commonGameStateChanged);
+            await _bus.Publish(nameof(CommonGameStateChanged),commonGameStateChanged);
         }
 
         private async Task<CommonGameStateChanged> GetCommonGameStateChanged(Guid gameId, Guid correlationId)

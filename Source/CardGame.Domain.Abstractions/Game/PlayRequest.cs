@@ -13,5 +13,6 @@ namespace CardGame.Domain.Abstractions.Game
         public Guid CorrelationId { get; set; }
         public Guid? TargetId { get; set; }
         public CardStrength? GuessValue { get; set; }
+        public Guid EventId { get; set; }
     }
 }

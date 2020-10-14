@@ -64,20 +64,33 @@ namespace CardGame.Domain.Game
                     note);
             }
 
-            if (!note.HasErrors())
+            if (note.HasErrors())
             {
-                await _gameRepository.SetById(game);
-                _bus.PublishEvent(nameof(GameStateChanged), new GameStateChanged
+                await _bus.PublishEvent(nameof(Rejected), new Rejected
                 {
                     CorrelationId = request.CorrelationId,
-                    GameId = gid.Value.Value
+                    OriginalEventId = request.EventId,
+                    Reason = note.ErrorMessage(),
                 });
+                return;
             }
 
-            _bus.PublishEvent("CardPlayed", new CardPlayed
+            await _gameRepository.SetById(game);
+            await _bus.PublishEvent("CardPlayed", new CardPlayed
             {
                 CorrelationId = request.CorrelationId,
-                ErrorMessage = note.ErrorMessage()
+                ErrorMessage = note.ErrorMessage(),
+                GameId = request.GameId,
+                PlayerId = request.PlayerId,
+                CardStrength = (int)request.CardStrength,
+                CardVarient = request.CardVarient,
+                TargetId = request.TargetId,
+                GuessValue = (int?)request.GuessValue,
+            });
+            await _bus.PublishEvent(nameof(GameStateChanged), new GameStateChanged
+            {
+                CorrelationId = request.CorrelationId,
+                GameId = gid.Value.Value
             });
         }
     }

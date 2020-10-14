@@ -22,7 +22,7 @@ namespace CardGame.Utils.Bus
             _responseRegistry = responseRegistry;
         }
 
-        public void Publish(string topic, 
+        public async Task Publish(string topic, 
             object obj, 
             Guid correlationId = default, 
             Guid eventId = default)
@@ -40,7 +40,7 @@ namespace CardGame.Utils.Bus
                 ? (Guid?)null
                 : correlationId;
             var values = _eventConverter.GetValues(topic, obj);
-            _eventConverter.Publish(topic, new CommonEvent
+            await _eventConverter.Publish(topic, new CommonEvent
             {
                 EventId = eventId,
                 CorrelationId = cid,
@@ -48,9 +48,10 @@ namespace CardGame.Utils.Bus
                 Topic = topic
             });
         }
-        public Task<TResponse> Request<TResponse>(string requestTopic,
+        public async Task<TResponse> Request<TResponse>(string requestTopic,
             object value,
-            Guid correlationId,
+            Guid correlationId, 
+            Guid eventId = default,
             CancellationToken cancellationToken = default)
         {
             if (!_responseRegistry.ResponseRegistry.TryGetValue(requestTopic, out var responseRegistration))
@@ -65,52 +66,53 @@ namespace CardGame.Utils.Bus
             var tcs = new TaskCompletionSource<TResponse>();
             token.Register(() =>
             {
-                if (!tcs.Task.IsCompleted)
-                {
-                    tcs.SetCanceled();
-                }
+                tcs.TrySetCanceled();
             });
 
-            
-
-            ISubscription subscription = null;
-            token.Register(() => { subscription?.Dispose(); });
+            ISubscription responseSubscription = null;
+            token.Register(() => responseSubscription?.Dispose());
 
             Task HandleResponse(TResponse response)
             {
-                if (timeoutSource.IsCancellationRequested)
-                {
-                    tcs.SetException(new Exception("service response timeout occurred"));
-                }
-                else
-                {
-                    tcs.SetResult(response);
-                }
-                subscription?.Dispose();
+                tcs.TrySetResult(response);
                 return Task.CompletedTask;
             }
 
-            subscription = Subscribe<TResponse>(responseRegistration.ResponseTopic, HandleResponse);
+            responseSubscription = this.SubscribeToFirst<TResponse>(responseRegistration.ResponseTopic, HandleResponse);
 
-            var publishId = Guid.NewGuid();
+            var publishId = eventId == Guid.Empty
+                ? Guid.NewGuid()
+                : eventId;
+
+            ISubscription rejectionSubscription = null;
+            token.Register(() => rejectionSubscription?.Dispose());
+
+            Task HandleRejection(Rejected rejected)
+            {
+                if (rejected.OriginalEventId == publishId)
+                {
+                    tcs.TrySetCanceled();
+                }
+                return Task.CompletedTask;
+            }
+            rejectionSubscription = this.SubscribeToFirst<Rejected>(nameof(Rejected), HandleRejection);
 
             ISubscription failSubscription = null;
             token.Register(() => failSubscription?.Dispose());
 
-            Task HandleFailure(ServiceCallFailed scf)
+            Task HandleServiceFailure(ServiceCallFailed scf)
             {
                 if (scf.ServiceCallEventId == publishId && scf.CorrelationId == correlationId)
                 {
                     tcs.TrySetException(new Exception("ServiceCallFailed", new Exception(scf.Exception)));
-                    failSubscription?.Dispose();
                 }
 
                 return Task.CompletedTask;
             }
 
-            failSubscription = Subscribe<ServiceCallFailed>("ServiceCallFailed", HandleFailure);
+            failSubscription = this.SubscribeToFirst<ServiceCallFailed>("ServiceCallFailed", HandleServiceFailure);
 
-            Publish("ServiceCall", new ServiceCall
+            await Publish("ServiceCall", new ServiceCall
                 {
                     RequestTopic = requestTopic,
                     Param = value,
@@ -120,7 +122,7 @@ namespace CardGame.Utils.Bus
                 correlationId,
                 eventId: publishId);
 
-            return tcs.Task;
+            return await tcs.Task;
         }
 
         public ISubscription Subscribe<T>(string topic, 

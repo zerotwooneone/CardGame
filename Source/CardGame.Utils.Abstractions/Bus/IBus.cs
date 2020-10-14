@@ -14,7 +14,7 @@ namespace CardGame.Utils.Abstractions.Bus
         /// <param name="value"></param>
         /// <param name="correlationId">Optional: original event id that triggered this publish</param>
         /// <param name="eventId">Optional: this event's id</param>
-        void Publish(string topic, object value, Guid correlationId = default, Guid eventId = default);
+        Task Publish(string topic, object value, Guid correlationId = default, Guid eventId = default);
 
         /// <summary>
         /// Make a request and await the first response
@@ -28,7 +28,8 @@ namespace CardGame.Utils.Abstractions.Bus
         /// <returns></returns>
         Task<TResponse> Request<TResponse>(string requestTopic,
             object value, 
-            Guid correlationId,
+            Guid correlationId, 
+            Guid eventId = default,
             CancellationToken cancellationToken = default);
 
         /// <summary>
@@ -51,12 +52,12 @@ namespace CardGame.Utils.Abstractions.Bus
         /// <param name="topic"></param>
         /// <param name="value"></param>
         /// <param name="eventId">Optional: this event's id</param>
-        public static void PublishEvent<T>(this IBus bus, 
+        public static async Task PublishEvent<T>(this IBus bus, 
             string topic, 
             T value,
             Guid eventId = default) where T : IEvent
         {
-            bus.Publish(topic, value, value.CorrelationId, eventId);
+            await bus.Publish(topic, value, value.CorrelationId, eventId);
         }
 
         /// <summary>
@@ -71,10 +72,33 @@ namespace CardGame.Utils.Abstractions.Bus
         /// <returns></returns>
         public static async Task<TResponse> Request<TRequest, TResponse>(this IBus bus, 
                 string requestTopic,
-                TRequest value,
+                TRequest value, 
+                Guid eventId = default,
                 CancellationToken cancellationToken = default) where TRequest : IRequest
         {
-            return await bus.Request<TResponse>(requestTopic, value, value.CorrelationId, cancellationToken);
+            return await bus.Request<TResponse>(requestTopic, value, value.CorrelationId, eventId, cancellationToken);
+        }
+
+        /// <summary>
+        /// Subscribes to the topic, but unsubscribes after handling the first message
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="bus"></param>
+        /// <param name="topic"></param>
+        /// <param name="handler"></param>
+        /// <returns></returns>
+        public static ISubscription SubscribeToFirst<T>(this IBus bus,
+            string topic,
+            Func<T, Task> handler)
+        {
+            ISubscription subscription = null;
+            async Task HandleFirst(T m)
+            {
+                await handler(m);
+                subscription?.Dispose();
+            }
+            subscription = bus.Subscribe<T>(topic, HandleFirst);
+            return subscription;
         }
     }
 }

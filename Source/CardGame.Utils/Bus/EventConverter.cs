@@ -20,7 +20,8 @@ namespace CardGame.Utils.Bus
             {"TurnChanged", new JsonRegistration("CardGame.CommonModel.Bus.TurnChanged") },
             {nameof(GameStateChanged), new JsonRegistration("CardGame.CommonModel.Bus.GameStateChanged") },
             {nameof(CommonGameStateChanged), new JsonRegistration("CardGame.CommonModel.Bus.CommonGameStateChanged") },
-            {nameof(PlayerConnected), new JsonRegistration("CardGame.CommonModel.Bus.PlayerConnected") }
+            {nameof(PlayerConnected), new JsonRegistration("CardGame.CommonModel.Bus.PlayerConnected") },
+            {nameof(Rejected), new JsonRegistration(typeof(Rejected).ToString()) }
         };
 
         public IReadOnlyDictionary<string, string> GetValues(string topic, object obj)
