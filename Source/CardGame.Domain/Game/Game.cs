@@ -80,7 +80,7 @@ namespace CardGame.Domain.Game
             return FactoryResult<Game>.Success(new Game(idResult.Value, pa, round, winningPlayerId));
         }
 
-        public void Play(IPlayerId playerId, 
+        public PlayResult Play(IPlayerId playerId, 
             ICardId cardId,
             IPlayerId target,
             ICardValue guessValue,
@@ -89,24 +89,25 @@ namespace CardGame.Domain.Game
             if (WinningPlayer != null)
             {
                 note.AddError($"Game Over. Player {WinningPlayer} won.");
-                return;
             }
             if (cardId is null)
             {
                 note.AddError("Card is required to play");
-                return;
             }
             var player = GetPlayerById(playerId);
             if (player is null)
             {
                 note.AddError($"Player not found {playerId}");
-                return;
             }
 
             if (!Round.IsTurn(playerId))
             {
                 note.AddError($"not player's turn {playerId}");
-                return;
+            }
+
+            if (note.HasErrors())
+            {
+                return null;
             }
 
             var targetPlayer = GetPlayerById(target);
@@ -157,7 +158,7 @@ namespace CardGame.Domain.Game
                 if (iterationCount > Players.Count())
                 {
                     note.AddError("Could not find winning player in player list");
-                    return;
+                    return null;
                 }
                 else
                 {
@@ -178,6 +179,11 @@ namespace CardGame.Domain.Game
             nextPlayer.Draw(drawCard, note);
 
             Round = drawnRound;
+
+            var revealedTargetCard = playContext.DoRevealTargetHand
+                ? targetCard.CardId
+                : null;
+            return new PlayResult(revealedTargetCard);
         }
 
         private void CheckForWinner()

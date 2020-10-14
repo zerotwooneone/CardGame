@@ -15,6 +15,7 @@ namespace CardGame.Domain.Card
         }
         protected override void OnPlayed(IPlayContext playContext)
         {
+            playContext.RevealTargetHand();
             if (playContext.PlayerHandWeaker())
             {
                 playContext.EliminatePlayer();

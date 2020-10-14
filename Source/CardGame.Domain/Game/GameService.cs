@@ -55,16 +55,21 @@ namespace CardGame.Domain.Game
                 note.AddError($"Game not found {request.GameId}");
             }
 
+            PlayResult playResult;
             if (!note.HasErrors())
             {
-                game.Play(playerId.Value, 
+                playResult = game.Play(playerId.Value, 
                     cardId.Value, 
                     targetId?.Value, 
                     guessValue?.Value,
                     note);
             }
+            else
+            {
+                playResult = null;
+            }
 
-            if (note.HasErrors())
+            if (note.HasErrors() || playResult == null)
             {
                 await _bus.PublishEvent(nameof(Rejected), new Rejected
                 {
@@ -76,6 +81,18 @@ namespace CardGame.Domain.Game
             }
 
             await _gameRepository.SetById(game);
+            if (playResult.RevealedTargetCard != null)
+            {
+                await _bus.PublishEvent(nameof(CardRevealed), new CardRevealed
+                {
+                    CorrelationId = request.CorrelationId,
+                    GameId = gid.Value.Value,
+                    PlayerId = request.PlayerId,
+                    TargetCardStrength = (int)playResult.RevealedTargetCard.CardValue.Value,
+                    TargetCardVariant = playResult.RevealedTargetCard.Variant,
+                    TargetId = request.TargetId.Value,
+                });
+            }
             await _bus.PublishEvent("CardPlayed", new CardPlayed
             {
                 CorrelationId = request.CorrelationId,

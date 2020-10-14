@@ -1,4 +1,5 @@
-﻿using CardGame.Utils.Validation;
+﻿using CardGame.Domain.Abstractions.Game;
+using CardGame.Utils.Validation;
 
 namespace CardGame.Domain.Card
 {
