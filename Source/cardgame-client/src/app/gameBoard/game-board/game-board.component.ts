@@ -61,6 +61,9 @@ export class GameBoardComponent implements OnInit {
         }),
         property(m => m)
       );
+
+    // todo: handle card revealed
+    this.gameModel.cardRevealedObservable.subscribe(cr => console.warn(cr));
   }
   findNotCached(cachedKeys: string[], allKeys: string[]): string[] {
     return allKeys.filter(a => !cachedKeys.some(c => c === a));

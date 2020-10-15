@@ -1,6 +1,7 @@
 import { merge, Observable, Subject } from 'rxjs';
 import { concatAll, filter, map, mergeMap, shareReplay, switchMap } from 'rxjs/operators';
 import { property } from 'src/pipes/property';
+import { CardRevealed } from '../commonState/CardRevealed';
 import { CommonStateModel, ICardId } from '../commonState/common-state-model';
 import { CommonKnowledgeGame, CommonKnowledgePlayer } from './game-client';
 
@@ -14,7 +15,8 @@ export class GameModel {
     get CurrentPlayerId(): Observable<string> { return this.commonModel.CurrentPlayerId; }
     get PlayersInRound(): Observable<readonly string[]> { return this.commonModel.PlayersInRound; }
     constructor(private readonly commonModel: CommonStateModel,
-        gameState: CommonKnowledgeGame) {
+        gameState: CommonKnowledgeGame,
+        readonly cardRevealedObservable: Observable<CardRevealed>) {
         this.gameSubject = new Subject<CommonKnowledgeGame>();
         this.PlayerIds = this.gameSubject
             .pipe(

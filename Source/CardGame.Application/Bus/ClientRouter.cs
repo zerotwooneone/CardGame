@@ -30,6 +30,21 @@ namespace CardGame.Application.Bus
             var playerConnectedSubscription =
                 _bus.Subscribe<PlayerConnected>(nameof(PlayerConnected), OnPlayerConnected);
             var cardPlayedSub = _bus.Subscribe<CardPlayed>(nameof(CardPlayed), OnCardPlayed);
+            var cardRevealedSubscription = _bus.Subscribe<CardRevealed>(nameof(CardRevealed), OnCardRevealed);
+        }
+
+        private async Task OnCardRevealed(CardRevealed arg)
+        {
+            var clientEvent = new ClientEvent
+            {
+                GameId = arg.GameId,
+                EventId = Guid.NewGuid(),
+                CorrelationId = arg.CorrelationId,
+                Topic = nameof(CardRevealed),
+                Data = arg,
+                Type = typeof(CardRevealed).ToString()
+            };
+            await _clientHub.SendToPlayers(new[] {arg.PlayerId}, clientEvent);
         }
 
         private async Task OnCardPlayed(CardPlayed arg)
@@ -40,7 +55,7 @@ namespace CardGame.Application.Bus
                 CorrelationId = arg.CorrelationId,
                 GameId = arg.GameId,
                 Type = typeof(CardPlayed).ToString(),
-                Topic = nameof(OnCommonGameStateChanged),
+                Topic = nameof(CardPlayed),
                 Data = arg
             };
             await _clientHub.SendClientEvent(clientEvent);
