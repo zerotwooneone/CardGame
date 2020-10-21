@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using CardGame.CommonModel.Bus;
 using CardGame.Utils.Abstractions.Bus;
 using Microsoft.AspNetCore.SignalR;
+using Microsoft.Extensions.Logging;
 
 namespace CardGame.Application.Client
 {
@@ -13,6 +14,7 @@ namespace CardGame.Application.Client
     {
         private readonly IHubContext<ClientHub> _context;
         private readonly IBus _bus;
+        private readonly ILogger<ClientHub> _logger;
 
         private static readonly IDictionary<string, ConnectionDetails> ConnectionRepoByConnectionId =
             new ConcurrentDictionary<string, ConnectionDetails>();
@@ -20,26 +22,40 @@ namespace CardGame.Application.Client
             new ConcurrentDictionary<Guid, PlayerDetails>();
 
         public ClientHub(IHubContext<ClientHub> context,
-            IBus bus)
+            IBus bus,
+            ILogger<ClientHub> logger)
         {
             _context = context;
             _bus = bus;
+            _logger = logger;
         }
 
         public async Task<ClientConnected> Connect(ClientIdentifier clientIdentifier)
         {
             //todo: get the player id from authentication
-            Guid playerId = Guid.NewGuid();
-            if (clientIdentifier.GameId.HasValue)
+            if (!clientIdentifier.GameId.HasValue)
             {
-                await Groups.AddToGroupAsync(Context.ConnectionId, GetGroupIdByGameId(clientIdentifier.GameId.Value));
-                ConnectionRepoByConnectionId.Add(Context.ConnectionId,
-                    new ConnectionDetails(clientIdentifier.GameId.Value, playerId));
-                ConnectionRepoByPlayerId.Add(playerId, new PlayerDetails(Context.ConnectionId, clientIdentifier.GameId.Value));
-
-                var correlationId = Guid.NewGuid();
-                await _bus.Publish(nameof(PlayerConnected), new PlayerConnected(clientIdentifier.GameId.Value, playerId, correlationId), correlationId: correlationId);
+                _logger.LogError("attempt to connect without a game id");
+                return null;
             }
+
+            if (!clientIdentifier.PlayerId.HasValue || clientIdentifier.PlayerId.Value == default)
+            {
+                _logger.LogError("attempt to connect without a player id");
+                return null;
+            }
+
+            var playerId = clientIdentifier.PlayerId.Value;
+            await Groups.AddToGroupAsync(Context.ConnectionId, GetGroupIdByGameId(clientIdentifier.GameId.Value));
+            ConnectionRepoByConnectionId.Add(Context.ConnectionId,
+                new ConnectionDetails(clientIdentifier.GameId.Value, playerId));
+            ConnectionRepoByPlayerId.Add(playerId,
+                new PlayerDetails(Context.ConnectionId, clientIdentifier.GameId.Value));
+
+            var correlationId = Guid.NewGuid();
+            await _bus.Publish(nameof(PlayerConnected),
+                new PlayerConnected(clientIdentifier.GameId.Value, playerId, correlationId),
+                correlationId: correlationId);
 
             return new ClientConnected {PlayerId = playerId};
         }
@@ -48,7 +64,7 @@ namespace CardGame.Application.Client
         {
             if (exception != null)
             {
-                //todo: log this. this means the caller did not choose to quit
+                _logger.LogError(exception, "client did not choose to disconnect");
             }
 
             if (ConnectionRepoByConnectionId.TryGetValue(Context.ConnectionId, out var details))
@@ -70,12 +86,15 @@ namespace CardGame.Application.Client
 
         public async Task SendClientEvent(ClientEvent clientEvent)
         {
-            if (_context.Clients != null)
+            if (_context.Clients == null)
             {
-                // cant use this.Clients
-                await _context.Clients.Group(GetGroupIdByGameId(clientEvent.GameId))
-                    .SendAsync("OnClientEvent", clientEvent);
+                _logger.LogWarning($"no clients");
+                return;
             }
+
+            // cant use this.Clients
+            await _context.Clients.Group(GetGroupIdByGameId(clientEvent.GameId))
+                .SendAsync("OnClientEvent", clientEvent);
         }
 
         private string GetGroupIdByGameId(Guid gameId)
@@ -88,6 +107,7 @@ namespace CardGame.Application.Client
             var connectionIds = ConvertPlayerIdsToConnectionIds(playerIds);
             if (connectionIds is null || connectionIds.Length == 0)
             {
+                _logger.LogWarning($"cannot find players {string.Join(",",playerIds.Select(g => g.ToString()))}");
                 return;
             }
             await _context.Clients.Clients(connectionIds).SendAsync("OnClientEvent", clientEvent);
@@ -113,6 +133,7 @@ namespace CardGame.Application.Client
     public class ClientIdentifier
     {
         public Guid? GameId { get; set; }
+        public Guid? PlayerId { get; set; }
     }
 
     public class ClientConnected

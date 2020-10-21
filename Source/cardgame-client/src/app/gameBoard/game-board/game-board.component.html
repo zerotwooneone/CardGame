@@ -2,7 +2,7 @@
     <div class="other-players">
         <div *ngFor="let player of otherPlayers | async; trackBy: trackByPlayerId"
         class="player">
-            <cgc-other-player [player]="player"></cgc-other-player>
+            <cgc-other-player [player]="player" [revealedCard]="player.revealedCardObservable | async"></cgc-other-player>
         </div>
     </div>
     <div class="play-area" *ngIf="!!gameModel">

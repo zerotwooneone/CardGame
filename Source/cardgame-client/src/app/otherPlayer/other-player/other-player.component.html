@@ -2,7 +2,12 @@
     <p>{{player.name}}</p>
     <div class="cards"
          [hidden]="!player.isInRound">
-        <div class="card"></div>
+        <div class="card">
+            <div *ngIf="revealedCard">
+                <div>S:{{revealedCard.strength}}</div>
+                <div>V:{{revealedCard.strength}}</div>
+            </div>
+        </div>
     </div>
 </div>
 

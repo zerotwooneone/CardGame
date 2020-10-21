@@ -7,10 +7,10 @@ import { CardPlayed } from 'src/app/commonState/CardPlayed';
 
 export class EventMap {
   private static readonly mappers: { [token: string]: MapDefinition; } = {
-    [TopicTokens.clientEvent]: EventMap.GetJsonMapDefinition(typeof ClientEvent),
-    [TopicTokens.GameStateChanged]: EventMap.GetJsonMapDefinition(typeof CommonGameStateChanged),
-    [TopicTokens.CardRevealed]: EventMap.GetJsonMapDefinition(typeof CardRevealed),
-    [TopicTokens.CardPlayed]: EventMap.GetJsonMapDefinition(typeof CardPlayed),
+    [TopicTokens.clientEvent]: EventMap.GetJsonMapDefinition('ClientEvent'),
+    [TopicTokens.GameStateChanged]: EventMap.GetJsonMapDefinition('CommonGameStateChanged'),
+    [TopicTokens.CardRevealed]: EventMap.GetJsonMapDefinition('CardRevealed'),
+    [TopicTokens.CardPlayed]: EventMap.GetJsonMapDefinition('CardPlayed'),
   };
   static GetJsonMapDefinition(type: string): MapDefinition {
     return {
@@ -31,6 +31,8 @@ export class EventMap {
     const mapper = EventMap.mappers[token];
     if (!mapper) {
       // todo: do something
+      console.error(`cannot find map to receive ${token}`);
+      return undefined as any;
     }
     return mapper.receiveMap?.(type, event) as T;
   }
@@ -41,7 +43,7 @@ export class EventMap {
     const mapper = EventMap.mappers[token];
     if (!mapper) {
       // todo: do something
-      console.error(`cannot find map for ${token}`);
+      console.error(`cannot find map to transmit ${token}`);
       return undefined;
     }
     return mapper.requestMap?.(event, eventId, correlationId);

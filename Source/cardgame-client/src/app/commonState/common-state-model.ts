@@ -21,28 +21,33 @@ export class CommonStateModel {
         this.DrawCount = this
             .stateChangedObservable
             .pipe(
+                distinctUntilChanged(),
                 property(m => m.drawCount)
             );
 
         this.PlayersInRound = this
             .stateChangedObservable
             .pipe(
+                distinctUntilChanged((old, newer) => old.playerOrder.length === newer.playerOrder.length),
                 property(m => m.playerOrder)
             );
 
         this.Discard = this
             .stateChangedObservable
             .pipe(
+                distinctUntilChanged((old, newer) => old.discard.length === newer.discard.length),
                 property(m => this.GetCards(m.discard))
             );
         this.CurrentPlayerId = this
             .stateChangedObservable
             .pipe(
+                distinctUntilChanged(),
                 property(m => m.playerOrder[0])
         );
         this.Turn = this
             .stateChangedObservable
             .pipe(
+                distinctUntilChanged((old, newer) => old.turn === newer.turn),
                 property(s => s.turn)
             );
         this.Player1Score = this.stateChangedObservable

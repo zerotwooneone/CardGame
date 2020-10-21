@@ -2,12 +2,12 @@ import { CardStrength } from '../domain/card/CardStrength';
 
 
 export class CardRevealed {
-    readonly CorrelationId: string;
-    readonly GameId: string;
-    readonly PlayerId: string;
-    readonly TargetCardStrength: CardStrength;
-    readonly TargetCardVariant: number;
-    readonly TargetId: string;
+    readonly correlationId: string;
+    readonly gameId: string;
+    readonly playerId: string;
+    readonly targetCardStrength: CardStrength;
+    readonly targetCardVariant: number;
+    readonly targetId: string;
 }
 
 

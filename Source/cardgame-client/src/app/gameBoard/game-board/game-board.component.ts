@@ -1,7 +1,7 @@
 import { Component, OnInit, Input } from '@angular/core';
-import { Observable } from 'rxjs';
+import { ConnectableObservable, merge, Observable } from 'rxjs';
 import { CurrentPlayerModel } from 'src/app/currentPlayer/current-player-model';
-import { withLatestFrom, map, shareReplay } from 'rxjs/operators';
+import { withLatestFrom, map, shareReplay, distinctUntilChanged, switchMap, filter, publish, take } from 'rxjs/operators';
 import { property } from 'src/pipes/property';
 import { GameModel } from 'src/app/game/game-model';
 import { ICardId } from 'src/app/commonState/common-state-model';
@@ -51,22 +51,52 @@ export class GameBoardComponent implements OnInit {
           return allPlayerIds
             .filter(s => s !== this.currentPlayer.Id)
             .map((p, i) => {
+              const revealedCardObservable = this.createCardRevealedObservable(p);
               const result: IOtherPlayer = {
                 Id: p,
                 name: p,
                 isInRound: inRound.has(p),
+                revealedCardObservable: revealedCardObservable,
               };
               return result;
             });
         }),
         property(m => m)
-      );
-
-    // todo: handle card revealed
-    this.gameModel.cardRevealedObservable.subscribe(cr => console.warn(cr));
+    );
   }
   findNotCached(cachedKeys: string[], allKeys: string[]): string[] {
     return allKeys.filter(a => !cachedKeys.some(c => c === a));
+  }
+
+  createCardRevealedObservable(playerId: string): Observable<ICardId | null> {
+
+    const currentPlayerIdObservable = (this.gameModel.CurrentPlayerId.pipe(publish()) as ConnectableObservable<string>)
+      .refCount(); // we publish here so that all observers avoid the sharedReplay value
+    currentPlayerIdObservable.pipe(take(5)).subscribe(); // subscribe to kick this off and clear out the cached value before unsubscribing
+
+    const targetTurnObservable = this.gameModel.CardRevealedObservable.pipe(
+      switchMap(cr => currentPlayerIdObservable.pipe(
+        filter(t => t === cr.playerId)
+      ))
+    );
+    const afterTargetTurnObservable = targetTurnObservable.pipe(
+      switchMap(m => currentPlayerIdObservable)
+    );
+
+    const cardRevealedObs = this.gameModel.CardRevealedObservable.pipe(
+      filter(e => e.targetId === playerId),
+      map(e => {
+        return ({
+          strength: e.targetCardStrength,
+          varient: e.targetCardVariant
+        } as ICardId);
+      })
+    );
+    const clearRevealedObservable = afterTargetTurnObservable.pipe(map(t => null as ICardId | null));
+    const result = merge(
+      cardRevealedObs.pipe(map(cr => cr as ICardId | null)),
+      clearRevealedObservable).pipe(map(m => { console.warn("result", m); return m; }));
+    return result;
   }
 
   public trackByPlayerId(player: any): string {
@@ -115,6 +145,8 @@ export interface IOtherPlayer {
   readonly Id: string;
   readonly name: string;
   readonly isInRound: boolean;
+  readonly revealedCardObservable: Observable<ICardId | null>;
 }
+
 
 

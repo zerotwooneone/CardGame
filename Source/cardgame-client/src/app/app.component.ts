@@ -37,7 +37,7 @@ export class AppComponent implements OnInit {
     this.gameIdX = gameId;
     try {
       // we call this to open the signalR connection
-      const c = await this.clientFactory.Create({ GameId: gameId });
+      const c = await this.clientFactory.Create({ GameId: gameId, PlayerId: playerId });
 
       const commonState = await this.commonStateFactory.get(gameId);
       this.gameModel = await this.gameModelFactory.create(commonState, gameId);
