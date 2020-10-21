@@ -11,11 +11,9 @@ import { CardStrength } from 'src/app/domain/card/CardStrength';
 export class PlayChoiceComponent implements OnInit {
 
   constructor(@Inject(MAT_DIALOG_DATA) public data: ChoiceInput,
-    public dialogRef: MatDialogRef<PlayChoiceComponent>) { }
-  players: Player[] = [
-    { value: '9b644228-6c7e-4caa-becf-89e093ee299f', viewValue: 'Jeb' },
-    { value: '5e96fafb-83b2-4e72-8afa-0e6a8f12345f', viewValue: 'Molly' },
-  ];
+              public dialogRef: MatDialogRef<PlayChoiceComponent>) { }
+  players: Player[] = (this.data.targetPlayers ?? [])
+    .map(p => ({ value: p, viewValue: p.substr(0, 8) }));
   strengths: Strength[] = [
     { value: 2, viewValue: 'Priest - 2' },
     { value: 3, viewValue: 'Baron - 3' },

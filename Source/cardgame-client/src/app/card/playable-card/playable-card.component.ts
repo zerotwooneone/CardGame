@@ -29,18 +29,20 @@ export class PlayableCardComponent implements OnInit {
   }
 
   onPlayClick(): void {
-    const otherPlayers = this.otherPlayers.filter(o => o.isInRound).map(o => o.Id);
-    const targetPlayers = this.isPlayerRequired()
-      ? [this.playerId, ...otherPlayers]
+    const otherPlayerIds = this.otherPlayers
+      .filter(o => o.isInRound)
+      .map(o => o.Id);
+    const targetPlayers = this.isTargetRequired()
+      ? this.canTargetSelf() ? [this.playerId, ...otherPlayerIds] : otherPlayerIds
       : null;
+    const targetRequired = this.canTargetSelf() || (otherPlayerIds.length > 1);
     const strengthRequired = CardStrength.Guard === this.card?.cardStrength;
-    // todo handle not targeting self
-    if (!strengthRequired && (!targetPlayers || !targetPlayers.length)) {
-      this.playClick.emit({
-        strength: null,
-        target: null,
-      });
-    } else {
+    console.warn("onPlayClick", {
+      strengthRequired,
+      targetRequired,
+      otherPlayerIds,
+    })
+    if (strengthRequired || targetRequired) {
       const playDetails: ChoiceInput = {
         strengthRequired,
         targetPlayers
@@ -53,10 +55,16 @@ export class PlayableCardComponent implements OnInit {
           this.playClick.emit(result);
         }
       });
+    } else {
+      const t = targetPlayers ?? [];
+      this.playClick.emit({
+        strength: null,
+        target: t.length > 1 ? null : t[0],
+      });
     }
   }
 
-  isPlayerRequired(): boolean {
+  private isTargetRequired(): boolean {
     switch (this.card?.cardStrength) {
       case CardStrength.Guard:
       case CardStrength.Priest:
@@ -64,6 +72,22 @@ export class PlayableCardComponent implements OnInit {
       case CardStrength.Prince:
       case CardStrength.King:
         return true;
+      case CardStrength.Handmaid:
+      case CardStrength.Countess:
+      case CardStrength.Princess:
+      default:
+        return false;
+    }
+  }
+
+  private canTargetSelf(): boolean {
+    switch (this.card?.cardStrength) {
+      case CardStrength.Prince:
+        return true;
+      case CardStrength.Guard:
+      case CardStrength.Priest:
+      case CardStrength.Baron:
+      case CardStrength.King:
       case CardStrength.Handmaid:
       case CardStrength.Countess:
       case CardStrength.Princess:
