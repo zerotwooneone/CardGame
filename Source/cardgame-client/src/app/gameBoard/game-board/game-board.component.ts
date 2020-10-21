@@ -92,10 +92,11 @@ export class GameBoardComponent implements OnInit {
         } as ICardId);
       })
     );
+    // todo: fix clearRevealedObservable as it is not emitting
     const clearRevealedObservable = afterTargetTurnObservable.pipe(map(t => null as ICardId | null));
     const result = merge(
       cardRevealedObs.pipe(map(cr => cr as ICardId | null)),
-      clearRevealedObservable).pipe(map(m => { console.warn("result", m); return m; }));
+      clearRevealedObservable);
     return result;
   }
 
