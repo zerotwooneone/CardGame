@@ -37,11 +37,6 @@ export class PlayableCardComponent implements OnInit {
       : null;
     const targetRequired = this.canTargetSelf() || (otherPlayerIds.length > 1);
     const strengthRequired = CardStrength.Guard === this.card?.cardStrength;
-    console.warn("onPlayClick", {
-      strengthRequired,
-      targetRequired,
-      otherPlayerIds,
-    })
     if (strengthRequired || targetRequired) {
       const playDetails: ChoiceInput = {
         strengthRequired,
