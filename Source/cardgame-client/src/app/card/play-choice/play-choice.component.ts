@@ -10,7 +10,7 @@ import { CardStrength } from 'src/app/domain/card/CardStrength';
 })
 export class PlayChoiceComponent implements OnInit {
 
-  constructor(@Inject(MAT_DIALOG_DATA) public data: any,
+  constructor(@Inject(MAT_DIALOG_DATA) public data: ChoiceInput,
     public dialogRef: MatDialogRef<PlayChoiceComponent>) { }
   players: Player[] = [
     { value: '9b644228-6c7e-4caa-becf-89e093ee299f', viewValue: 'Jeb' },
@@ -31,10 +31,11 @@ export class PlayChoiceComponent implements OnInit {
   strengthFormControl: FormControl;
 
   ngOnInit(): void {
-    const input = (this.data as ChoiceInput);
-    this.playerRequired = !!input?.targetPlayers?.length;
+    const input = this.data;
 
+    this.playerRequired = !!input?.targetPlayers?.length;
     this.strengthRequired = input?.strengthRequired;
+
     this.playerFormControl = new FormControl(null, this.playerRequired ? Validators.required : null);
     this.strengthFormControl = new FormControl(null, this.strengthRequired ? Validators.required : null);
   }
