@@ -2,14 +2,16 @@
 
 public class Turn
 {
-    public uint Id { get; }
+    public uint Number { get; private set; }
     public Game Game { get; }
     public Round Round { get; private set; }
-    public Player Player { get; }
+    public Player Player=> Round.CurrentPlayer;
     
-    public Turn(uint id, Game game, Round round, Player player)
+    public Turn(uint number, Game game, Round round)
     {
-        (Id, Game, Round, Player) = (id, game, round, player);
+        Number = number;
+        Game = game;
+        Round = round;
     }
 
     public async Task Play(
@@ -137,5 +139,6 @@ public class Turn
         }
         var drawn =Round.DrawForTurn();
         Round.CurrentPlayer.Draw(drawn);
+        Number++;
     }
 }

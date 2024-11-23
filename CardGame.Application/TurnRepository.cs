@@ -6,13 +6,26 @@ namespace CardGame.Application;
 public class TurnRepository : ITurnRepository
 {
     private readonly ILogger<TurnRepository> _logger;
+    private Turn _turn;
+
     public TurnRepository(ILogger<TurnRepository> logger)
     {
         _logger = logger;
+        _logger.LogWarning("returning same old game");
+        _turn = CreatTurn();
     }
     public async Task<Turn?> GetCurrentTurn(GameId gameId)
     {
-        _logger.LogWarning("returning same old game");
+        return Clone(_turn);
+    }
+
+    private Turn Clone(Turn turn)
+    {
+        return new Turn(turn.Number, turn.Game, turn.Round);
+    }
+
+    private Turn CreatTurn()
+    {
         var cards = Cards.AllCards;
         var shuffled =new Queue<Card>(cards.OrderBy(c => (new Random(3223)).Next()));
         var burned = shuffled.Dequeue();
@@ -27,13 +40,12 @@ public class TurnRepository : ITurnRepository
             new Game((GameId) 1,
                 players,
                 cards),
-            new Round(1, shuffled.ToArray(), new[] {burned}, players),
-            players[0]);
+            new Round(1, shuffled.ToArray(), new[] {burned}, players));
     }
 
     public async Task Save(Turn turn)
     {
-        _logger.LogError("save turn not implemented");
+        _turn = turn;
     }
 
     
