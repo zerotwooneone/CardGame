@@ -8,7 +8,7 @@ public class ApplicationTurnService: IApplicationTurnService
     private readonly ILogger<ApplicationTurnService> _logger;
     private readonly TurnService _domainService;
     private readonly ITurnRepository _turnRepository;
-    private readonly ICardEffectRepository _cardEffectRepository;
+    private readonly IPlayEffectRepository _playEffectRepository;
     private readonly IInspectNotificationService _inspectNotificationService;
     private readonly IRoundFactory _roundFactory;
 
@@ -16,14 +16,14 @@ public class ApplicationTurnService: IApplicationTurnService
         ILogger<ApplicationTurnService> logger,
         TurnService domainService,
         ITurnRepository turnRepository, 
-        ICardEffectRepository cardEffectRepository, 
+        IPlayEffectRepository playEffectRepository, 
         IInspectNotificationService inspectNotificationService,
         IRoundFactory roundFactory)
     {
         _logger = logger;
         _domainService = domainService;
         _turnRepository = turnRepository;
-        _cardEffectRepository = cardEffectRepository;
+        _playEffectRepository = playEffectRepository;
         _inspectNotificationService = inspectNotificationService;
         _roundFactory = roundFactory;
     }
@@ -36,7 +36,7 @@ public class ApplicationTurnService: IApplicationTurnService
     {
         return await _domainService.Play(
             _turnRepository,
-            _cardEffectRepository,
+            _playEffectRepository,
             (GameId) gameId,
             (PlayerId) playerId,
             (CardId) cardId,

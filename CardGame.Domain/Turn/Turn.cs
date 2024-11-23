@@ -15,8 +15,8 @@ public class Turn
     }
 
     public async Task Play(
-        CardEffect cardEffect, 
-        ICardEffectRepository cardEffectRepository, 
+        PlayEffect playEffect, 
+        IPlayEffectRepository playEffectRepository, 
         PlayParams playParams,
         IInspectNotificationService inspectNotificationService,
         IRoundFactory roundFactory)
@@ -30,16 +30,16 @@ public class Turn
         {
             throw new Exception("round is complete");
         }
-        var card = Player.GetHand().First(c=> c.Id == cardEffect.Card);
-        Player.Discard(cardEffect, card);
-        Round.Play(cardEffect, Player);
-        if (cardEffect.RequiresTargetPlayer)
+        var card = Player.GetHand().First(c=> c.Id == playEffect.Card);
+        Player.Discard(playEffect, card);
+        Round.Play(playEffect, Player);
+        if (playEffect.RequiresTargetPlayer)
         {
-            var target =Round.GetTargetPlayer(cardEffect, playParams);
+            var target =Round.GetTargetPlayer(playEffect, playParams);
             var otherRemainingPlayers = Round.RemainingPlayers
                 .Where(p=>!p.Equals(Player))
                 .ToArray();
-            if (cardEffect.TradeHands && !otherRemainingPlayers.All(p=>p.IsProtected))
+            if (playEffect.TradeHands && !otherRemainingPlayers.All(p=>p.IsProtected))
             {
                 if (target.IsProtected)
                 {
@@ -49,7 +49,7 @@ public class Turn
                 var targetHand = target.Trade(playerHand);
                 Player.Trade(targetHand);
             }
-            if (cardEffect.DiscardAndDraw)
+            if (playEffect.DiscardAndDraw)
             {
                 if (target.IsProtected && !Player.Id.Equals(playParams.TargetPlayer))
                 {
@@ -64,13 +64,13 @@ public class Turn
                 {
                     var drawnForDiscard = Round.DrawForDiscard();
                     var discarded =target.DiscardAndDraw(drawnForDiscard);
-                    var discardEffect = await cardEffectRepository.Get(Game.Id, discarded.Id, playParams).ConfigureAwait(false);
+                    var discardEffect = await playEffectRepository.Get(Game.Id, discarded.Id, playParams).ConfigureAwait(false);
                     Round.DiscardAndDraw(discardEffect, target);
                     target.RemoveFromRound();
                 }
             }
 
-            if (cardEffect.Compare)
+            if (playEffect.Compare)
             {
                 if (!otherRemainingPlayers.All(p => p.IsProtected))
                 {
@@ -89,7 +89,7 @@ public class Turn
                 }
             }
 
-            if (cardEffect.Inspect)
+            if (playEffect.Inspect)
             {
                 if (target.IsProtected)
                 {
@@ -99,7 +99,7 @@ public class Turn
                 await inspectNotificationService.Notify(targetCard).ConfigureAwait(false);
             }
 
-            if (cardEffect.Guess && !otherRemainingPlayers.All(p=>p.IsProtected))
+            if (playEffect.Guess && !otherRemainingPlayers.All(p=>p.IsProtected))
             {
                 if (target.IsProtected)
                 {
@@ -118,7 +118,7 @@ public class Turn
                 }
             }
         }
-        if(cardEffect.Protect)
+        if(playEffect.Protect)
         {
             Player.Protect();
         }

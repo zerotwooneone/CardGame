@@ -1,6 +1,6 @@
 ﻿namespace CardGame.Domain.Turn;
 
-public record CardEffect
+public record PlayEffect
 {
     public CardId Card { get;  init;}
     public bool CanTargetSelf { get; init; }

@@ -51,7 +51,7 @@ public record Round
         return playerWithMaxTotal.Player;
     }
 
-    public void Play(CardEffect cardEffect, Player player)
+    public void Play(PlayEffect playEffect, Player player)
     {
         if (Complete)
         {
@@ -61,7 +61,7 @@ public record Round
         {
             throw new Exception($"not players turn {player.Id}");
         }
-        if (cardEffect.KickOutOfRoundOnDiscard)
+        if (playEffect.KickOutOfRoundOnDiscard)
         {
             RemovePlayer(CurrentPlayer);
         }
@@ -73,9 +73,9 @@ public record Round
         _eliminated.Add(player);
     }
 
-    public Player GetTargetPlayer(CardEffect cardEffect, PlayParams playParams)
+    public Player GetTargetPlayer(PlayEffect playEffect, PlayParams playParams)
     {
-        if (!cardEffect.RequiresTargetPlayer)
+        if (!playEffect.RequiresTargetPlayer)
         {
             throw new Exception("no target required");
         }
@@ -84,7 +84,7 @@ public record Round
             throw new Exception("missing target player");
         }
 
-        var possibleTargets = cardEffect.CanTargetSelf
+        var possibleTargets = playEffect.CanTargetSelf
             ? RemainingPlayers
             : RemainingPlayers.Where(p => !p.Equals(CurrentPlayer));
         var selectedTarget = possibleTargets.FirstOrDefault(p => playParams.TargetPlayer.HasValue && p.Id == playParams.TargetPlayer.Value);
@@ -111,9 +111,9 @@ public record Round
         return result;
     }
 
-    public void DiscardAndDraw(CardEffect cardEffect, Player player)
+    public void DiscardAndDraw(PlayEffect playEffect, Player player)
     {
-        if (cardEffect.DiscardAndDrawKickEnabled && cardEffect.KickOutOfRoundOnDiscard)
+        if (playEffect.DiscardAndDrawKickEnabled && playEffect.KickOutOfRoundOnDiscard)
         {
             RemovePlayer(player);
         }

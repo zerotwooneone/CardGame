@@ -19,7 +19,7 @@ var appBuilder = Host.CreateDefaultBuilder(args)
         serviceCollection.AddSingleton<IApplicationTurnService, ApplicationTurnService>();
         serviceCollection.AddSingleton<TurnService>();
         serviceCollection.AddSingleton<ITurnRepository, TurnRepository>();
-        serviceCollection.AddSingleton<ICardEffectRepository, CardEffectRepository>();
+        serviceCollection.AddSingleton<IPlayEffectRepository, PlayEffectRepository>();
         var logFactory = serviceCollection.BuildServiceProvider().GetRequiredService<ILoggerFactory>();
         serviceCollection.AddSingleton<IInspectNotificationService>(new LoggerNotificationService(logFactory.CreateLogger<LoggerNotificationService>()));
         serviceCollection.AddSingleton<IRoundFactory, RoundFactory>();

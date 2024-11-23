@@ -2,14 +2,14 @@
 
 namespace CardGame.Application;
 
-public class CardEffectRepository : ICardEffectRepository
+public class PlayEffectRepository : IPlayEffectRepository
 {
-    public Task<CardEffect?> Get(GameId gameId, CardId cardId, PlayParams playParams)
+    public Task<PlayEffect?> Get(GameId gameId, CardId cardId, PlayParams playParams)
     {
         var card = Cards.AllCards.FirstOrDefault(c=> c.Id == cardId);
         if (card == null)
         {
-            return Task.FromException<CardEffect?>(new Exception("card not found"));
+            return Task.FromException<PlayEffect?>(new Exception("card not found"));
         }
         var isPrincess = card.Value == CardValues.Princess;
         var isKing = card.Value == CardValues.King;
@@ -19,7 +19,7 @@ public class CardEffectRepository : ICardEffectRepository
         var isBaron = card.Value == CardValues.Baron;
         var isGuard = card.Value == CardValues.Guard;
         //var isCountess = card.Value == CardValues.Countess;
-        return Task.FromResult<CardEffect?>(new CardEffect
+        return Task.FromResult<PlayEffect?>(new PlayEffect
         {
             KickOutOfRoundOnDiscard = isPrincess,
             CanDiscard = true,

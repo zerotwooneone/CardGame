@@ -43,7 +43,7 @@ public class Player: IEquatable<Player>
     private readonly List<Card> _discardPile = new();
     public bool IsProtected { get; private set; }
 
-    public void Discard(CardEffect effect, Card card)
+    public void Discard(PlayEffect effect, Card card)
     {
         if (!Has(card))
         {
