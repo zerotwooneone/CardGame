@@ -20,7 +20,7 @@ public readonly struct CardId(uint value) : IEquatable<CardId>
 
     public override string ToString()
     {
-        return Value.ToString();
+        return $"C{Value.ToString()}";
     }
 
     public override bool Equals(object? obj)

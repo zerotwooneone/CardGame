@@ -10,5 +10,6 @@ public interface ITurnService
         CardId cardId, 
         PlayParams playParams, 
         IInspectNotificationService inspectNotificationService,
-        IRoundFactory roundFactory);
+        IRoundFactory roundFactory, 
+        IForcedDiscardEffectRepository forcedDiscardEffectRepository);
 }

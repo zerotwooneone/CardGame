@@ -43,16 +43,17 @@ public class Player: IEquatable<Player>
     private readonly List<Card> _discardPile = new();
     public bool IsProtected { get; private set; }
 
-    public void Discard(PlayEffect effect, Card card)
+    public void Play(PlayEffect effect, Card card)
     {
         if (!Has(card))
         {
-            throw new Exception($"player does not have card with id {card.Id}");
+            throw new Exception($"player does not have card {card}");
         }
 
-        if (!effect.CanDiscard)
+        var otherCard = GetHand().Single(c => c.Id != card.Id);
+        if (effect.PlayProhibitedByCardInHand.Any(p=>p == otherCard.Value))
         {
-            throw new Exception($"cannot discard {card.Id}");
+            throw new Exception($"Playing {card} is prohibited by {otherCard} in hand.");
         }
         _discardPile.Add(card);
         if (Card1 == card)

@@ -11,6 +11,7 @@ public class ApplicationTurnService: IApplicationTurnService
     private readonly IPlayEffectRepository _playEffectRepository;
     private readonly IInspectNotificationService _inspectNotificationService;
     private readonly IRoundFactory _roundFactory;
+    private readonly IForcedDiscardEffectRepository _forcedDiscardEffectRepository;
 
     public ApplicationTurnService(
         ILogger<ApplicationTurnService> logger,
@@ -18,7 +19,8 @@ public class ApplicationTurnService: IApplicationTurnService
         ITurnRepository turnRepository, 
         IPlayEffectRepository playEffectRepository, 
         IInspectNotificationService inspectNotificationService,
-        IRoundFactory roundFactory)
+        IRoundFactory roundFactory, 
+        IForcedDiscardEffectRepository forcedDiscardEffectRepository)
     {
         _logger = logger;
         _domainService = domainService;
@@ -26,6 +28,7 @@ public class ApplicationTurnService: IApplicationTurnService
         _playEffectRepository = playEffectRepository;
         _inspectNotificationService = inspectNotificationService;
         _roundFactory = roundFactory;
+        _forcedDiscardEffectRepository = forcedDiscardEffectRepository;
     }
 
     public async Task<Turn> Play(
@@ -42,6 +45,7 @@ public class ApplicationTurnService: IApplicationTurnService
             (CardId) cardId,
             playParams,
             _inspectNotificationService,
-            _roundFactory).ConfigureAwait(false);
+            _roundFactory,
+            _forcedDiscardEffectRepository).ConfigureAwait(false);
     }
 }

@@ -111,9 +111,9 @@ public record Round
         return result;
     }
 
-    public void DiscardAndDraw(PlayEffect playEffect, Player player)
+    public void DiscardAndDraw(ForcedDiscardEffect discardEffect, Player player)
     {
-        if (playEffect.DiscardAndDrawKickEnabled && playEffect.KickOutOfRoundOnDiscard)
+        if (discardEffect.DiscardAndDrawKickEnabled && discardEffect.KickOutOfRoundOnDiscard)
         {
             RemovePlayer(player);
         }

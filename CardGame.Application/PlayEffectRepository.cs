@@ -2,8 +2,9 @@
 
 namespace CardGame.Application;
 
-public class PlayEffectRepository : IPlayEffectRepository
+public class PlayEffectRepository : IPlayEffectRepository, IForcedDiscardEffectRepository
 {
+    private readonly IReadOnlyCollection<CardValue> _countessForcedValues = new CardValue[] { CardValues.King, CardValues.Prince };
     public Task<PlayEffect?> Get(GameId gameId, CardId cardId, PlayParams playParams)
     {
         var card = Cards.AllCards.FirstOrDefault(c=> c.Id == cardId);
@@ -18,16 +19,18 @@ public class PlayEffectRepository : IPlayEffectRepository
         var isPriest = card.Value == CardValues.Priest;
         var isBaron = card.Value == CardValues.Baron;
         var isGuard = card.Value == CardValues.Guard;
-        //var isCountess = card.Value == CardValues.Countess;
+        var isCountess = card.Value == CardValues.Countess;
+        
         return Task.FromResult<PlayEffect?>(new PlayEffect
         {
             KickOutOfRoundOnDiscard = isPrincess,
-            CanDiscard = true,
+            PlayProhibitedByCardInHand = isCountess
+                ? _countessForcedValues
+                : Array.Empty<CardValue>(),
             CanTargetSelf = isPrince,
             Card = cardId,
             Compare = isBaron,
             DiscardAndDraw = isPrince,
-            DiscardAndDrawKickEnabled = true,
             Guess = isGuard,
             Inspect = isPriest,
             Protect = isHandmaid,
@@ -35,4 +38,16 @@ public class PlayEffectRepository : IPlayEffectRepository
             RequiresTargetPlayer = isKing || isPrince || isBaron || isPriest || isGuard
         });
     }
+
+    public bool DiscardAndDrawKickEnabled => true;
+    public Task<ForcedDiscardEffect?> Get(CardValue value)
+    {
+        var isPrincess = value == CardValues.Princess;
+        return Task.FromResult<ForcedDiscardEffect?>(new ForcedDiscardEffect
+        {
+            KickOutOfRoundOnDiscard = isPrincess,
+            DiscardAndDrawKickEnabled = DiscardAndDrawKickEnabled,
+        });
+    }
 }
+

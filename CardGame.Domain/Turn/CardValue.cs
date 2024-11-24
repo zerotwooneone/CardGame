@@ -39,7 +39,7 @@ public readonly struct CardValue : IEquatable<CardValue>
 
     public override string ToString()
     {
-        return Value.ToString();
+        return $"CV{Value}";
     }
 
     public override bool Equals(object? obj)

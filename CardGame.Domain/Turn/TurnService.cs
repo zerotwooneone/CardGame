@@ -17,7 +17,8 @@ public class TurnService : ITurnService
         CardId cardId, 
         PlayParams playParams, 
         IInspectNotificationService inspectNotificationService,
-        IRoundFactory roundFactory)
+        IRoundFactory roundFactory, 
+        IForcedDiscardEffectRepository forcedDiscardEffectRepository)
     {
         var turn = await turnRepository.GetCurrentTurn(gameId).ConfigureAwait(false);
         if (turn == null)
@@ -36,7 +37,7 @@ public class TurnService : ITurnService
             throw new Exception($"card effect not found {cardId}");
         }
         
-        await turn.Play(cardEffect,playEffectRepository, playParams, inspectNotificationService, roundFactory).ConfigureAwait(false);
+        await turn.Play(cardEffect,forcedDiscardEffectRepository, playParams, inspectNotificationService, roundFactory).ConfigureAwait(false);
         
         await turnRepository.Save(turn).ConfigureAwait(false);
         

@@ -16,7 +16,7 @@ public class Turn
 
     public async Task Play(
         PlayEffect playEffect, 
-        IPlayEffectRepository playEffectRepository, 
+        IForcedDiscardEffectRepository effectRepository, 
         PlayParams playParams,
         IInspectNotificationService inspectNotificationService,
         IRoundFactory roundFactory)
@@ -31,7 +31,7 @@ public class Turn
             throw new Exception("round is complete");
         }
         var card = Player.GetHand().First(c=> c.Id == playEffect.Card);
-        Player.Discard(playEffect, card);
+        Player.Play(playEffect, card);
         Round.Play(playEffect, Player);
         if (playEffect.RequiresTargetPlayer)
         {
@@ -64,7 +64,7 @@ public class Turn
                 {
                     var drawnForDiscard = Round.DrawForDiscard();
                     var discarded =target.DiscardAndDraw(drawnForDiscard);
-                    var discardEffect = await playEffectRepository.Get(Game.Id, discarded.Id, playParams).ConfigureAwait(false);
+                    var discardEffect = await effectRepository.Get(discarded.Value).ConfigureAwait(false);
                     Round.DiscardAndDraw(discardEffect, target);
                     target.RemoveFromRound();
                 }
