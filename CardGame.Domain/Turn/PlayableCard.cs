@@ -1,8 +1,9 @@
 ﻿namespace CardGame.Domain.Turn;
 
-public record PlayEffect
+public record PlayableCard
 {
-    public CardId Card { get;  init;}
+    public required CardId CardId { get;  init;}
+    public required CardValue Value { get; init; }
     public bool CanTargetSelf { get; init; }
     public IReadOnlyCollection<CardValue> PlayProhibitedByCardInHand { get; init;} = Array.Empty<CardValue>();
     public bool TradeHands { get; init;}

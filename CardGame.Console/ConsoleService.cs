@@ -27,7 +27,7 @@ public class ConsoleService:IHostedService
 
         try
         {
-            Print( await _applicationTurnService.Play(1, 1, 2, new PlayParams{TargetPlayer = (PlayerId)2, Guess = (CardValue)2}).ConfigureAwait(false));
+            Print( await _applicationTurnService.Play(1, 1, 4, new PlayParams{TargetPlayer = (PlayerId)2, Guess = (CardValue)2}).ConfigureAwait(false));
             Print( await _applicationTurnService.Play(1, 2, 4, new PlayParams{TargetPlayer = (PlayerId)1, Guess = (CardValue)2}).ConfigureAwait(false));
             Print( await _applicationTurnService.Play(1, 3, 5, new PlayParams{TargetPlayer = (PlayerId)4, Guess = (CardValue)2}).ConfigureAwait(false));
         }
@@ -40,8 +40,8 @@ public class ConsoleService:IHostedService
 
     private void Print(Turn turn)
     {
-        _logger.LogInformation($"Round:{turn.Round.Number} Turn:{turn.Number} RemainingPlayers:{string.Join(",", turn.Round.RemainingPlayers.Select(p=>$"{p.Id}:{p.GetHand().First().Value}" ))} ");
-        _logger.LogInformation($"Player:{turn.Player.Id} Hand:{string.Join(",", turn.Player.GetHand().Select(c=>c.Id))} Discard:{string.Join(",", turn.Player.DiscardPile.Select(c=>c.Id))} ");
+        _logger.LogInformation("Round:{RoundNumber} Turn:{TurnNumber} RemainingPlayers:{RemainingPlayers} ", turn.Round.Number, turn.Number, string.Join(",", turn.Round.RemainingPlayers.Select(p=>$"{p.Id}:{string.Join(",",p.Hand.Value) }" )));
+        _logger.LogInformation("Player:{CurrentPlayerId} Hand:{Hand} Discard:{Discard} ", turn.CurrentPlayer.Id, string.Join(",", turn.CurrentPlayer.GetHand().Select(c=>$"id:{c.Id} value:{c.Value}")), string.Join(",", (turn.Round.RemainingPlayers.Single(p=>p.Id == turn.CurrentPlayer.Id)).DiscardPile.Select(c=>c.Id)));
     }
 
     public async Task StopAsync(CancellationToken cancellationToken)

@@ -1,11 +1,12 @@
 ﻿namespace CardGame.Domain.Turn;
 
-public class Player: IEquatable<Player>
+public class CurrentPlayer: IEquatable<CurrentPlayer>, ITargetablePlayer
 {
-    public Player(
+    public CurrentPlayer(
         PlayerId id,
         Card? card1 = null,
-        Card? card2 =null)
+        Card? card2 =null, 
+        bool isProtected=false)
     {
         if(card1==null && card2==null)
         {
@@ -39,11 +40,9 @@ public class Player: IEquatable<Player>
 
         return new[] {Card1, Card2};
     }
-    public IReadOnlyCollection<Card> DiscardPile => _discardPile;
-    private readonly List<Card> _discardPile = new();
     public bool IsProtected { get; private set; }
 
-    public void Play(PlayEffect effect, Card card)
+    public void Play(PlayableCard effect, Card card)
     {
         if (!Has(card))
         {
@@ -55,7 +54,6 @@ public class Player: IEquatable<Player>
         {
             throw new Exception($"Playing {card} is prohibited by {otherCard} in hand.");
         }
-        _discardPile.Add(card);
         if (Card1 == card)
         {
             Card1 = null;
@@ -95,12 +93,11 @@ public class Player: IEquatable<Player>
     public Card DiscardAndDraw(Card card)
     {
         var discarded = GetHand().Single();
-        _discardPile.Add(discarded);
         Card1 = card;
         return discarded;
     }
 
-    public bool Equals(Player? other)
+    public bool Equals(CurrentPlayer? other)
     {
         if (ReferenceEquals(null, other)) return false;
         if (ReferenceEquals(this, other)) return true;
@@ -112,7 +109,7 @@ public class Player: IEquatable<Player>
         if (ReferenceEquals(null, obj)) return false;
         if (ReferenceEquals(this, obj)) return true;
         if (obj.GetType() != GetType()) return false;
-        return Equals((Player)obj);
+        return Equals((CurrentPlayer)obj);
     }
 
     public override int GetHashCode()
@@ -130,24 +127,10 @@ public class Player: IEquatable<Player>
         IsProtected = true;
     }
 
-    public void StartTurn(Card card)
+    public void StartTurn()
     {
         IsProtected = false;
-        Card1 = card;
-        Card2 = null;
     }
-
-    public void RemoveFromRound()
-    {   
-        _discardPile.AddRange(GetHand());
-    }
-
-    public void WinRound()
-    {
-        Tokens++;
-    }
-
-    public int Tokens { get; private set; }
 
     public void Draw(Card card)
     {

@@ -2,5 +2,10 @@
 
 public interface IRoundFactory
 {
-    Round CreateFrom(uint roundNumber, Player first, IReadOnlyCollection<Player> playerOrder, IEnumerable<Card> deck);
+    Round CreateFrom(
+        uint roundNumber, 
+        GamePlayer first, 
+        IEnumerable<GamePlayer> playerOrder, 
+        IEnumerable<Card> deck,
+        IShuffleService shuffleService);
 }

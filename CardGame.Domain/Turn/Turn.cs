@@ -2,24 +2,30 @@
 
 public class Turn
 {
-    public uint Number { get; private set; }
+    public uint Number { get; }
     public Game Game { get; }
     public Round Round { get; private set; }
-    public Player Player=> Round.CurrentPlayer;
-    
-    public Turn(uint number, Game game, Round round)
+    public CurrentPlayer CurrentPlayer { get; }
+
+    public Turn(
+        uint number, 
+        Game game, 
+        Round round, 
+        CurrentPlayer currentPlayer)
     {
         Number = number;
         Game = game;
         Round = round;
+        CurrentPlayer = currentPlayer;
     }
 
     public async Task Play(
-        PlayEffect playEffect, 
+        PlayableCard playableCard, 
         IForcedDiscardEffectRepository effectRepository, 
         PlayParams playParams,
         IInspectNotificationService inspectNotificationService,
-        IRoundFactory roundFactory)
+        IRoundFactory roundFactory,
+        IShuffleService shuffleService)
     {
         if (Game.Complete)
         {
@@ -30,32 +36,38 @@ public class Turn
         {
             throw new Exception("round is complete");
         }
-        var card = Player.GetHand().First(c=> c.Id == playEffect.Card);
-        Player.Play(playEffect, card);
-        Round.Play(playEffect, Player);
-        if (playEffect.RequiresTargetPlayer)
+        var card = CurrentPlayer.GetHand().Single(c=> c.Id == playableCard.CardId);
+        CurrentPlayer.Play(playableCard, card);
+        var currentRemainingPlayer = Round.RemainingPlayers.Single(p => p.Id == CurrentPlayer.Id);
+        currentRemainingPlayer.Discard(card, CurrentPlayer.GetHand().Single());
+        if (playableCard.KickOutOfRoundOnDiscard)
         {
-            var target =Round.GetTargetPlayer(playEffect, playParams);
+            Round.RemovePlayer(CurrentPlayer.Id);
+        }
+        if (playableCard.RequiresTargetPlayer)
+        {
+            var (target,roundTarget) =GetTargetPlayer(playableCard, playParams);
             var otherRemainingPlayers = Round.RemainingPlayers
-                .Where(p=>!p.Equals(Player))
+                .Where(p=>!p.Id.Equals(CurrentPlayer.Id))
                 .ToArray();
-            if (playEffect.TradeHands && !otherRemainingPlayers.All(p=>p.IsProtected))
+            if (playableCard.TradeHands && !otherRemainingPlayers.All(p=>p.IsProtected))
             {
                 if (target.IsProtected)
                 {
                     throw new Exception("cannot trade with someone protected. trade hands");
                 }
-                var playerHand = Player.GetHand().Single();
+                var playerHand = CurrentPlayer.GetHand().Single();
                 var targetHand = target.Trade(playerHand);
-                Player.Trade(targetHand);
+                CurrentPlayer.Trade(targetHand);
+                currentRemainingPlayer.Trade(targetHand);
             }
-            if (playEffect.DiscardAndDraw)
+            if (playableCard.DiscardAndDraw)
             {
-                if (target.IsProtected && !Player.Id.Equals(playParams.TargetPlayer))
+                if (target.IsProtected && !CurrentPlayer.Id.Equals(playParams.TargetPlayer))
                 {
                     throw new Exception("cannot target someone protected. discard and draw");
                 }
-                if (otherRemainingPlayers.All(p => p.IsProtected) && !Player.Id.Equals(playParams.TargetPlayer))
+                if (otherRemainingPlayers.All(p => p.IsProtected) && !CurrentPlayer.Id.Equals(playParams.TargetPlayer))
                 {
                     throw new Exception("must target self when all other players are protected");
                 }
@@ -64,13 +76,22 @@ public class Turn
                 {
                     var drawnForDiscard = Round.DrawForDiscard();
                     var discarded =target.DiscardAndDraw(drawnForDiscard);
+
+                    if(target.Id == CurrentPlayer.Id)
+                    {
+                        roundTarget.Discard(discarded, drawnForDiscard);
+                    }
+                    
                     var discardEffect = await effectRepository.Get(discarded.Value).ConfigureAwait(false);
-                    Round.DiscardAndDraw(discardEffect, target);
-                    target.RemoveFromRound();
+                    if (discardEffect.DiscardAndDrawKickEnabled && discardEffect.KickOutOfRoundOnDiscard)
+                    {
+                        Round.RemovePlayer(target.Id);
+                        roundTarget.RemoveFromRound(drawnForDiscard);
+                    }
                 }
             }
 
-            if (playEffect.Compare)
+            if (playableCard.Compare)
             {
                 if (!otherRemainingPlayers.All(p => p.IsProtected))
                 {
@@ -78,28 +99,28 @@ public class Turn
                     {
                         throw new Exception("cannot target someone protected. compare");
                     }
-                    var targetCard = target.GetHand().Single();
-                    var playerCard = Player.GetHand().Single();
+                    var targetCard = roundTarget.Hand;
+                    var playerCard = CurrentPlayer.GetHand().Single();
                     if(targetCard.Value != playerCard.Value)
                     {
-                        var toBeRemoved = targetCard.Value > playerCard.Value ? Player : target;
-                        Round.RemovePlayer(toBeRemoved);
-                        target.RemoveFromRound();
+                        var toBeRemoved = targetCard.Value > playerCard.Value ? CurrentPlayer : target;
+                        Round.RemovePlayer(toBeRemoved.Id);
+                        roundTarget.RemoveFromRound(roundTarget.Hand);
                     }
                 }
             }
 
-            if (playEffect.Inspect)
+            if (playableCard.Inspect)
             {
                 if (target.IsProtected)
                 {
                     throw new Exception("cannot target someone protected. inspect");
                 }
-                var targetCard = target.GetHand().Single();
+                var targetCard = roundTarget.Hand;
                 await inspectNotificationService.Notify(targetCard).ConfigureAwait(false);
             }
 
-            if (playEffect.Guess && !otherRemainingPlayers.All(p=>p.IsProtected))
+            if (playableCard.Guess && !otherRemainingPlayers.All(p=>p.IsProtected))
             {
                 if (target.IsProtected)
                 {
@@ -110,35 +131,78 @@ public class Turn
                 {
                     throw new Exception("guess is required");
                 }
-                var targetCard = target.GetHand().Single();
+                var targetCard = roundTarget.Hand;
                 if (playParams.Guess == targetCard.Value)
                 {
-                    Round.RemovePlayer(target);
-                    target.RemoveFromRound();
+                    Round.RemovePlayer(target.Id);
+                    roundTarget.RemoveFromRound(targetCard);
                 }
             }
         }
-        if(playEffect.Protect)
+        if(playableCard.Protect)
         {
-            Player.Protect();
+            CurrentPlayer.Protect();
         }
 
         if (Round.Complete)
         {
             var winner = Round.GetWinner();
-            winner.WinRound();
+            var roundWinner = Game.Players.First(p => p.Id == winner.Id);
+            roundWinner.WinRound();
             if (Game.Complete)
             {
                 return;
             }
-            Round = roundFactory.CreateFrom(Round.Number+1,winner, Game.Players, Game.Deck);
+            Round = roundFactory.CreateFrom(
+                Round.Number+1,
+                roundWinner, 
+                Game.Players, 
+                Game.Deck,
+                shuffleService);
+            NextPlayerId = winner.Id;
         }
         else
         {
-            Round.NextPlayer();
+            var remainingIdsInOrder =  Game.Players
+                .Where(gp => Round.RemainingPlayers
+                    .Select(p => p.Id).Contains(gp.Id))
+                .Select(gp=>gp.Id)
+                .ToArray();
+            var currentIndex = Array.IndexOf(remainingIdsInOrder, CurrentPlayer.Id);
+            
+            var nextIndex = currentIndex == remainingIdsInOrder.Length-1
+                ? 0
+                : currentIndex+1;
+            NextPlayerId = remainingIdsInOrder[nextIndex];
         }
         var drawn =Round.DrawForTurn();
-        Round.CurrentPlayer.Draw(drawn);
-        Number++;
+        var nextPlayer = Round.RemainingPlayers
+            .Where(p => p.Id == NextPlayerId)
+            .Select(p => p.ToCurrentPlayer(drawn))
+            .Single();
+        nextPlayer.StartTurn();
+    }
+
+    public PlayerId? NextPlayerId { get; private set; } = null;
+
+    private (ITargetablePlayer, RemainingPlayer) GetTargetPlayer(PlayableCard playableCard, PlayParams playParams)
+    {
+        if (!playableCard.RequiresTargetPlayer)
+        {
+            throw new Exception("no target required");
+        }
+        if (playParams.TargetPlayer == null)
+        {
+            throw new Exception("missing target player");
+        }
+
+        var possibleTargets = playableCard.CanTargetSelf
+            ? Round.RemainingPlayers
+            : Round.RemainingPlayers.Prepend((ITargetablePlayer)CurrentPlayer);
+        var selectedTarget = possibleTargets.First(p => playParams.TargetPlayer.HasValue && p.Id == playParams.TargetPlayer.Value);
+
+        var roundTarget = Round.RemainingPlayers.Single(p => p.Id == selectedTarget.Id);
+
+        return (selectedTarget, roundTarget);
     }
 }

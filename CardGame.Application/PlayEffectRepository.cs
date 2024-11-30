@@ -5,12 +5,12 @@ namespace CardGame.Application;
 public class PlayEffectRepository : IPlayEffectRepository, IForcedDiscardEffectRepository
 {
     private readonly IReadOnlyCollection<CardValue> _countessForcedValues = new CardValue[] { CardValues.King, CardValues.Prince };
-    public Task<PlayEffect?> Get(GameId gameId, CardId cardId, PlayParams playParams)
+    public Task<PlayableCard?> Get(GameId gameId, CardId cardId, PlayParams playParams)
     {
         var card = Cards.AllCards.FirstOrDefault(c=> c.Id == cardId);
         if (card == null)
         {
-            return Task.FromException<PlayEffect?>(new Exception("card not found"));
+            return Task.FromException<PlayableCard?>(new Exception("card not found"));
         }
         var isPrincess = card.Value == CardValues.Princess;
         var isKing = card.Value == CardValues.King;
@@ -21,14 +21,15 @@ public class PlayEffectRepository : IPlayEffectRepository, IForcedDiscardEffectR
         var isGuard = card.Value == CardValues.Guard;
         var isCountess = card.Value == CardValues.Countess;
         
-        return Task.FromResult<PlayEffect?>(new PlayEffect
+        return Task.FromResult<PlayableCard?>(new PlayableCard
         {
             KickOutOfRoundOnDiscard = isPrincess,
             PlayProhibitedByCardInHand = isCountess
                 ? _countessForcedValues
                 : Array.Empty<CardValue>(),
             CanTargetSelf = isPrince,
-            Card = cardId,
+            CardId = cardId,
+            Value = card.Value,
             Compare = isBaron,
             DiscardAndDraw = isPrince,
             Guess = isGuard,

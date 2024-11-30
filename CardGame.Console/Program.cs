@@ -18,14 +18,17 @@ var appBuilder = Host.CreateDefaultBuilder(args)
         
         serviceCollection.AddSingleton<IApplicationTurnService, ApplicationTurnService>();
         serviceCollection.AddSingleton<TurnService>();
-        serviceCollection.AddSingleton<ITurnRepository, TurnRepository>();
-        var playEffectRepository = new PlayEffectRepository();  
-        serviceCollection.AddSingleton<IPlayEffectRepository>(playEffectRepository);
-        serviceCollection.AddSingleton<IForcedDiscardEffectRepository>(playEffectRepository);
+        
         var logFactory = serviceCollection.BuildServiceProvider().GetRequiredService<ILoggerFactory>();
         serviceCollection.AddSingleton<IInspectNotificationService>(new LoggerNotificationService(logFactory.CreateLogger<LoggerNotificationService>()));
-        serviceCollection.AddSingleton<IRoundFactory, RoundFactory>();
         serviceCollection.AddSingleton<IShuffleService, ShuffleService>();
+        
+        serviceCollection.AddSingleton<DummyRepository>();
+        serviceCollection.AddSingleton<ITurnRepository>(s=>s.GetRequiredService<DummyRepository>());
+        serviceCollection.AddSingleton<IRoundFactory>(s=>s.GetRequiredService<DummyRepository>());
+        serviceCollection.AddSingleton<PlayEffectRepository>();
+        serviceCollection.AddSingleton<IPlayEffectRepository>(s=>s.GetRequiredService<PlayEffectRepository>());
+        serviceCollection.AddSingleton<IForcedDiscardEffectRepository>(s=>s.GetRequiredService<PlayEffectRepository>());
     });
 
 appBuilder.Build().Run();

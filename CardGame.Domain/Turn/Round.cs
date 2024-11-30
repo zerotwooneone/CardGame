@@ -2,33 +2,32 @@
 
 public record Round
 {
-    private readonly List<Player> _remainingPlayers;
-    public IReadOnlyCollection<Player> RemainingPlayers => _remainingPlayers;
-    public IReadOnlyCollection<Player> Eliminated => _eliminated;
-    private readonly List<Player> _eliminated;
-    public Player CurrentPlayer => RemainingPlayers.First();
-    private List<Card> _drawPile { get; }
+    private readonly List<RemainingPlayer> _remainingPlayers;
+    public IReadOnlyCollection<RemainingPlayer> RemainingPlayers => _remainingPlayers;
+    public IReadOnlyCollection<RoundPlayer> Eliminated => _eliminated;
+    private readonly List<RoundPlayer> _eliminated;
+    private readonly List<Card> _drawPile;
     public IReadOnlyCollection<Card> DrawPile => _drawPile;
-    private List<Card> _burnPile { get; }
+    private readonly List<Card> _burnPile;
     public IReadOnlyCollection<Card> BurnPile => _burnPile;
     public bool Complete => DrawPile.Count == 0 || RemainingPlayers.Count == 1;
-    public uint Number { get; init; }
+    public uint Number { get; }
 
     public Round(
         uint number,
         IEnumerable<Card> drawPile,
         IEnumerable<Card> burnPile,
-        IEnumerable<Player> remainingPlayers,
-        IEnumerable<Player>? eliminated=null)
+        IEnumerable<RemainingPlayer> remainingPlayers,
+        IEnumerable<RoundPlayer>? eliminated=null)
     {
         Number = number;
         _drawPile = drawPile.ToList();
         _burnPile = burnPile.ToList();
-        _remainingPlayers = new List<Player>(remainingPlayers);
+        _remainingPlayers = [..remainingPlayers];
         _eliminated = eliminated?.ToList() ?? [];
     }
 
-    public Player GetWinner()
+    public RemainingPlayer GetWinner()
     {
         if(!Complete)
         {
@@ -39,8 +38,8 @@ public record Round
             return RemainingPlayers.First();
         }
 
-        var maxValue = (CardValue) RemainingPlayers.Max(p => p.GetHand().Single().Value.Value);
-        var playerWithMaxValue = RemainingPlayers.Where(p => p.GetHand().Single().Value.Value == maxValue.Value).ToArray();
+        var maxValue = (CardValue) RemainingPlayers.Max(p => p.Hand.Value.Value);
+        var playerWithMaxValue = RemainingPlayers.Where(p => p.Hand.Value.Value == maxValue.Value).ToArray();
         if(playerWithMaxValue.Length == 1)
         {
             return playerWithMaxValue[0];
@@ -51,49 +50,11 @@ public record Round
         return playerWithMaxTotal.Player;
     }
 
-    public void Play(PlayEffect playEffect, Player player)
+    public void RemovePlayer(PlayerId playerId)
     {
-        if (Complete)
-        {
-            throw new Exception("round is already complete");
-        }
-        if (player != CurrentPlayer)
-        {
-            throw new Exception($"not players turn {player.Id}");
-        }
-        if (playEffect.KickOutOfRoundOnDiscard)
-        {
-            RemovePlayer(CurrentPlayer);
-        }
-    }
-
-    public void RemovePlayer(Player player)
-    {
+        var player = RemainingPlayers.First(p => p.Id == playerId);
         _remainingPlayers.Remove(player);
-        _eliminated.Add(player);
-    }
-
-    public Player GetTargetPlayer(PlayEffect playEffect, PlayParams playParams)
-    {
-        if (!playEffect.RequiresTargetPlayer)
-        {
-            throw new Exception("no target required");
-        }
-        if (playParams.TargetPlayer == null)
-        {
-            throw new Exception("missing target player");
-        }
-
-        var possibleTargets = playEffect.CanTargetSelf
-            ? RemainingPlayers
-            : RemainingPlayers.Where(p => !p.Equals(CurrentPlayer));
-        var selectedTarget = possibleTargets.FirstOrDefault(p => playParams.TargetPlayer.HasValue && p.Id == playParams.TargetPlayer.Value);
-        if (selectedTarget == null)
-        {
-            throw new Exception($"invalid target player {playParams.TargetPlayer}");
-        }
-
-        return selectedTarget;
+        _eliminated.Add(player.ToEliminated());
     }
 
     public Card DrawForDiscard()
@@ -111,25 +72,10 @@ public record Round
         return result;
     }
 
-    public void DiscardAndDraw(ForcedDiscardEffect discardEffect, Player player)
-    {
-        if (discardEffect.DiscardAndDrawKickEnabled && discardEffect.KickOutOfRoundOnDiscard)
-        {
-            RemovePlayer(player);
-        }
-    }
-
     public Card DrawForTurn()
     {
         var result = _drawPile.First();
         _drawPile.Remove(result);
         return result;
-    }
-
-    public void NextPlayer()
-    {
-        var current = CurrentPlayer;
-        _remainingPlayers.Remove(current);
-        _remainingPlayers.Add(current);
     }
 }

@@ -2,7 +2,7 @@
 
 public class Game
 {
-    public Game(GameId id, IEnumerable<Player> players, IEnumerable<Card> deck)
+    public Game(GameId id, IEnumerable<GamePlayer> players, IEnumerable<Card> deck)
     {
         Id = id;
         Players = players.ToArray();
@@ -10,7 +10,7 @@ public class Game
     }
 
     public GameId Id { get; }
-    public IReadOnlyCollection<Player> Players { get; }
+    public IReadOnlyCollection<GamePlayer> Players { get; }
     public IReadOnlyCollection<Card> Deck { get; }
     public bool Complete=>Players.Count ==2
         ? Players.Any(p=> p.Tokens>=7)
