@@ -3,12 +3,11 @@
 public class RemainingPlayer(
     PlayerId id, 
     Card hand, 
-    bool isHandCard1,
     bool isProtected=false,
     IEnumerable<Card>? discardPile = null) : ITargetablePlayer
 {
     public PlayerId Id { get; } = id;
-    public bool IsProtected { get; } = isProtected;
+    public bool IsProtected { get; private set; } = isProtected;
     public Card Hand { get; private set; } = hand;
     public IReadOnlyCollection<Card> DiscardPile => _discardPile;
     private readonly List<Card> _discardPile = discardPile?.ToList() ?? [];
@@ -20,6 +19,7 @@ public class RemainingPlayer(
     }
     public void RemoveFromRound(Card discarded)
     {   
+        _discardPile.Add(Hand);
         _discardPile.Add(discarded);
     }
     public Card DiscardAndDraw(Card card)
@@ -59,6 +59,16 @@ public class RemainingPlayer(
     {
         _discardPile.Add(discarded);
         Hand = remaining;
+    }
+
+    public void Protect()
+    {
+        IsProtected = true;
+    }
+
+    public void StartTurn()
+    {
+        IsProtected = false;
     }
 }
 

@@ -2,7 +2,7 @@
 
 public interface IRoundFactory
 {
-    Round CreateFrom(
+    Task<Round> CreateFrom(
         uint roundNumber, 
         GamePlayer first, 
         IEnumerable<GamePlayer> playerOrder, 

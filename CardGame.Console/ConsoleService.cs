@@ -28,8 +28,9 @@ public class ConsoleService:IHostedService
         try
         {
             Print( await _applicationTurnService.Play(1, 1, 4, new PlayParams{TargetPlayer = (PlayerId)2, Guess = (CardValue)2}).ConfigureAwait(false));
-            Print( await _applicationTurnService.Play(1, 2, 4, new PlayParams{TargetPlayer = (PlayerId)1, Guess = (CardValue)2}).ConfigureAwait(false));
-            Print( await _applicationTurnService.Play(1, 3, 5, new PlayParams{TargetPlayer = (PlayerId)4, Guess = (CardValue)2}).ConfigureAwait(false));
+            Print( await _applicationTurnService.Play(1, 2, 14, new PlayParams{TargetPlayer = (PlayerId)1}).ConfigureAwait(false));
+            Print( await _applicationTurnService.Play(1, 3, 10, new PlayParams{}).ConfigureAwait(false));
+            Print( await _applicationTurnService.Play(1, 4, 2, new PlayParams{TargetPlayer = (PlayerId)1, Guess = (CardValue)2}).ConfigureAwait(false));
         }
         catch (Exception e)
         {

@@ -16,5 +16,5 @@ public class Game
         ? Players.Any(p=> p.Tokens>=7)
         : Players.Count ==3
             ? Players.Any(p=> p.Tokens>=5)
-            : Players.Count ==4 && Players.Any(p=> p.Tokens>=4);
+            : Players.Any(p=> p.Tokens>=4);
 }

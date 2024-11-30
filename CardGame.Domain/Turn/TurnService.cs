@@ -42,9 +42,11 @@ public class TurnService : ITurnService
             cardEffect,
             forcedDiscardEffectRepository, 
             playParams, 
-            inspectNotificationService, 
-            roundFactory,
-            shuffleService).ConfigureAwait(false);
+            inspectNotificationService).ConfigureAwait(false);
+        if (!turn.Round.Complete)
+        {
+            await turn.NextTurn(roundFactory, shuffleService).ConfigureAwait(false);
+        }
         
         await turnRepository.Save(turn).ConfigureAwait(false);
         

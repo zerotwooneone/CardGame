@@ -40,7 +40,6 @@ public class CurrentPlayer: IEquatable<CurrentPlayer>, ITargetablePlayer
 
         return new[] {Card1, Card2};
     }
-    public bool IsProtected { get; private set; }
 
     public void Play(PlayableCard effect, Card card)
     {
@@ -120,16 +119,6 @@ public class CurrentPlayer: IEquatable<CurrentPlayer>, ITargetablePlayer
     public override string ToString()
     {
         return Id.ToString();
-    }
-
-    public void Protect()
-    {
-        IsProtected = true;
-    }
-
-    public void StartTurn()
-    {
-        IsProtected = false;
     }
 
     public void Draw(Card card)

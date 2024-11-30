@@ -58,14 +58,14 @@ public class DummyRepository : ITurnRepository,IRoundFactory
         return Task.CompletedTask;
     }
 
-    public Round CreateFrom(
+    public Task<Round> CreateFrom(
         uint roundNumber,
         GamePlayer first,
         IEnumerable<GamePlayer> playerOrder,
         IEnumerable<Card> deck,
         IShuffleService shuffleService)
     {
-        return Internal_CreateFrom(roundNumber, first, playerOrder.ToArray(), deck.ToArray(), shuffleService);
+        return Task.FromResult(Internal_CreateFrom(roundNumber, first, playerOrder.ToArray(), deck.ToArray(), shuffleService));
     }
     private Round Internal_CreateFrom(
         uint roundNumber, 
