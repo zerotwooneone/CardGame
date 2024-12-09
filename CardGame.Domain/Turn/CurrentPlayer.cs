@@ -1,12 +1,11 @@
 ﻿namespace CardGame.Domain.Turn;
 
-public class CurrentPlayer: IEquatable<CurrentPlayer>, ITargetablePlayer
+public class CurrentPlayer: IEquatable<CurrentPlayer>
 {
     public CurrentPlayer(
         PlayerId id,
         Card? card1 = null,
-        Card? card2 =null, 
-        bool isProtected=false)
+        Card? card2 =null)
     {
         if(card1==null && card2==null)
         {
@@ -41,8 +40,9 @@ public class CurrentPlayer: IEquatable<CurrentPlayer>, ITargetablePlayer
         return new[] {Card1, Card2};
     }
 
-    public void Play(PlayableCard effect, Card card)
+    public void Play(PlayableCard effect)
     {
+        var card = GetHand().Single(c=> c.Id == effect.CardId);
         if (!Has(card))
         {
             throw new Exception($"player does not have card {card}");
@@ -88,12 +88,27 @@ public class CurrentPlayer: IEquatable<CurrentPlayer>, ITargetablePlayer
         Card1 = otherHand;
         return result;
     }
-
-    public Card DiscardAndDraw(Card card)
+    public void Discard(Card card)
     {
-        var discarded = GetHand().Single();
-        Card1 = card;
-        return discarded;
+        var isCard1 = Card1 == card && Card1 != null;
+        var isCard2 = Card2 == card && Card2 != null;
+        if (!isCard1 && !isCard2)
+        {
+            throw new Exception($"player does not have card {card}");
+        }
+
+        if (isCard1)
+        {
+            Card1 = null;
+            return;
+        }
+
+        if (!isCard2)
+        {
+            throw new Exception($"player does not have card {card}");
+        }
+
+        Card2 = null;
     }
 
     public bool Equals(CurrentPlayer? other)

@@ -50,9 +50,8 @@ public record Round
         return playerWithMaxTotal.Player;
     }
 
-    public void EliminatePlayer(PlayerId playerId)
+    public void EliminatePlayer(RemainingPlayer player)
     {
-        var player = RemainingPlayers.Single(p => p.Id == playerId);
         _remainingPlayers.Remove(player);
         _eliminated.Add(player.ToEliminated());
     }

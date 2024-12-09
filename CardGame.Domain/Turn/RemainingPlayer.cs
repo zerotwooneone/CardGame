@@ -4,7 +4,7 @@ public class RemainingPlayer(
     PlayerId id, 
     Card hand, 
     bool isProtected=false,
-    IEnumerable<Card>? discardPile = null) : ITargetablePlayer
+    IEnumerable<Card>? discardPile = null): IEquatable<RemainingPlayer>
 {
     public PlayerId Id { get; } = id;
     public bool IsProtected { get; private set; } = isProtected;
@@ -16,18 +16,6 @@ public class RemainingPlayer(
         var result = Hand;
         Hand = otherHand;
         return result;
-    }
-    public void RemoveFromRound(Card discarded)
-    {   
-        _discardPile.Add(Hand);
-        _discardPile.Add(discarded);
-    }
-    public Card DiscardAndDraw(Card card)
-    {
-        var discarded = Hand;
-        _discardPile.Add(discarded);
-        Hand = card;
-        return discarded;
     }
 
     public bool Equals(RemainingPlayer? other)
@@ -55,10 +43,19 @@ public class RemainingPlayer(
         return Id.ToString();
     }
 
-    public void Discard(Card discarded, Card remaining)
+    public void ReplaceHand(Card discarded, Card hand)
     {
+        if(Hand !=hand && Hand != discarded)
+        {
+            throw new Exception("hand does not match");
+        }
+        if (_discardPile.Contains(discarded))
+        {
+            throw new Exception("hand already discarded");
+        }
+
         _discardPile.Add(discarded);
-        Hand = remaining;
+        Hand = hand;
     }
 
     public void Protect()
@@ -76,11 +73,11 @@ internal static class RemainingPlayerExtensions
 {
     public static RoundPlayer ToEliminated(this RemainingPlayer player)
     {
-        return new RoundPlayer(player.Id, player.DiscardPile);
+        return new RoundPlayer(player.Id, player.DiscardPile.Append(player.Hand));
     }
     
     public static CurrentPlayer ToCurrentPlayer(this RemainingPlayer firstPlayer, Card drawnCard)
     {
-        return new CurrentPlayer(firstPlayer.Id,firstPlayer.Hand,drawnCard, firstPlayer.IsProtected);
+        return new CurrentPlayer(firstPlayer.Id,firstPlayer.Hand,drawnCard);
     }
 }

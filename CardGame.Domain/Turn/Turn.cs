@@ -35,12 +35,12 @@ public class Turn
             throw new Exception("round is complete");
         }
         var card = CurrentPlayer.GetHand().Single(c=> c.Id == playableCard.CardId);
-        CurrentPlayer.Play(playableCard, card);
+        CurrentPlayer.Play(playableCard);
         var currentRemainingPlayer = Round.RemainingPlayers.Single(p => p.Id == CurrentPlayer.Id);
-        currentRemainingPlayer.Discard(card, CurrentPlayer.GetHand().Single());
+        currentRemainingPlayer.ReplaceHand(card, CurrentPlayer.GetHand().Single());
         if (playableCard.KickOutOfRoundOnDiscard)
         {
-            Round.EliminatePlayer(CurrentPlayer.Id);
+            Round.EliminatePlayer(currentRemainingPlayer);
         }
         if (playableCard.RequiresTargetPlayer)
         {
@@ -73,11 +73,13 @@ public class Turn
                 if (!targetPlayer.IsProtected)
                 {
                     var drawnForDiscard = Round.DrawForDiscard();
-                    var discarded =targetPlayer.DiscardAndDraw(drawnForDiscard);
+                    var discarded = targetPlayer.Hand;
+                    targetPlayer.ReplaceHand(discarded,drawnForDiscard);
 
                     if(targetPlayer.Id == CurrentPlayer.Id)
                     {
-                        CurrentPlayer.DiscardAndDraw(drawnForDiscard);
+                        CurrentPlayer.Discard(discarded);
+                        CurrentPlayer.Draw(drawnForDiscard);
                     }
                     
                     var discardEffect = await effectRepository.Get(discarded.Value).ConfigureAwait(false);
@@ -87,8 +89,7 @@ public class Turn
                     }
                     if (discardEffect.DiscardAndDrawKickEnabled && discardEffect.KickOutOfRoundOnDiscard)
                     {
-                        targetPlayer.RemoveFromRound(drawnForDiscard);
-                        Round.EliminatePlayer(targetPlayer.Id);
+                        Round.EliminatePlayer(targetPlayer);
                     }
                 }
             }
@@ -106,9 +107,8 @@ public class Turn
                     if(targetCard.Value != playerCard.Value)
                     {
                         var toBeRemoved = targetCard.Value > playerCard.Value 
-                            ? CurrentPlayer.Id 
-                            : targetPlayer.Id;
-                        targetPlayer.RemoveFromRound(targetPlayer.Hand);
+                            ? currentRemainingPlayer 
+                            : targetPlayer;
                         Round.EliminatePlayer(toBeRemoved);
                     }
                 }
@@ -138,9 +138,7 @@ public class Turn
                 var targetCard = targetPlayer.Hand;
                 if (playParams.Guess == targetCard.Value)
                 {
-                    //todo: this is likely not the right card to pass here
-                    targetPlayer.RemoveFromRound(targetCard);
-                    Round.EliminatePlayer(targetPlayer.Id);
+                    Round.EliminatePlayer(targetPlayer);
                 }
             }
         }

@@ -49,7 +49,7 @@ public class DummyRepository : ITurnRepository,IRoundFactory
 
     private static CurrentPlayer ToCurrentPlayer(RemainingPlayer firstPlayer, Card drawnCard)
     {
-        return new CurrentPlayer(firstPlayer.Id,firstPlayer.Hand,drawnCard, firstPlayer.IsProtected);
+        return new CurrentPlayer(firstPlayer.Id,firstPlayer.Hand,drawnCard);
     }
 
     public Task Save(Turn turn)
