@@ -107,7 +107,7 @@ public class Turn
                     var playerCard = CurrentPlayer.GetHand().Single();
                     if(targetCard.Value != playerCard.Value)
                     {
-                        var toBeRemoved = targetCard.Value > playerCard.Value 
+                        var toBeRemoved = targetCard.Value.Value > playerCard.Value.Value 
                             ? currentRemainingPlayer 
                             : targetPlayer;
                         Round.EliminatePlayer(toBeRemoved);

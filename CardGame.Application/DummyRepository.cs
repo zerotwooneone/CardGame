@@ -100,8 +100,7 @@ public class DummyRepository : ITurnRepository,IRoundFactory
             var drawnCard = drawPile.Dequeue();
             return new RemainingPlayer(
                 gp.Id,
-                drawnCard,
-                true);
+                drawnCard);
         }).ToArray();
         var round = new Round(roundNumber, drawPile, burnPile, players);
         return round;
