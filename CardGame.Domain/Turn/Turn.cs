@@ -20,7 +20,7 @@ public class Turn
     }
 
     public async Task Play(
-        PlayableCard playableCard, 
+        CardId playedCardId, 
         PlayParams playParams,
         IInspectNotificationService inspectNotificationService)
     {
@@ -33,6 +33,7 @@ public class Turn
         {
             throw new Exception("round is complete");
         }
+        var playableCard=CurrentPlayer.GetHand().Single(c=>c.CardId == playedCardId);
         
         CurrentPlayer.Play(playableCard);
         var currentRemainingPlayer = Round.RemainingPlayers.Single(p => p.Id == CurrentPlayer.Id);

@@ -4,7 +4,6 @@ public interface ITurnService
 {
     Task<Turn> Play(
         ITurnRepository turnRepository, 
-        IPlayableCardRepository playableCardRepository,
         GameId gameId, 
         PlayerId playerId, 
         CardId cardId, 
