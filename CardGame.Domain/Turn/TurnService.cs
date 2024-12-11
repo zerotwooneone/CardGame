@@ -11,7 +11,7 @@ public class TurnService : ITurnService
     }
     public async Task<Turn> Play(
         ITurnRepository turnRepository, 
-        IPlayEffectRepository playEffectRepository,
+        IPlayableCardRepository playableCardRepository,
         GameId gameId, 
         PlayerId playerId, 
         CardId cardId, 
@@ -31,7 +31,7 @@ public class TurnService : ITurnService
             throw new Exception($"it's not player {playerId} turn");
         }
 
-        var cardEffect = await playEffectRepository.Get(gameId, cardId).ConfigureAwait(false);
+        var cardEffect = await playableCardRepository.Get(gameId, cardId).ConfigureAwait(false);
         if (cardEffect == null)
         {
             throw new Exception($"card effect not found {cardId}");

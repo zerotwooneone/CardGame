@@ -2,7 +2,7 @@
 
 namespace CardGame.Application;
 
-public class PlayEffectRepository : IPlayEffectRepository
+public class PlayableCardRepository : IPlayableCardRepository
 {
     private readonly IReadOnlyCollection<CardValue> _countessForcedValues = [CardValues.King, CardValues.Prince];
     public Task<PlayableCard?> Get(GameId gameId, CardId cardId)

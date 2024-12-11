@@ -26,8 +26,8 @@ var appBuilder = Host.CreateDefaultBuilder(args)
         serviceCollection.AddSingleton<DummyRepository>();
         serviceCollection.AddSingleton<ITurnRepository>(s=>s.GetRequiredService<DummyRepository>());
         serviceCollection.AddSingleton<IRoundFactory>(s=>s.GetRequiredService<DummyRepository>());
-        serviceCollection.AddSingleton<PlayEffectRepository>();
-        serviceCollection.AddSingleton<IPlayEffectRepository>(s=>s.GetRequiredService<PlayEffectRepository>());
+        serviceCollection.AddSingleton<PlayableCardRepository>();
+        serviceCollection.AddSingleton<IPlayableCardRepository>(s=>s.GetRequiredService<PlayableCardRepository>());
     });
 
 appBuilder.Build().Run();
