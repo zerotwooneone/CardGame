@@ -4,8 +4,8 @@ public class CurrentPlayer: IEquatable<CurrentPlayer>
 {
     public CurrentPlayer(
         PlayerId id,
-        Card? card1 = null,
-        Card? card2 =null)
+        PlayableCard? card1 = null,
+        PlayableCard? card2 =null)
     {
         if(card1==null && card2==null)
         {
@@ -17,10 +17,10 @@ public class CurrentPlayer: IEquatable<CurrentPlayer>
     }
 
     public PlayerId Id { get; }
-    public Card? Card1 { get; private set; }
-    public Card? Card2 { get; private set; }
+    public PlayableCard? Card1 { get; private set; }
+    public PlayableCard? Card2 { get; private set; }
 
-    public IReadOnlyCollection<Card> GetHand()
+    public IReadOnlyCollection<PlayableCard> GetHand()
     {
         if (Card1 == null && Card2 != null)
         {
@@ -40,16 +40,12 @@ public class CurrentPlayer: IEquatable<CurrentPlayer>
         return new[] {Card1, Card2};
     }
 
-    public void Play(PlayableCard effect)
+    public void Play(PlayableCard played)
     {
-        var card = GetHand().Single(c=> c.Id == effect.CardId);
-        if (!Has(card))
-        {
-            throw new Exception($"player does not have card {card}");
-        }
+        var card = GetHand().Single(c=> c.CardId == played.CardId);
 
-        var otherCard = GetHand().Single(c => c.Id != card.Id);
-        if (effect.PlayProhibitedByCardInHand.Any(p=>p == otherCard.Value))
+        var otherCard = GetHand().Single(c => c.CardId != card.CardId);
+        if (played.PlayProhibitedByCardInHand.Any(p=>p == otherCard.Value))
         {
             throw new Exception($"Playing {card} is prohibited by {otherCard} in hand.");
         }
@@ -65,12 +61,7 @@ public class CurrentPlayer: IEquatable<CurrentPlayer>
         }
     }
 
-    private bool Has(Card card)
-    {
-        return Card1 == card || Card2 == card;
-    }
-
-    public Card Trade(Card otherHand)
+    public PlayableCard Trade(PlayableCard otherHand)
     {
         if (Card1 == null && Card2 != null)
         {
@@ -90,8 +81,8 @@ public class CurrentPlayer: IEquatable<CurrentPlayer>
     }
     public void Discard(Card card)
     {
-        var isCard1 = Card1 == card && Card1 != null;
-        var isCard2 = Card2 == card && Card2 != null;
+        var isCard1 = Card1?.CardId == card.Id && Card1 != null;
+        var isCard2 = Card2?.CardId == card.Id && Card2 != null;
         if (!isCard1 && !isCard2)
         {
             throw new Exception($"player does not have card {card}");
@@ -136,7 +127,7 @@ public class CurrentPlayer: IEquatable<CurrentPlayer>
         return Id.ToString();
     }
 
-    public void Draw(Card card)
+    public void Draw(PlayableCard card)
     {
         if (Card1 != null && Card2 != null)
         {

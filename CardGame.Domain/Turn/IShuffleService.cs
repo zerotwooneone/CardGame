@@ -2,5 +2,5 @@
 
 public interface IShuffleService
 {
-    Card[] Shuffle(IEnumerable<Card> deck);
+    RoundCard[] Shuffle(IEnumerable<RoundCard> deck);
 }

@@ -36,20 +36,21 @@ public class DummyRepository : ITurnRepository,IRoundFactory
             new GamePlayer((PlayerId)3),
             new GamePlayer((PlayerId)4)
         };
-        var round = Internal_CreateFrom(1, players[0], players, cards, shuffleService);
+        var round = Internal_CreateFrom(1, players[0], players, cards.Select(c=> c.ToRoundCard()).ToArray(), shuffleService);
         var firstPlayer = round.RemainingPlayers.First();
+        var drawnCard = round.DrawForTurn();
         return new Turn(1,
             new Game((GameId) 1,
                 players,
                 cards),
             round,
-            ToCurrentPlayer(firstPlayer, round.DrawForTurn())
+            ToCurrentPlayer(firstPlayer, drawnCard)
             );
     }
 
-    private static CurrentPlayer ToCurrentPlayer(RemainingPlayer firstPlayer, Card drawnCard)
+    private static CurrentPlayer ToCurrentPlayer(RemainingPlayer firstPlayer, RoundCard drawnCard)
     {
-        return new CurrentPlayer(firstPlayer.Id,firstPlayer.Hand,drawnCard);
+        return new CurrentPlayer(firstPlayer.Id,firstPlayer.Hand.ToPlayableCard(),drawnCard.ToPlayableCard());
     }
 
     public Task Save(Turn turn)
@@ -65,13 +66,13 @@ public class DummyRepository : ITurnRepository,IRoundFactory
         IEnumerable<Card> deck,
         IShuffleService shuffleService)
     {
-        return Task.FromResult(Internal_CreateFrom(roundNumber, first, playerOrder.ToArray(), deck.ToArray(), shuffleService));
+        return Task.FromResult(Internal_CreateFrom(roundNumber, first, playerOrder.ToArray(), deck.Select(c=> c.ToRoundCard()).ToArray(), shuffleService));
     }
     private Round Internal_CreateFrom(
         uint roundNumber, 
         GamePlayer first, 
         GamePlayer[] playerOrder, 
-        Card[] deck,
+        RoundCard[] deck,
         IShuffleService shuffleService)
     {
         if (!playerOrder.Contains(first))
@@ -83,7 +84,7 @@ public class DummyRepository : ITurnRepository,IRoundFactory
             ? 4
             : 1;
         var burnPile = shuffledDeck.Take(burnCount).ToArray();
-        var drawPile = new Queue<Card>(shuffledDeck.Skip(burnCount));
+        var drawPile = new Queue<RoundCard>(shuffledDeck.Skip(burnCount));
             
         const int sanityMax = 5;
         var sanityCount = 0;
@@ -94,10 +95,14 @@ public class DummyRepository : ITurnRepository,IRoundFactory
             orderedPlayers.Enqueue(orderedPlayers.Dequeue());
         }
 
-        var players = orderedPlayers.Select(gp => new RemainingPlayer(
-            gp.Id,
-            drawPile.Dequeue(),
-            true)).ToArray();
+        var players = orderedPlayers.Select(gp =>
+        {
+            var drawnCard = drawPile.Dequeue();
+            return new RemainingPlayer(
+                gp.Id,
+                drawnCard,
+                true);
+        }).ToArray();
         var round = new Round(roundNumber, drawPile, burnPile, players);
         return round;
     }
@@ -137,5 +142,45 @@ internal static class Cards
         }
         _allCards.AddRange(cards);
         return cards;
+    }
+    
+    public static RoundCard ToRoundCard(this Card card)
+    {
+        return new RoundCard(GetPlayableCard(card.Id));
+    }
+    private static readonly IReadOnlyCollection<CardValue> CountessForcedValues = [CardValues.King, CardValues.Prince];
+    public static PlayableCard GetPlayableCard(CardId cardId)
+    {
+        var card = AllCards.FirstOrDefault(c=> c.Id == cardId);
+        if (card == null)
+        {
+            throw new Exception("card not found");
+        }
+        var isPrincess = card.Value == CardValues.Princess;
+        var isKing = card.Value == CardValues.King;
+        var isPrince = card.Value == CardValues.Prince;
+        var isHandmaid = card.Value == CardValues.Handmaid;
+        var isPriest = card.Value == CardValues.Priest;
+        var isBaron = card.Value == CardValues.Baron;
+        var isGuard = card.Value == CardValues.Guard;
+        var isCountess = card.Value == CardValues.Countess;
+        
+        return new PlayableCard
+        {
+            KickOutOfRoundOnDiscard = isPrincess,
+            PlayProhibitedByCardInHand = isCountess
+                ? CountessForcedValues
+                : Array.Empty<CardValue>(),
+            CanTargetSelf = isPrince,
+            CardId = cardId,
+            Value = card.Value,
+            Compare = isBaron,
+            DiscardAndDraw = isPrince,
+            Guess = isGuard,
+            Inspect = isPriest,
+            Protect = isHandmaid,
+            TradeHands = isKing,
+            RequiresTargetPlayer = isKing || isPrince || isBaron || isPriest || isGuard
+        };
     }
 }

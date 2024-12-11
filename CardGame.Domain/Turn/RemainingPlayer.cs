@@ -2,16 +2,16 @@
 
 public class RemainingPlayer(
     PlayerId id, 
-    Card hand, 
+    RoundCard hand, 
     bool isProtected=false,
     IEnumerable<Card>? discardPile = null): IEquatable<RemainingPlayer>
 {
     public PlayerId Id { get; } = id;
     public bool IsProtected { get; private set; } = isProtected;
-    public Card Hand { get; private set; } = hand;
+    public RoundCard Hand { get; private set; } = hand;
     public IReadOnlyCollection<Card> DiscardPile => _discardPile;
     private readonly List<Card> _discardPile = discardPile?.ToList() ?? [];
-    public Card Trade(Card otherHand)
+    public RoundCard Trade(RoundCard otherHand)
     {
         var result = Hand;
         Hand = otherHand;
@@ -43,18 +43,18 @@ public class RemainingPlayer(
         return Id.ToString();
     }
 
-    public void ReplaceHand(Card discarded, Card hand)
+    public void ReplaceHand(RoundCard discarded, RoundCard hand)
     {
-        if(Hand !=hand && Hand != discarded)
+        if(Hand.Id.Equals(hand.Id) && Hand.Id.Equals(discarded.Id))
         {
             throw new Exception("hand does not match");
         }
-        if (_discardPile.Contains(discarded))
+        if (_discardPile.Select(c => c.Id).Contains(discarded.Id))
         {
             throw new Exception("hand already discarded");
         }
 
-        _discardPile.Add(discarded);
+        _discardPile.Add(new Card{Id = discarded.Id, Value = discarded.Value});
         Hand = hand;
     }
 
@@ -73,11 +73,11 @@ internal static class RemainingPlayerExtensions
 {
     public static RoundPlayer ToEliminated(this RemainingPlayer player)
     {
-        return new RoundPlayer(player.Id, player.DiscardPile.Append(player.Hand));
+        return new RoundPlayer(player.Id, player.DiscardPile.Append(new Card{Id = player.Hand.Id, Value = player.Hand.Value}).ToArray());
     }
     
-    public static CurrentPlayer ToCurrentPlayer(this RemainingPlayer firstPlayer, Card drawnCard)
+    public static CurrentPlayer ToCurrentPlayer(this RemainingPlayer player, RoundCard drawnCard)
     {
-        return new CurrentPlayer(firstPlayer.Id,firstPlayer.Hand,drawnCard);
+        return new CurrentPlayer(player.Id,player.Hand.ToPlayableCard(),drawnCard.ToPlayableCard());
     }
 }

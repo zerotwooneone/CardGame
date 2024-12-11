@@ -11,7 +11,6 @@ public class ApplicationTurnService: IApplicationTurnService
     private readonly IPlayEffectRepository _playEffectRepository;
     private readonly IInspectNotificationService _inspectNotificationService;
     private readonly IRoundFactory _roundFactory;
-    private readonly IForcedDiscardEffectRepository _forcedDiscardEffectRepository;
     private readonly IShuffleService _shuffleService;
 
     public ApplicationTurnService(
@@ -21,7 +20,6 @@ public class ApplicationTurnService: IApplicationTurnService
         IPlayEffectRepository playEffectRepository, 
         IInspectNotificationService inspectNotificationService,
         IRoundFactory roundFactory, 
-        IForcedDiscardEffectRepository forcedDiscardEffectRepository,
         IShuffleService shuffleService)
     {
         _logger = logger;
@@ -30,7 +28,6 @@ public class ApplicationTurnService: IApplicationTurnService
         _playEffectRepository = playEffectRepository;
         _inspectNotificationService = inspectNotificationService;
         _roundFactory = roundFactory;
-        _forcedDiscardEffectRepository = forcedDiscardEffectRepository;
         _shuffleService = shuffleService;
     }
 
@@ -49,7 +46,6 @@ public class ApplicationTurnService: IApplicationTurnService
             playParams,
             _inspectNotificationService,
             _roundFactory,
-            _forcedDiscardEffectRepository,
             _shuffleService).ConfigureAwait(false);
     }
 }

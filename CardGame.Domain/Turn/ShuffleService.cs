@@ -15,7 +15,7 @@ public class ShuffleService : IShuffleService
         _logger.LogWarning("Shuffling with seed {NonRandomSeed}", nonRandomSeed);
         _random = new Random(nonRandomSeed);
     }
-    public Card[] Shuffle(IEnumerable<Card> deck)
+    public RoundCard[] Shuffle(IEnumerable<RoundCard> deck)
     {
         return deck.OrderBy(_ => _random.Next()).ToArray();
     }

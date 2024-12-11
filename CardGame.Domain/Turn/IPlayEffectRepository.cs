@@ -2,5 +2,5 @@
 
 public interface IPlayEffectRepository
 {
-    Task<PlayableCard?> Get(GameId gameId, CardId cardId, PlayParams playParams);
+    Task<PlayableCard?> Get(GameId gameId, CardId cardId);
 }

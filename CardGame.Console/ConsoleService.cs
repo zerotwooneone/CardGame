@@ -42,7 +42,7 @@ public class ConsoleService:IHostedService
     private void Print(Turn turn)
     {
         _logger.LogInformation("Round:{RoundNumber} Turn:{TurnNumber} RemainingPlayers:{RemainingPlayers} ", turn.Round.Number, turn.Number, string.Join(",", turn.Round.RemainingPlayers.Select(p=>$"{p.Id}:{string.Join(",",p.Hand.Value) }" )));
-        _logger.LogInformation("Player:{CurrentPlayerId} Hand:{Hand} Discard:{Discard} ", turn.CurrentPlayer.Id, string.Join(",", turn.CurrentPlayer.GetHand().Select(c=>$"id:{c.Id} value:{c.Value}")), string.Join(",", (turn.Round.RemainingPlayers.Single(p=>p.Id == turn.CurrentPlayer.Id)).DiscardPile.Select(c=>c.Id)));
+        _logger.LogInformation("Player:{CurrentPlayerId} Hand:{Hand} Discard:{Discard} ", turn.CurrentPlayer.Id, string.Join(",", turn.CurrentPlayer.GetHand().Select(c=>$"id:{c.CardId} value:{c.Value}")), string.Join(",", (turn.Round.RemainingPlayers.Single(p=>p.Id == turn.CurrentPlayer.Id)).DiscardPile.Select(c=>c.Id)));
     }
 
     public async Task StopAsync(CancellationToken cancellationToken)

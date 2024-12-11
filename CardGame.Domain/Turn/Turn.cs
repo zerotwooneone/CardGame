@@ -21,7 +21,6 @@ public class Turn
 
     public async Task Play(
         PlayableCard playableCard, 
-        IForcedDiscardEffectRepository effectRepository, 
         PlayParams playParams,
         IInspectNotificationService inspectNotificationService)
     {
@@ -34,10 +33,18 @@ public class Turn
         {
             throw new Exception("round is complete");
         }
-        var card = CurrentPlayer.GetHand().Single(c=> c.Id == playableCard.CardId);
+        
         CurrentPlayer.Play(playableCard);
         var currentRemainingPlayer = Round.RemainingPlayers.Single(p => p.Id == CurrentPlayer.Id);
-        currentRemainingPlayer.ReplaceHand(card, CurrentPlayer.GetHand().Single());
+
+        var remainingCard = CurrentPlayer.GetHand().Single();
+        var discardedRoundCard = currentRemainingPlayer.Hand.Id.Equals(playableCard.CardId) 
+            ? currentRemainingPlayer.Hand
+            : new RoundCard(playableCard);
+        var handRoundCard = currentRemainingPlayer.Hand.Id.Equals(playableCard.CardId)
+            ? new RoundCard(remainingCard)
+            : currentRemainingPlayer.Hand;
+        currentRemainingPlayer.ReplaceHand(discardedRoundCard, handRoundCard);
         if (playableCard.KickOutOfRoundOnDiscard)
         {
             Round.EliminatePlayer(currentRemainingPlayer);
@@ -54,9 +61,8 @@ public class Turn
                 {
                     throw new Exception("cannot trade with someone protected. trade hands");
                 }
-                var playerHand = CurrentPlayer.GetHand().Single();
-                var targetHand = targetPlayer.Trade(playerHand);
-                CurrentPlayer.Trade(targetHand);
+                var targetHand = targetPlayer.Trade(currentRemainingPlayer.Hand);
+                CurrentPlayer.Trade(targetHand.ToPlayableCard());
                 currentRemainingPlayer.Trade(targetHand);
             }
             if (playableCard.DiscardAndDraw)
@@ -78,16 +84,11 @@ public class Turn
 
                     if(targetPlayer.Id == CurrentPlayer.Id)
                     {
-                        CurrentPlayer.Discard(discarded);
-                        CurrentPlayer.Draw(drawnForDiscard);
+                        CurrentPlayer.Discard(new Card{Id = discarded.Id, Value = discarded.Value});
+                        CurrentPlayer.Draw(drawnForDiscard.ToPlayableCard());
                     }
-                    
-                    var discardEffect = await effectRepository.Get(discarded.Value).ConfigureAwait(false);
-                    if (discardEffect == null)
-                    {
-                        throw new Exception("no discard effect found");
-                    }
-                    if (discardEffect.DiscardAndDrawKickEnabled && discardEffect.KickOutOfRoundOnDiscard)
+
+                    if (Game.DiscardAndDrawKickEnabled && discarded.KickOutOfRoundOnDiscard)
                     {
                         Round.EliminatePlayer(targetPlayer);
                     }
@@ -120,7 +121,7 @@ public class Turn
                 {
                     throw new Exception("cannot target someone protected. inspect");
                 }
-                var targetCard = targetPlayer.Hand;
+                var targetCard = new Card{Id = targetPlayer.Hand.Id, Value = targetPlayer.Hand.Value};
                 await inspectNotificationService.Notify(targetCard).ConfigureAwait(false);
             }
 

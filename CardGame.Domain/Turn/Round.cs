@@ -6,17 +6,17 @@ public record Round
     public IReadOnlyCollection<RemainingPlayer> RemainingPlayers => _remainingPlayers;
     public IReadOnlyCollection<RoundPlayer> Eliminated => _eliminated;
     private readonly List<RoundPlayer> _eliminated;
-    private readonly List<Card> _drawPile;
-    public IReadOnlyCollection<Card> DrawPile => _drawPile;
-    private readonly List<Card> _burnPile;
-    public IReadOnlyCollection<Card> BurnPile => _burnPile;
+    private readonly List<RoundCard> _drawPile;
+    public IReadOnlyCollection<RoundCard> DrawPile => _drawPile;
+    private readonly List<RoundCard> _burnPile;
+    public IReadOnlyCollection<RoundCard> BurnPile => _burnPile;
     public bool Complete => DrawPile.Count == 0 || RemainingPlayers.Count == 1;
     public uint Number { get; }
 
     public Round(
         uint number,
-        IEnumerable<Card> drawPile,
-        IEnumerable<Card> burnPile,
+        IEnumerable<RoundCard> drawPile,
+        IEnumerable<RoundCard> burnPile,
         IEnumerable<RemainingPlayer> remainingPlayers,
         IEnumerable<RoundPlayer>? eliminated=null)
     {
@@ -56,12 +56,12 @@ public record Round
         _eliminated.Add(player.ToEliminated());
     }
 
-    public Card DrawForDiscard()
+    public RoundCard DrawForDiscard()
     {
         return Draw() ?? _burnPile.First();
     }
 
-    private Card? Draw()
+    private RoundCard? Draw()
     {
         var result = _drawPile.FirstOrDefault();
         if(result != null)
@@ -71,7 +71,7 @@ public record Round
         return result;
     }
 
-    public Card DrawForTurn()
+    public RoundCard DrawForTurn()
     {
         var result = _drawPile.First();
         _drawPile.Remove(result);

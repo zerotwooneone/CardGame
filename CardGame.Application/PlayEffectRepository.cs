@@ -2,10 +2,10 @@
 
 namespace CardGame.Application;
 
-public class PlayEffectRepository : IPlayEffectRepository, IForcedDiscardEffectRepository
+public class PlayEffectRepository : IPlayEffectRepository
 {
-    private readonly IReadOnlyCollection<CardValue> _countessForcedValues = new CardValue[] { CardValues.King, CardValues.Prince };
-    public Task<PlayableCard?> Get(GameId gameId, CardId cardId, PlayParams playParams)
+    private readonly IReadOnlyCollection<CardValue> _countessForcedValues = [CardValues.King, CardValues.Prince];
+    public Task<PlayableCard?> Get(GameId gameId, CardId cardId)
     {
         var card = Cards.AllCards.FirstOrDefault(c=> c.Id == cardId);
         if (card == null)
@@ -37,17 +37,6 @@ public class PlayEffectRepository : IPlayEffectRepository, IForcedDiscardEffectR
             Protect = isHandmaid,
             TradeHands = isKing,
             RequiresTargetPlayer = isKing || isPrince || isBaron || isPriest || isGuard
-        });
-    }
-
-    public bool DiscardAndDrawKickEnabled => true;
-    public Task<ForcedDiscardEffect?> Get(CardValue value)
-    {
-        var isPrincess = value == CardValues.Princess;
-        return Task.FromResult<ForcedDiscardEffect?>(new ForcedDiscardEffect
-        {
-            KickOutOfRoundOnDiscard = isPrincess,
-            DiscardAndDrawKickEnabled = DiscardAndDrawKickEnabled,
         });
     }
 }

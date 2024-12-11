@@ -11,6 +11,5 @@ public interface ITurnService
         PlayParams playParams, 
         IInspectNotificationService inspectNotificationService,
         IRoundFactory roundFactory, 
-        IForcedDiscardEffectRepository forcedDiscardEffectRepository,
         IShuffleService shuffleService);
 }
