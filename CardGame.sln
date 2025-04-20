@@ -22,7 +22,7 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GeneratorAttributes", "Gene
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CodeGenerator", "CodeGenerator\CodeGenerator.csproj", "{9931A82A-A4AB-4CBF-B78F-9C0E0C73F8D8}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SmartEnumConsoleTest", "SmartEnumConsoleTest\SmartEnumConsoleTest.csproj", "{E84EFA07-7905-449D-834E-C264C9F2E715}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CodeGenConsoleTest", "CodeGenConsoleTest\CodeGenConsoleTest.csproj", "{E84EFA07-7905-449D-834E-C264C9F2E715}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

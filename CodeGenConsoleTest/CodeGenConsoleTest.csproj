@@ -11,7 +11,7 @@
     <ItemGroup>
       <ProjectReference Include="..\GeneratorAttributes\GeneratorAttributes.csproj" />
     <ProjectReference Include="..\CodeGenerator\CodeGenerator.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
-      <ProjectReference Include="..\SmartEnumGenerator\SmartEnumGenerator.csproj" />
+    <ProjectReference Include="..\CodeGenerator\CodeGenerator.csproj" />
     </ItemGroup>
 
 </Project>
