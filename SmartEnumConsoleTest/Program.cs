@@ -23,28 +23,13 @@ namespace SmartEnumConsoleTest
         // (after value and name). Generator currently infers types/names poorly.
         // Assumed constructor: CardType(int value, string name, string description, bool requiresTarget, bool requiresGuess)
 
-        [SmartEnumProps("Guess another player's non-Guard card.", true, true)] // desc, target, guess
-        Guard = 1, // Underlying value (Rank)
-
-        [SmartEnumProps("Look at another player's hand.", true, false)] // desc, target, guess=false
+        Guard = 1, 
         Priest = 2,
-
-        [SmartEnumProps("Compare hands; lower rank is out.", true, false)]
         Baron = 3,
-
-        [SmartEnumProps("Protection until your next turn.", false, false)]
         Handmaid = 4,
-
-        [SmartEnumProps("Discard hand and draw.", true, false)] // Assuming target=true means targettable, even if self
         Prince = 5,
-
-        [SmartEnumProps("Trade hands.", true, false)]
         King = 6,
-
-        [SmartEnumProps("Must discard if holding King or Prince.", false, false)]
         Countess = 7,
-
-        [SmartEnumProps("Lose if discarded.", false, false)]
         Princess = 8
     }
 
