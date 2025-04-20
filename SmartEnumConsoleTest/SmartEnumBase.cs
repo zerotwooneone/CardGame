@@ -1,7 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Reflection;
+﻿using System.Reflection;
 
 // This base class is typically placed in a shared library or generated/included
 // by the source generator itself if needed. For this example, we assume it exists
@@ -9,7 +6,7 @@ using System.Reflection;
 // NOTE: This is NOT part of the Source Generator project itself, but code the
 // generated output depends on. It could be in the Attributes library or a Core library.
 
-namespace SmartEnumBase // Or your preferred namespace
+namespace SmartEnumConsoleTest // Or your preferred namespace
 {
     /// <summary>
     /// Base class for creating type-safe, smart enums.

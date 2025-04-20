@@ -1,6 +1,8 @@
 ﻿using CardGame.Domain.Turn;
 using Microsoft.Extensions.Logging;
 
+namespace CardGame.Console;
+
 public class LoggerNotificationService : IInspectNotificationService
 {
     private readonly ILogger<LoggerNotificationService> _logger;

@@ -3,6 +3,8 @@ using CardGame.Domain.Turn;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 
+namespace CardGame.Console;
+
 public class ConsoleService:IHostedService
 {
     private readonly ILogger<ConsoleService> _logger;

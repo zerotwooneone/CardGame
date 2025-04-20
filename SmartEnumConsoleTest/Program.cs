@@ -1,12 +1,11 @@
 ﻿// In your SampleApp project
 
-// Reference SmartEnumGeneratorAttributes project
+// Reference GeneratorAttributes project
 // Reference EnumLikeGenerator project as Analyzer
-using SmartEnumGeneratorAttributes;
-using System;
-using System.Linq;
 
-namespace SampleApp
+using GeneratorAttributes;
+
+namespace SmartEnumConsoleTest
 {
     // 1. Define the partial class with the [EnumLike] attribute
     //    and private static fields marked with [GeneratedEnumValue]

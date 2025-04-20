@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace SmartEnumGeneratorAttributes;
+namespace GeneratorAttributes;
 
 /// <summary>
 /// Apply to a partial class to indicate it should be treated as a generated Smart Enum.

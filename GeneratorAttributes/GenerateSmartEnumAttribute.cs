@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace SmartEnumGeneratorAttributes
+namespace GeneratorAttributes
 {
     /// <summary>
     /// Apply to a private static readonly field within a class marked with [EnumLike].
