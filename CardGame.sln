@@ -16,6 +16,14 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CardGame.Console", "CardGam
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CardGame.Domain.Tests", "CardGame.Domain.Tests\CardGame.Domain.Tests.csproj", "{85162458-10CE-4BC6-BBBB-10EF99BB24F2}"
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "CodeGen", "CodeGen", "{AA1A895C-DB3D-47F6-B087-FD5E20B2504D}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SmartEnumGeneratorAttributes", "SmartEnumGeneratorAttributes\SmartEnumGeneratorAttributes.csproj", "{C7EFF636-CE2B-4901-BCB5-F5CCD9BCD1A6}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SmartEnumGenerator", "SmartEnumGenerator\SmartEnumGenerator.csproj", "{9931A82A-A4AB-4CBF-B78F-9C0E0C73F8D8}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SmartEnumConsoleTest", "SmartEnumConsoleTest\SmartEnumConsoleTest.csproj", "{E84EFA07-7905-449D-834E-C264C9F2E715}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -38,11 +46,28 @@ Global
 		{85162458-10CE-4BC6-BBBB-10EF99BB24F2}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{85162458-10CE-4BC6-BBBB-10EF99BB24F2}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{85162458-10CE-4BC6-BBBB-10EF99BB24F2}.Release|Any CPU.Build.0 = Release|Any CPU
+		{C7EFF636-CE2B-4901-BCB5-F5CCD9BCD1A6}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{C7EFF636-CE2B-4901-BCB5-F5CCD9BCD1A6}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{C7EFF636-CE2B-4901-BCB5-F5CCD9BCD1A6}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{C7EFF636-CE2B-4901-BCB5-F5CCD9BCD1A6}.Release|Any CPU.Build.0 = Release|Any CPU
+		{9931A82A-A4AB-4CBF-B78F-9C0E0C73F8D8}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{9931A82A-A4AB-4CBF-B78F-9C0E0C73F8D8}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{9931A82A-A4AB-4CBF-B78F-9C0E0C73F8D8}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{9931A82A-A4AB-4CBF-B78F-9C0E0C73F8D8}.Release|Any CPU.Build.0 = Release|Any CPU
+		{E84EFA07-7905-449D-834E-C264C9F2E715}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{E84EFA07-7905-449D-834E-C264C9F2E715}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{E84EFA07-7905-449D-834E-C264C9F2E715}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{E84EFA07-7905-449D-834E-C264C9F2E715}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {B30E8357-F496-4188-BF3B-E591DCBB2DFB}
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{C7EFF636-CE2B-4901-BCB5-F5CCD9BCD1A6} = {AA1A895C-DB3D-47F6-B087-FD5E20B2504D}
+		{9931A82A-A4AB-4CBF-B78F-9C0E0C73F8D8} = {AA1A895C-DB3D-47F6-B087-FD5E20B2504D}
+		{E84EFA07-7905-449D-834E-C264C9F2E715} = {AA1A895C-DB3D-47F6-B087-FD5E20B2504D}
 	EndGlobalSection
 EndGlobal
