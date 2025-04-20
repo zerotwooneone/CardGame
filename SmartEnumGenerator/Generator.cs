@@ -8,272 +8,251 @@ using System.Collections.Immutable;
 using System.Linq;
 using System.Text;
 
-namespace SmartEnumGenerator
+namespace SmartEnumGenerator // Keep the generator namespace
 {
     [Generator]
-    public class Generator : IIncrementalGenerator
+    public class EnumLikeGenerator : IIncrementalGenerator
     {
-        // Define the fully qualified names of the attributes
-        private const string GenerateSmartEnumAttributeName = "SmartEnumGeneratorAttributes.GenerateSmartEnumAttribute";
-        private const string SmartEnumPropsAttributeName = "SmartEnumGeneratorAttributes.SmartEnumPropsAttribute";
-        private const string BaseSmartEnumNamespace = "SmartEnumBase"; // Namespace of the base class
+        private const string EnumLikeAttributeName = "SmartEnumGeneratorAttributes.EnumLikeAttribute";
+        private const string GeneratedValueAttributeName = "SmartEnumGeneratorAttributes.GeneratedEnumValueAttribute";
 
         public void Initialize(IncrementalGeneratorInitializationContext context)
         {
-            // --- Step 1: Filter Syntax Nodes ---
-            // Find all enum declarations that might have the [GenerateSmartEnum] attribute
-            IncrementalValuesProvider<EnumDeclarationSyntax> enumDeclarations = context.SyntaxProvider
+            // Find classes decorated with [EnumLike]
+            IncrementalValuesProvider<ClassDeclarationSyntax> classDeclarations = context.SyntaxProvider
                 .CreateSyntaxProvider(
-                    predicate: static (s, _) => IsSyntaxTargetForGeneration(s), // Quick filter for enums
-                    transform: static (ctx, _) => GetSemanticTargetForGeneration(ctx)) // Get enum if attribute matches
-                .Where(static m => m is not null)!; // Filter out nulls
+                    predicate: static (s, _) => IsSyntaxTargetForGeneration(s),
+                    transform: static (ctx, _) => GetSemanticTargetForGeneration(ctx))
+                .Where(static m => m is not null)!;
 
-            // --- Step 2: Combine with Compilation ---
-            // Get the semantic model for the filtered enums and combine with attribute data
-            IncrementalValueProvider<(Compilation, ImmutableArray<EnumDeclarationSyntax>)> compilationAndEnums
-                = context.CompilationProvider.Combine(enumDeclarations.Collect());
+            IncrementalValueProvider<(Compilation, ImmutableArray<ClassDeclarationSyntax>)> compilationAndClasses
+                = context.CompilationProvider.Combine(classDeclarations.Collect());
 
-            // --- Step 3: Generate Code ---
-            context.RegisterSourceOutput(compilationAndEnums,
+            context.RegisterSourceOutput(compilationAndClasses,
                 static (spc, source) => Execute(source.Item1, source.Item2, spc));
+
+            // Add IsExternalInit definition for potential record usage internally or by generated code
+            context.RegisterPostInitializationOutput(ctx => ctx.AddSource(
+                "IsExternalInit.g.cs",
+                SourceText.From(IsExternalInitSource, Encoding.UTF8)));
         }
 
-        // Quick syntax check: is it an enum declaration?
+        // Quick syntax check: is it a class with attributes?
         private static bool IsSyntaxTargetForGeneration(SyntaxNode node) =>
-            node is EnumDeclarationSyntax eds && eds.AttributeLists.Count > 0;
+            node is ClassDeclarationSyntax cds && cds.AttributeLists.Count > 0;
 
-        // Semantic check: does the enum actually have the [GenerateSmartEnum] attribute?
-        private static EnumDeclarationSyntax? GetSemanticTargetForGeneration(GeneratorSyntaxContext context)
+        // Semantic check: does the class have the [EnumLike] attribute?
+        private static ClassDeclarationSyntax? GetSemanticTargetForGeneration(GeneratorSyntaxContext context)
         {
-            var enumDeclarationSyntax = (EnumDeclarationSyntax)context.Node;
+            var classDeclarationSyntax = (ClassDeclarationSyntax)context.Node;
+            var classSymbol = context.SemanticModel.GetDeclaredSymbol(classDeclarationSyntax);
 
-            // Loop through all attributes on the enum
-            foreach (AttributeListSyntax attributeListSyntax in enumDeclarationSyntax.AttributeLists)
+            if (classSymbol != null)
             {
-                foreach (AttributeSyntax attributeSyntax in attributeListSyntax.Attributes)
+                foreach (var attributeData in classSymbol.GetAttributes())
                 {
-                    if (context.SemanticModel.GetSymbolInfo(attributeSyntax).Symbol is IMethodSymbol attributeSymbol)
+                    if (attributeData.AttributeClass?.ToDisplayString() == EnumLikeAttributeName)
                     {
-                        INamedTypeSymbol attributeContainingTypeSymbol = attributeSymbol.ContainingType;
-                        string fullName = attributeContainingTypeSymbol.ToDisplayString();
-
-                        // Is the attribute the [GenerateSmartEnum] attribute?
-                        if (fullName == GenerateSmartEnumAttributeName)
+                        // Basic check: Ensure the class is partial
+                        if (!classDeclarationSyntax.Modifiers.Any(m => m.IsKind(SyntaxKind.PartialKeyword)))
                         {
-                            return enumDeclarationSyntax;
+                            // Optional: Report a diagnostic error here if not partial
+                            // context.ReportDiagnostic(Diagnostic.Create(...));
+                            return null; // Don't generate for non-partial classes
                         }
+                        return classDeclarationSyntax;
                     }
                 }
             }
-            // No matching attribute found
             return null;
         }
 
         // --- Main Generation Logic ---
-        private static void Execute(Compilation compilation, ImmutableArray<EnumDeclarationSyntax> enums, SourceProductionContext context)
+        private static void Execute(Compilation compilation, ImmutableArray<ClassDeclarationSyntax> classes, SourceProductionContext context)
         {
-            if (enums.IsDefaultOrEmpty) return; // Nothing to do
+            if (classes.IsDefaultOrEmpty) return;
 
-            // Get distinct enums (might be multiple partial definitions) - not applicable here as we target enums
-            IEnumerable<EnumDeclarationSyntax> distinctEnums = enums.Distinct();
+            // Prevent generating for duplicate partial declarations
+            IEnumerable<ClassDeclarationSyntax> distinctClasses = classes.Distinct();
 
-            // Process each enum found
-            foreach (var enumSyntax in distinctEnums)
+            foreach (var classSyntax in distinctClasses)
             {
-                context.CancellationToken.ThrowIfCancellationRequested(); // Check for cancellation
+                context.CancellationToken.ThrowIfCancellationRequested();
 
-                SemanticModel semanticModel = compilation.GetSemanticModel(enumSyntax.SyntaxTree);
-                if (semanticModel.GetDeclaredSymbol(enumSyntax) is not INamedTypeSymbol enumSymbol) continue; // Should not happen
+                SemanticModel semanticModel = compilation.GetSemanticModel(classSyntax.SyntaxTree);
+                if (semanticModel.GetDeclaredSymbol(classSyntax) is not INamedTypeSymbol classSymbol) continue;
 
-                // --- Extract Data ---
-                string enumName = enumSymbol.Name;
-                string enumNamespace = enumSymbol.ContainingNamespace.IsGlobalNamespace ? string.Empty : enumSymbol.ContainingNamespace.ToDisplayString();
-                string underlyingTypeName = enumSymbol.EnumUnderlyingType?.ToDisplayString() ?? "int"; // Default to int
+                string className = classSymbol.Name;
+                string classNamespace = classSymbol.ContainingNamespace.IsGlobalNamespace ? string.Empty : classSymbol.ContainingNamespace.ToDisplayString();
+                string? underlyingValueTypeName = null; // Determine this from the first valid field
 
-                // Get attribute arguments
-                var generateAttribute = enumSymbol.GetAttributes().FirstOrDefault(ad => ad.AttributeClass?.ToDisplayString() == GenerateSmartEnumAttributeName);
-                string valuePropertyName = "Value"; // Default
-                string? generatedClassName = null;
-                string? generatedNamespace = null;
+                var membersToGenerate = new List<EnumMemberInfo>();
 
-                if (generateAttribute != null)
+                // Find relevant private static fields
+                foreach (var member in classSymbol.GetMembers())
                 {
-                    foreach (var namedArg in generateAttribute.NamedArguments)
+                    if (member is IFieldSymbol fieldSymbol &&
+                        fieldSymbol.IsStatic &&
+                        fieldSymbol.IsReadOnly && // Must be readonly
+                        fieldSymbol.DeclaredAccessibility == Accessibility.Private &&
+                        fieldSymbol.Name.StartsWith("_"))
                     {
-                        if (namedArg.Key == "ValuePropertyName" && namedArg.Value.Value is string vpn) valuePropertyName = vpn;
-                        if (namedArg.Key == "GeneratedClassName" && namedArg.Value.Value is string gcn) generatedClassName = gcn;
-                        if (namedArg.Key == "GeneratedNamespace" && namedArg.Value.Value is string gns) generatedNamespace = gns;
-                    }
-                }
+                        // Check for [GeneratedEnumValue] attribute
+                        bool hasAttribute = fieldSymbol.GetAttributes().Any(ad => ad.AttributeClass?.ToDisplayString() == GeneratedValueAttributeName);
 
-                // Determine final class name and namespace
-                string finalClassName = generatedClassName ?? SanitizeClassName(enumName);
-                string finalNamespace = generatedNamespace ?? enumNamespace;
-
-                // Extract members and their properties from [SmartEnumProps]
-                var membersData = new List<SmartEnumMemberInfo>();
-                var constructorParamNames = new List<string>(); // To store names of extra props for the constructor signature
-                var constructorParamTypes = new List<string>(); // To store types of extra props
-
-                bool firstMember = true;
-                foreach (var memberSyntax in enumSyntax.Members)
-                {
-                    if (semanticModel.GetDeclaredSymbol(memberSyntax) is not IFieldSymbol memberSymbol) continue;
-
-                    string memberName = memberSymbol.Name;
-                    object memberValue = memberSymbol.ConstantValue!; // Underlying value (e.g., 1, 2)
-                    string memberValueLiteral = GetValueLiteral(memberValue, underlyingTypeName); // Format value for code gen
-
-                    // Find the [SmartEnumProps] attribute
-                    var propsAttribute = memberSymbol.GetAttributes().FirstOrDefault(ad => ad.AttributeClass?.ToDisplayString() == SmartEnumPropsAttributeName);
-                    var propValues = new List<string>(); // Formatted values for constructor call
-
-                    if (propsAttribute != null && propsAttribute.ConstructorArguments.Length > 0)
-                    {
-                        // Assumes the first constructor argument is the object[] propertyValues
-                        var valuesArray = propsAttribute.ConstructorArguments[0];
-                        if (valuesArray.Kind == TypedConstantKind.Array)
+                        if (hasAttribute)
                         {
-                            int index = 0;
-                            foreach (var typedConstant in valuesArray.Values)
+                            string privateName = fieldSymbol.Name;
+                            string publicName = Capitalize(privateName.Substring(1)); // Remove "_" and capitalize
+                            string fieldTypeName = fieldSymbol.Type.ToDisplayString();
+
+                            // Determine the underlying value type from the first valid field found
+                            if (underlyingValueTypeName == null)
                             {
-                                // On the first member, determine constructor param names/types from the attribute values
-                                if (firstMember)
-                                {
-                                    // VERY basic type inference - needs improvement for production
-                                    string paramType = typedConstant.Type?.ToDisplayString() ?? "object";
-                                    // Infer name - THIS IS A HUGE GUESS/ASSUMPTION
-                                    // A better approach would be required for production (e.g., named args in attribute, explicit config)
-                                    string paramName = $"prop{index + 1}"; // Highly unreliable naming
-                                    constructorParamNames.Add(paramName);
-                                    constructorParamTypes.Add(paramType);
-                                }
-                                // Format the value for code generation (string literal, number literal, etc.)
-                                propValues.Add(GetConstantValueLiteral(typedConstant));
-                                index++;
+                                underlyingValueTypeName = fieldTypeName;
+                            }
+                            else if (underlyingValueTypeName != fieldTypeName)
+                            {
+                                // Optional: Report diagnostic error - all fields must have the same type
+                                continue; // Skip inconsistent types for now
+                            }
+
+                            // How to get the value? This is tricky for readonly fields initialized elsewhere.
+                            // Simplification: Assume the field is initialized inline with a constant value.
+                            // A robust generator would need to find the initializer syntax.
+                            var fieldSyntax = fieldSymbol.DeclaringSyntaxReferences.FirstOrDefault()?.GetSyntax() as VariableDeclaratorSyntax;
+                            string? valueLiteral = fieldSyntax?.Initializer?.Value?.ToString();
+
+                            if (valueLiteral != null)
+                            {
+                                membersToGenerate.Add(new EnumMemberInfo(publicName, valueLiteral));
+                            }
+                            else
+                            {
+                                // Optional: Report diagnostic - couldn't find initializer value
                             }
                         }
                     }
-                    membersData.Add(new SmartEnumMemberInfo(memberName, memberValueLiteral, propValues));
-                    firstMember = false; // Constructor signature determined after first member
                 }
 
+                // Only generate if we found members and determined the value type
+                if (!membersToGenerate.Any() || underlyingValueTypeName == null)
+                {
+                    continue;
+                }
 
                 // --- Generate Code ---
                 var sourceBuilder = new StringBuilder();
-
-                // Header
                 sourceBuilder.AppendLine("// <auto-generated/>");
+                sourceBuilder.AppendLine($"// Generator: {nameof(EnumLikeGenerator)}");
                 sourceBuilder.AppendLine("#nullable enable");
-                sourceBuilder.AppendLine($"using System;");
-                sourceBuilder.AppendLine($"using {BaseSmartEnumNamespace}; // Assuming base class namespace");
+                sourceBuilder.AppendLine("using System;");
+                sourceBuilder.AppendLine("using System.Collections.Generic;");
+                sourceBuilder.AppendLine("using System.Linq;");
                 sourceBuilder.AppendLine();
-                if (!string.IsNullOrEmpty(finalNamespace))
+
+                if (!string.IsNullOrEmpty(classNamespace))
                 {
-                    sourceBuilder.AppendLine($"namespace {finalNamespace}");
+                    sourceBuilder.AppendLine($"namespace {classNamespace}");
                     sourceBuilder.AppendLine("{");
                 }
 
-                // Class definition
-                sourceBuilder.AppendLine($"    /// <summary>");
-                sourceBuilder.AppendLine($"    /// Generated Smart Enum for {enumName}.");
-                sourceBuilder.AppendLine($"    /// </summary>");
-                sourceBuilder.AppendLine($"    public sealed partial class {finalClassName} : SmartEnum<{finalClassName}, {underlyingTypeName}>");
-                sourceBuilder.AppendLine("    {");
+                string indent = string.IsNullOrEmpty(classNamespace) ? "" : "    ";
 
-                // Static readonly instances
-                foreach (var member in membersData)
+                // Extend the existing partial class
+                sourceBuilder.AppendLine($"{indent}/// <summary>");
+                sourceBuilder.AppendLine($"{indent}/// Generated members for EnumLike class {className}.");
+                sourceBuilder.AppendLine($"{indent}/// </summary>");
+                sourceBuilder.AppendLine($"{indent}public sealed partial class {className} : IEquatable<{className}>"); // Assume sealed for simplicity
+                sourceBuilder.AppendLine($"{indent}{{");
+
+                string innerIndent = indent + "    ";
+
+                // Static list & Instances (similar to previous generator)
+                sourceBuilder.AppendLine($"{innerIndent}// Private list populated by the constructor");
+                sourceBuilder.AppendLine($"{innerIndent}private static readonly System.Collections.Generic.List<{className}> _list = new System.Collections.Generic.List<{className}>();");
+                sourceBuilder.AppendLine();
+                sourceBuilder.AppendLine($"{innerIndent}// Public static readonly instances");
+                foreach (var member in membersToGenerate)
                 {
-                    // Construct arguments for the constructor call
-                    var constructorArgs = new List<string> { member.ValueLiteral, $"nameof({member.Name})" }; // Standard value, name
-                    constructorArgs.AddRange(member.PropertyValues); // Add values from [SmartEnumProps]
-
-                    sourceBuilder.AppendLine($"        public static readonly {finalClassName} {member.Name} = new {finalClassName}({string.Join(", ", constructorArgs)});");
+                    // Call the private constructor we are about to generate
+                    sourceBuilder.AppendLine($"{innerIndent}public static readonly {className} {member.PublicName} = new {className}({member.ValueLiteral}, nameof({member.PublicName}));");
                 }
                 sourceBuilder.AppendLine();
 
-                // Properties from [SmartEnumProps]
-                for(int i = 0; i < constructorParamNames.Count; i++)
-                {
-                    sourceBuilder.AppendLine($"        public {constructorParamTypes[i]} {Capitalize(constructorParamNames[i])} {{ get; }}");
-                }
-                 // Value property alias (e.g., Rank)
-                 if (valuePropertyName != "Value") // Avoid duplicate if base already has "Value"
-                 {
-                      sourceBuilder.AppendLine($"        public {underlyingTypeName} {valuePropertyName} => Value;");
-                 }
-                 sourceBuilder.AppendLine();
-
+                // Value and Name properties
+                sourceBuilder.AppendLine($"{innerIndent}/// <summary>Gets the underlying value that defines this instance.</summary>");
+                sourceBuilder.AppendLine($"{innerIndent}public {underlyingValueTypeName} Value {{ get; }}");
+                sourceBuilder.AppendLine();
+                sourceBuilder.AppendLine($"{innerIndent}/// <summary>Gets the name associated with this instance.</summary>");
+                sourceBuilder.AppendLine($"{innerIndent}public string Name {{ get; }}");
+                sourceBuilder.AppendLine();
 
                 // Private Constructor
-                sourceBuilder.Append($"        private {finalClassName}({underlyingTypeName} value, string name");
-                // Add parameters for extra properties
-                for (int i = 0; i < constructorParamNames.Count; i++)
-                {
-                    sourceBuilder.Append($", {constructorParamTypes[i]} {constructorParamNames[i]}");
-                }
-                sourceBuilder.AppendLine(")");
-                sourceBuilder.AppendLine($"            : base(value, name)"); // Call base constructor
-                sourceBuilder.AppendLine("        {");
-                 // Assign properties from constructor parameters
-                 for (int i = 0; i < constructorParamNames.Count; i++)
-                 {
-                     sourceBuilder.AppendLine($"            this.{Capitalize(constructorParamNames[i])} = {constructorParamNames[i]};");
-                 }
-                sourceBuilder.AppendLine("        }"); // End constructor
+                sourceBuilder.AppendLine($"{innerIndent}// Private constructor used by static initializers");
+                sourceBuilder.AppendLine($"{innerIndent}private {className}({underlyingValueTypeName} value, string name)");
+                sourceBuilder.AppendLine($"{innerIndent}{{");
+                sourceBuilder.AppendLine($"{innerIndent}    this.Value = value;");
+                sourceBuilder.AppendLine($"{innerIndent}    this.Name = name ?? throw new ArgumentNullException(nameof(name));");
+                sourceBuilder.AppendLine($"{innerIndent}    _list.Add(this); // Add instance to the static list");
+                sourceBuilder.AppendLine($"{innerIndent}}}");
+                sourceBuilder.AppendLine();
 
-                sourceBuilder.AppendLine("    }"); // End class
+                // Static List(), FromValue(), FromName() methods (needed as no base class)
+                // (Code is identical to previous generator's generated code for these)
+                sourceBuilder.AppendLine($"{innerIndent}// Static utility methods");
+                sourceBuilder.AppendLine($"{innerIndent}public static System.Collections.Generic.IReadOnlyCollection<{className}> List() => _list.AsReadOnly();");
+                sourceBuilder.AppendLine();
+                sourceBuilder.AppendLine($"{innerIndent}public static {className} FromValue({underlyingValueTypeName} value)");
+                sourceBuilder.AppendLine($"{innerIndent}{{");
+                sourceBuilder.AppendLine($"{innerIndent}    var matchingItem = _list.FirstOrDefault(item => EqualityComparer<{underlyingValueTypeName}>.Default.Equals(item.Value, value));");
+                sourceBuilder.AppendLine($"{innerIndent}    if (matchingItem == null) throw new ArgumentException($\"'{{value}}' is not a valid value for {className}.\", nameof(value));");
+                sourceBuilder.AppendLine($"{innerIndent}    return matchingItem;");
+                sourceBuilder.AppendLine($"{innerIndent}}}");
+                sourceBuilder.AppendLine();
+                sourceBuilder.AppendLine($"{innerIndent}public static {className} FromName(string name, bool ignoreCase = false)");
+                sourceBuilder.AppendLine($"{innerIndent}{{");
+                sourceBuilder.AppendLine($"{innerIndent}    var comparison = ignoreCase ? StringComparison.OrdinalIgnoreCase : StringComparison.Ordinal;");
+                sourceBuilder.AppendLine($"{innerIndent}    var matchingItem = _list.FirstOrDefault(item => string.Equals(item.Name, name, comparison));");
+                sourceBuilder.AppendLine($"{innerIndent}    if (matchingItem == null) throw new ArgumentException($\"'{{name}}' is not a valid name for {className}.\", nameof(name));");
+                sourceBuilder.AppendLine($"{innerIndent}    return matchingItem;");
+                sourceBuilder.AppendLine($"{innerIndent}}}");
+                sourceBuilder.AppendLine();
 
-                if (!string.IsNullOrEmpty(finalNamespace))
+                // IEquatable<T>, Equals, GetHashCode, Operators, ToString (identical to previous generator)
+                sourceBuilder.AppendLine($"{innerIndent}// Equality implementations");
+                sourceBuilder.AppendLine($"{innerIndent}public bool Equals({className}? other) {{ if (other is null) return false; if (Object.ReferenceEquals(this, other)) return true; return EqualityComparer<{underlyingValueTypeName}>.Default.Equals(this.Value, other.Value); }}");
+                sourceBuilder.AppendLine($"{innerIndent}public override bool Equals(object? obj) {{ if (obj == null || GetType() != obj.GetType()) return false; return this.Equals(({className})obj); }}");
+                sourceBuilder.AppendLine($"{innerIndent}public override int GetHashCode() => EqualityComparer<{underlyingValueTypeName}>.Default.GetHashCode(this.Value);");
+                sourceBuilder.AppendLine($"{innerIndent}public static bool operator ==({className}? left, {className}? right) {{ if (left is null) return right is null; return left.Equals(right); }}");
+                sourceBuilder.AppendLine($"{innerIndent}public static bool operator !=({className}? left, {className}? right) => !(left == right);");
+                sourceBuilder.AppendLine($"{innerIndent}public override string ToString() => this.Name;");
+
+                sourceBuilder.AppendLine($"{indent}}}"); // End partial class
+
+                if (!string.IsNullOrEmpty(classNamespace))
                 {
                     sourceBuilder.AppendLine("}"); // End namespace
                 }
 
-                // Add the generated source file to the compilation
-                context.AddSource($"{finalClassName}.g.cs", SourceText.From(sourceBuilder.ToString(), Encoding.UTF8));
+                context.AddSource($"{className}.EnumLike.g.cs", SourceText.From(sourceBuilder.ToString(), Encoding.UTF8));
             }
         }
 
         // --- Helper Methods ---
+        private static string Capitalize(string s) => string.IsNullOrEmpty(s) ? s : char.ToUpperInvariant(s[0]) + s.Substring(1);
 
-        // Helper to sanitize enum name to be a valid class name
-        private static string SanitizeClassName(string enumName)
-        {
-            if (enumName.EndsWith("Enum", StringComparison.OrdinalIgnoreCase))
-                return enumName.Substring(0, enumName.Length - 4);
-            if (enumName.EndsWith("Definition", StringComparison.OrdinalIgnoreCase))
-                return enumName.Substring(0, enumName.Length - 10);
-            return enumName;
-        }
+        // Helper record
+        private record EnumMemberInfo(string PublicName, string ValueLiteral);
 
-         // Helper to format the underlying value as a C# literal
-         private static string GetValueLiteral(object value, string typeName)
-         {
-             if (typeName == "string") return $"\"{value}\""; // Basic string literal
-             // Add handling for other types if needed (char, etc.)
-             return value.ToString() ?? "default"; // Default for numbers/other structs
-         }
-
-         // Helper to format TypedConstant value as C# literal - NEEDS MORE ROBUSTNESS
-         private static string GetConstantValueLiteral(TypedConstant constant)
-         {
-             if (constant.Kind == TypedConstantKind.Error) return "default"; // Or throw?
-             if (constant.Value == null) return "null";
-             if (constant.Type?.SpecialType == SpecialType.System_String) return $"\"{constant.Value}\"";
-             if (constant.Type?.SpecialType == SpecialType.System_Boolean) return constant.Value.ToString()?.ToLowerInvariant() ?? "default"; // true/false
-             // Add more types as needed (char, other numerics)
-             return constant.Value.ToString() ?? "default";
-         }
-
-         // Simple capitalization helper
-         private static string Capitalize(string s)
-         {
-             if (string.IsNullOrEmpty(s)) return s;
-             return char.ToUpperInvariant(s[0]) + s.Substring(1);
-         }
-
-
-        // Helper record to store extracted member info
-        private record SmartEnumMemberInfo(string Name, string ValueLiteral, List<string> PropertyValues);
+        // Source for IsExternalInit
+        private const string IsExternalInitSource = @"
+// <auto-generated/>
+namespace System.Runtime.CompilerServices
+{
+    using System.ComponentModel;
+    [EditorBrowsable(EditorBrowsableState.Never)]
+    internal static class IsExternalInit { }
+}";
     }
 }
