@@ -85,7 +85,7 @@ public class Turn
 
                     if(targetPlayer.Id == CurrentPlayer.Id)
                     {
-                        CurrentPlayer.Discard(new Card{Id = discarded.Id, Value = discarded.Value});
+                        CurrentPlayer.Discard(new Card{Id = discarded.Id, Type = discarded.Type});
                         CurrentPlayer.Draw(drawnForDiscard.ToPlayableCard());
                     }
 
@@ -106,9 +106,9 @@ public class Turn
                     }
                     var targetCard = targetPlayer.Hand;
                     var playerCard = CurrentPlayer.GetHand().Single();
-                    if(targetCard.Value != playerCard.Value)
+                    if(targetCard.Type != playerCard.Type)
                     {
-                        var toBeRemoved = targetCard.Value.Value > playerCard.Value.Value 
+                        var toBeRemoved = targetCard.Type.Value > playerCard.Type.Value 
                             ? currentRemainingPlayer 
                             : targetPlayer;
                         Round.EliminatePlayer(toBeRemoved);
@@ -122,7 +122,7 @@ public class Turn
                 {
                     throw new Exception("cannot target someone protected. inspect");
                 }
-                var targetCard = new Card{Id = targetPlayer.Hand.Id, Value = targetPlayer.Hand.Value};
+                var targetCard = new Card{Id = targetPlayer.Hand.Id, Type = targetPlayer.Hand.Type};
                 await inspectNotificationService.Notify(targetCard).ConfigureAwait(false);
             }
 
@@ -138,7 +138,7 @@ public class Turn
                     throw new Exception("guess is required");
                 }
                 var targetCard = targetPlayer.Hand;
-                if (playParams.Guess == targetCard.Value)
+                if (playParams.Guess == targetCard.Type)
                 {
                     Round.EliminatePlayer(targetPlayer);
                 }

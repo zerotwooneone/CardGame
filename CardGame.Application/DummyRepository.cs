@@ -107,37 +107,25 @@ public class DummyRepository : ITurnRepository,IRoundFactory
     }
 }
 
-internal static class CardValues
-{
-    public static readonly CardValue Guard = (CardValue) 1;
-    public static readonly CardValue Priest = (CardValue) 2;
-    public static readonly CardValue Baron = (CardValue) 3;
-    public static readonly CardValue Handmaid = (CardValue) 4;
-    public static readonly CardValue Prince = (CardValue) 5;
-    public static readonly CardValue King = (CardValue) 6;
-    public static readonly CardValue Countess = (CardValue) 7;
-    public static readonly CardValue Princess = (CardValue) 8;
-}
-
 internal static class Cards
 {
     private static List<Card> _allCards = new();
     public static IReadOnlyCollection<Card> AllCards => _allCards;
-    public static IReadOnlyCollection<Card> Guards = Add(1, CardValues.Guard, 5);
-    public static IReadOnlyCollection<Card> Priests = Add(6, CardValues.Priest, 2);
-    public static IReadOnlyCollection<Card> Barons = Add(8, CardValues.Baron, 2);
-    public static IReadOnlyCollection<Card> Handmaids = Add(10, CardValues.Handmaid, 2);
-    public static IReadOnlyCollection<Card> Princes = Add(12, CardValues.Prince, 2);
-    public static Card King = Add(14, CardValues.King, 1).First();
-    public static Card Countess = Add(15, CardValues.Countess, 1).First();
-    public static Card Princess = Add(16, CardValues.Princess, 1).First();
+    public static IReadOnlyCollection<Card> Guards = Add(1, CardType.Guard, 5);
+    public static IReadOnlyCollection<Card> Priests = Add(6, CardType.Priest, 2);
+    public static IReadOnlyCollection<Card> Barons = Add(8, CardType.Baron, 2);
+    public static IReadOnlyCollection<Card> Handmaids = Add(10, CardType.Handmaid, 2);
+    public static IReadOnlyCollection<Card> Princes = Add(12, CardType.Prince, 2);
+    public static Card King = Add(14, CardType.King, 1).First();
+    public static Card Countess = Add(15, CardType.Countess, 1).First();
+    public static Card Princess = Add(16, CardType.Princess, 1).First();
 
-    private static Card[] Add(int startId, CardValue cardValue, int count)
+    private static Card[] Add(int startId, CardType cardType, int count)
     {
         var cards = new Card[count];
         for (uint i = 0; i < count; i++)
         {
-            cards[i] = new Card{Id = (CardId)(startId + i), Value = cardValue};
+            cards[i] = new Card{Id = (CardId)(startId + i), Type = cardType};
         }
         _allCards.AddRange(cards);
         return cards;
@@ -147,7 +135,7 @@ internal static class Cards
     {
         return new RoundCard(GetPlayableCard(card.Id));
     }
-    private static readonly IReadOnlyCollection<CardValue> CountessForcedValues = [CardValues.King, CardValues.Prince];
+    private static readonly IReadOnlyCollection<CardType> CountessForcedValues = [CardType.King, CardType.Prince];
     public static PlayableCard GetPlayableCard(CardId cardId)
     {
         var card = AllCards.FirstOrDefault(c=> c.Id == cardId);
@@ -155,24 +143,24 @@ internal static class Cards
         {
             throw new Exception("card not found");
         }
-        var isPrincess = card.Value == CardValues.Princess;
-        var isKing = card.Value == CardValues.King;
-        var isPrince = card.Value == CardValues.Prince;
-        var isHandmaid = card.Value == CardValues.Handmaid;
-        var isPriest = card.Value == CardValues.Priest;
-        var isBaron = card.Value == CardValues.Baron;
-        var isGuard = card.Value == CardValues.Guard;
-        var isCountess = card.Value == CardValues.Countess;
+        var isPrincess = card.Type == CardType.Princess;
+        var isKing = card.Type == CardType.King;
+        var isPrince = card.Type == CardType.Prince;
+        var isHandmaid = card.Type == CardType.Handmaid;
+        var isPriest = card.Type == CardType.Priest;
+        var isBaron = card.Type == CardType.Baron;
+        var isGuard = card.Type == CardType.Guard;
+        var isCountess = card.Type == CardType.Countess;
         
         return new PlayableCard
         {
             KickOutOfRoundOnDiscard = isPrincess,
             PlayProhibitedByCardInHand = isCountess
                 ? CountessForcedValues
-                : Array.Empty<CardValue>(),
+                : Array.Empty<CardType>(),
             CanTargetSelf = isPrince,
             CardId = cardId,
-            Value = card.Value,
+            Type = card.Type,
             Compare = isBaron,
             DiscardAndDraw = isPrince,
             Guess = isGuard,

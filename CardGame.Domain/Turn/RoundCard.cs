@@ -4,10 +4,10 @@ public record RoundCard(PlayableCard PlayableCard)
 {
     private PlayableCard Playable=> PlayableCard;
     public CardId Id => Playable.CardId;
-    public CardValue Value=> Playable.Value;
+    public CardType Type=> Playable.Type;
     public bool KickOutOfRoundOnDiscard => Playable.KickOutOfRoundOnDiscard;
     
-    public override string ToString() => $"{Id}:{Value}";
+    public override string ToString() => $"{Id}:{Type}";
 
     public PlayableCard ToPlayableCard()
     {

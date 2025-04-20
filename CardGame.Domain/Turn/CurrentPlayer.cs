@@ -45,7 +45,7 @@ public class CurrentPlayer: IEquatable<CurrentPlayer>
         var card = GetHand().Single(c=> c.CardId == played.CardId);
 
         var otherCard = GetHand().Single(c => c.CardId != card.CardId);
-        if (played.PlayProhibitedByCardInHand.Any(p=>p == otherCard.Value))
+        if (played.PlayProhibitedByCardInHand.Any(p=>p == otherCard.Type))
         {
             throw new Exception($"Playing {card} is prohibited by {otherCard} in hand.");
         }

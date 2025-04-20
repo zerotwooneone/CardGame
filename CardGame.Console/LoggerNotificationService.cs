@@ -13,6 +13,6 @@ public class LoggerNotificationService : IInspectNotificationService
     }
     public async Task Notify(Card card)
     {
-        _logger.LogInformation("Inspected card id:{CardId} value:{CardValue}", card.Id, card.Value);
+        _logger.LogInformation("Inspected card id:{CardId} value:{CardValue}", card.Id, card.Type);
     }
 }

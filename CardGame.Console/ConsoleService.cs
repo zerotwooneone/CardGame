@@ -29,10 +29,10 @@ public class ConsoleService:IHostedService
 
         try
         {
-            Print( await _applicationTurnService.Play(1, 1, 4, new PlayParams{TargetPlayer = (PlayerId)2, Guess = (CardValue)2}).ConfigureAwait(false));
+            Print( await _applicationTurnService.Play(1, 1, 4, new PlayParams{TargetPlayer = (PlayerId)2, Guess = CardType.Priest}).ConfigureAwait(false));
             Print( await _applicationTurnService.Play(1, 2, 14, new PlayParams{TargetPlayer = (PlayerId)1}).ConfigureAwait(false));
             Print( await _applicationTurnService.Play(1, 3, 10, new PlayParams{}).ConfigureAwait(false));
-            Print( await _applicationTurnService.Play(1, 4, 2, new PlayParams{TargetPlayer = (PlayerId)1, Guess = (CardValue)2}).ConfigureAwait(false));
+            Print( await _applicationTurnService.Play(1, 4, 2, new PlayParams{TargetPlayer = (PlayerId)1, Guess = CardType.Priest}).ConfigureAwait(false));
         }
         catch (Exception e)
         {
@@ -43,8 +43,8 @@ public class ConsoleService:IHostedService
 
     private void Print(Turn turn)
     {
-        _logger.LogInformation("Round:{RoundNumber} Turn:{TurnNumber} RemainingPlayers:{RemainingPlayers} ", turn.Round.Number, turn.Number, string.Join(",", turn.Round.RemainingPlayers.Select(p=>$"{p.Id}:{string.Join(",",p.Hand.Value) }" )));
-        _logger.LogInformation("Player:{CurrentPlayerId} Hand:{Hand} Discard:{Discard} ", turn.CurrentPlayer.Id, string.Join(",", turn.CurrentPlayer.GetHand().Select(c=>$"id:{c.CardId} value:{c.Value}")), string.Join(",", (turn.Round.RemainingPlayers.Single(p=>p.Id == turn.CurrentPlayer.Id)).DiscardPile.Select(c=>c.Id)));
+        _logger.LogInformation("Round:{RoundNumber} Turn:{TurnNumber} RemainingPlayers:{RemainingPlayers} ", turn.Round.Number, turn.Number, string.Join(",", turn.Round.RemainingPlayers.Select(p=>$"{p.Id}:{string.Join(",",p.Hand.Type) }" )));
+        _logger.LogInformation("Player:{CurrentPlayerId} Hand:{Hand} Discard:{Discard} ", turn.CurrentPlayer.Id, string.Join(",", turn.CurrentPlayer.GetHand().Select(c=>$"id:{c.CardId} value:{c.Type}")), string.Join(",", (turn.Round.RemainingPlayers.Single(p=>p.Id == turn.CurrentPlayer.Id)).DiscardPile.Select(c=>c.Id)));
     }
 
     public async Task StopAsync(CancellationToken cancellationToken)

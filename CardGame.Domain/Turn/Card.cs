@@ -3,7 +3,7 @@
 public record Card
 {
     public CardId Id { get; init; }
-    public CardValue Value { get; init; }
+    public CardType Type { get; init; }
     
-    public override string ToString() => $"{Id}:{Value}";
+    public override string ToString() => $"{Id}:{Type}";
 }

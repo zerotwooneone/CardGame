@@ -54,7 +54,7 @@ public class RemainingPlayer(
             throw new Exception("hand already discarded");
         }
 
-        _discardPile.Add(new Card{Id = discarded.Id, Value = discarded.Value});
+        _discardPile.Add(new Card{Id = discarded.Id, Type = discarded.Type});
         Hand = hand;
     }
 
@@ -73,7 +73,7 @@ internal static class RemainingPlayerExtensions
 {
     public static RoundPlayer ToEliminated(this RemainingPlayer player)
     {
-        return new RoundPlayer(player.Id, player.DiscardPile.Append(new Card{Id = player.Hand.Id, Value = player.Hand.Value}).ToArray());
+        return new RoundPlayer(player.Id, player.DiscardPile.Append(new Card{Id = player.Hand.Id, Type = player.Hand.Type}).ToArray());
     }
     
     public static CurrentPlayer ToCurrentPlayer(this RemainingPlayer player, RoundCard drawnCard)

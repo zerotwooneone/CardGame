@@ -38,13 +38,13 @@ public record Round
             return RemainingPlayers.First();
         }
 
-        var maxValue = (CardValue) RemainingPlayers.Max(p => p.Hand.Value.Value);
-        var playerWithMaxValue = RemainingPlayers.Where(p => p.Hand.Value.Value == maxValue.Value).ToArray();
+        var maxValue = RemainingPlayers.MaxBy(p => p.Hand.Type.Value)?.Hand.Type;
+        var playerWithMaxValue = RemainingPlayers.Where(p => p.Hand.Type.Value == maxValue.Value).ToArray();
         if(playerWithMaxValue.Length == 1)
         {
             return playerWithMaxValue[0];
         }
-        var cardValueTotals = RemainingPlayers.Select(p=> new {Player = p, Total = p.DiscardPile.Sum(c => c.Value.Value)}).ToArray();
+        var cardValueTotals = RemainingPlayers.Select(p=> new {Player = p, Total = p.DiscardPile.Sum(c => c.Type.Value)}).ToArray();
         var maxTotal = cardValueTotals.Max(p => p.Total);
         var playerWithMaxTotal = cardValueTotals.Where(p => p.Total == maxTotal).ToArray().First();
         return playerWithMaxTotal.Player;
