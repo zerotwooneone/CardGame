@@ -22,6 +22,10 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CodeGenConsoleTest", "CodeG
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CardGame.Web", "CardGame.Web\CardGame.Web.csproj", "{A7C9F6C3-80B2-48F5-B2CD-1AB2DC2AE4F4}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CardGame.Application", "CardGame.Application\CardGame.Application.csproj", "{75F8225C-0388-44BB-9516-1F1B9CA5C245}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CardGame.Infrastructure", "CardGame.Infrastructure\CardGame.Infrastructure.csproj", "{976E059D-B6E2-45E4-AAE7-31F47C5DA843}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -52,6 +56,14 @@ Global
 		{A7C9F6C3-80B2-48F5-B2CD-1AB2DC2AE4F4}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{A7C9F6C3-80B2-48F5-B2CD-1AB2DC2AE4F4}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{A7C9F6C3-80B2-48F5-B2CD-1AB2DC2AE4F4}.Release|Any CPU.Build.0 = Release|Any CPU
+		{75F8225C-0388-44BB-9516-1F1B9CA5C245}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{75F8225C-0388-44BB-9516-1F1B9CA5C245}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{75F8225C-0388-44BB-9516-1F1B9CA5C245}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{75F8225C-0388-44BB-9516-1F1B9CA5C245}.Release|Any CPU.Build.0 = Release|Any CPU
+		{976E059D-B6E2-45E4-AAE7-31F47C5DA843}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{976E059D-B6E2-45E4-AAE7-31F47C5DA843}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{976E059D-B6E2-45E4-AAE7-31F47C5DA843}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{976E059D-B6E2-45E4-AAE7-31F47C5DA843}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
