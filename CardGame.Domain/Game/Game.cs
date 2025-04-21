@@ -127,23 +127,20 @@ public class Game // Aggregate Root
 
         // --- 1. Validation ---
         // Pass the instance to validation, but validation mostly uses the type
-        ValidatePlayCardAction(playerId, cardToPlayInstance, targetPlayerId, guessedCardType);
+        ValidatePlayCardAction(playerId, cardType, targetPlayerId, guessedCardType);
         var actingPlayer = GetPlayerById(playerId);
         Player? targetPlayer = targetPlayerId.HasValue ? GetPlayerById(targetPlayerId.Value) : null;
 
         // --- 2. Perform the Action (Remove card first) ---
-        // Player.PlayCard now needs to accept the specific Card instance
         actingPlayer.PlayCard(cardToPlayInstance);
 
         // Add the specific played card instance to the central discard pile
         DiscardPile.Add(cardToPlayInstance);
 
         // Raise event AFTER card is confirmed played and state updated
-        // Event uses CardType, which is correct for describing the action abstractly
         AddDomainEvent(new PlayerPlayedCard(Id, playerId, cardType, targetPlayerId, guessedCardType));
 
         // --- 3. Dispatch to Specific Card Logic ---
-        // Switch statement and helpers operate on the CardType
         switch (cardType)
         {
             case var _ when cardType == CardType.Guard:
@@ -185,14 +182,8 @@ public class Game // Aggregate Root
         }
     }
 
-
-    // --- Private Helper Methods ---
-
-    // Updated to accept Card instance, but primarily uses its Type for validation
-    private void ValidatePlayCardAction(Guid playerId, Card cardToPlayInstance, Guid? targetPlayerId, CardType? guessedCardType)
+    private void ValidatePlayCardAction(Guid playerId, CardType cardType, Guid? targetPlayerId, CardType? guessedCardType)
     {
-        var cardType = cardToPlayInstance.Type; // Get type for checks
-
         if (GamePhase != GamePhase.RoundInProgress)
              throw new InvalidMoveException("Cannot play cards when the round is not in progress.");
         if (CurrentTurnPlayerId != playerId)
@@ -218,7 +209,6 @@ public class Game // Aggregate Root
             if (targetPlayer.IsProtected)
                  throw new InvalidMoveException($"Player {targetPlayer.Name} is protected by a Handmaid.");
             // Check if targeting self is allowed for this card type
-            // FIX: Check specific card types instead of non-existent RequiresTarget property
             if (targetPlayerId.Value == playerId && !CanTargetSelf(cardType) &&
                 (cardType == CardType.Guard || cardType == CardType.Priest || cardType == CardType.Baron || cardType == CardType.King))
                 throw new InvalidMoveException($"Cannot target self with {cardType.Name}.");
@@ -232,16 +222,11 @@ public class Game // Aggregate Root
              }
         }
 
-        // Card-specific validation (uses Type)
         if (cardType == CardType.Guard && (targetPlayerId == null || guessedCardType == null || guessedCardType == CardType.Guard))
             throw new InvalidMoveException("Guard requires a valid target player and a non-Guard guess.");
-        // ... other validations ...
     }
 
-    private bool CanTargetSelf(CardType cardType) => cardType == CardType.Prince; // Use Type
-
-    // --- Specific Card Effect Helpers ---
-    // No changes needed here as they operate on player state or CardType logic
+    private bool CanTargetSelf(CardType cardType) => cardType == CardType.Prince; 
 
     private void ExecuteGuardEffect(Player actingPlayer, Player? targetPlayer, CardType? guessedCardType)
     {
@@ -343,15 +328,11 @@ public class Game // Aggregate Root
         AddDomainEvent(new PlayerPlayedCountess(Id, actingPlayer.Id));
     }
 
-    // Updated to accept the specific card instance
     private void ExecutePrincessEffect(Player actingPlayer, Card princessCardInstance)
     {
         // Pass the CardType to EliminatePlayer for consistency in event/reason
         EliminatePlayer(actingPlayer.Id, "discarded the Princess", princessCardInstance.Type);
     }
-
-    // --- Core State Change Methods ---
-    // No changes needed in most of these
 
     private void EliminatePlayer(Guid playerId, string reason, CardType? cardResponsible)
     {
@@ -463,7 +444,6 @@ public class Game // Aggregate Root
          }
     }
 
-    // --- Helper to get player ---
     private Player GetPlayerById(Guid playerId)
     {
         var player = Players.FirstOrDefault(p => p.Id == playerId);
