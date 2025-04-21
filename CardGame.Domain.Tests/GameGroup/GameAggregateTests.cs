@@ -18,31 +18,22 @@ namespace CardGame.Domain.Tests.GameGroup;
 
             // 1. Create the game with two players
             var playerNames = new List<string> { "Alice", "Bob" };
-            var game = Game.Game.CreateNewGame(playerNames, tokensToWin: 4);
+            var game = Game.Game.CreateNewGame(playerNames);
             var player1 = game.Players.First(p => p.Name == "Alice");
             var player2 = game.Players.First(p => p.Name == "Bob");
 
-            // 2. Use the deterministic randomizer for predictable deck order
             var deterministicRandomizer = new NonShufflingRandomizer();
-
-            // 3. Start the first round using the non-shuffling randomizer
             game.StartNewRound(randomizer: deterministicRandomizer);
 
-            // 4. Get Player 1's actual hand cards after dealing and drawing
-            // Because the deck isn't shuffled, we know the types, but the Guids are random.
             // Expected Types: Guard, Guard (based on previous prediction logic)
             var player1HandCards = player1.Hand.GetCards().ToList();
             player1HandCards.Should().HaveCount(2);
             player1HandCards.Should().AllSatisfy(c => c.Type.Should().Be(CardType.Guard));
 
-            // Choose the first card instance from the hand to play
             var cardToPlayInstance = player1HandCards[0];
-            // The other card is the one to keep
             var cardToKeepInstance = player1HandCards[1];
 
-            // Define the target and guess for the Guard play
             var targetPlayerId = player2.Id;
-            // Guess Princess - guaranteed wrong as P2 has a Guard
             var guessedCardType = CardType.Princess;
 
             // 5. Clear events raised during setup
@@ -61,7 +52,7 @@ namespace CardGame.Domain.Tests.GameGroup;
 
             // 2. Player 1's hand should contain only the card they kept
             player1.Hand.Count.Should().Be(1);
-            player1.Hand.GetHeldCard().Should().Be(cardToKeepInstance); // Check specific instance kept
+            player1.Hand.GetHeldCard().Should().Be(cardToKeepInstance); 
 
             // 3. Player 1's played cards should include the type played
             player1.PlayedCards.Should().Contain(cardToPlayInstance.Type);
