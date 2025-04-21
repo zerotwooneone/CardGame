@@ -5,7 +5,7 @@ using FluentAssertions;
 
 namespace CardGame.Domain.Tests.GameGroup;
 
-    [TestFixture] // NUnit attribute to mark a class containing tests
+    [TestFixture] 
     public class GameAggregateTests
     {
         // No SetUp needed for this specific test

@@ -8,11 +8,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution 
 		README.md = README.md
 	EndProjectSection
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CardGame.Application", "CardGame.Application\CardGame.Application.csproj", "{75E68D2E-1A9E-41B3-990A-9BA59B7EFB10}"
-EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CardGame.Domain", "CardGame.Domain\CardGame.Domain.csproj", "{C329F14F-0EBF-4D7F-B050-747DA4A6BB5C}"
-EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CardGame.Console", "CardGame.Console\CardGame.Console.csproj", "{EF6F857E-039C-459A-80C2-FB213F35CB27}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CardGame.Domain.Tests", "CardGame.Domain.Tests\CardGame.Domain.Tests.csproj", "{85162458-10CE-4BC6-BBBB-10EF99BB24F2}"
 EndProject
@@ -30,18 +26,10 @@ Global
 		Release|Any CPU = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
-		{75E68D2E-1A9E-41B3-990A-9BA59B7EFB10}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{75E68D2E-1A9E-41B3-990A-9BA59B7EFB10}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{75E68D2E-1A9E-41B3-990A-9BA59B7EFB10}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{75E68D2E-1A9E-41B3-990A-9BA59B7EFB10}.Release|Any CPU.Build.0 = Release|Any CPU
 		{C329F14F-0EBF-4D7F-B050-747DA4A6BB5C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{C329F14F-0EBF-4D7F-B050-747DA4A6BB5C}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{C329F14F-0EBF-4D7F-B050-747DA4A6BB5C}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{C329F14F-0EBF-4D7F-B050-747DA4A6BB5C}.Release|Any CPU.Build.0 = Release|Any CPU
-		{EF6F857E-039C-459A-80C2-FB213F35CB27}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{EF6F857E-039C-459A-80C2-FB213F35CB27}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{EF6F857E-039C-459A-80C2-FB213F35CB27}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{EF6F857E-039C-459A-80C2-FB213F35CB27}.Release|Any CPU.Build.0 = Release|Any CPU
 		{85162458-10CE-4BC6-BBBB-10EF99BB24F2}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{85162458-10CE-4BC6-BBBB-10EF99BB24F2}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{85162458-10CE-4BC6-BBBB-10EF99BB24F2}.Release|Any CPU.ActiveCfg = Release|Any CPU
