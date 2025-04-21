@@ -32,6 +32,30 @@ public class Player // Entity
 
         return new Player(Guid.NewGuid(), name);
     }
+    
+    /// <summary>
+    /// Rehydrates a Player entity from its persisted state.
+    /// </summary>
+    public static Player Load(
+        Guid id,
+        string name,
+        PlayerStatus status,
+        Hand hand, // Assume Hand VO is already loaded
+        List<CardType> playedCards, // Assume List<CardType> is loaded
+        int tokensWon,
+        bool isProtected)
+    {
+        var player = new Player(id, name); // Use private constructor
+
+        // Assign loaded state
+        player.Status = status ?? PlayerStatus.Active; // Default if null? Or throw?
+        player.Hand = hand ?? Hand.Empty;
+        player.PlayedCards = playedCards ?? new List<CardType>();
+        player.TokensWon = tokensWon;
+        player.IsProtected = isProtected;
+
+        return player;
+    }
 
     /// <summary>
     /// Resets player state for the start of a new round.

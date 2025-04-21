@@ -20,6 +20,16 @@ namespace CardGame.Domain.Game;
         {
             Cards = cards?.ToList().AsReadOnly() ?? throw new ArgumentNullException(nameof(cards));
         }
+        
+        // --- Factory Method for Rehydration ---
+        /// <summary>
+        /// Creates a Hand instance from a collection of cards (e.g., loaded from persistence).
+        /// </summary>
+        public static Hand Load(IEnumerable<Card> cards)
+        {
+            // Use private constructor. Handles null/empty via constructor logic.
+            return new Hand(cards ?? Enumerable.Empty<Card>());
+        }
 
         public bool IsEmpty => !Cards.Any();
         public int Count => Cards.Count;

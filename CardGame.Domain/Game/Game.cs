@@ -64,6 +64,37 @@ public class Game // Aggregate Root
 
         return game;
     }
+    
+    /// <summary>
+    /// Rehydrates a Game aggregate from its persisted state.
+    /// Assumes constituent objects (Players, Deck, Cards) are already rehydrated.
+    /// </summary>
+    public static Game Load(
+        Guid id,
+        int roundNumber,
+        GamePhase gamePhase,
+        Guid currentTurnPlayerId,
+        List<Player> players, 
+        Deck deck,          
+        Card? setAsideCard,  
+        List<Card> discardPile, 
+        int tokensToWin)
+    {
+        var game = new Game(id);
+
+        // Assign loaded state
+        game.RoundNumber = roundNumber;
+        game.GamePhase = gamePhase;
+        game.CurrentTurnPlayerId = currentTurnPlayerId;
+        game.Players = players ?? new List<Player>();
+        game.Deck = deck ?? Deck.CreateShuffledDeck(); // Or handle empty deck state appropriately
+        game.SetAsideCard = setAsideCard;
+        game.DiscardPile = discardPile ?? new List<Card>();
+        game.TokensNeededToWin = tokensToWin;
+
+        // No domain events are raised during loading
+        return game;
+    }    
 
 
     public void StartNewRound(IRandomizer? randomizer = null)

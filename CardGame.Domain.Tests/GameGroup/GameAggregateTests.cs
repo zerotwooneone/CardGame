@@ -1,4 +1,5 @@
-﻿using CardGame.Domain.Game.Event;
+﻿using CardGame.Domain.Game;
+using CardGame.Domain.Game.Event;
 using CardGame.Domain.Tests.TestDoubles;
 using CardGame.Domain.Types;
 using FluentAssertions;
@@ -120,5 +121,161 @@ namespace CardGame.Domain.Tests.GameGroup;
 
              // Check total number of events raised by PlayCard action
              events.Should().HaveCount(5); // PlayerPlayedCard, GuardGuessResult, TurnStarted, PlayerDrewCard, DeckChanged
+        }
+        
+        [Test] // New test for game end condition
+        public void PlayCard_WhenPlayerWinsFinalRound_ShouldEndGameAndDeclareWinner()
+        {
+            // ARRANGE
+
+            // 1. Define Game Parameters
+            Guid gameId = Guid.NewGuid();
+            int tokensToWin = 1; // Game ends after this round is won
+
+            // 2. Create the full initial card list (predictable order)
+            // We need specific instances to distribute correctly.
+            var fullCardList = new List<Card> {
+                new Card(Guid.NewGuid(), CardType.Princess), 
+                new Card(Guid.NewGuid(), CardType.Countess),
+                new Card(Guid.NewGuid(), CardType.King), 
+                new Card(Guid.NewGuid(), CardType.Prince),
+                new Card(Guid.NewGuid(), CardType.Prince), 
+                new Card(Guid.NewGuid(), CardType.Handmaid),
+                new Card(Guid.NewGuid(), CardType.Handmaid), 
+                new Card(Guid.NewGuid(), CardType.Baron),
+                new Card(Guid.NewGuid(), CardType.Baron), 
+                new Card(Guid.NewGuid(), CardType.Priest),
+                new Card(Guid.NewGuid(), CardType.Priest), 
+                new Card(Guid.NewGuid(), CardType.Guard),
+                new Card(Guid.NewGuid(), CardType.Guard), 
+                new Card(Guid.NewGuid(), CardType.Guard),
+                new Card(Guid.NewGuid(), CardType.Guard), 
+                new Card(Guid.NewGuid(), CardType.Guard),
+            };
+            // Because Deck uses ImmutableStack.CreateRange, the effective draw order is reversed.
+            // Top card to be drawn first is the *last* one in the list above.
+            Card setAsideCard = fullCardList[15];   // Guard (last G)
+            Card p1InitialCard = fullCardList[14]; // Guard (4th G)
+            Card p2InitialCard = fullCardList[0]; // Guard (3rd G)
+            Card p1Turn1Draw = fullCardList[12];  // Guard (2nd G)
+            // Card p2Turn1Draw = fullCardList[11]; // Guard (1st G) - will be drawn after P1 plays
+
+            // 3. Create Player States
+            var aliceId = Guid.NewGuid();
+            var bobId = Guid.NewGuid();
+
+            // Player 1 (Alice) State: Active, 0 tokens, Hand{Guard(14), Guard(12)}
+            var aliceHand = Hand.Load(new List<Card> { p1InitialCard, p1Turn1Draw });
+            var alice = Player.Load(
+                id: aliceId,
+                name: "Alice",
+                status: PlayerStatus.Active,
+                hand: aliceHand,
+                playedCards: new List<CardType>(), // No cards played yet
+                tokensWon: 0, // Starts with 0 tokens
+                isProtected: false
+            );
+
+            // Player 2 (Bob) State: Active, 0 tokens, Hand{Guard(13)}
+            var bobHand = Hand.Load(new List<Card> { p2InitialCard });
+            var bob = Player.Load(
+                id: bobId,
+                name: "Bob",
+                status: PlayerStatus.Active,
+                hand: bobHand,
+                playedCards: new List<CardType>(),
+                tokensWon: 0,
+                isProtected: false
+            );
+
+            var players = new List<Player> { alice, bob };
+
+            // 4. Create Deck State (Remaining cards after deal + P1 draw)
+            // Cards remaining: Princess(0)...Guard(11)
+            // Order for Deck.Load needs to be reverse draw order (top card last)
+            var remainingCardsForDeck = fullCardList.Take(12).ToList(); // Indices 0 through 11
+            var deck = Deck.Load(remainingCardsForDeck);
+
+            // 5. Create Discard Pile State
+            var discardPile = new List<Card>(); // Empty at start of P1's turn
+
+            // 6. Load the Game aggregate
+            var game = Game.Game.Load(
+                id: gameId,
+                roundNumber: 1,
+                gamePhase: GamePhase.RoundInProgress,
+                currentTurnPlayerId: aliceId, // Alice's turn
+                players: players,
+                deck: deck,
+                setAsideCard: setAsideCard,
+                discardPile: discardPile,
+                tokensToWin: tokensToWin
+            );
+
+            // Get one of Alice's actual Guard cards from her hand
+            Card cardToPlay = alice.Hand.GetCards().First(c => c.Type == CardType.Guard);
+
+            var guessedCardType = CardType.Princess;
+            game.PlayCard(aliceId, cardToPlay, bobId, guessedCardType); 
+
+            // ASSERT
+
+            // 1. Game Phase should be GameOver
+            game.GamePhase.Should().Be(GamePhase.GameOver);
+
+            // 2. Player 2 should be eliminated (from the Guard guess)
+            bob.Status.Should().Be(PlayerStatus.Eliminated);
+
+            // 3. Player 1 should have won 1 token
+            alice.Status.Should().Be(PlayerStatus.Active); // Still active when round ended
+            alice.TokensWon.Should().Be(1);
+
+            // 4. Correct domain events should have been raised by the PlayCard action sequence
+            var events = game.DomainEvents.ToList();
+
+            // Check sequence and details (order matters here)
+            events.Should().HaveCount(6, "Expected 6 events: PlayCard, GuardResult, Eliminate, RoundEnd, TokenAward, GameEnd");
+
+            // Event 1: PlayerPlayedCard
+            events[0].Should().BeOfType<PlayerPlayedCard>().Which.Should().BeEquivalentTo(
+                new PlayerPlayedCard(game.Id, alice.Id, CardType.Guard, bobId, guessedCardType),
+                options => options.ExcludingMissingMembers()
+                    .Excluding(ev=>ev.EventId)
+                    .Excluding(ev=>ev.OccurredOn)); // Exclude EventId, OccurredOn etc.
+
+            // Event 3: PlayerEliminated (Player 2 eliminated by Guard)
+            events[1].Should().BeOfType<PlayerEliminated>().Which.Should().BeEquivalentTo(
+                new PlayerEliminated(game.Id, bobId, $"guessed correctly by {alice.Name} with a Guard", CardType.Guard),
+                options => options.ExcludingMissingMembers()
+                    .Excluding(ev=>ev.EventId)
+                    .Excluding(ev=>ev.OccurredOn));
+            
+            // Event 2: GuardGuessResult (Correct guess)
+            events[2].Should().BeOfType<GuardGuessResult>().Which.Should().BeEquivalentTo(
+                new GuardGuessResult(game.Id, aliceId, bobId, guessedCardType, true), // WasCorrect = true
+                options => options.ExcludingMissingMembers()
+                    .Excluding(ev=>ev.EventId)
+                    .Excluding(ev=>ev.OccurredOn));
+
+            // Event 4: RoundEnded (Player 1 wins - last standing)
+            var roundEndedEvent = events[3].Should().BeOfType<RoundEnded>().Subject;
+            roundEndedEvent.WinnerPlayerId.Should().Be(aliceId);
+            roundEndedEvent.Reason.Should().Be("Last player standing");
+            // Could check FinalHands if needed
+
+            // Event 5: TokenAwarded (Player 1 gets 1 token)
+            events[4].Should().BeOfType<TokenAwarded>().Which.Should().BeEquivalentTo(
+                new TokenAwarded(game.Id, aliceId, 1), // NewTokenCount = 1
+                options => options.ExcludingMissingMembers()
+                    .Excluding(ev=>ev.EventId)
+                    .Excluding(ev=>ev.OccurredOn));
+
+            // Event 6: GameEnded (Player 1 wins the game)
+            events[5].Should().BeOfType<GameEnded>().Which.Should().BeEquivalentTo(
+                new GameEnded(game.Id, aliceId), // WinnerPlayerId = player1.Id
+                options => options.ExcludingMissingMembers()
+                    .Excluding(ev=>ev.EventId)
+                    .Excluding(ev=>ev.OccurredOn));
+
         }
     }

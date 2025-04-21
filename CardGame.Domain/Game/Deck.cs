@@ -94,4 +94,17 @@ public sealed record Deck
             new(Guid.NewGuid(),CardType.Guard),
         };
     }
+    
+    /// <summary>
+    /// Rehydrates a Deck instance from a persisted sequence of cards.
+    /// Assumes the provided sequence is in the correct stack order (top card is first).
+    /// </summary>
+    public static Deck Load(IEnumerable<Card> orderedCards)
+    {
+        // CreateRange expects the item that should be on top to be last in the IEnumerable
+        // So, we might need to reverse the loaded order depending on how it was saved.
+        // Assuming orderedCards is saved such that first element is top card:
+        var stack = ImmutableStack.CreateRange(orderedCards.Reverse());
+        return new Deck(stack); // Use private constructor
+    }
 }
