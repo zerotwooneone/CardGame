@@ -1,8 +1,8 @@
-﻿using CardGame.Domain.Exceptions;
+﻿using CardGame.Domain.Common;
+using CardGame.Domain.Exceptions;
 using CardGame.Domain.Game.Event;
 using CardGame.Domain.Game.GameException;
 using CardGame.Domain.Interfaces;
-using CardGame.Domain.Turn;
 using CardGame.Domain.Types;
 
 namespace CardGame.Domain.Game;
@@ -66,14 +66,14 @@ public class Game // Aggregate Root
     }
 
 
-    public void StartNewRound()
+    public void StartNewRound(IRandomizer? randomizer = null)
     {
         if (GamePhase == GamePhase.GameOver) throw new GameRuleException("Cannot start a new round, the game is over.");
         // Allow starting round if NotStarted or RoundOver
         if (GamePhase == GamePhase.RoundInProgress) throw new GameRuleException("Cannot start a new round while one is in progress.");
 
         RoundNumber++;
-        Deck = Deck.CreateShuffledDeck(); // Creates Deck with Card instances
+        Deck = Deck.CreateShuffledDeck(randomizer); // Creates Deck with Card instances
         DiscardPile.Clear();
         SetAsideCard = null; // Reset set aside card
 

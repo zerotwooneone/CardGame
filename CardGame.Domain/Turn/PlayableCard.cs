@@ -3,9 +3,9 @@
 public record PlayableCard
 {
     public required CardId CardId { get;  init;}
-    public required CardType Type { get; init; }
+    public required Types.CardType Type { get; init; }
     public bool CanTargetSelf { get; init; }
-    public IReadOnlyCollection<CardType> PlayProhibitedByCardInHand { get; init;} = Array.Empty<CardType>();
+    public IReadOnlyCollection<Types.CardType> PlayProhibitedByCardInHand { get; init;} = Array.Empty<Types.CardType>();
     public bool TradeHands { get; init;}
     public bool RequiresTargetPlayer { get; init;}
     public bool KickOutOfRoundOnDiscard { get; init;}

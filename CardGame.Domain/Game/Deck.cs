@@ -1,7 +1,7 @@
 ﻿using System.Collections.Immutable;
 using CardGame.Domain.Exceptions;
 using CardGame.Domain.Game.GameException;
-using CardGame.Domain.Turn;
+using CardGame.Domain.Types;
 
 namespace CardGame.Domain.Game;
 /// <summary>
@@ -74,37 +74,24 @@ public sealed record Deck
     /// </summary>
     private static List<Card> CreateStandardCardList()
     {
-        // Appearance IDs assigned simply (0/1 for pairs, 0 for singles)
-        // Assumes Card constructor is Card(CardType type, int appearanceId)
-        // Assumes CardType has static members Guard, Priest, etc.
         return new List<Card>
         {
-            new Card(CardType.Princess, 0),
-            new Card(CardType.Countess, 0),
-            new Card(CardType.King, 0),
-            new Card(CardType.Prince, 0),
-            new Card(CardType.Prince, 1),
-            new Card(CardType.Handmaid, 0),
-            new Card(CardType.Handmaid, 1),
-            new Card(CardType.Baron, 0),
-            new Card(CardType.Baron, 1),
-            new Card(CardType.Priest, 0),
-            new Card(CardType.Priest, 1),
-            new Card(CardType.Guard, 0),
-            new Card(CardType.Guard, 1),
-            new Card(CardType.Guard, 2),
-            new Card(CardType.Guard, 3),
-            new Card(CardType.Guard, 4),
+            new( Guid.NewGuid(), CardType.Princess),
+            new( Guid.NewGuid(),CardType.Countess),
+            new(Guid.NewGuid(),CardType.King),
+            new(Guid.NewGuid(),CardType.Prince),
+            new(Guid.NewGuid(),CardType.Prince),
+            new(Guid.NewGuid(),CardType.Handmaid),
+            new(Guid.NewGuid(),CardType.Handmaid),
+            new(Guid.NewGuid(),CardType.Baron),
+            new(Guid.NewGuid(),CardType.Baron),
+            new(Guid.NewGuid(),CardType.Priest),
+            new(Guid.NewGuid(),CardType.Priest),
+            new(Guid.NewGuid(),CardType.Guard),
+            new(Guid.NewGuid(),CardType.Guard),
+            new(Guid.NewGuid(),CardType.Guard),
+            new(Guid.NewGuid(),CardType.Guard),
+            new(Guid.NewGuid(),CardType.Guard),
         };
     }
-
-    // Note: By changing to 'record', C# automatically generates:
-    // - IEquatable<Deck> implementation
-    // - override Equals(object obj)
-    // - override GetHashCode()
-    // - operator == and operator !=
-    // These compare based on the record's fields (in this case, the _cards stack).
-    // Default record equality for collections/stacks typically compares references,
-    // not deep content equality. For Love Letter, this is usually sufficient as
-    // we primarily care about the deck's state transitions (drawing cards).
 }

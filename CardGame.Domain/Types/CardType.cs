@@ -1,6 +1,6 @@
 ﻿using GeneratorAttributes;
 
-namespace CardGame.Domain.Turn;
+namespace CardGame.Domain.Types;
 
 [EnumLike]
 public sealed partial class CardType 

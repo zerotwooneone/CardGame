@@ -1,5 +1,5 @@
 ﻿using CardGame.Domain.Interfaces;
-using CardGame.Domain.Turn;
+using CardGame.Domain.Types;
 
 namespace CardGame.Domain.Game.Event;
 

@@ -2,6 +2,7 @@
 using CardGame.Domain.Turn;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
+using CardType = CardGame.Domain.Types.CardType;
 
 namespace CardGame.Console;
 
