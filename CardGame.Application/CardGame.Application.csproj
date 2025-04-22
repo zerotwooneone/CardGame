@@ -17,4 +17,10 @@
       <ProjectReference Include="..\CardGame.Domain\CardGame.Domain.csproj" />
     </ItemGroup>
 
+    <ItemGroup>
+      <Reference Include="Microsoft.AspNetCore.Authentication.Cookies">
+        <HintPath>..\..\..\..\..\..\Program Files\dotnet\shared\Microsoft.AspNetCore.App\9.0.4\Microsoft.AspNetCore.Authentication.Cookies.dll</HintPath>
+      </Reference>
+    </ItemGroup>
+
 </Project>

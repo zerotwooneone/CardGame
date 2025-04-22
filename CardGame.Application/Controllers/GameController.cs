@@ -2,6 +2,7 @@
 using CardGame.Application.DTOs;
 using CardGame.Application.Queries;
 using MediatR;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace CardGame.Application.Controllers;
@@ -49,7 +50,7 @@ public class GameController : ControllerBase
     /// <param name="playerId">The ID of the player whose state is requested.</param>
     /// <returns>The player-specific game state or Not Found / Forbidden.</returns>
     [HttpGet("{gameId}/players/{playerId}", Name = "GetPlayerGameState")]
-    // [Authorize] // Add this when using real authentication middleware
+    [Authorize] // Add this when using real authentication middleware
     [ProducesResponseType(typeof(PlayerGameStateDto), 200)] // OK
     [ProducesResponseType(401)] // Unauthorized (if real auth fails)
     [ProducesResponseType(403)] // Forbidden (if user tries to access other player's state)
@@ -57,7 +58,7 @@ public class GameController : ControllerBase
     public async Task<ActionResult<PlayerGameStateDto>> GetPlayerState(Guid gameId, Guid playerId)
     {
         // 1. Get the ID of the user making the request (using fake service here)
-        Guid currentUserId = _authService.GetCurrentUserId();
+        Guid currentUserId = User.Claims.FirstOrDefault(c => c.Type == "PlayerId")?.Value == null ? Guid.Empty : Guid.Parse(User.Claims.FirstOrDefault(c => c.Type == "PlayerId")?.Value);
 
         // --- Authorization Check ---
         // Ensure the authenticated user is requesting their own state.

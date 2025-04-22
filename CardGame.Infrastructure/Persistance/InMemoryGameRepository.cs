@@ -42,7 +42,8 @@ namespace CardGame.Infrastructure.Persistance;
                 var remainingCardsForDeckList = fullCardList.Take(12).ToList();
 
                 // Create Player States
-                var aliceId = Guid.Parse("AAAAAAAA-aaaa-aaaa-aaaa-aaaaaaaaaaaa");
+                //for testing "playerId": "b2e28463-4b18-f5cb-8ecc-f10ca7a6563c","name": "Alice",
+                var aliceId = Guid.Parse("b2e28463-4b18-f5cb-8ecc-f10ca7a6563c");
                 var bobId = Guid.Parse("BBBBBBBB-bbbb-bbbb-bbbb-bbbbbbbbbbbb");
 
                 var aliceHand = Hand.Load(new List<Card> { p1InitialCard, p1Turn1Draw });
