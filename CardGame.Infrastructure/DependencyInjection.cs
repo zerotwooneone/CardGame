@@ -45,6 +45,8 @@ public static class DependencyInjection
         
         // Use Scoped as user identity is typically per-request
         services.AddScoped<IUserAuthenticationService, FakeUserAuthenticationService>();
+        
+        services.AddSingleton<IUserRepository, InMemoryUserRepository>();
 
         return services;
     }
