@@ -42,8 +42,8 @@ namespace CardGame.Infrastructure.Persistance;
                 var remainingCardsForDeckList = fullCardList.Take(12).ToList();
 
                 // Create Player States
-                var aliceId = Guid.NewGuid(); // Give players known IDs if helpful, or new Guids
-                var bobId = Guid.NewGuid();
+                var aliceId = Guid.Parse("AAAAAAAA-aaaa-aaaa-aaaa-aaaaaaaaaaaa");
+                var bobId = Guid.Parse("BBBBBBBB-bbbb-bbbb-bbbb-bbbbbbbbbbbb");
 
                 var aliceHand = Hand.Load(new List<Card> { p1InitialCard, p1Turn1Draw });
                 var alice = Player.Load(aliceId, "Alice", PlayerStatus.Active, aliceHand, new List<CardType>(), 0, false);
