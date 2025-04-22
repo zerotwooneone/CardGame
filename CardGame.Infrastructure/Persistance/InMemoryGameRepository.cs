@@ -6,134 +6,82 @@ using CardGame.Domain.Types;
 namespace CardGame.Infrastructure.Persistance;
 
 /// <summary>
-    /// In-memory implementation of the IGameRepository for testing and development.
-    /// Initializes with one pre-loaded game state in progress.
-    /// </summary>
-    public class InMemoryGameRepository : IGameRepository
+/// In-memory implementation of the IGameRepository for testing and development.
+/// Limits the number of stored games, overwriting the oldest when capacity is reached.
+/// </summary>
+public class InMemoryGameRepository : IGameRepository
+{
+    private const int MaxCapacity = 1000; // Set the maximum number of games to store
+
+    // Stores the games: gameId -> Game instance
+    // Made static so the repository behaves like a persistent store across instances (common for in-memory singleton)
+    private static readonly ConcurrentDictionary<Guid, Game> _games = new ConcurrentDictionary<Guid, Game>();
+
+    // Tracks the order of insertion to manage capacity
+    private static readonly ConcurrentQueue<Guid> _gameQueue = new ConcurrentQueue<Guid>();
+
+    // Lock object for thread safety during add/remove operations across dictionary and queue
+    private static readonly object _lock = new object();
+
+    // --- Removed PreLoadedGameId constant ---
+    // --- Removed static constructor ---
+    // --- Removed InitializePreLoadedGame method ---
+    // --- Removed CreateStandardCardListForLoad method ---
+
+    // Internal synchronous save method used by SaveAsync
+    private static void SaveInternal(Game game)
     {
-        // Use ConcurrentDictionary for basic thread safety if accessed by multiple threads
-        private static readonly ConcurrentDictionary<Guid, Game> _games = new ConcurrentDictionary<Guid, Game>();
+         if (game == null) throw new ArgumentNullException(nameof(game));
 
-        // A known Guid for the pre-loaded game for easy access in tests/dev
-        public static readonly Guid PreLoadedGameId = new Guid("AAAAAAAA-BBBB-CCCC-DDDD-EEEEEEEEEEEE");
+         lock (_lock)
+         {
+             bool isUpdate = _games.ContainsKey(game.Id);
 
-        // Static constructor to initialize the pre-loaded game state once
-        static InMemoryGameRepository()
-        {
-            InitializePreLoadedGame();
-        }
+             // If it's a new game, check capacity
+             if (!isUpdate)
+             {
+                 while (_gameQueue.Count >= MaxCapacity)
+                 {
+                     if (_gameQueue.TryDequeue(out Guid oldestGameId))
+                     {
+                         _games.TryRemove(oldestGameId, out _);
+                     }
+                     else { break; } // Should not happen
+                 }
+             }
 
-        private static void InitializePreLoadedGame()
-        {
-            try
-            {
-                // --- Define the state for the pre-loaded game ---
-                int tokensToWin = 1; // Game ends after this round is won
+             // Add or update the game
+             _games.AddOrUpdate(game.Id, game, (id, existingGame) => game);
 
-                // Create the full initial card list (predictable order)
-                var fullCardList = CreateStandardCardListForLoad(); // Use helper
-
-                // Distribute cards based on non-shuffled order (top is last element)
-                Card setAsideCard = fullCardList[15];   // Guard
-                Card p1InitialCard = fullCardList[14]; // Guard
-                Card p2InitialCard = fullCardList[13]; // Guard
-                Card p1Turn1Draw = fullCardList[12];  // Guard
-                // Remaining cards for deck (indices 0-11)
-                var remainingCardsForDeckList = fullCardList.Take(12).ToList();
-
-                // Create Player States
-                //for testing "playerId": "b2e28463-4b18-f5cb-8ecc-f10ca7a6563c","name": "Alice",
-                var aliceId = Guid.Parse("b2e28463-4b18-f5cb-8ecc-f10ca7a6563c");
-                var bobId = Guid.Parse("BBBBBBBB-bbbb-bbbb-bbbb-bbbbbbbbbbbb");
-
-                var aliceHand = Hand.Load(new List<Card> { p1InitialCard, p1Turn1Draw });
-                var alice = Player.Load(aliceId, "Alice", PlayerStatus.Active, aliceHand, new List<CardType>(), 0, false);
-
-                var bobHand = Hand.Load(new List<Card> { p2InitialCard });
-                var bob = Player.Load(bobId, "Bob", PlayerStatus.Active, bobHand, new List<CardType>(), 0, false);
-
-                var players = new List<Player> { alice, bob };
-
-                // Create Deck State
-                var deck = Deck.Load(remainingCardsForDeckList); // Load remaining cards
-
-                // Create Discard Pile State
-                var discardPile = new List<Card>(); // Empty
-
-                // Load the Game aggregate using the static factory
-                var game = Game.Load(
-                    id: PreLoadedGameId, // Use the known Guid
-                    roundNumber: 1,
-                    gamePhase: GamePhase.RoundInProgress,
-                    currentTurnPlayerId: aliceId, // Alice's turn
-                    players: players,
-                    deck: deck,
-                    setAsideCard: setAsideCard,
-                    discardPile: discardPile,
-                    tokensToWin: tokensToWin
-                );
-
-                // Store the pre-loaded game
-                _games.TryAdd(game.Id, game);
-            }
-            catch (Exception ex)
-            {
-                // Handle or log initialization error appropriately
-                Console.WriteLine($"Error initializing pre-loaded game: {ex.Message}");
-                // Depending on requirements, might want to throw or ensure _games is empty
-            }
-        }
-
-        /// <summary>
-        /// Helper to create the card list for the pre-loaded game state.
-        /// Ensures consistency with Deck's internal creation logic.
-        /// </summary>
-        private static List<Card> CreateStandardCardListForLoad()
-        {
-             // Copied from Deck.CreateStandardCardList - ensure this stays in sync
-             // if the standard deck composition changes.
-             return new List<Card>
-            {
-                new Card(Guid.NewGuid(), CardType.Princess), new Card(Guid.NewGuid(), CardType.Countess),
-                new Card(Guid.NewGuid(), CardType.King), new Card(Guid.NewGuid(), CardType.Prince),
-                new Card(Guid.NewGuid(), CardType.Prince), new Card(Guid.NewGuid(), CardType.Handmaid),
-                new Card(Guid.NewGuid(), CardType.Handmaid), new Card(Guid.NewGuid(), CardType.Baron),
-                new Card(Guid.NewGuid(), CardType.Baron), new Card(Guid.NewGuid(), CardType.Priest),
-                new Card(Guid.NewGuid(), CardType.Priest), new Card(Guid.NewGuid(), CardType.Guard),
-                new Card(Guid.NewGuid(), CardType.Guard), new Card(Guid.NewGuid(), CardType.Guard),
-                new Card(Guid.NewGuid(), CardType.Guard), new Card(Guid.NewGuid(), CardType.Guard),
-            };
-        }
-
-
-        // --- IGameRepository Implementation ---
-
-        public async Task<Game?> GetByIdAsync(Guid gameId, CancellationToken cancellationToken = default)
-        {
-            // Simulate async operation
-            await Task.Yield(); // Use Task.Yield or Task.Delay(1) for more realistic async simulation if desired
-
-            _games.TryGetValue(gameId, out var game);
-            // Return a copy to prevent unintended modifications to the stored object?
-            // For in-memory, returning the direct reference is common but less safe.
-            // Let's return the reference for simplicity. Be careful in tests/usage.
-            return game;
-        }
-
-        public Task SaveAsync(Game game, CancellationToken cancellationToken = default)
-        {
-            if (game == null) throw new ArgumentNullException(nameof(game));
-
-            // Simulate async operation
-            // await Task.Delay(1, cancellationToken); // Simulate minimal I/O delay
-
-            // AddOrUpdate handles both new and existing games
-            _games.AddOrUpdate(game.Id, game, (id, existingGame) => game);
-
-            // Important: After saving, the caller should typically retrieve and publish
-            // domain events from the game object. This repository doesn't do that.
-            // game.ClearDomainEvents(); // Should be done AFTER events are published by caller
-
-            return Task.CompletedTask;
-        }
+             // If it was a new game, add its ID to the queue
+             if (!isUpdate)
+             {
+                 _gameQueue.Enqueue(game.Id);
+             }
+         }
     }
+
+
+    // --- IGameRepository Implementation ---
+
+    public Task<Game?> GetByIdAsync(Guid gameId, CancellationToken cancellationToken = default)
+    {
+        // Simulate async operation
+        // await Task.Yield(); // Not strictly needed for ConcurrentDictionary reads
+
+        _games.TryGetValue(gameId, out var game);
+        // Consider returning a clone if true isolation is needed, but reference is simpler for basic in-mem.
+        return Task.FromResult(game);
+    }
+
+    public Task SaveAsync(Game game, CancellationToken cancellationToken = default)
+    {
+        // Use internal synchronous method for logic, wrap in Task.Run for async signature
+        // Or just call SaveInternal and return Task.CompletedTask if true async simulation isn't needed
+        SaveInternal(game);
+        return Task.CompletedTask;
+
+        // If true async simulation is desired:
+        // return Task.Run(() => SaveInternal(game), cancellationToken);
+    }
+}

@@ -51,9 +51,8 @@ public class AuthController : ControllerBase
             }
 
             // --- Use Repository to get or add Player ID ---
-            Guid playerId = await _userRepository.GetOrAddPlayerIdAsync(request.Username);
-            // Removed direct Guid generation here
-
+            Guid playerId = (await _userRepository.GetOrAddUserAsync(request.Username)).PlayerId;
+            
             // --- Create Authentication Cookie ---
             var claims = new List<Claim>
             {

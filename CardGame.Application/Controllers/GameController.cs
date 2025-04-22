@@ -1,4 +1,5 @@
-﻿using CardGame.Application.Common.Interfaces;
+﻿using CardGame.Application.Commands;
+using CardGame.Application.Common.Interfaces;
 using CardGame.Application.DTOs;
 using CardGame.Application.Queries;
 using MediatR;
@@ -12,12 +13,10 @@ namespace CardGame.Application.Controllers;
 public class GameController : ControllerBase
 {
     private readonly IMediator _mediator;
-    private readonly IUserAuthenticationService _authService; // Inject the auth service
 
-    public GameController(IMediator mediator, IUserAuthenticationService authService)
+    public GameController(IMediator mediator)
     {
         _mediator = mediator ?? throw new ArgumentNullException(nameof(mediator));
-        _authService = authService ?? throw new ArgumentNullException(nameof(authService));
     }
 
     /// <summary>
@@ -86,4 +85,66 @@ public class GameController : ControllerBase
         return Ok(result);
     }
 
+    /// <summary>
+    /// Creates a new Love Letter game.
+    /// </summary>
+    /// <param name="request">Details for the new game, including player IDs.</param> // Updated param doc
+    /// <returns>The ID of the newly created game.</returns>
+    [HttpPost(Name = "CreateGame")] // Route: POST /api/Game
+    [Authorize] // Require authentication
+    [ProducesResponseType(typeof(Guid), 201)] // Created
+    [ProducesResponseType(400)] // Bad Request (validation errors)
+    [ProducesResponseType(401)] // Unauthorized
+    public async Task<ActionResult<Guid>> CreateGame([FromBody] CreateGameRequestDto request) // Uses updated DTO
+    {
+        // Get the Player ID of the user making the request from their claims
+        Guid creatorPlayerId = GetCurrentPlayerIdFromClaims();
+        if (creatorPlayerId == Guid.Empty)
+        {
+            return Unauthorized("Could not identify creating user.");
+        }
+
+        // Basic check for distinct IDs in request before sending command
+        if (request.PlayerIds == null || request.PlayerIds.Distinct().Count() != request.PlayerIds.Count)
+        {
+            return BadRequest("Player IDs must be provided and unique.");
+        }
+
+        try
+        {
+            // Create command using PlayerIds from the request DTO
+            var command = new CreateGameCommand(
+                request.PlayerIds, // Pass the list of Guids
+                creatorPlayerId,
+                request.TokensToWin
+            );
+
+            var gameId = await _mediator.Send(command);
+
+            return CreatedAtRoute("GetSpectatorGameState", new {gameId = gameId}, gameId);
+        }
+        catch (FluentValidation.ValidationException ex) // Catch validation errors from handler/pipeline
+        {
+            var errors = ex.Errors.GroupBy(e => e.PropertyName)
+                .ToDictionary(g => g.Key, g => g.Select(e => e.ErrorMessage).ToArray());
+            return BadRequest(new ValidationProblemDetails(errors));
+        }
+        catch (Exception ex) // Catch other potential errors
+        {
+            // Log the exception ex
+            return BadRequest(new ProblemDetails {Title = "Failed to create game.", Detail = ex.Message});
+        }
+    }
+
+    // --- Helper to get Player ID from Claims ---
+    private Guid GetCurrentPlayerIdFromClaims()
+    {
+        var playerIdClaim = User.Claims.FirstOrDefault(c => c.Type == "PlayerId"); // Use custom claim
+        if (playerIdClaim != null && Guid.TryParse(playerIdClaim.Value, out Guid playerId))
+        {
+            return playerId;
+        }
+
+        return Guid.Empty;
+    }
 }

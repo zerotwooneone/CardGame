@@ -2,7 +2,6 @@
 using CardGame.Domain.Common;
 using CardGame.Domain.Interfaces;
 using CardGame.Infrastructure.Persistance;
-using CardGame.Infrastructure.Services;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -43,8 +42,6 @@ public static class DependencyInjection
         // Transient might be suitable if it only depends on Scoped/Transient services like IMediator
         // services.AddTransient<IDomainEventPublisher, MediatRDomainEventPublisher>();
         
-        // Use Scoped as user identity is typically per-request
-        services.AddScoped<IUserAuthenticationService, FakeUserAuthenticationService>();
         
         services.AddSingleton<IUserRepository, InMemoryUserRepository>();
 
