@@ -18,14 +18,18 @@ public record CreateGameCommand(
 
 public class CreateGameCommandValidator : AbstractValidator<CreateGameCommand>
 {
-    // Note: Injecting IUserRepository here for validation might be less common
-    // if validation primarily happens in the handler. Adjust as needed.
     public CreateGameCommandValidator()
     {
         RuleFor(x => x.PlayerIds)
-            .NotEmpty()
+            .NotEmpty().WithMessage("Player IDs cannot be empty.")
             .Must(list => list.Count >= 2 && list.Count <= 4).WithMessage("Game must have between 2 and 4 players.")
             .Must(list => list.Distinct().Count() == list.Count).WithMessage("Player IDs must be unique.");
-        // Cannot easily validate creator inclusion or existence without repository access here.
+
+        RuleFor(x => x).Must(cmd => cmd.PlayerIds.Contains(cmd.CreatorPlayerId))
+            .WithMessage("Creator must be included in the player list.");
+
+        RuleFor(x => x.TokensToWin)
+            .InclusiveBetween(1, 10).When(x => x.TokensToWin.HasValue)
+            .WithMessage("Tokens to win must be between 1 and 10.");
     }
 }

@@ -2,6 +2,7 @@
 using CardGame.Domain.Common;
 using CardGame.Domain.Interfaces;
 using CardGame.Infrastructure.Persistance;
+using CardGame.Infrastructure.Services;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -44,6 +45,8 @@ public static class DependencyInjection
         
         
         services.AddSingleton<IUserRepository, InMemoryUserRepository>();
+
+        services.AddSingleton<IDomainEventPublisher, MediatRDomainEventPublisher>();
 
         return services;
     }

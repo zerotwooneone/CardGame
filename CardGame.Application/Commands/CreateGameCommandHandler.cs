@@ -4,76 +4,84 @@ using CardGame.Domain.Common;
 using CardGame.Domain.Game;
 using CardGame.Domain.Interfaces;
 using MediatR;
+using Microsoft.Extensions.Logging;
 
 namespace CardGame.Application.Commands;
 
 /// <summary>
-/// Handles the CreateGameCommand. Creates the game and immediately starts the first round.
+/// Handles the CreateGameCommand. Creates the game, immediately starts the first round,
+/// persists the state, and publishes domain events.
 /// </summary>
 public class CreateGameCommandHandler : IRequestHandler<CreateGameCommand, Guid>
 {
     private readonly IGameRepository _gameRepository;
     private readonly IUserRepository _userRepository;
-    private readonly IRandomizer _randomizer; // Inject randomizer for StartNewRound
+    private readonly IRandomizer _randomizer;
+    private readonly IDomainEventPublisher _domainEventPublisher; // Inject publisher
+    private readonly ILogger<CreateGameCommandHandler> _logger; // Inject logger
 
     public CreateGameCommandHandler(
         IGameRepository gameRepository,
         IUserRepository userRepository,
-        IRandomizer randomizer) // Add IRandomizer dependency
+        IRandomizer randomizer,
+        IDomainEventPublisher domainEventPublisher, // Add publisher dependency
+        ILogger<CreateGameCommandHandler> logger)
     {
         _gameRepository = gameRepository ?? throw new ArgumentNullException(nameof(gameRepository));
         _userRepository = userRepository ?? throw new ArgumentNullException(nameof(userRepository));
-        _randomizer = randomizer ?? throw new ArgumentNullException(nameof(randomizer)); // Use injected randomizer
+        _randomizer = randomizer ?? throw new ArgumentNullException(nameof(randomizer));
+        _domainEventPublisher = domainEventPublisher ?? throw new ArgumentNullException(nameof(domainEventPublisher)); // Assign publisher
+        _logger = logger ?? throw new ArgumentNullException(nameof(logger));
     }
 
     public async Task<Guid> Handle(CreateGameCommand request, CancellationToken cancellationToken)
     {
         // --- Validation ---
-        // (Assuming FluentValidation pipeline runs first or validation is done here)
-
-        // 1. Fetch user details (including username) for all provided Player IDs
-        // Use PlayerInfo record (defined elsewhere, assumes public record PlayerInfo(Guid Id, string Name);)
+        _logger.LogInformation("Handling CreateGameCommand for Creator {CreatorId}", request.CreatorPlayerId);
         var playerInfosForGame = new List<PlayerInfo>();
-        foreach (var playerId in request.PlayerIds)
+        foreach(var playerId in request.PlayerIds)
         {
             var user = await _userRepository.GetUserByIdAsync(playerId);
-            if (user == null)
-            {
-                // Player ID provided doesn't correspond to a known user
-                throw new ValidationException($"Player ID '{playerId}' not found.");
-            }
-
-            // Add PlayerInfo containing both ID and Username
+            if (user == null) throw new ValidationException($"Player ID '{playerId}' not found.");
             playerInfosForGame.Add(new PlayerInfo(user.PlayerId, user.Username));
         }
-
-        // 2. Check for duplicate usernames (unlikely if IDs are unique, but good practice)
-        // Use the retrieved usernames from playerInfosForGame
-        if (playerInfosForGame.Select(p => p.Name).Distinct(StringComparer.OrdinalIgnoreCase).Count() !=
-            playerInfosForGame.Count)
-        {
-            throw new InvalidOperationException("Duplicate usernames found for distinct player IDs.");
-        }
+        if (playerInfosForGame.Select(p => p.Name).Distinct(StringComparer.OrdinalIgnoreCase).Count() != playerInfosForGame.Count)
+             throw new InvalidOperationException("Duplicate usernames found for distinct player IDs.");
         // --- End Validation ---
 
 
         // --- Create Game ---
-        // **ASSUMPTION:** Game.CreateNewGame needs to be refactored to accept IEnumerable<PlayerInfo>
-        // instead of IEnumerable<string>.
-        // The updated factory method would then use both the ID and Name from PlayerInfo
-        // when creating the Player entities internally (likely calling Player.Load or similar).
+        _logger.LogDebug("Creating new game aggregate...");
         var game = Game.CreateNewGame(playerInfosForGame, request.TokensToWin ?? 4);
+        // GameCreated event is now in game.DomainEvents
 
         // --- Start First Round ---
-        // Call StartNewRound immediately after creation, using the injected randomizer
+        _logger.LogDebug("Starting first round for game {GameId}...", game.Id);
         game.StartNewRound(_randomizer);
+        // RoundStarted, TurnStarted etc. events are now also in game.DomainEvents
 
         // --- Save Final State ---
-        // Persist the game state *after* the first round has been initialized
+        _logger.LogDebug("Saving game state for {GameId}...", game.Id);
         await _gameRepository.SaveAsync(game, cancellationToken);
+        _logger.LogInformation("Game {GameId} created and saved.", game.Id);
 
-        // Domain events raised by CreateNewGame AND StartNewRound should be published
-        // by a separate mechanism after this handler completes successfully.
+        // --- Publish Domain Events ---
+        // Retrieve events collected within the aggregate during CreateNewGame and StartNewRound
+        var eventsToPublish = game.DomainEvents.ToList(); // Copy the list
+        game.ClearDomainEvents(); // Clear events from the aggregate
+
+        _logger.LogDebug("Publishing {EventCount} domain events for game {GameId}...", eventsToPublish.Count, game.Id);
+        foreach (var domainEvent in eventsToPublish)
+        {
+            // Use the injected publisher. Its implementation (e.g., MediatRDomainEventPublisher)
+            // will handle wrapping the event (e.g., GameCreated) in DomainEventNotification<GameCreated>
+            // before sending it via MediatR.
+            await _domainEventPublisher.PublishAsync(domainEvent, cancellationToken);
+            _logger.LogTrace("Published domain event {EventType} ({EventId})", domainEvent.GetType().Name, domainEvent.EventId);
+        }
+        _logger.LogInformation("Finished publishing domain events for game {GameId}.", game.Id);
+        // --- End Event Publishing ---
+
 
         return game.Id;
     }

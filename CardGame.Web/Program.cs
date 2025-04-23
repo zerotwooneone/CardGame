@@ -1,6 +1,8 @@
 using CardGame.Application;
 using CardGame.Infrastructure;
+using CardGame.Web.Hubs;
 using Microsoft.AspNetCore.Authentication.Cookies;
+using Microsoft.AspNetCore.SignalR;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -11,10 +13,12 @@ builder.Services.AddAuthentication(options => {
     options.DefaultForbidScheme = CookieAuthenticationDefaults.AuthenticationScheme; // Set DefaultForbidScheme
 }).AddCookie(); // Add the handler for the scheme
 
-// Add services to the container.
+builder.Services.AddAuthorization();
 builder.Services.AddApplicationServices();
 builder.Services.AddInfrastructureServices(builder.Configuration);
+builder.Services.AddCardGameWebServices();
 builder.Services.AddControllersWithViews();
+builder.Services.AddSignalR();
 
 builder.Services.AddEndpointsApiExplorer();
 //builder.Services.AddSwaggerGen();
@@ -40,6 +44,9 @@ app.UseAuthorization();
 app.MapControllerRoute(
     name: "default",
     pattern: "{controller}/{action=Index}/{id?}");
+
+app.MapHub<NotificationHub>("/hubs/notification"); // Map NotificationHub to /hubs/notification
+//app.MapHub<GameHub>("/hubs/game");                 // Map GameHub (assuming you create this later)
 
 app.MapFallbackToFile("index.html");
 
