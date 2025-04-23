@@ -7,7 +7,6 @@
 /// </summary>
 public class DefaultRandomizer : IRandomizer
 {
-    // Use a single Random instance for better distribution than creating new ones repeatedly.
     private static readonly Random _random = new Random();
 
     public void Shuffle<T>(IList<T> list)

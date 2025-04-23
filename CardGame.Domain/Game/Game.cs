@@ -38,30 +38,44 @@ public class Game // Aggregate Root
     // Private constructor for persistence/mapping frameworks
     private Game(Guid id) { Id = id; }
 
-    // Factory method or public constructor for creation
-    public static Game CreateNewGame(IEnumerable<string> playerNames, int tokensToWin = 4)
+    /// <summary>
+    /// Creates a brand new game instance using provided player info (ID and Name).
+    /// </summary>
+    /// <param name="playerInfos">Information for the players joining the game.</param>
+    /// <param name="tokensToWin">Number of tokens needed to win.</param>
+    /// <returns>A new Game instance.</returns>
+    public static Game CreateNewGame(IEnumerable<PlayerInfo> playerInfos, int tokensToWin = 4) // Changed parameter type
     {
         var gameId = Guid.NewGuid();
-        var game = new Game(gameId)
+        var game = new Game(gameId) // Use private constructor
         {
             TokensNeededToWin = tokensToWin,
-            GamePhase = GamePhase.NotStarted
+            GamePhase = GamePhase.NotStarted,
+            Deck = Deck.CreateShuffledDeck() // Ensure new game gets a fresh deck
         };
 
-        var playerInfos = new List<PlayerInfo>(); // Assuming PlayerInfo is a simple DTO/record for the event
-        foreach (var name in playerNames)
+        // Ensure playerInfos is materialized if needed for validation/event
+        var playerInfoList = playerInfos?.ToList() ?? new List<PlayerInfo>();
+
+        if (!playerInfoList.Any()) throw new ArgumentException("Player information cannot be empty.", nameof(playerInfos));
+
+        foreach (var pInfo in playerInfoList)
         {
-            var player = Player.Create(name); // Assuming Player has a factory
+            // **ASSUMPTION:** Player needs a way to be created with a specific ID and Name.
+            // Option A: Modify Player.Create
+            // var player = Player.Create(pInfo.Id, pInfo.Name);
+            // Option B: Use Player.Load (if appropriate semantics)
+            var player = Player.Load(pInfo.Id, pInfo.Name, PlayerStatus.Active, Hand.Empty, new List<CardType>(), 0, false);
+
             game.Players.Add(player);
-            playerInfos.Add(new PlayerInfo(player.Id, player.Name)); // Populate info for event
+            // PlayerInfo list already created above
         }
 
-        if (game.Players.Count < 2) throw new DomainException("Game requires at least 2 players.", 1000); // Added example code
+        if (game.Players.Count < 2) throw new DomainException("Game requires at least 2 players.", 1000);
+        if (game.Players.Count > 4) throw new DomainException("Game cannot have more than 4 players.", 1000); // Added upper bound check
 
-        game.AddDomainEvent(new GameCreated(gameId, playerInfos, tokensToWin)); // Use GameCreated event
-        // Consider starting the first round immediately or require another command
-        // game.StartNewRound(); // Let's assume StartNewRound is called separately
-
+        // Pass the original PlayerInfo list to the event
+        game.AddDomainEvent(new GameCreated(gameId, playerInfoList, tokensToWin));
         return game;
     }
     
@@ -482,3 +496,5 @@ public class Game // Aggregate Root
         return player;
     }
 }
+
+public record PlayerInfo(Guid Id, string Name);

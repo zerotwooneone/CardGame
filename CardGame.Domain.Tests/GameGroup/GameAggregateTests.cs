@@ -17,7 +17,7 @@ namespace CardGame.Domain.Tests.GameGroup;
             // ARRANGE
 
             // 1. Create the game with two players
-            var playerNames = new List<string> { "Alice", "Bob" };
+            var playerNames = new List<PlayerInfo> { new PlayerInfo(Guid.NewGuid(), "Alice"), new PlayerInfo(Guid.NewGuid(), "Bob") }; 
             var game = Game.Game.CreateNewGame(playerNames);
             var player1 = game.Players.First(p => p.Name == "Alice");
             var player2 = game.Players.First(p => p.Name == "Bob");
