@@ -110,6 +110,11 @@ public class GameController : ControllerBase
             return BadRequest("Player IDs must be provided and unique.");
         }
 
+        if (!request.PlayerIds.Contains(creatorPlayerId))
+        {
+            return BadRequest("Creator must be a player in the game."); 
+        }
+
         try
         {
             // Create command using PlayerIds from the request DTO
