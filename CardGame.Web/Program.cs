@@ -45,8 +45,8 @@ app.MapControllerRoute(
     name: "default",
     pattern: "{controller}/{action=Index}/{id?}");
 
-app.MapHub<NotificationHub>("/hubs/notification"); // Map NotificationHub to /hubs/notification
-//app.MapHub<GameHub>("/hubs/game");                 // Map GameHub (assuming you create this later)
+app.MapHub<NotificationHub>("/hubs/notification"); 
+app.MapHub<GameHub>("/hubs/game");                 
 
 app.MapFallbackToFile("index.html");
 
