@@ -1,4 +1,5 @@
 ﻿using System.Reflection;
+using CardGame.Application.Common.Services;
 using FluentValidation;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -19,6 +20,8 @@ public static class DependencyInjection
 
         // Register any other application-specific services here (e.g., interfaces/implementations)
         // services.AddScoped<ISomeApplicationService, SomeApplicationService>();
+
+        services.AddScoped<GameStateUpdateService>();
 
         return services;
     }

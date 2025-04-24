@@ -37,7 +37,7 @@ public class GameController : ControllerBase
     public async Task<ActionResult<SpectatorGameStateDto>> GetSpectatorView(Guid gameId)
     {
         var query = new GetSpectatorGameStateQuery(gameId);
-        var result = await _mediator.Send(query);
+        var result = await _mediator.Send(query).ConfigureAwait(false);
 
         if (result == null)
         {
@@ -79,7 +79,7 @@ public class GameController : ControllerBase
 
         // 2. Send the query to get the player-specific state
         var query = new GetPlayerGameStateQuery(gameId, playerId); // Pass player ID from URL
-        var result = await _mediator.Send(query);
+        var result = await _mediator.Send(query).ConfigureAwait(false);
 
         // 3. Handle results
         if (result == null)
@@ -130,7 +130,7 @@ public class GameController : ControllerBase
                 request.TokensToWin
             );
 
-            var gameId = await _mediator.Send(command);
+            var gameId = await _mediator.Send(command).ConfigureAwait(false);
 
             return CreatedAtRoute("GetSpectatorGameState", new {gameId = gameId}, gameId);
         }
@@ -194,7 +194,7 @@ public class GameController : ControllerBase
             // **Refined Approach:** Handler needs Card instance, not just ID.
             // Controller needs to load game, find card, then send command.
             // This slightly breaks pure CQRS but is necessary here.
-            var game = await _gameRepository.GetByIdAsync(gameId);
+            var game = await _gameRepository.GetByIdAsync(gameId).ConfigureAwait(false);
             if (game == null) return NotFound($"Game {gameId} not found.");
 
             var player = game.Players.FirstOrDefault(p => p.Id == currentPlayerId);
@@ -217,7 +217,7 @@ public class GameController : ControllerBase
             );
 
             // 4. Send the command
-            await _mediator.Send(command);
+            await _mediator.Send(command).ConfigureAwait(false);
 
             // 5. Return success
             return Ok(); // Simple 200 OK for successful command execution

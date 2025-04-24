@@ -58,7 +58,7 @@ public class SendGameInvitationsHandler : INotificationHandler<DomainEventNotifi
                         invitedPlayerId: playerInfo.Id,
                         gameId: domainEvent.GameId,
                         creatorUsername: creatorUsername,
-                        cancellationToken: cancellationToken); // Pass CancellationToken
+                        cancellationToken: cancellationToken).ConfigureAwait(false); // Pass CancellationToken
 
                      _logger.LogInformation("Sent game invitation for Game {GameId} to Player {PlayerId}", domainEvent.GameId, playerInfo.Id);
                 }

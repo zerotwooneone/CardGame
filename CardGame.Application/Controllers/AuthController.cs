@@ -51,7 +51,7 @@ public class AuthController : ControllerBase
             }
 
             // --- Use Repository to get or add Player ID ---
-            Guid playerId = (await _userRepository.GetOrAddUserAsync(request.Username)).PlayerId;
+            Guid playerId = (await _userRepository.GetOrAddUserAsync(request.Username).ConfigureAwait(false)).PlayerId;
             
             // --- Create Authentication Cookie ---
             var claims = new List<Claim>
@@ -83,7 +83,7 @@ public class AuthController : ControllerBase
             await HttpContext.SignInAsync(
                 CookieAuthenticationDefaults.AuthenticationScheme, // Specify the scheme
                 new ClaimsPrincipal(claimsIdentity),
-                authProperties);
+                authProperties).ConfigureAwait(false);
 
             // Return success response
             return Ok(new LoginResponseDto
@@ -103,7 +103,7 @@ public class AuthController : ControllerBase
     public async Task<IActionResult> Logout()
     {
         // Sign the user out, removing the cookie
-        await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
+        await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme).ConfigureAwait(false);
         return Ok(new { Message = "Logout successful." });
     }
 }

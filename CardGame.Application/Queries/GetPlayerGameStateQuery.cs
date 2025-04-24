@@ -26,7 +26,7 @@ namespace CardGame.Application.Queries;
 
         public async Task<PlayerGameStateDto?> Handle(GetPlayerGameStateQuery request, CancellationToken cancellationToken)
         {
-            var game = await _gameRepository.GetByIdAsync(request.GameId);
+            var game = await _gameRepository.GetByIdAsync(request.GameId).ConfigureAwait(false);
             if (game == null) return null;
 
             // Find the requesting player within the game

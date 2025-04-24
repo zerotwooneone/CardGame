@@ -41,7 +41,7 @@ public class CreateGameCommandHandler : IRequestHandler<CreateGameCommand, Guid>
         var playerInfosForGame = new List<PlayerInfo>();
         foreach(var playerId in request.PlayerIds)
         {
-            var user = await _userRepository.GetUserByIdAsync(playerId);
+            var user = await _userRepository.GetUserByIdAsync(playerId).ConfigureAwait(false);
             if (user == null) throw new ValidationException($"Player ID '{playerId}' not found.");
             playerInfosForGame.Add(new PlayerInfo(user.PlayerId, user.Username));
         }
@@ -62,7 +62,7 @@ public class CreateGameCommandHandler : IRequestHandler<CreateGameCommand, Guid>
 
         // --- Save Final State ---
         _logger.LogDebug("Saving game state for {GameId}...", game.Id);
-        await _gameRepository.SaveAsync(game, cancellationToken);
+        await _gameRepository.SaveAsync(game, cancellationToken).ConfigureAwait(false);
         _logger.LogInformation("Game {GameId} created and saved.", game.Id);
 
         // --- Publish Domain Events ---
@@ -76,7 +76,7 @@ public class CreateGameCommandHandler : IRequestHandler<CreateGameCommand, Guid>
             // Use the injected publisher. Its implementation (e.g., MediatRDomainEventPublisher)
             // will handle wrapping the event (e.g., GameCreated) in DomainEventNotification<GameCreated>
             // before sending it via MediatR.
-            await _domainEventPublisher.PublishAsync(domainEvent, cancellationToken);
+            await _domainEventPublisher.PublishAsync(domainEvent, cancellationToken).ConfigureAwait(false);
             _logger.LogTrace("Published domain event {EventType} ({EventId})", domainEvent.GetType().Name, domainEvent.EventId);
         }
         _logger.LogInformation("Finished publishing domain events for game {GameId}.", game.Id);

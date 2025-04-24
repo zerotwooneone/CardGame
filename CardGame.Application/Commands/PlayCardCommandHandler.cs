@@ -20,7 +20,7 @@ public class PlayCardCommandHandler : IRequestHandler<PlayCardCommand>
     public async Task Handle(PlayCardCommand request, CancellationToken cancellationToken)
     {
         // 1. Load Game Aggregate
-        var game = await _gameRepository.GetByIdAsync(request.GameId, cancellationToken);
+        var game = await _gameRepository.GetByIdAsync(request.GameId, cancellationToken).ConfigureAwait(false);
         if (game == null)
         {
             // Consider a specific exception type or handle not found appropriately
@@ -75,7 +75,7 @@ public class PlayCardCommandHandler : IRequestHandler<PlayCardCommand>
         );
 
         // 8. Save the updated game state
-        await _gameRepository.SaveAsync(game, cancellationToken);
+        await _gameRepository.SaveAsync(game, cancellationToken).ConfigureAwait(false);
 
         // 9. Publish Domain Events (handled by separate mechanism, e.g., pipeline behavior or repository decorator)
 

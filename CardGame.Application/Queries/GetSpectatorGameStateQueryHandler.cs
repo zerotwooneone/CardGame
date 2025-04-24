@@ -20,7 +20,7 @@ public class GetSpectatorGameStateQueryHandler : IRequestHandler<GetSpectatorGam
     public async Task<SpectatorGameStateDto?> Handle(GetSpectatorGameStateQuery request, CancellationToken cancellationToken)
     {
         // 1. Load the Game aggregate
-        var game = await _gameRepository.GetByIdAsync(request.GameId); // Assuming repository method exists
+        var game = await _gameRepository.GetByIdAsync(request.GameId).ConfigureAwait(false); // Assuming repository method exists
 
         if (game == null)
         {

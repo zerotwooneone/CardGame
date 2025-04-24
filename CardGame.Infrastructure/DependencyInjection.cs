@@ -46,7 +46,7 @@ public static class DependencyInjection
         
         services.AddSingleton<IUserRepository, InMemoryUserRepository>();
 
-        services.AddSingleton<IDomainEventPublisher, MediatRDomainEventPublisher>();
+        services.AddScoped<IDomainEventPublisher, MediatRDomainEventPublisher>();
 
         return services;
     }

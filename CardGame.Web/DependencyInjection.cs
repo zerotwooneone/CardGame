@@ -1,5 +1,7 @@
 ﻿using System.Reflection;
+using CardGame.Application.Common.Interfaces;
 using CardGame.Application.GameEventHandlers;
+using CardGame.Web.Hubs;
 using CardGame.Web.SignalR;
 using FluentValidation;
 using Microsoft.AspNetCore.SignalR;
@@ -19,6 +21,8 @@ public static class DependencyInjection
         // This tells SignalR to use the "PlayerId" claim from the authenticated user's
         // identity as the UserIdentifier for targeting specific users.
         services.AddSingleton<IUserIdProvider, PlayerIdUserIdProvider>();
+
+        services.AddSingleton<IGameStateBroadcaster, SignalRGameStateBroadcaster>();
 
         return services;
     }
