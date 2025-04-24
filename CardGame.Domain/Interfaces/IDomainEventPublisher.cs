@@ -9,11 +9,10 @@ public interface IDomainEventPublisher
 {
     /// <summary>
     /// Publishes the specified domain event.
+    /// The implementation is responsible for dispatching to appropriate handlers.
     /// </summary>
-    /// <typeparam name="TEvent">The type of the domain event.</typeparam>
-    /// <param name="domainEvent">The domain event instance to publish.</param>
+    /// <param name="domainEvent">The domain event instance to publish.</param> // Parameter is now just IDomainEvent
     /// <param name="cancellationToken">Optional token to cancel the operation.</param>
     /// <returns>A task representing the asynchronous operation.</returns>
-    Task PublishAsync<TEvent>(TEvent domainEvent, CancellationToken cancellationToken = default)
-        where TEvent : IDomainEvent; // Ensure the event implements the marker interface
+    Task PublishAsync(IDomainEvent domainEvent, CancellationToken cancellationToken = default);
 }

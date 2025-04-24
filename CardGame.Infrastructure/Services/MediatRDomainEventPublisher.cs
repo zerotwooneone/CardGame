@@ -7,7 +7,8 @@ namespace CardGame.Infrastructure.Services;
 
 /// <summary>
 /// Implements IDomainEventPublisher using MediatR.
-/// Wraps domain events in DomainEventNotification before publishing.
+/// Dynamically wraps domain events in the correct DomainEventNotification<T>
+/// before publishing via MediatR.
 /// </summary>
 public class MediatRDomainEventPublisher : IDomainEventPublisher
 {
@@ -21,25 +22,40 @@ public class MediatRDomainEventPublisher : IDomainEventPublisher
     }
 
     /// <summary>
-    /// Publishes a domain event by wrapping it in a DomainEventNotification
-    /// and sending it via MediatR.
+    /// Publishes a domain event by dynamically wrapping it in the appropriate
+    /// DomainEventNotification<TEvent> and sending it via MediatR.
     /// </summary>
-    public Task PublishAsync<TEvent>(TEvent domainEvent, CancellationToken cancellationToken = default)
-        where TEvent : IDomainEvent
+    // Method signature changed: no longer generic, accepts IDomainEvent
+    public Task PublishAsync(IDomainEvent domainEvent, CancellationToken cancellationToken = default)
     {
         if (domainEvent == null)
         {
             throw new ArgumentNullException(nameof(domainEvent));
         }
 
-        _logger.LogDebug("Publishing domain event: {DomainEventType} - {EventId}", domainEvent.GetType().Name,
-            domainEvent.EventId);
+        _logger.LogDebug("Publishing domain event: {DomainEventType} - {EventId}", domainEvent.GetType().Name, domainEvent.EventId);
 
-        // Create the generic wrapper notification instance
-        var notificationWrapper = new DomainEventNotification<TEvent>(domainEvent);
+        // 1. Get the actual runtime type of the domain event
+        Type domainEventType = domainEvent.GetType();
 
-        // Publish the wrapper via MediatR
-        // MediatR handlers will subscribe to DomainEventNotification<TEvent>
+        // 2. Construct the generic DomainEventNotification<> type using the actual event type
+        Type wrapperType = typeof(DomainEventNotification<>).MakeGenericType(domainEventType);
+
+        // 3. Create an instance of the wrapper, passing the domain event to its constructor
+        // Activator.CreateInstance returns object?, so we need a cast.
+        // Ensure DomainEventNotification has a public constructor accepting the domain event.
+        object? notificationWrapper = Activator.CreateInstance(wrapperType, domainEvent);
+
+        if (notificationWrapper == null)
+        {
+            // This should ideally not happen if the wrapper and event types are valid
+            _logger.LogError("Could not create DomainEventNotification wrapper for event type {DomainEventType}", domainEventType.Name);
+            return Task.CompletedTask; // Or throw?
+        }
+
+        // 4. Publish the wrapper object via MediatR.
+        // MediatR's Publish method accepts 'object' or 'INotification'.
+        // It will internally dispatch based on the actual runtime type of notificationWrapper.
         return _mediator.Publish(notificationWrapper, cancellationToken);
     }
 }
