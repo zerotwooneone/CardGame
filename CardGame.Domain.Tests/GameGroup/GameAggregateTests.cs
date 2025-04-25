@@ -1,8 +1,11 @@
 ﻿using CardGame.Domain.Game;
 using CardGame.Domain.Game.Event;
+using CardGame.Domain.Interfaces;
 using CardGame.Domain.Tests.TestDoubles;
 using CardGame.Domain.Types;
 using FluentAssertions;
+using FluentAssertions.Execution;
+using FluentAssertions.Equivalency;
 
 namespace CardGame.Domain.Tests.GameGroup;
 
@@ -269,4 +272,80 @@ namespace CardGame.Domain.Tests.GameGroup;
                     .Excluding(ev=>ev.OccurredOn));
 
         }
+
+        [Test]
+        public void PlayCard_WhenPlayerPlaysAndNextPlayerCannotDraw_ShouldEndRoundAndDeclareWinnerByHighestRank()
+        {
+            // ARRANGE
+            Guid gameId = Guid.NewGuid();
+            int tokensToWin = 4;
+            var p1Id = Guid.NewGuid();
+            var p2Id = Guid.NewGuid();
+            var p1Card_King = new Card(Guid.NewGuid(), CardType.King);
+            var p1Card_Handmaid = new Card(Guid.NewGuid(), CardType.Handmaid);
+            var p2Card_Princess = new Card(Guid.NewGuid(), CardType.Princess);
+            var aliceHand = Hand.Load(new List<Card> {p1Card_King, p1Card_Handmaid});
+            var alice = Player.Load(p1Id, "Alice", PlayerStatus.Active, aliceHand, new List<CardType>(), 0, false);
+            var bobHand = Hand.Load(new List<Card> {p2Card_Princess});
+            var bob = Player.Load(p2Id, "Bob", PlayerStatus.Active, bobHand, new List<CardType>(), 0, false);
+            var players = new List<Player> {alice, bob};
+            var deck = Deck.Load(Enumerable.Empty<Card>());
+            var discardPile = new List<Card>();
+            var game = Game.Game.Load(gameId, 1, GamePhase.RoundInProgress, p1Id, players, deck, null, discardPile,
+                tokensToWin);
+            var cardToPlayInstance = p1Card_Handmaid;
+            game.ClearDomainEvents();
+
+            // ACT
+            game.PlayCard(p1Id, cardToPlayInstance, null, null);
+
+            // ASSERT
+            using (new AssertionScope())
+            {
+                game.GamePhase.Should().Be(GamePhase.RoundOver);
+                alice.Status.Should().Be(PlayerStatus.Active);
+                alice.Hand.Count.Should().Be(1);
+                alice.Hand.GetHeldCard()?.Type.Should().Be(CardType.King);
+                bob.Status.Should().Be(PlayerStatus.Active);
+                bob.Hand.Count.Should().Be(1);
+                bob.Hand.GetHeldCard()?.Type.Should().Be(CardType.Princess);
+
+                var events = game.DomainEvents.ToList();
+                events.Should().HaveCount(4);
+
+                events.Should().ContainSingle(e => e is PlayerPlayedCard).Which.Should().BeEquivalentTo(
+                    new PlayerPlayedCard(game.Id, p1Id, CardType.Handmaid, null, null),
+                    ExcludeEventMetadata<PlayerPlayedCard>());
+
+                events.Should().ContainSingle(e => e is HandmaidProtectionSet).Which.Should().BeEquivalentTo(
+                    new HandmaidProtectionSet(game.Id, p1Id),
+                    ExcludeEventMetadata<HandmaidProtectionSet>());
+
+                var expectedFinalHands = new Dictionary<Guid, CardType?>
+                    {{p1Id, CardType.King}, {p2Id, CardType.Princess}};
+                events.Should().ContainSingle(e => e is RoundEnded).Which.Should().BeEquivalentTo(
+                    new RoundEnded(game.Id, p2Id, expectedFinalHands, "Deck empty, highest card wins"),
+                    ExcludeEventMetadata<RoundEnded>());
+                events.OfType<RoundEnded>().Single().WinnerPlayerId.Should().Be(p2Id); // Verify winner separately
+
+                events.Should().ContainSingle(e => e is TokenAwarded).Which.Should().BeEquivalentTo(
+                    new TokenAwarded(game.Id, p2Id, 1),
+                    ExcludeEventMetadata<TokenAwarded>());
+
+                events.Should().NotContain(e => e is GameEnded);
+                events.Should().NotContain(e => e is TurnStarted && ((TurnStarted) e).PlayerId == p2Id);
+                events.Should().NotContain(e => e is PlayerDrewCard && ((PlayerDrewCard) e).PlayerId == p2Id);
+                events.Should().NotContain(e => e is DeckChanged);
+            }
+        }
+        
+        private static Func<EquivalencyOptions<T>, EquivalencyOptions<T>> ExcludeEventMetadata<T>() where T : IDomainEvent
+        {
+            return options => options
+                .Excluding(ev => ev.EventId)
+                .Excluding(ev => ev.OccurredOn)
+                .Excluding(ev => ev.CorrelationId);
+        }
+
+
     }

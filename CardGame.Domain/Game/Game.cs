@@ -464,29 +464,29 @@ public class Game // Aggregate Root
 
     private void HandleTurnStartDrawing()
     {
-         var player = GetPlayerById(CurrentTurnPlayerId);
-         if (player.Status != PlayerStatus.Active) return;
+        var player = GetPlayerById(CurrentTurnPlayerId);
+        if (player.Status != PlayerStatus.Active) return; // Eliminated players don't draw
 
-         if (!Deck.IsEmpty)
-         {
-              (Card card, Deck remainingDeck) = Deck.Draw(); // Deck.Draw returns Card instance
-              Deck = remainingDeck; // Update deck state
-              player.GiveCard(card); // Give Card instance
-              AddDomainEvent(new PlayerDrewCard(Id, player.Id));
-              AddDomainEvent(new DeckChanged(Id, Deck.CardsRemaining));
-         }
-         else
-         {
-              if (!CheckRoundEndCondition()) // Check if deck empty ends round
-              {
-                   EndRound(Players.Where(p => p.Status == PlayerStatus.Active).ToList());
-              }
-         }
-         // Only raise TurnStarted if round is still in progress after draw attempt
-         if(GamePhase == GamePhase.RoundInProgress)
-         {
+        bool drewCard = false;
+        if (!Deck.IsEmpty)
+        {
+            (Card card, Deck remainingDeck) = Deck.Draw();
+            Deck = remainingDeck; // Deck might be empty now
+            player.GiveCard(card);
+            AddDomainEvent(new PlayerDrewCard(Id, player.Id));
+            AddDomainEvent(new DeckChanged(Id, Deck.CardsRemaining));
+            drewCard = true;
+        }
+
+        // Check round end condition AFTER the draw attempt, regardless of success.
+        // This correctly handles the case where the draw emptied the deck.
+        bool roundEnded = CheckRoundEndCondition();
+
+        // Only raise TurnStarted if the round didn't just end
+        if(!roundEnded && GamePhase == GamePhase.RoundInProgress)
+        {
             AddDomainEvent(new TurnStarted(Id, CurrentTurnPlayerId, RoundNumber));
-         }
+        }
     }
 
     private Player GetPlayerById(Guid playerId)
