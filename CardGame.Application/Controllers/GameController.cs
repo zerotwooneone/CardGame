@@ -151,7 +151,7 @@ public class GameController : ControllerBase
     /// Allows the authenticated player to play a card from their hand.
     /// </summary>
     /// <param name="gameId">The ID of the game.</param>
-    /// <param name="request">Details of the card play action.</param>
+    /// <param name="request">Details of the card play action, including the specific CardId.</param>
     /// <returns>Ok on success, or appropriate error status.</returns>
     [HttpPost("{gameId}/play", Name = "PlayCard")]
     [Authorize] // Require authentication
@@ -169,18 +169,12 @@ public class GameController : ControllerBase
             return Unauthorized();
         }
 
-        // 2. Preliminary check: Find the card instance in the player's hand
-        // This requires loading the game state here in the controller, which isn't ideal CQRS.
-        // Alternative: Pass CardId to the handler and let the handler load the game and find the card.
-        // Let's go with the alternative for better separation.
-
-        // 3. Parse GuessedCardType string into CardType object
+        // 2. Parse GuessedCardType string into CardType object
         CardType? guessedType = null;
         if (!string.IsNullOrEmpty(request.GuessedCardType))
         {
             try
             {
-                // Assumes CardType is an EnumLike generated class with FromName
                 guessedType = CardType.FromName(request.GuessedCardType, ignoreCase: true);
             }
             catch (Exception) // Catch potential exception from FromName if invalid
@@ -191,27 +185,12 @@ public class GameController : ControllerBase
 
         try
         {
-            // **Refined Approach:** Handler needs Card instance, not just ID.
-            // Controller needs to load game, find card, then send command.
-            // This slightly breaks pure CQRS but is necessary here.
-            var game = await _gameRepository.GetByIdAsync(gameId).ConfigureAwait(false);
-            if (game == null) return NotFound($"Game {gameId} not found.");
-
-            var player = game.Players.FirstOrDefault(p => p.Id == currentPlayerId);
-            if (player == null) return Forbid("Authenticated user is not a player in this game."); // Or NotFound
-
-            // Find the specific card instance in the player's hand by ID
-            var cardToPlayInstance = player.Hand.GetCards().FirstOrDefault(c => c.Id == request.CardId);
-            if (cardToPlayInstance == null)
-            {
-                return BadRequest($"Card with ID {request.CardId} not found in player's hand.");
-            }
-
-            // Now create the command with the actual Card instance
+            // 3. Create the command, passing the CardId from the request
+            // The handler is now responsible for loading the game and finding the Card instance.
             var command = new PlayCardCommand(
                 gameId,
                 currentPlayerId,
-                cardToPlayInstance, 
+                request.CardId, // Pass the ID, not the Card object
                 request.TargetPlayerId,
                 guessedType
             );
@@ -222,19 +201,20 @@ public class GameController : ControllerBase
             // 5. Return success
             return Ok(); // Simple 200 OK for successful command execution
         }
-        catch (ValidationException ex) // Catch FluentValidation errors
+        catch (ValidationException ex)
         {
             return BadRequest(CreateValidationProblemDetails(ex));
         }
-        catch (InvalidOperationException ex) // Catch fail-fast errors from handler
+        catch (InvalidOperationException ex) // Catch fail-fast errors like wrong turn, card not held etc.
         {
-             // Log ex
              return BadRequest(new ProblemDetails { Title = "Invalid Operation", Detail = ex.Message });
         }
-        catch (DomainException ex) // Catch domain rule violations from aggregate
+        catch (Domain.Game.GameException.CardNotFoundInHandException ex) // Catch specific domain exception
         {
-             // Log ex
-             // Return BadRequest with domain error code and message
+             return BadRequest(new ProblemDetails { Title = "Invalid Move", Detail = ex.Message, Extensions = { { "errorCode", ex.ErrorCode } } });
+        }
+        catch (Domain.Exceptions.DomainException ex) // Catch other domain rule violations
+        {
              return BadRequest(new ProblemDetails { Title = "Game Rule Violation", Detail = ex.Message, Extensions = { { "errorCode", ex.ErrorCode } } });
         }
         catch (KeyNotFoundException ex) // Catch game not found from handler
@@ -244,7 +224,6 @@ public class GameController : ControllerBase
         catch (Exception ex) // Catch unexpected errors
         {
              // Log ex
-             // Return a generic 500 Internal Server Error
              return StatusCode(500, new ProblemDetails { Title = "An unexpected error occurred while playing the card."});
         }
     }
