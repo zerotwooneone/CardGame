@@ -17,4 +17,10 @@ public interface IPlayerNotifier
 
     // Add other methods for player-specific notifications
     Task SendPriestRevealAsync(Guid requestingPlayerId, Guid opponentId, CardDto revealedCard, CancellationToken cancellationToken);
+    
+    // --- Game Group Broadcasts ---
+    Task BroadcastGuardGuessAsync(Guid gameId, Guid guesserId, Guid targetId, int guessedCardType, bool wasCorrect, CancellationToken cancellationToken);
+    Task BroadcastBaronComparisonAsync(Guid gameId, Guid player1Id, int player1CardType, Guid player2Id, int player2CardType, Guid? loserId, CancellationToken cancellationToken);
+    Task BroadcastPlayerDiscardAsync(Guid gameId, Guid targetPlayerId, CardDto discardedCard, CancellationToken cancellationToken);
+    Task BroadcastKingSwapAsync(Guid gameId, Guid player1Id, Guid player2Id, CancellationToken cancellationToken);
 }

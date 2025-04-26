@@ -335,10 +335,10 @@ public class Game // Aggregate Root
              AddDomainEvent(new PrinceEffectFailed(Id, targetPlayer.Id, "Target hand empty"));
              return;
         }
-        Card? discardedCard = targetPlayer.DiscardHand(Deck.IsEmpty); // Returns Card instance
+        Card? discardedCard = targetPlayer.DiscardHand(Deck.IsEmpty); 
         if (discardedCard == null) return;
 
-        AddDomainEvent(new PrinceEffectUsed(Id, CurrentTurnPlayerId, targetPlayer.Id, discardedCard.Type)); // Uses Type
+        AddDomainEvent(new PrinceEffectUsed(Id, CurrentTurnPlayerId, targetPlayer.Id, discardedCard.Type, discardedCard.Id)); 
 
         if (discardedCard.Type == CardType.Princess)
         {
@@ -350,7 +350,7 @@ public class Game // Aggregate Root
              {
                  (Card newCard, Deck remainingDeck) = Deck.Draw();
                  Deck = remainingDeck;
-                 targetPlayer.GiveCard(newCard); // Gives Card instance
+                 targetPlayer.GiveCard(newCard); 
                  AddDomainEvent(new PlayerDrewCard(Id, targetPlayer.Id));
                  AddDomainEvent(new DeckChanged(Id, Deck.CardsRemaining));
              }

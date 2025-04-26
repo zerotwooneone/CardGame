@@ -120,7 +120,23 @@ public interface IGameClient
     /// <param name="revealedCard">The card DTO of the revealed card.</param>
     Task RevealOpponentHand(Guid opponentId, CardDto revealedCard);
 
-    // Add other game-specific client methods here if needed
-    // Example: Task ReceiveGameMessage(string message);
-    // Example: Task PlayerEliminatedUpdate(Guid playerId, string reason); // More granular update
+    /// <summary>
+    /// Informs clients in the game group about the result of a Guard guess.
+    /// </summary>
+    Task PlayerGuessed(Guid guesserId, Guid targetId, int guessedCardType, bool wasCorrect);
+
+    /// <summary>
+    /// Informs clients in the game group about the result of a Baron comparison.
+    /// </summary>
+    Task PlayersComparedHands(Guid player1Id, int player1CardType, Guid player2Id, int player2CardType, Guid? loserId);
+
+    /// <summary>
+    /// Informs clients in the game group that a player was forced to discard their hand (Prince effect).
+    /// </summary>
+    Task PlayerDiscarded(Guid targetPlayerId, CardDto discardedCard); // Send discarded card info
+
+    /// <summary>
+    /// Informs clients in the game group that two players swapped hands (King effect).
+    /// </summary>
+    Task CardsSwapped(Guid player1Id, Guid player2Id);
 }

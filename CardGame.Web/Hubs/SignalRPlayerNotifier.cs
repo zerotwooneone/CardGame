@@ -67,4 +67,77 @@ public class SignalRPlayerNotifier : IPlayerNotifier
             // Decide whether to re-throw or just log
         }
     }
+    
+    // --- Game Group Broadcast Methods ---
+
+    public async Task BroadcastGuardGuessAsync(Guid gameId, Guid guesserId, Guid targetId, int guessedCardType,
+        bool wasCorrect, CancellationToken cancellationToken)
+    {
+        string groupName = GetGameGroupName(gameId);
+        try
+        {
+            await _hubContext.Clients.Group(groupName).PlayerGuessed(guesserId, targetId, guessedCardType, wasCorrect);
+            _logger.LogInformation("Broadcast Guard guess result to group {GroupName} for Game {GameId}.", groupName,
+                gameId);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error broadcasting Guard guess to group {GroupName} for Game {GameId}.", groupName,
+                gameId);
+        }
+    }
+
+    public async Task BroadcastBaronComparisonAsync(Guid gameId, Guid player1Id, int player1CardType, Guid player2Id,
+        int player2CardType, Guid? loserId, CancellationToken cancellationToken)
+    {
+        string groupName = GetGameGroupName(gameId);
+        try
+        {
+            await _hubContext.Clients.Group(groupName)
+                .PlayersComparedHands(player1Id, player1CardType, player2Id, player2CardType, loserId);
+            _logger.LogInformation("Broadcast Baron comparison result to group {GroupName} for Game {GameId}.",
+                groupName, gameId);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error broadcasting Baron comparison to group {GroupName} for Game {GameId}.",
+                groupName, gameId);
+        }
+    }
+
+    public async Task BroadcastPlayerDiscardAsync(Guid gameId, Guid targetPlayerId, CardDto discardedCard,
+        CancellationToken cancellationToken)
+    {
+        if (discardedCard == null) return; // Don't broadcast if nothing was discarded
+        string groupName = GetGameGroupName(gameId);
+        try
+        {
+            await _hubContext.Clients.Group(groupName).PlayerDiscarded(targetPlayerId, discardedCard);
+            _logger.LogInformation("Broadcast Player discard result to group {GroupName} for Game {GameId}.", groupName,
+                gameId);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error broadcasting Player discard to group {GroupName} for Game {GameId}.", groupName,
+                gameId);
+        }
+    }
+
+    public async Task BroadcastKingSwapAsync(Guid gameId, Guid player1Id, Guid player2Id,
+        CancellationToken cancellationToken)
+    {
+        string groupName = GetGameGroupName(gameId);
+        try
+        {
+            await _hubContext.Clients.Group(groupName).CardsSwapped(player1Id, player2Id);
+            _logger.LogInformation("Broadcast King swap result to group {GroupName} for Game {GameId}.", groupName,
+                gameId);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error broadcasting King swap to group {GroupName} for Game {GameId}.", groupName,
+                gameId);
+        }
+    }
+    private static string GetGameGroupName(Guid gameId) => $"Game_{gameId}";
 }
