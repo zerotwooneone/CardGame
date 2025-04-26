@@ -106,6 +106,12 @@ public interface IGameClient
     /// </summary>
     /// <param name="gameState">The spectator game state DTO.</param>
     Task UpdateSpectatorGameState(SpectatorGameStateDto gameState);
+    
+    /// <summary>
+    /// Sends the updated private hand state directly to a specific player.
+    /// </summary>
+    /// <param name="currentHand">A list of Card DTOs representing the player's current hand.</param>
+    Task UpdatePlayerHand(List<CardDto> currentHand);
 
     // Add other game-specific client methods here if needed
     // Example: Task ReceiveGameMessage(string message);

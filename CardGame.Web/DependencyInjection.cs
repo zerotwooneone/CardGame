@@ -23,6 +23,7 @@ public static class DependencyInjection
         services.AddSingleton<IUserIdProvider, PlayerIdUserIdProvider>();
 
         services.AddSingleton<IGameStateBroadcaster, SignalRGameStateBroadcaster>();
+        services.AddSingleton<IPlayerNotifier,SignalRPlayerNotifier>();
 
         return services;
     }
