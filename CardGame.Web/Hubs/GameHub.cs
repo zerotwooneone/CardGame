@@ -112,6 +112,13 @@ public interface IGameClient
     /// </summary>
     /// <param name="currentHand">A list of Card DTOs representing the player's current hand.</param>
     Task UpdatePlayerHand(List<CardDto> currentHand);
+    
+    /// <summary>
+    /// Sends the details of an opponent's revealed card (via Priest) to the requesting player.
+    /// </summary>
+    /// <param name="opponentId">The ID of the opponent whose card was revealed.</param>
+    /// <param name="revealedCard">The card DTO of the revealed card.</param>
+    Task RevealOpponentHand(Guid opponentId, CardDto revealedCard);
 
     // Add other game-specific client methods here if needed
     // Example: Task ReceiveGameMessage(string message);

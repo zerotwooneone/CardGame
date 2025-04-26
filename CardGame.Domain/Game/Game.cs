@@ -286,11 +286,19 @@ public class Game // Aggregate Root
 
     private void ExecutePriestEffect(Player actingPlayer, Player? targetPlayer)
     {
-         if (targetPlayer == null) return;
-         var revealedCard = targetPlayer.Hand.GetHeldCard(); // Gets Card instance
-         if (revealedCard != null) {
-            AddDomainEvent(new PriestEffectUsed(Id, actingPlayer.Id, targetPlayer.Id, revealedCard.Type)); // Uses Type
-         }
+        if (targetPlayer == null) return;
+        // GetHeldCard() returns the specific Card instance
+        var revealedCard = targetPlayer.Hand.GetHeldCard();
+        if (revealedCard != null) {
+            // Raise event with specific Card ID and Type
+            AddDomainEvent(new PriestEffectUsed(
+                Id,
+                actingPlayer.Id,
+                targetPlayer.Id,
+                revealedCard.Id, // Pass the ID
+                revealedCard.Type // Pass the Type
+            ));
+        }
     }
 
      private void ExecuteBaronEffect(Player actingPlayer, Player? targetPlayer)
@@ -496,5 +504,3 @@ public class Game // Aggregate Root
         return player;
     }
 }
-
-public record PlayerInfo(Guid Id, string Name);

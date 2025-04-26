@@ -42,7 +42,29 @@ public class SignalRPlayerNotifier : IPlayerNotifier
             // Decide whether to re-throw or just log
         }
     }
+    
+    
+    /// <summary>
+    /// Sends the details of an opponent's revealed card (via Priest) via SignalR to the specified user ID.
+    /// </summary>
+    public async Task SendPriestRevealAsync(Guid requestingPlayerId, Guid opponentId, CardDto revealedCard, CancellationToken cancellationToken) // Added method implementation
+    {
+        if (requestingPlayerId == Guid.Empty || opponentId == Guid.Empty || revealedCard == null) return;
 
-    // Implement other IPlayerNotifier methods here...
-    // public async Task SendPriestRevealAsync(...) { ... }
+        string userId = requestingPlayerId.ToString(); // Target the player who played the Priest
+        try
+        {
+            await _hubContext.Clients
+                .User(userId)
+                .RevealOpponentHand(opponentId, revealedCard);
+
+            _logger.LogInformation("Sent Priest reveal (Opponent: {OpponentId}, Card: {RevealedCardType}) to Player {PlayerId}.",
+                opponentId, revealedCard.Type, requestingPlayerId);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error sending Priest reveal to Player {PlayerId}.", requestingPlayerId);
+            // Decide whether to re-throw or just log
+        }
+    }
 }

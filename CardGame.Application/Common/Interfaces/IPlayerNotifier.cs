@@ -16,5 +16,5 @@ public interface IPlayerNotifier
     Task SendHandUpdateAsync(Guid playerId, List<CardDto> handCards, CancellationToken cancellationToken);
 
     // Add other methods for player-specific notifications
-    // Example: Task SendPriestRevealAsync(Guid requestingPlayerId, Guid opponentId, CardDto revealedCard, CancellationToken cancellationToken);
+    Task SendPriestRevealAsync(Guid requestingPlayerId, Guid opponentId, CardDto revealedCard, CancellationToken cancellationToken);
 }
