@@ -10,23 +10,19 @@ namespace CardGame.Domain.Game;
     /// Includes a unique ID and its functional type. Behaves as a Value Object via record equality.
     /// Provides explicit comparison methods for clarity.
     /// </summary>
-    public class Card // Using record for immutability and value equality
+    public class Card 
     {
         /// <summary>
         /// Gets the unique identifier for this specific card instance.
         /// </summary>
-        public Guid Id { get; } // Added unique ID
+        public Guid Id { get; } 
 
         /// <summary>
         /// Gets the functional type of the card (Guard, Priest, etc.).
         /// Initialized with null! to satisfy nullable reference type analysis;
         /// the constructor ensures a non-null value is assigned.
         /// </summary>
-        public CardType Type { get; } = null!; // Keep null! fix
-
-        // --- AppearanceId property removed ---
-
-        // --- Static instance caching removed ---
+        public CardType Type { get; }
 
         /// <summary>
         /// Initializes a new instance of the Card record.
@@ -36,18 +32,14 @@ namespace CardGame.Domain.Game;
         /// <param name="type">The functional type of the card.</param>
         public Card(Guid id, CardType type) // Updated constructor signature
         {
-            Id = id; // Assign Id
+            Id = id; 
             Type = type ?? throw new ArgumentNullException(nameof(type));
         }
-
-        // --- GetInstance method removed ---
 
         /// <summary>
         /// Gets the rank of the card based on its type.
         /// </summary>
-        public int Rank => Type.Value; // Delegate Rank access
-
-        // --- Added Helper Methods ---
+        public int Rank => Type.Value;
 
         /// <summary>
         /// Checks if this card instance is the same as another card instance based on their unique IDs.
