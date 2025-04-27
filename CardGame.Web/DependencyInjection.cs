@@ -1,11 +1,8 @@
-﻿using System.Reflection;
-using CardGame.Application.Common.Interfaces;
+﻿using CardGame.Application.Common.Interfaces;
 using CardGame.Application.GameEventHandlers;
 using CardGame.Web.Hubs;
 using CardGame.Web.SignalR;
-using FluentValidation;
 using Microsoft.AspNetCore.SignalR;
-using Microsoft.Extensions.DependencyInjection;
 
 namespace CardGame.Application;
 

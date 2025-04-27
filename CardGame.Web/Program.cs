@@ -2,7 +2,6 @@ using CardGame.Application;
 using CardGame.Infrastructure;
 using CardGame.Web.Hubs;
 using Microsoft.AspNetCore.Authentication.Cookies;
-using Microsoft.AspNetCore.SignalR;
 
 var builder = WebApplication.CreateBuilder(args);
 

@@ -1,8 +1,6 @@
 ﻿using CardGame.Application.Commands;
-using CardGame.Application.Common.Interfaces;
 using CardGame.Application.DTOs;
 using CardGame.Application.Queries;
-using CardGame.Domain.Exceptions;
 using CardGame.Domain.Interfaces;
 using CardGame.Domain.Types;
 using FluentValidation;

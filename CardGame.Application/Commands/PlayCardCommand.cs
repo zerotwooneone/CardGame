@@ -1,5 +1,4 @@
-﻿using CardGame.Domain.Game;
-using CardGame.Domain.Types;
+﻿using CardGame.Domain.Types;
 using FluentValidation;
 using MediatR;
 

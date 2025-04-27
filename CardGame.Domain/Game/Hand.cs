@@ -1,5 +1,4 @@
-﻿using CardGame.Domain.Exceptions;
-using CardGame.Domain.Game.GameException;
+﻿using CardGame.Domain.Game.GameException;
 using CardGame.Domain.Types;
 
 namespace CardGame.Domain.Game;

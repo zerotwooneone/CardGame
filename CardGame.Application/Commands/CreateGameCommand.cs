@@ -1,5 +1,4 @@
-﻿using CardGame.Application.Common.Interfaces;
-using FluentValidation;
+﻿using FluentValidation;
 using MediatR;
 
 namespace CardGame.Application.Commands;

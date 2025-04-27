@@ -1,7 +1,6 @@
 ﻿using System.Collections.Concurrent;
 using CardGame.Domain.Game;
 using CardGame.Domain.Interfaces;
-using CardGame.Domain.Types;
 
 namespace CardGame.Infrastructure.Persistance;
 
