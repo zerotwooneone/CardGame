@@ -1,0 +1,40 @@
+.login-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 80vh; /* Adjust as needed */
+  /* padding: 20px; */
+}
+
+.login-card {
+  max-width: 400px;
+  width: 100%;
+}
+
+.full-width {
+  width: 100%;
+  margin-bottom: 15px;
+}
+
+.remember-checkbox {
+  margin-bottom: 15px;
+}
+
+.login-actions {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 10px;
+}
+
+.error-message {
+  color: red; // Or use theme error color
+  margin-bottom: 15px;
+  text-align: center;
+}
+
+.button-spinner {
+  display: inline-block;
+  vertical-align: middle;
+  /* Add margin to the spinner if needed */
+  margin: 0 10px;
+}
