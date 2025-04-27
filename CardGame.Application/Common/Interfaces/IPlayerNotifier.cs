@@ -23,4 +23,9 @@ public interface IPlayerNotifier
     Task BroadcastBaronComparisonAsync(Guid gameId, Guid player1Id, int player1CardType, Guid player2Id, int player2CardType, Guid? loserId, CancellationToken cancellationToken);
     Task BroadcastPlayerDiscardAsync(Guid gameId, Guid targetPlayerId, CardDto discardedCard, CancellationToken cancellationToken);
     Task BroadcastKingSwapAsync(Guid gameId, Guid player1Id, Guid player2Id, CancellationToken cancellationToken);
+
+    Task BroadcastRoundWinnerAsync(Guid gameId, Guid? winnerId, string reason, Dictionary<Guid, int?> finalHands,
+        CancellationToken cancellationToken);
+
+    Task BroadcastGameWinnerAsync(Guid gameId, Guid winnerId, CancellationToken cancellationToken);
 }

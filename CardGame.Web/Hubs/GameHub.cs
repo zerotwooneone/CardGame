@@ -139,4 +139,18 @@ public interface IGameClient
     /// Informs clients in the game group that two players swapped hands (King effect).
     /// </summary>
     Task CardsSwapped(Guid player1Id, Guid player2Id);
+    
+    /// <summary>
+    /// Announces the winner of a round to the game group.
+    /// </summary>
+    /// <param name="winnerId">The ID of the player who won the round (null if draw).</param>
+    /// <param name="reason">Why the round ended (e.g., "Last player standing").</param>
+    /// <param name="finalHands">Optional: Information about final hands if needed by UI.</param>
+    Task RoundWinnerAnnounced(Guid? winnerId, string reason, Dictionary<Guid, int?> finalHands); // Send CardType values
+
+    /// <summary>
+    /// Announces the winner of the game to the game group.
+    /// </summary>
+    /// <param name="winnerId">The ID of the player who won the game.</param>
+    Task GameWinnerAnnounced(Guid winnerId);
 }

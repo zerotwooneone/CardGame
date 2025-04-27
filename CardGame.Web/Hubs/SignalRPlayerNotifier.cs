@@ -139,5 +139,27 @@ public class SignalRPlayerNotifier : IPlayerNotifier
                 gameId);
         }
     }
+    
+    public async Task BroadcastRoundWinnerAsync(Guid gameId, Guid? winnerId, string reason, Dictionary<Guid, int?> finalHands, CancellationToken cancellationToken)
+    {
+        string groupName = GetGameGroupName(gameId);
+        try
+        {
+            await _hubContext.Clients.Group(groupName).RoundWinnerAnnounced(winnerId, reason, finalHands);
+            _logger.LogInformation("Broadcast Round Winner announcement to group {GroupName} for Game {GameId}.", groupName, gameId);
+        }
+        catch (Exception ex) { _logger.LogError(ex, "Error broadcasting Round Winner to group {GroupName} for Game {GameId}.", groupName, gameId); }
+    }
+
+    public async Task BroadcastGameWinnerAsync(Guid gameId, Guid winnerId, CancellationToken cancellationToken)
+    {
+        string groupName = GetGameGroupName(gameId);
+        try
+        {
+            await _hubContext.Clients.Group(groupName).GameWinnerAnnounced(winnerId);
+            _logger.LogInformation("Broadcast Game Winner announcement to group {GroupName} for Game {GameId}.", groupName, gameId);
+        }
+        catch (Exception ex) { _logger.LogError(ex, "Error broadcasting Game Winner to group {GroupName} for Game {GameId}.", groupName, gameId); }
+    }
     private static string GetGameGroupName(Guid gameId) => $"Game_{gameId}";
 }
