@@ -1,1 +1,58 @@
-<p>lobby works!</p>
+<div class="lobby-container">
+  <mat-card class="lobby-card">
+    <mat-card-header class="lobby-header">
+      <mat-card-title>Game Lobby</mat-card-title>
+      <button mat-icon-button (click)="logout()" aria-label="Logout" matTooltip="Logout">
+        <mat-icon>logout</mat-icon>
+      </button>
+    </mat-card-header>
+
+    <mat-card-content>
+      <div class="lobby-actions">
+        <button mat-raised-button color="primary" (click)="navigateToCreateGame()">
+          <mat-icon>add</mat-icon> Create New Game
+        </button>
+        <button mat-icon-button (click)="loadAvailableGames()" aria-label="Refresh game list" matTooltip="Refresh List">
+          <mat-icon>refresh</mat-icon>
+        </button>
+      </div>
+
+      <mat-divider></mat-divider>
+
+      <div class="game-list-container">
+        <h2>Available Games</h2>
+        <ng-container *ngIf="availableGames$ | async as availableGames; else loadingOrError">
+          <mat-list *ngIf="availableGames.length > 0; else noGames" role="list">
+            <mat-list-item *ngFor="let game of availableGames" role="listitem" class="game-list-item">
+              <mat-icon matListItemIcon>sports_esports</mat-icon>
+              <div matListItemTitle>Game by {{ game.createdBy }}</div>
+              <div matListItemLine>
+                <span>Status: {{ game.status }}</span> |
+                <span>Players: {{ game.playerCount }} / 4</span>
+              </div>
+              <button mat-icon-button color="accent" (click)="joinGame(game.gameId)" aria-label="Join or Spectate Game" matTooltip="Join/Spectate">
+                <mat-icon>visibility</mat-icon> </button>
+            </mat-list-item>
+          </mat-list>
+        </ng-container>
+
+        <ng-template #loadingOrError>
+          <div *ngIf="isLoading" class="spinner-container">
+            <mat-spinner diameter="50"></mat-spinner>
+          </div>
+          <div *ngIf="!isLoading && errorMessage" class="error-message">
+            {{ errorMessage }}
+          </div>
+        </ng-template>
+
+        <ng-template #noGames>
+          <div class="no-games">
+            No available games found. Why not create one?
+          </div>
+        </ng-template>
+
+      </div>
+
+    </mat-card-content>
+  </mat-card>
+</div>
