@@ -36,7 +36,7 @@ public class SendGameInvitationsHandler : INotificationHandler<DomainEventNotifi
         // Assumption: GameCreated event includes PlayerInfo which has Id and Name.
         // A more robust approach might involve passing the CreatorPlayerId explicitly
         // in the GameCreated event and looking up their name here if needed.
-        var creatorInfo = domainEvent.Players.FirstOrDefault(); // Simplified assumption
+        var creatorInfo = domainEvent.Players.FirstOrDefault(p=>p.Id==domainEvent.CreatorPlayerId); // Simplified assumption
         if (creatorInfo == null)
         {
             _logger.LogWarning("Could not determine creator from GameCreated event for Game {GameId}.", domainEvent.GameId);

@@ -44,7 +44,7 @@ public class Game // Aggregate Root
     /// <param name="playerInfos">Information for the players joining the game.</param>
     /// <param name="tokensToWin">Number of tokens needed to win.</param>
     /// <returns>A new Game instance.</returns>
-    public static Game CreateNewGame(IEnumerable<PlayerInfo> playerInfos, int tokensToWin = 4) // Changed parameter type
+    public static Game CreateNewGame(IEnumerable<PlayerInfo> playerInfos, Guid creatorPlayerId, int tokensToWin = 4) // Changed parameter type
     {
         var gameId = Guid.NewGuid();
         var game = new Game(gameId) // Use private constructor
@@ -75,7 +75,7 @@ public class Game // Aggregate Root
         if (game.Players.Count > 4) throw new DomainException("Game cannot have more than 4 players.", 1000); // Added upper bound check
 
         // Pass the original PlayerInfo list to the event
-        game.AddDomainEvent(new GameCreated(gameId, playerInfoList, tokensToWin));
+        game.AddDomainEvent(new GameCreated(gameId, playerInfoList, tokensToWin, creatorPlayerId));
         return game;
     }
     
