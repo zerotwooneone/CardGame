@@ -8,36 +8,27 @@
 @include mat.core();
 
 // --- Define Palettes (Using M2 compatibility function for v18+) ---
-// Define the palettes for your theme using the Material Design palettes available in palette.scss
-// Use mat.m2-define-palette for compatibility with Material v15+ themes.
-// Available color palettes: https://material.io/design/color/
-// Example: Using predefined palettes
-// Access predefined palettes using the 'mat.' namespace and '$m2-' prefix
-$cardgame-primary: mat.m2-define-palette(mat.$m2-indigo-palette, 500, 100, 700); // Corrected: Added m2- prefix
-$cardgame-accent: mat.m2-define-palette(mat.$m2-pink-palette, A200, A100, A400); // Corrected: Added m2- prefix
-$cardgame-warn: mat.m2-define-palette(mat.$m2-red-palette); // Corrected: Added m2- prefix
+$cardgame-primary: mat.m2-define-palette(mat.$m2-indigo-palette, 500, 100, 700);
+$cardgame-accent: mat.m2-define-palette(mat.$m2-pink-palette, A200, A100, A400);
+$cardgame-warn: mat.m2-define-palette(mat.$m2-red-palette);
 
 // --- Define Light Theme (Using M2 compatibility functions) ---
-// Use mat.m2-define-light-theme for M2 compatibility
-$cardgame-light-theme: mat.m2-define-light-theme(( // Corrected function name
+$cardgame-light-theme: mat.m2-define-light-theme((
   color: (
     primary: $cardgame-primary,
     accent: $cardgame-accent,
     warn: $cardgame-warn,
   ),
-  // Optional: Define typography, density, etc.
   // typography: mat.define-typography-config(),
   // density: 0,
 ));
 
 // --- Define Dark Theme (Using M2 compatibility functions) ---
-// Example: Using different hues for dark mode or entirely different palettes
-$cardgame-dark-primary: mat.m2-define-palette(mat.$m2-blue-grey-palette, 700, 300, 900); // Corrected: Added m2- prefix
-$cardgame-dark-accent: mat.m2-define-palette(mat.$m2-amber-palette, A200, A100, A400); // Corrected: Added m2- prefix
-$cardgame-dark-warn: mat.m2-define-palette(mat.$m2-deep-orange-palette); // Corrected: Added m2- prefix
+$cardgame-dark-primary: mat.m2-define-palette(mat.$m2-blue-grey-palette, 700, 300, 900);
+$cardgame-dark-accent: mat.m2-define-palette(mat.$m2-amber-palette, A200, A100, A400);
+$cardgame-dark-warn: mat.m2-define-palette(mat.$m2-deep-orange-palette);
 
-// Use mat.m2-define-dark-theme for M2 compatibility
-$cardgame-dark-theme: mat.m2-define-dark-theme(( // Corrected function name
+$cardgame-dark-theme: mat.m2-define-dark-theme((
   color: (
     primary: $cardgame-dark-primary,
     accent: $cardgame-dark-accent,
@@ -47,20 +38,26 @@ $cardgame-dark-theme: mat.m2-define-dark-theme(( // Corrected function name
 
 // --- Apply Themes ---
 
-// Apply the light theme by default to the entire application
-// Use the appropriate mixin for M2 themes (all-component-themes)
+// Apply the light theme always (serves as the default)
+// We apply themes directly to the :root or body, or specific component selectors.
+// Applying all component themes includes structural styles that might conflict
+// if applied twice (once for light, once for dark in the media query).
+// It's often better to apply only the *colors* for the dark theme override.
+// Alternatively, define common structural themes separately.
 @include mat.all-component-themes($cardgame-light-theme);
 
-// Apply the dark theme only when the '.dark-theme' class is present on the body
-// You would typically add/remove this class based on user preference or system setting (prefers-color-scheme)
-// using TypeScript in your AppComponent or a theme service.
-body.dark-theme {
-  // Use the appropriate color mixin for M2 themes (all-component-colors)
+// Apply the dark theme colors when the user prefers dark mode
+@media (prefers-color-scheme: dark) {
+  // Apply only the color styles for the dark theme.
+  // This overrides the light theme colors applied above.
   @include mat.all-component-colors($cardgame-dark-theme);
 
-  // Optional: Add specific overrides for dark theme if needed for non-Material components
-  // background-color: mat.get-theme-color(mat.get-theme-background-palette($cardgame-dark-theme), background);
-  // color: mat.get-theme-color(mat.get-theme-foreground-palette($cardgame-dark-theme), base);
+  // Optional: Add specific global overrides for dark theme if needed
+  // for non-Material components or base elements.
+  // body {
+  //   background-color: mat.get-theme-color(mat.get-theme-background-palette($cardgame-dark-theme), background);
+  //   color: mat.get-theme-color(mat.get-theme-foreground-palette($cardgame-dark-theme), base);
+  // }
 }
 
 
@@ -75,11 +72,11 @@ body {
   margin: 0;
   font-family: Roboto, "Helvetica Neue", sans-serif; // Default Material font
 
-  // Apply background color from the theme - do this here or inside the theme class scopes
-  // Note: Applying here means it won't automatically switch with the theme class unless
-  // you also define it inside the body.dark-theme scope above.
-  // It's often better to apply the theme class to body and let components handle their own background.
-  // background-color: mat.get-theme-color(mat.get-theme-background-palette($cardgame-light-theme), background);
+  // Set background and text color based on the applied theme's CSS variables
+  // This ensures the body background adapts correctly. Material themes emit CSS variables.
+  // Use the standard Material CSS variables for background and text.
+  background-color: var(--mat-app-background-color);
+  color: var(--mat-app-text-color);
 }
 
 // Example: Style scrollbars globally (optional)
@@ -87,14 +84,15 @@ body {
   width: 8px;
 }
 ::-webkit-scrollbar-track {
-  background: #f1f1f1; // Or use theme variable
+  // Use a background color that adapts? Or keep it simple.
+  background: rgba(128, 128, 128, 0.1); // Slightly visible track
 }
 ::-webkit-scrollbar-thumb {
-  background: #888; // Or use theme variable
+  background: rgba(128, 128, 128, 0.5); // Semi-transparent grey
   border-radius: 4px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: #555; // Or use theme variable
+  background: rgba(128, 128, 128, 0.7);
 }
 
 // Add global helper classes if needed
