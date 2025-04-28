@@ -2,13 +2,15 @@
   display: flex;
   justify-content: center;
   align-items: center;
-  min-height: 80vh; /* Adjust as needed */
-  /* padding: 20px; */
+  min-height: 80vh;
+  padding: 20px;
+  // Background should be handled by global theme application (e.g., on body)
 }
 
 .login-card {
   max-width: 400px;
   width: 100%;
+  // Background and card text color will be handled by Material's theming
 }
 
 .full-width {
@@ -18,23 +20,42 @@
 
 .remember-checkbox {
   margin-bottom: 15px;
+  // Checkbox color will be themed based on 'accent' or 'primary' color attribute in HTML
 }
 
 .login-actions {
   display: flex;
   justify-content: flex-end;
   margin-top: 10px;
+  // Button color is handled by the 'color="primary"' attribute and the theme
 }
 
+// Styles for the custom <div> used to display general/server errors.
 .error-message {
-  color: red; // Or use theme error color
+  // Use CSS Custom Property for warn/error color provided by Material theme
+  // Property names might vary slightly based on M2/M3 and exact theme setup
+  // Check browser dev tools to inspect the variables applied by your theme.
+  color: var(--mat-form-field-error-text-color, var(--mdc-theme-error, #f44336)); // Fallback to red
+
   margin-bottom: 15px;
   text-align: center;
+  font-size: 0.9em;
+}
+
+// mat-error text color is typically handled correctly by the applied theme.
+mat-error {
+  display: block; // Ensure mat-error takes space
 }
 
 .button-spinner {
   display: inline-block;
   vertical-align: middle;
-  /* Add margin to the spinner if needed */
   margin: 0 10px;
+
+  // Style the spinner based on the button's color context (primary contrast)
+  // Use CSS Custom Property for the contrast color on the primary button
+  ::ng-deep circle {
+    // Standard MDC property for text/icon color on a primary background
+    stroke: var(--mdc-theme-on-primary, white) !important; // Fallback to white
+  }
 }

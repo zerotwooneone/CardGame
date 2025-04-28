@@ -8,7 +8,7 @@
         <mat-form-field appearance="outline" class="full-width">
           <mat-label>Username</mat-label>
           <input matInput formControlName="username" required>
-          <mat-error *ngIf="loginForm.get('username')?.hasError('required')">
+          <mat-error *ngIf="loginForm.get('username')?.hasError('required') && loginForm.get('username')?.touched">
             Username is required
           </mat-error>
         </mat-form-field>
@@ -16,8 +16,11 @@
         <mat-form-field appearance="outline" class="full-width">
           <mat-label>Password</mat-label>
           <input matInput formControlName="password" type="password" required>
-          <mat-error *ngIf="loginForm.get('password')?.hasError('required')">
+          <mat-error *ngIf="loginForm.get('password')?.hasError('required') && loginForm.get('password')?.touched">
             Password is required
+          </mat-error>
+          <mat-error *ngIf="loginForm.get('password')?.hasError('pattern') && loginForm.get('password')?.touched">
+            Password must be 8+ chars with uppercase, lowercase, number, and special character (&#64;$!%*?&._-)
           </mat-error>
         </mat-form-field>
 
@@ -25,13 +28,16 @@
           Remember username
         </mat-checkbox>
 
-        <div *ngIf="errorMessage" class="error-message">
+        <div *ngIf="errorMessage && loginForm.invalid && loginForm.touched" class="error-message">
+          {{ errorMessage }}
+        </div>
+        <div *ngIf="errorMessage && !loginForm.invalid" class="error-message">
           {{ errorMessage }}
         </div>
 
+
         <div class="login-actions">
-          <button mat-raised-button color="primary" type="submit" [disabled]="loginForm.invalid || isLoading">
-            <span *ngIf="!isLoading">Login</span>
+          <button mat-raised-button color="primary" type="submit" [disabled]="isLoading"> <span *ngIf="!isLoading">Login</span>
             <mat-spinner *ngIf="isLoading" diameter="24" class="button-spinner"></mat-spinner>
           </button>
         </div>

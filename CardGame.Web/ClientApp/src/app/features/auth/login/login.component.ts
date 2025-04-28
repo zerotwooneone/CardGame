@@ -28,7 +28,7 @@ import { LoginRequest } from '../../../core/models/loginRequest';
     MatSnackBarModule
   ],
   templateUrl: './login.component.html',
-  styleUrls: ['./login.component.scss']
+  styleUrls: ['./login.component.scss'] // Use styleUrls for component-specific styles, changed to .scss
 })
 export class LoginComponent implements OnInit {
   loginForm: FormGroup;
@@ -36,6 +36,7 @@ export class LoginComponent implements OnInit {
   errorMessage: string | null = null;
   rememberUsername = true; // Default to true
 
+  // Inject services using inject() function (preferred in Angular 14+)
   private fb = inject(FormBuilder);
   private authService = inject(AuthService);
   private router = inject(Router);
@@ -51,7 +52,7 @@ export class LoginComponent implements OnInit {
   constructor() {
     // Initialize form group
     this.loginForm = this.fb.group({
-      username: ['', [Validators.required, Validators.minLength(8)]],
+      username: ['', [Validators.required, Validators.minLength(1)]],
       // Add Validators.pattern for password complexity
       password: ['', [
         Validators.required,
