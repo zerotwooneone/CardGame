@@ -33,7 +33,7 @@ public class GameAggregateTests
         var playerInfos = new List<PlayerInfo> {aliceInfo, bobInfo};
 
         // 2. Create the game using PlayerInfo
-        var game = Game.Game.CreateNewGame(playerInfos, tokensToWin: 4); // Corrected call
+        var game = Game.Game.CreateNewGame(playerInfos, aliceInfo.Id, tokensToWin: 4); // Corrected call
         var player1 = game.Players.First(p => p.Id == aliceInfo.Id); // Find by ID
         var player2 = game.Players.First(p => p.Id == bobInfo.Id); // Find by ID
 
