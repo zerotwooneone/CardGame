@@ -1,0 +1,36 @@
+<h2 mat-dialog-title>{{ data.prompt }}</h2>
+
+<mat-dialog-content>
+  <form [formGroup]="actionForm">
+
+    <mat-form-field appearance="outline" *ngIf="data.actionType === 'select-player'" class="full-width">
+      <mat-label>Select Player</mat-label>
+      <mat-select formControlName="selectedPlayerId" required>
+        <mat-option *ngFor="let player of filteredPlayers" [value]="player.id">
+          {{ player.name }}
+        </mat-option>
+      </mat-select>
+      <mat-error *ngIf="actionForm.get('selectedPlayerId')?.hasError('required')">
+        Player selection is required.
+      </mat-error>
+      <mat-hint *ngIf="filteredPlayers.length === 0">No valid targets available.</mat-hint>
+    </mat-form-field>
+
+    <div *ngIf="data.actionType === 'guess-card'" class="radio-group-container">
+      <mat-radio-group formControlName="selectedCardTypeValue" required color="primary">
+        <mat-radio-button *ngFor="let cardType of filteredCardTypes" [value]="cardType.value" class="radio-button">
+          {{ cardType.name }}
+        </mat-radio-button>
+      </mat-radio-group>
+      <mat-error *ngIf="actionForm.get('selectedCardTypeValue')?.hasError('required') && actionForm.get('selectedCardTypeValue')?.touched">
+        Card guess is required.
+      </mat-error>
+    </div>
+
+  </form>
+</mat-dialog-content>
+
+<mat-dialog-actions align="end">
+  <button mat-button (click)="onCancel()">Cancel</button>
+  <button mat-raised-button color="primary" (click)="onConfirm()" [disabled]="actionForm.invalid">Confirm</button>
+</mat-dialog-actions>

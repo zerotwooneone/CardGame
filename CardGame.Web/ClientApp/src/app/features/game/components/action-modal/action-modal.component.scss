@@ -1,0 +1,19 @@
+.full-width {
+  width: 100%;
+}
+
+.radio-group-container {
+  padding: 10px 0;
+}
+
+.radio-button {
+  display: block;
+  margin-bottom: 10px;
+}
+
+// Ensure mat-error is visible if needed
+mat-error {
+  display: block;
+  margin-top: -10px; // Adjust spacing if needed
+  margin-bottom: 10px;
+}
