@@ -15,8 +15,10 @@ public record RoundStarted : IDomainEvent
     public List<Guid> PlayerIds { get; }
     public int DeckCount { get; }
     public CardType? SetAsideCardType { get; }
+    public List<PublicCardInfo> PubliclySetAsideCards { get; }
 
-    public RoundStarted(Guid gameId, int roundNumber, List<Guid> playerIds, int deckCount, CardType? setAsideCardType, Guid? correlationId = null)
+    public RoundStarted(Guid gameId, int roundNumber, List<Guid> playerIds, int deckCount, CardType? setAsideCardType,
+        List<PublicCardInfo> publiclySetAsideCards, Guid? correlationId = null)
     {
         EventId = Guid.NewGuid();
         OccurredOn = DateTimeOffset.UtcNow;
@@ -26,5 +28,6 @@ public record RoundStarted : IDomainEvent
         PlayerIds = playerIds ?? new List<Guid>();
         DeckCount = deckCount;
         SetAsideCardType = setAsideCardType;
+        PubliclySetAsideCards = publiclySetAsideCards;
     }
 }
