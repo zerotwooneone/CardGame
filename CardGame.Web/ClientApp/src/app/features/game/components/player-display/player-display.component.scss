@@ -1,0 +1,117 @@
+@use '@angular/material' as mat;
+
+:host {
+  display: block;
+  transition: transform 0.2s ease-out, box-shadow 0.2s ease-out;
+  border-radius: 4px; // Match card border radius
+  border: 2px solid transparent; // Placeholder for target highlight
+  margin: 5px; // Spacing between players
+}
+
+.player-card {
+  min-height: 180px; // Ensure minimum size
+  display: flex;
+  flex-direction: column;
+  transition: background-color 0.3s ease;
+}
+
+.player-header {
+  padding-bottom: 8px; // Add some space below header
+}
+
+.player-name {
+  font-size: 1.1em;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  gap: 4px; // Space between name and icon
+}
+
+.current-user-indicator {
+  font-size: 1em; // Match text size
+  height: 1em;
+  width: 1em;
+  vertical-align: middle;
+  color: mat.get-theme-color(mat.$m2-blue-palette, 400); // Example color
+}
+
+.player-status {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.9em;
+}
+
+.protection-indicator {
+  font-size: 1.1em; // Slightly larger icon
+  height: 1.1em;
+  width: 1.1em;
+  color: mat.get-theme-color(mat.$m2-blue-palette, 300); // Example color
+  @media (prefers-color-scheme: dark) {
+    color: mat.get-theme-color(mat.$m2-blue-palette, 200);
+  }
+}
+
+.player-area {
+  display: flex;
+  flex-direction: column; // Stack hand and discard
+  gap: 10px; // Space between hand and discard areas
+  flex-grow: 1; // Allow content to fill card height
+  padding-top: 8px;
+}
+
+.hand-area, .discard-area {
+  display: flex;
+  flex-wrap: wrap; // Allow cards to wrap
+  gap: 5px; // Space between cards
+  min-height: 50px; // Ensure area has some height even when empty
+  align-items: center; // Align items vertically
+  border-radius: 4px;
+  padding: 4px;
+  background-color: rgba(0,0,0,0.03); // Subtle background
+
+  @media (prefers-color-scheme: dark) {
+    background-color: rgba(255,255,255,0.05);
+  }
+
+  span { // Styling for "Hand Empty" / "Discard Empty" text
+    font-size: 0.8em;
+    font-style: italic;
+    color: grey; // Use theme hint color variable if possible
+    padding-left: 5px;
+  }
+}
+
+.card-slot {
+  // Container for each card, can add specific layout if needed
+}
+
+// --- State Styling using HostBinding classes ---
+
+:host(.current-turn) {
+  box-shadow: 0 0 15px mat.get-theme-color(mat.$m2-amber-palette, 400); // Glow effect for current turn
+  transform: scale(1.02); // Slightly larger
+}
+
+:host(.eliminated) {
+  opacity: 0.6;
+  filter: grayscale(80%); // Make eliminated players less prominent
+}
+
+:host(.targetable) {
+  cursor: pointer;
+  &:hover {
+    // Add a subtle hover effect to indicate targetability
+    box-shadow: 0 0 10px mat.get-theme-color(mat.$m2-light-green-palette, 300);
+  }
+}
+
+:host(.selected-target) {
+  border: 2px solid mat.get-theme-color(mat.$m2-light-blue-palette, 400); // Highlight selected target
+  box-shadow: 0 0 10px mat.get-theme-color(mat.$m2-light-blue-palette, 200);
+}
+
+:host(.current-user) {
+  // Optional: Add a subtle border or background to distinguish the current user's card
+  // border-left: 4px solid mat.get-theme-color(mat.$m2-blue-palette, 500);
+}
