@@ -1,1 +1,82 @@
-<p>game-view works!</p>
+<div class="game-view-container" *ngIf="SpectatorGameState; else loadingOrErrorTemplate">
+  <div class="game-info-bar">
+    <span>Round: {{ SpectatorGameState.roundNumber }}</span>
+    <span>Phase: {{ SpectatorGameState.gamePhase }}</span>
+    <span>Deck: {{ SpectatorGameState.deckCardsRemaining }} cards left</span>
+    <span>Tokens to Win: {{ SpectatorGameState.tokensNeededToWin }}</span>
+  </div>
+
+  <div class="players-area">
+    <app-player-display
+      *ngFor="let player of SpectatorGameState.players; trackBy: trackPlayerById"
+      [playerData]="player"
+      [isCurrentTurn]="player.playerId === SpectatorGameState.currentTurnPlayerId"
+      [isCurrentUser]="player.playerId === MyPlayerId"
+      [isTargetable]="isTargetingRequired() && player.playerId !== MyPlayerId && !player.isProtected && player.status === 'Active'"
+      [isSelectedTarget]="player.playerId === SelectedTargetId"
+      (playerClicked)="onPlayerSelected($event)">
+    </app-player-display>
+  </div>
+
+  <div class="current-player-hand-area" *ngIf="MyPlayerId">
+    <h3>Your Hand</h3>
+    <div class="hand-cards">
+      <div class="card-slot" *ngFor="let card of PlayerHandCards; trackBy: trackCardById">
+        <app-card
+          [cardData]="card"
+          [isFaceDown]="false"
+          [isPlayable]="isMyTurn()"
+          [isSelected]="card.id === SelectedCardId"
+          (cardClicked)="onCardSelected($event)">
+        </app-card>
+      </div>
+      <div *ngIf="PlayerHandCards.length === 0 && SpectatorGameState.gamePhase !== 'GameOver'">
+        Waiting for card...
+      </div>
+    </div>
+    <div class="action-prompts" *ngIf="isMyTurn()">
+      <div *ngIf="selectedCard()">
+           <span *ngIf="isTargetingRequired() && !selectedTargetPlayerId()">
+             Please select a target player for {{ selectedCard()?.type }}.
+           </span>
+        <span *ngIf="isGuessingRequired() && !selectedTargetPlayerId()">
+             Please select a target player for Guard.
+           </span>
+        <span *ngIf="isGuessingRequired() && selectedTargetPlayerId()">
+             Please guess Player {{ getPlayerName(selectedTargetPlayerId()) }}'s card. </span>
+      </div>
+      <div *ngIf="!selectedCard()">
+        Select a card to play.
+      </div>
+      <div *ngIf="isLoadingAction()" class="action-spinner">
+        <mat-spinner diameter="20"></mat-spinner> <span>Processing...</span>
+      </div>
+    </div>
+    <div *ngIf="ErrorMessage" class="component-error-message">
+      {{ ErrorMessage }}
+    </div>
+  </div>
+
+  <div class="public-cards-area" *ngIf="SpectatorGameState.publiclySetAsideCards.length > 0">
+    <h4>Public Cards</h4>
+    <div class="card-slot" *ngFor="let card of SpectatorGameState.publiclySetAsideCards; trackBy: trackCardById">
+      <app-card [cardData]="card" [isFaceDown]="false"></app-card>
+    </div>
+  </div>
+
+</div>
+
+<ng-template #loadingOrErrorTemplate>
+  <div class="loading-container" *ngIf="!ErrorMessage; else errorTemplate">
+    <mat-spinner diameter="60"></mat-spinner>
+    <p>Loading Game...</p>
+  </div>
+</ng-template>
+
+<ng-template #errorTemplate>
+  <div class="error-container">
+    <h2>Error Loading Game</h2>
+    <p>{{ ErrorMessage }}</p>
+    <button mat-stroked-button color="warn" routerLink="/lobby">Return to Lobby</button>
+  </div>
+</ng-template>

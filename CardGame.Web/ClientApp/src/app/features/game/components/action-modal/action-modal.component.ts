@@ -9,6 +9,7 @@ import {MatListModule} from '@angular/material/list';
 import {ActionModalData} from '../../actionModalData';
 import {ActionModalResult} from '../../actionModalResult';
 import {MatSelectModule} from '@angular/material/select';
+import {MatRadioModule} from '@angular/material/radio';
 
 @Component({
   selector: 'app-action-modal',
@@ -22,7 +23,8 @@ import {MatSelectModule} from '@angular/material/select';
     MatSelectModule,
     MatDialogModule,
     MatDividerModule,
-    MatListModule
+    MatListModule,
+    MatRadioModule
   ],
   templateUrl: './action-modal.component.html',
   styleUrls: ['./action-modal.component.scss']

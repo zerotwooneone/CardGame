@@ -12,5 +12,7 @@ export interface SpectatorGameStateDto {
   tokensNeededToWin: number;
   players: SpectatorPlayerDto[];
   deckCardsRemaining: number; // Count only
-  discardPile: CardDto[];
+  discardPile: CardDto[]; // Show discarded cards
+  publiclySetAsideCards: CardDto[]; // Added: Cards set aside face-up (2-player games)
+  // Note: SetAsideCard (face-down) is omitted as its identity is secret.
 }

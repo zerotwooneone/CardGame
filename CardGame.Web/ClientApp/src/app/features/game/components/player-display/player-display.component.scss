@@ -1,8 +1,6 @@
-@use '@angular/material' as mat;
-
 :host {
   display: block;
-  transition: transform 0.2s ease-out, box-shadow 0.2s ease-out;
+  transition: transform 0.2s ease-out, box-shadow 0.2s ease-out, border-color 0.2s ease-out;
   border-radius: 4px; // Match card border radius
   border: 2px solid transparent; // Placeholder for target highlight
   margin: 5px; // Spacing between players
@@ -13,6 +11,7 @@
   display: flex;
   flex-direction: column;
   transition: background-color 0.3s ease;
+  // Use theme variables for background/color (handled by mat-card)
 }
 
 .player-header {
@@ -32,7 +31,8 @@
   height: 1em;
   width: 1em;
   vertical-align: middle;
-  color: mat.get-theme-color(mat.$m2-blue-palette, 400); // Example color
+  // Use theme's secondary text color or a subtle accent
+  color: var(--mat-secondary-text-color, rgba(0,0,0,0.54));
 }
 
 .player-status {
@@ -46,10 +46,8 @@
   font-size: 1.1em; // Slightly larger icon
   height: 1.1em;
   width: 1.1em;
-  color: mat.get-theme-color(mat.$m2-blue-palette, 300); // Example color
-  @media (prefers-color-scheme: dark) {
-    color: mat.get-theme-color(mat.$m2-blue-palette, 200);
-  }
+  // Use theme's primary or accent color (adjust as needed)
+  color: var(--mat-primary-color-400, #5c6bc0); // Lighter primary shade
 }
 
 .player-area {
@@ -68,16 +66,13 @@
   align-items: center; // Align items vertically
   border-radius: 4px;
   padding: 4px;
-  background-color: rgba(0,0,0,0.03); // Subtle background
-
-  @media (prefers-color-scheme: dark) {
-    background-color: rgba(255,255,255,0.05);
-  }
+  // Use a subtle background color from the theme
+  background-color: var(--mat-card-subtitle-color, rgba(0,0,0,0.06)); // Example using subtitle color
 
   span { // Styling for "Hand Empty" / "Discard Empty" text
     font-size: 0.8em;
     font-style: italic;
-    color: grey; // Use theme hint color variable if possible
+    color: var(--mat-disabled-text-color, rgba(0,0,0,0.38)); // Use theme hint/disabled color
     padding-left: 5px;
   }
 }
@@ -89,8 +84,9 @@
 // --- State Styling using HostBinding classes ---
 
 :host(.current-turn) {
-  box-shadow: 0 0 15px mat.get-theme-color(mat.$m2-amber-palette, 400); // Glow effect for current turn
-  transform: scale(1.02); // Slightly larger
+  // Use theme's accent color for glow
+  box-shadow: 0 0 15px 2px var(--mat-accent-color-300, rgba(255, 64, 129, 0.5));
+  transform: scale(1.02);
 }
 
 :host(.eliminated) {
@@ -101,17 +97,18 @@
 :host(.targetable) {
   cursor: pointer;
   &:hover {
-    // Add a subtle hover effect to indicate targetability
-    box-shadow: 0 0 10px mat.get-theme-color(mat.$m2-light-green-palette, 300);
+    // Use theme's primary color (lighter shade) for hover effect
+    box-shadow: 0 0 10px 1px var(--mat-primary-color-200, rgba(63, 81, 181, 0.3));
   }
 }
 
 :host(.selected-target) {
-  border: 2px solid mat.get-theme-color(mat.$m2-light-blue-palette, 400); // Highlight selected target
-  box-shadow: 0 0 10px mat.get-theme-color(mat.$m2-light-blue-palette, 200);
+  // Use theme's primary color for border
+  border: 2px solid var(--mat-primary-color-500, #3f51b5);
+  box-shadow: 0 0 10px 1px var(--mat-primary-color-300, rgba(63, 81, 181, 0.5));
 }
 
 :host(.current-user) {
   // Optional: Add a subtle border or background to distinguish the current user's card
-  // border-left: 4px solid mat.get-theme-color(mat.$m2-blue-palette, 500);
+  // border-left: 4px solid var(--mat-accent-color-500);
 }

@@ -14,5 +14,6 @@ export interface PlayerGameStateDto {
   players: PlayerHandInfoDto[];
   deckCardsRemaining: number;
   discardPile: CardDto[];
+  publiclySetAsideCards: CardDto[]; // Added here as well
   playerHand: CardDto[]; // Actual hand cards for the requesting player
 }

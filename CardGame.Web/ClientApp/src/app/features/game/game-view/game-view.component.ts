@@ -1,11 +1,350 @@
-import { Component } from '@angular/core';
+import { Component, OnInit, OnDestroy, inject, signal, WritableSignal, computed, Signal, ChangeDetectionStrategy, ChangeDetectorRef } from '@angular/core';
+import { ActivatedRoute, Router } from '@angular/router';
+import { CommonModule } from '@angular/common';
+import { Subscription, Subject } from 'rxjs';
+import { filter, switchMap, takeUntil, tap } from 'rxjs/operators';
+import { MatDialog, MatDialogModule } from '@angular/material/dialog';
+import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
+import { MatButtonModule } from '@angular/material/button';
+import { MatIconModule } from '@angular/material/icon';
+import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
+import { MatTooltipModule } from '@angular/material/tooltip';
+
+// Services
+import { GameStateService } from '../services/game-state.service'; // Adjust path
+import { GameActionService } from '../services/game-action.service'; // Adjust path
+import { AuthService } from '../../../core/services/auth.service'; // Adjust path
+import { SignalrService } from '../../../core/services/signalr.service'; // Adjust path
+
+// Models & Components
+import { PlayerDisplayComponent } from '../components/player-display/player-display.component'; // Adjust path
+import { CardComponent } from '../components/card/card.component'; // Adjust path
+import { ActionModalComponent } from '../components/action-modal/action-modal.component';
+import {SpectatorGameStateDto} from '../../../core/models/spectatorGameStateDto'; // Adjust pathm/class representation if needed for mapping
+import { CardDto } from '../../../core/models/cardDto';
+import {ActionModalData} from '../actionModalData';
+import {ActionModalResult} from '../actionModalResult';
+import {PlayCardRequestDto} from '../../../core/models/playCardRequestDto';
+import {PlayerHandInfoDto} from '../../../core/models/playerHandInfoDto';
+
+// Placeholder for backend CardType mapping (replace with actual import or definition)
+// This is needed if the backend sends type values (int) but modal needs names/values
+const CardTypeMap: { value: number; name: string }[] = [
+  { value: 1, name: 'Guard' }, { value: 2, name: 'Priest' }, { value: 3, name: 'Baron' },
+  { value: 4, name: 'Handmaid' }, { value: 5, name: 'Prince' }, { value: 6, name: 'King' },
+  { value: 7, name: 'Countess' }, { value: 8, name: 'Princess' }
+];
+
 
 @Component({
-  selector: 'cgc-game-view',
-  imports: [],
+  selector: 'app-game-view',
+  standalone: true,
+  imports: [
+    CommonModule,
+    MatDialogModule,
+    MatSnackBarModule,
+    MatButtonModule,
+    MatIconModule,
+    MatProgressSpinnerModule,
+    MatTooltipModule,
+    PlayerDisplayComponent,
+    CardComponent
+  ],
   templateUrl: './game-view.component.html',
-  styleUrl: './game-view.component.scss'
+  styleUrls: ['./game-view.component.scss'],
+  changeDetection: ChangeDetectionStrategy.OnPush
 })
-export class GameViewComponent {
+export class GameViewComponent implements OnInit, OnDestroy {
+  // Inject services
+  private route = inject(ActivatedRoute);
+  private router = inject(Router);
+  private gameStateService = inject(GameStateService);
+  private gameActionService = inject(GameActionService);
+  private authService = inject(AuthService);
+  private dialog = inject(MatDialog);
+  private snackBar = inject(MatSnackBar);
+  private cdr = inject(ChangeDetectorRef); // Inject ChangeDetectorRef
+
+  private destroy$ = new Subject<void>();
+
+  // Game State Signals/Observables from Service
+  spectatorState: Signal<SpectatorGameStateDto | null> = this.gameStateService.spectatorState;
+  playerHand: Signal<CardDto[]> = this.gameStateService.playerHand;
+  isMyTurn: Signal<boolean> = this.gameStateService.isMyTurn;
+  gamePhase: Signal<string | null> = this.gameStateService.gamePhase;
+  gameId: Signal<string | null> = this.gameStateService.gameId;
+
+  // Local UI State Signals
+  selectedCard: WritableSignal<CardDto | null> = signal(null);
+  selectedTargetPlayerId: WritableSignal<string | null> = signal(null);
+  isLoadingAction: WritableSignal<boolean> = signal(false);
+  errorState: WritableSignal<string | null> = signal(null); // Use this signal for errors
+
+  // Computed signal for current player ID
+  currentPlayerId: Signal<string | null> = computed(() => this.authService.getCurrentPlayerId());
+
+  // Computed signal for targetable players
+  targetablePlayers: Signal<{ id: string; name: string; isProtected: boolean }[]> = computed(() => {
+    const state = this.spectatorState();
+    const myId = this.currentPlayerId();
+    if (!state || !myId) return [];
+    // Filter out self (usually) and protected/eliminated players
+    return state.players
+      .filter(p => p.playerId !== myId && p.status === 'Active' && !p.isProtected)
+      .map(p => ({ id: p.playerId, name: p.name, isProtected: p.isProtected })); // Map to simpler structure if needed
+  });
+
+  // Computed signal to check if targeting is needed for the selected card
+  isTargetingRequired: Signal<boolean> = computed(() => {
+    const card = this.selectedCard();
+    if (!card) return false;
+    // Define which card types require a target player
+    const targetTypes = ['Guard', 'Priest', 'Baron', 'King']; // Prince handles self implicitly
+    return targetTypes.includes(card.type);
+  });
+
+  // Computed signal to check if guessing is needed (Guard)
+  isGuessingRequired: Signal<boolean> = computed(() => this.selectedCard()?.type === 'Guard');
+
+  ngOnInit(): void {
+    this.errorState.set(null); // Clear error on init
+
+    this.route.paramMap
+      .pipe(takeUntil(this.destroy$))
+      .subscribe(params => {
+        const id = params.get('id');
+        if (id) {
+          this.gameStateService.clearState(); // Clear previous state
+          this.gameStateService.connectToGame(id)
+            .catch(err => {
+              console.error("Error connecting to game:", err);
+              this.errorState.set("Could not connect to the game.");
+              this.snackBar.open('Error connecting to game.', 'Close', { duration: 3000 });
+              this.cdr.markForCheck(); // Trigger change detection for error message
+            });
+        } else {
+          console.error("No game ID found in route.");
+          this.errorState.set("No Game ID specified.");
+          // Optionally navigate away
+          // this.router.navigate(['/lobby']);
+        }
+      });
+
+    // Subscribe to transient events for UI feedback (e.g., snackbar messages)
+    this.subscribeToGameEvents();
+  }
+
+  ngOnDestroy(): void {
+    this.destroy$.next();
+    this.destroy$.complete();
+    const currentId = this.gameId();
+    if (currentId) {
+      this.gameStateService.disconnectFromGame(currentId);
+    }
+  }
+
+  private subscribeToGameEvents(): void {
+    this.gameStateService.playerGuessed$
+      .pipe(takeUntil(this.destroy$))
+      .subscribe(data => this.showSnackBar(`Guess result: ${data.wasCorrect ? 'Correct!' : 'Incorrect.'}`));
+
+    this.gameStateService.playersComparedHands$
+      .pipe(takeUntil(this.destroy$))
+      .subscribe(data => this.showSnackBar(`Baron: ${data.loserId ? `Player ${this.getPlayerName(data.loserId)} is out!` : 'Tie!'}`));
+
+    this.gameStateService.playerDiscarded$
+      .pipe(takeUntil(this.destroy$))
+      .subscribe(data => this.showSnackBar(`Player ${this.getPlayerName(data.targetPlayerId)} discarded ${data.discardedCard.type}`));
+
+    this.gameStateService.cardsSwapped$
+      .pipe(takeUntil(this.destroy$))
+      .subscribe(data => this.showSnackBar(`Player ${this.getPlayerName(data.player1Id)} swapped hands with Player ${this.getPlayerName(data.player2Id)}`));
+
+    this.gameStateService.roundWinnerAnnounced$
+      .pipe(takeUntil(this.destroy$))
+      .subscribe(data => this.showSnackBar(`Round Over! ${data.winnerId ? `Player ${this.getPlayerName(data.winnerId)} wins.` : 'Draw.'} Reason: ${data.reason}`));
+
+    this.gameStateService.gameWinnerAnnounced$
+      .pipe(takeUntil(this.destroy$))
+      .subscribe(data => this.showSnackBar(`Game Over! Player ${this.getPlayerName(data.winnerId)} wins the game!`, 10000)); // Longer duration
+  }
+
+  // --- Card Interaction ---
+
+  onCardSelected(card: CardDto): void {
+    if (!this.isMyTurn()) return; // Can only select cards on your turn
+
+    // If already selected, deselect
+    if (this.selectedCard()?.id === card.id) {
+      this.selectedCard.set(null);
+      this.selectedTargetPlayerId.set(null); // Also clear target
+    } else {
+      this.selectedCard.set(card);
+      this.selectedTargetPlayerId.set(null); // Clear target when selecting new card
+
+      // If the selected card doesn't need a target or guess, play it immediately
+      if (!this.isTargetingRequired() && !this.isGuessingRequired()) {
+        this.confirmAndPlayCard();
+      }
+    }
+  }
+
+  // --- Targeting Interaction ---
+
+  onPlayerSelected(playerId: string): void {
+    if (!this.isTargetingRequired() || !this.selectedCard()) return; // Only select if targeting needed
+
+    this.selectedTargetPlayerId.set(playerId);
+
+    // If no guess is needed after selecting target, play the card
+    if (!this.isGuessingRequired()) {
+      this.confirmAndPlayCard();
+    } else {
+      // If guess is needed (Guard), open the guess modal
+      this.openGuessModal();
+    }
+  }
+
+  // --- Action Confirmation / Modal ---
+
+  openGuessModal(): void {
+    const cardBeingPlayed = this.selectedCard();
+    if (!cardBeingPlayed || cardBeingPlayed.type !== 'Guard') return;
+
+    const dialogData: ActionModalData = {
+      actionType: 'guess-card',
+      prompt: `Guess Player ${this.getPlayerName(this.selectedTargetPlayerId())}'s card (not Guard):`,
+      // Map CardType values/names for the modal
+      availableCardTypes: CardTypeMap.filter(ct => ct.value !== 1), // Exclude Guard (value 1)
+      excludeCardTypeValue: 1
+    };
+
+    const dialogRef = this.dialog.open<ActionModalComponent, ActionModalData, ActionModalResult>(
+      ActionModalComponent, { width: '300px', data: dialogData, disableClose: true }
+    );
+
+    dialogRef.afterClosed().subscribe(result => {
+      if (result?.selectedCardTypeValue !== undefined) {
+        // User confirmed guess
+        this.confirmAndPlayCard(result.selectedCardTypeValue);
+      } else {
+        // User cancelled - reset selections
+        this.selectedCard.set(null);
+        this.selectedTargetPlayerId.set(null);
+      }
+    });
+  }
+
+  // --- Play Action ---
+
+  confirmAndPlayCard(guessedValue?: number): void {
+    const card = this.selectedCard();
+    const targetId = this.selectedTargetPlayerId();
+    const gameId = this.gameId();
+    const myId = this.currentPlayerId();
+
+    if (!card || !gameId || !myId) {
+      console.error("Cannot play card, missing required state.", { card, gameId, myId });
+      this.showSnackBar("Error: Cannot determine required game state to play card.", 5000);
+      return;
+    }
+
+    // Final validation before sending to backend
+    if (this.isTargetingRequired() && !targetId) {
+      this.showSnackBar("Please select a target player.", 3000);
+      return;
+    }
+    if (this.isGuessingRequired() && guessedValue === undefined) {
+      this.showSnackBar("Please select a card type to guess.", 3000);
+      return; // Should have come from modal, but safety check
+    }
+
+    this.isLoadingAction.set(true);
+    this.errorState.set(null); // Corrected: Use errorState signal
+
+    // Map guessed value back to type name string if needed by API
+    const guessedTypeString = guessedValue !== undefined
+      ? CardTypeMap.find(ct => ct.value === guessedValue)?.name
+      : null;
+
+    const payload: PlayCardRequestDto = {
+      cardId: card.id,
+      targetPlayerId: targetId,
+      guessedCardType: guessedTypeString
+    };
+
+    // Corrected: Call gameActionService.playCard
+    this.gameActionService.playCard(gameId, payload)
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: () => {
+          // Success! State will update via SignalR. Clear local UI state.
+          this.isLoadingAction.set(false);
+          this.selectedCard.set(null);
+          this.selectedTargetPlayerId.set(null);
+          console.log("PlayCard action sent successfully.");
+        },
+        error: (err) => {
+          this.isLoadingAction.set(false);
+          // Corrected: Use errorState signal
+          this.errorState.set(err.message || 'Failed to play card.');
+          this.showSnackBar(`Error: ${this.errorState()}`, 5000); // Use signal value
+          // Don't clear selection on error, allow user to retry or change action
+          this.cdr.markForCheck(); // Ensure error message is displayed
+        }
+      });
+  }
+
+  // --- Helpers ---
+  trackByIndex(index: number, item: any): number {
+    return index;
+  }
+
+  trackCardById(index: number, item: CardDto): string {
+    return item.id; // Use unique card ID for tracking
+  }
+
+  getPlayerName(playerId: string | null | undefined): string {
+    if (!playerId) return 'Unknown';
+    return this.spectatorState()?.players.find(p => p.playerId === playerId)?.name ?? 'Unknown';
+  }
+
+  showSnackBar(message: string, duration: number = 3000): void {
+    this.snackBar.open(message, 'Close', { duration });
+  }
+
+  // --- Getters for template ---
+  get SpectatorGameState(): SpectatorGameStateDto | null {
+    return this.spectatorState();
+  }
+  get PlayerHandCards(): CardDto[] {
+    return this.playerHand();
+  }
+  get MyPlayerId(): string | null {
+    return this.currentPlayerId();
+  }
+  get SelectedCardId(): string | null {
+    return this.selectedCard()?.id ?? null;
+  }
+  get SelectedTargetId(): string | null {
+    return this.selectedTargetPlayerId();
+  }
+  get IsLoading(): boolean {
+    return this.isLoadingAction();
+  }
+  get ErrorMessage(): string | null {
+    // Corrected: Getter for the errorState signal
+    return this.errorState();
+  }
+
+  /**
+   * TrackBy function for loops over PlayerHandInfoDto objects.
+   * @param index The index of the item.
+   * @param item The PlayerHandInfoDto item.
+   * @returns The unique player ID.
+   */
+  trackPlayerById(index: number, item: PlayerHandInfoDto): string {
+    return item.playerId;
+  }
 
 }

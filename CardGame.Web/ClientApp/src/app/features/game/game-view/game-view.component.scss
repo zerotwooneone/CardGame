@@ -1,0 +1,117 @@
+@use '@angular/material' as mat;
+
+:host {
+  display: block;
+  padding: 15px;
+  // Use theme background
+  background-color: var(--mat-app-background-color);
+  color: var(--mat-app-text-color);
+  min-height: calc(100vh - 64px); // Example: Adjust based on toolbar height
+}
+
+.game-view-container {
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.game-info-bar {
+  display: flex;
+  justify-content: space-around;
+  align-items: center;
+  padding: 8px 16px;
+  background-color: rgba(128, 128, 128, 0.1); // Subtle background
+  border-radius: 4px;
+  margin-bottom: 20px;
+  font-size: 0.9em;
+  flex-wrap: wrap;
+  gap: 15px;
+}
+
+.players-area {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center; // Adjust as needed (space-around, space-between)
+  gap: 10px; // Spacing between player displays
+  margin-bottom: 30px;
+
+  app-player-display {
+    flex-basis: calc(50% - 20px); // Two per row on larger screens
+    max-width: 350px; // Max width for a player card
+
+    @media (max-width: 800px) {
+      flex-basis: calc(100% - 20px); // One per row on smaller screens
+    }
+  }
+}
+
+.current-player-hand-area {
+  margin-top: 20px;
+  padding: 15px;
+  border: 1px solid rgba(128, 128, 128, 0.2);
+  border-radius: 4px;
+  min-height: 180px; // Match player display height roughly
+
+  h3 {
+    margin-top: 0;
+    margin-bottom: 15px;
+    text-align: center;
+  }
+
+  .hand-cards {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 10px;
+    min-height: 130px; // Space for cards
+  }
+}
+
+.action-prompts {
+  text-align: center;
+  margin-top: 15px;
+  font-style: italic;
+  min-height: 24px; // Reserve space
+  color: grey; // Use theme hint color if possible
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 8px;
+}
+
+.public-cards-area {
+  margin-top: 20px;
+  padding: 10px;
+  border: 1px dashed rgba(128, 128, 128, 0.3);
+  border-radius: 4px;
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  align-items: center;
+
+  h4 {
+    margin: 0 10px 0 0;
+    font-size: 0.9em;
+    font-weight: 500;
+  }
+}
+
+
+.loading-container, .error-container {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  min-height: 300px;
+  text-align: center;
+
+  p {
+    margin-top: 15px;
+  }
+}
+
+.error-container {
+  color: var(--mat-warn-color, #f44336); // Use theme warn color variable
+  h2 { margin-bottom: 10px; }
+  p { margin-bottom: 20px; }
+}

@@ -77,4 +77,24 @@ export class PlayerDisplayComponent {
     }));
   }
 
+  /**
+   * TrackBy function for loops based on index.
+   * @param index The index of the item.
+   * @param item The item itself (unused).
+   * @returns The index.
+   */
+  trackByIndex(index: number, item: any): number { // Added method
+    return index;
+  }
+
+  /**
+   * TrackBy function for loops over CardDto objects.
+   * @param index The index of the item.
+   * @param item The CardDto item.
+   * @returns The unique card ID.
+   */
+  trackCardById(index: number, item: CardDto): string {
+    return item.id; // Use unique card ID for tracking
+  }
+
 }
