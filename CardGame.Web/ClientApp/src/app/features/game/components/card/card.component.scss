@@ -1,0 +1,158 @@
+@use '@angular/material' as mat;
+
+:host {
+  display: block; // Ensure the component takes up space
+}
+
+.card-container {
+  // --- Base Card Styling ---
+  width: 80px; // Example size
+  height: 120px; // Example size
+  border: 1px solid #aaa; // Use theme variable later
+  border-radius: 6px;
+  cursor: default;
+  position: relative;
+  overflow: hidden;
+  background-color: white; // Default background
+  box-shadow: 2px 2px 5px rgba(0, 0, 0, 0.2);
+  transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+
+  // --- State Styles ---
+  &.playable {
+    cursor: pointer;
+    border-color: #4CAF50; // Example playable border - use theme accent?
+
+    &:hover {
+      transform: translateY(-3px);
+      box-shadow: 4px 4px 8px rgba(0, 0, 0, 0.3);
+    }
+  }
+
+  &.selected {
+    border-color: mat.get-theme-color(mat.$m2-blue-palette, 500); // Example selected border - use theme primary
+    border-width: 2px;
+    transform: scale(1.05); // Slightly larger when selected
+    box-shadow: 0 0 10px mat.get-theme-color(mat.$m2-blue-palette, 300); // Glow effect
+  }
+
+  &.face-down {
+    background-color: mat.get-theme-color(mat.$m2-deep-purple-palette, 500); // Example back color
+  }
+
+  // Dark mode adjustments (using CSS variables is better)
+  @media (prefers-color-scheme: dark) {
+    border-color: #666;
+    background-color: #555; // Default dark background
+
+    &.face-down {
+      background-color: mat.get-theme-color(mat.$m2-deep-purple-palette, 800);
+    }
+    &.selected {
+      border-color: mat.get-theme-color(mat.$m2-light-blue-palette, 300);
+      box-shadow: 0 0 10px mat.get-theme-color(mat.$m2-light-blue-palette, 200);
+    }
+    &.playable {
+      border-color: mat.get-theme-color(mat.$m2-light-green-palette, 400);
+    }
+  }
+}
+
+.card-face {
+  width: 100%;
+  height: 100%;
+  position: absolute;
+  top: 0;
+  left: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  backface-visibility: hidden; // For potential flip animation
+  padding: 5px;
+  box-sizing: border-box;
+}
+
+.card-back {
+  // Styles for the card back design
+  .card-back-design {
+    font-size: 2em;
+    font-weight: bold;
+    color: white; // Example color
+    transform: scaleY(-1); // Flip design if needed for animation
+  }
+  @media (prefers-color-scheme: dark) {
+    .card-back-design {
+      color: rgba(255,255,255,0.7);
+    }
+  }
+}
+
+.card-front {
+  // Styles for the card front content
+  justify-content: space-between; // Push rank to corners
+  align-items: stretch;
+  color: #333; // Default text color
+
+  .card-rank {
+    font-size: 1.2em;
+    font-weight: bold;
+  }
+
+  .top-left {
+    align-self: flex-start;
+  }
+
+  .bottom-right {
+    align-self: flex-end;
+  }
+
+  .card-name {
+    font-size: 0.9em;
+    text-align: center;
+    font-weight: 600;
+    // Allow wrapping
+    white-space: normal;
+    word-wrap: break-word;
+  }
+
+  .card-id { // Optional debug display
+    position: absolute;
+    bottom: 2px;
+    left: 2px;
+    font-size: 0.5em;
+    color: #aaa;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    color: rgba(255,255,255,0.87); // Dark theme text color
+    .card-id {
+      color: #888;
+    }
+  }
+}
+
+.card-placeholder {
+  font-size: 3em;
+  color: #ccc;
+  @media (prefers-color-scheme: dark) {
+    color: #666;
+  }
+}
+
+.card-container {
+  perspective: 1000px;
+}
+.card-face {
+  transition: transform 0.6s;
+  transform-style: preserve-3d;
+}
+.card-container.flipped .card-front {
+  transform: rotateY(180deg);
+}
+.card-container.flipped .card-back {
+  transform: rotateY(0deg);
+}
+.card-back {
+  transform: rotateY(-180deg);
+}
