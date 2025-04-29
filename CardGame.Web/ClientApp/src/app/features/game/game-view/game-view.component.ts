@@ -26,6 +26,7 @@ import {ActionModalData} from '../actionModalData';
 import {ActionModalResult} from '../actionModalResult';
 import {PlayCardRequestDto} from '../../../core/models/playCardRequestDto';
 import {PlayerHandInfoDto} from '../../../core/models/playerHandInfoDto';
+import {SpectatorPlayerDto} from '../../../core/models/spectatorPlayerDto';
 
 // Placeholder for backend CardType mapping (replace with actual import or definition)
 // This is needed if the backend sends type values (int) but modal needs names/values
@@ -260,7 +261,7 @@ export class GameViewComponent implements OnInit, OnDestroy {
     }
 
     this.isLoadingAction.set(true);
-    this.errorState.set(null); // Corrected: Use errorState signal
+    this.errorState.set(null); // Use errorState signal
 
     // Map guessed value back to type name string if needed by API
     const guessedTypeString = guessedValue !== undefined
@@ -273,7 +274,7 @@ export class GameViewComponent implements OnInit, OnDestroy {
       guessedCardType: guessedTypeString
     };
 
-    // Corrected: Call gameActionService.playCard
+    // Call gameActionService.playCard
     this.gameActionService.playCard(gameId, payload)
       .pipe(takeUntil(this.destroy$))
       .subscribe({
@@ -286,7 +287,7 @@ export class GameViewComponent implements OnInit, OnDestroy {
         },
         error: (err) => {
           this.isLoadingAction.set(false);
-          // Corrected: Use errorState signal
+          // Use errorState signal
           this.errorState.set(err.message || 'Failed to play card.');
           this.showSnackBar(`Error: ${this.errorState()}`, 5000); // Use signal value
           // Don't clear selection on error, allow user to retry or change action
@@ -296,22 +297,26 @@ export class GameViewComponent implements OnInit, OnDestroy {
   }
 
   // --- Helpers ---
-  trackByIndex(index: number, item: any): number {
-    return index;
-  }
-
-  trackCardById(index: number, item: CardDto): string {
-    return item.id; // Use unique card ID for tracking
-  }
-
   getPlayerName(playerId: string | null | undefined): string {
     if (!playerId) return 'Unknown';
+    // Use optional chaining on spectatorState() signal call
     return this.spectatorState()?.players.find(p => p.playerId === playerId)?.name ?? 'Unknown';
   }
 
   showSnackBar(message: string, duration: number = 3000): void {
     this.snackBar.open(message, 'Close', { duration });
   }
+
+  trackCardById(index: number, item: CardDto): string {
+    return item.id;
+  }
+
+  // Corrected type to match SpectatorGameStateDto.players or PlayerHandInfoDto
+  trackPlayerById(index: number, item: PlayerHandInfoDto | SpectatorPlayerDto): string {
+    return item.playerId;
+  }
+  // --- End TrackBy Functions ---
+
 
   // --- Getters for template ---
   get SpectatorGameState(): SpectatorGameStateDto | null {
@@ -333,18 +338,8 @@ export class GameViewComponent implements OnInit, OnDestroy {
     return this.isLoadingAction();
   }
   get ErrorMessage(): string | null {
-    // Corrected: Getter for the errorState signal
+    // Getter for the errorState signal
     return this.errorState();
-  }
-
-  /**
-   * TrackBy function for loops over PlayerHandInfoDto objects.
-   * @param index The index of the item.
-   * @param item The PlayerHandInfoDto item.
-   * @returns The unique player ID.
-   */
-  trackPlayerById(index: number, item: PlayerHandInfoDto): string {
-    return item.playerId;
   }
 
 }

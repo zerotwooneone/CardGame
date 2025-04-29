@@ -1,17 +1,14 @@
-<div class="game-view-container" *ngIf="SpectatorGameState; else loadingOrErrorTemplate">
-  <div class="game-info-bar">
-    <span>Round: {{ SpectatorGameState.roundNumber }}</span>
-    <span>Phase: {{ SpectatorGameState.gamePhase }}</span>
-    <span>Deck: {{ SpectatorGameState.deckCardsRemaining }} cards left</span>
-    <span>Tokens to Win: {{ SpectatorGameState.tokensNeededToWin }}</span>
-  </div>
+<div class="game-view-container" *ngIf="SpectatorGameState as gameState; else loadingOrErrorTemplate"> <div class="game-info-bar">
+  <span>Round: {{ gameState.roundNumber }}</span>
+  <span>Phase: {{ gameState.gamePhase }}</span>
+  <span>Deck: {{ gameState.deckCardsRemaining }} cards left</span>
+  <span>Tokens to Win: {{ gameState.tokensNeededToWin }}</span>
+</div>
 
   <div class="players-area">
     <app-player-display
-      *ngFor="let player of SpectatorGameState.players; trackBy: trackPlayerById"
-      [playerData]="player"
-      [isCurrentTurn]="player.playerId === SpectatorGameState.currentTurnPlayerId"
-      [isCurrentUser]="player.playerId === MyPlayerId"
+      *ngFor="let player of gameState.players; trackBy: trackPlayerById" [playerData]="player"
+      [isCurrentTurn]="player.playerId === gameState.currentTurnPlayerId" [isCurrentUser]="player.playerId === MyPlayerId"
       [isTargetable]="isTargetingRequired() && player.playerId !== MyPlayerId && !player.isProtected && player.status === 'Active'"
       [isSelectedTarget]="player.playerId === SelectedTargetId"
       (playerClicked)="onPlayerSelected($event)">
@@ -30,8 +27,7 @@
           (cardClicked)="onCardSelected($event)">
         </app-card>
       </div>
-      <div *ngIf="PlayerHandCards.length === 0 && SpectatorGameState.gamePhase !== 'GameOver'">
-        Waiting for card...
+      <div *ngIf="PlayerHandCards.length === 0 && gameState.gamePhase !== 'GameOver'"> Waiting for card...
       </div>
     </div>
     <div class="action-prompts" *ngIf="isMyTurn()">
@@ -57,10 +53,9 @@
     </div>
   </div>
 
-  <div class="public-cards-area" *ngIf="SpectatorGameState.publiclySetAsideCards.length > 0">
+  <div class="public-cards-area" *ngIf="gameState.publiclySetAsideCards && gameState.publiclySetAsideCards.length > 0">
     <h4>Public Cards</h4>
-    <div class="card-slot" *ngFor="let card of SpectatorGameState.publiclySetAsideCards; trackBy: trackCardById">
-      <app-card [cardData]="card" [isFaceDown]="false"></app-card>
+    <div class="card-slot" *ngFor="let card of gameState.publiclySetAsideCards; trackBy: trackCardById"> <app-card [cardData]="card" [isFaceDown]="false"></app-card>
     </div>
   </div>
 
