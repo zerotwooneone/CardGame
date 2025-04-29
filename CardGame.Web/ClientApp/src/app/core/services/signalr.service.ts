@@ -20,7 +20,8 @@ export enum ConnectionState {
   providedIn: 'root'
 })
 export class SignalrService implements OnDestroy {
-  private isBrowser: boolean;
+  // --- Make isBrowser public readonly ---
+  public readonly isBrowser: boolean;
   private notificationHubConnection?: signalR.HubConnection;
   private gameHubConnection?: signalR.HubConnection;
 
@@ -35,39 +36,27 @@ export class SignalrService implements OnDestroy {
   // --- End Connection State Signals ---
 
   // --- Subjects for Server-to-Client Messages (Keep as Subjects/Observables for event streams) ---
-  // Notification Hub Events
   private gameInvitationSubject = new Subject<{ gameId: string, creatorName: string }>();
   public gameInvitationReceived$ = this.gameInvitationSubject.asObservable();
-
-  // Game Hub Events
   private spectatorGameStateSubject = new Subject<SpectatorGameStateDto>();
   public spectatorGameStateReceived$ = this.spectatorGameStateSubject.asObservable();
-
   private playerHandSubject = new Subject<CardDto[]>();
   public playerHandReceived$ = this.playerHandSubject.asObservable();
-
   private opponentHandRevealSubject = new Subject<{ opponentId: string, revealedCard: CardDto }>();
   public opponentHandRevealReceived$ = this.opponentHandRevealSubject.asObservable();
-
   private playerGuessedSubject = new Subject<{ guesserId: string, targetId: string, guessedCardTypeValue: number, wasCorrect: boolean }>();
   public playerGuessedReceived$ = this.playerGuessedSubject.asObservable();
-
   private playersComparedHandsSubject = new Subject<{ player1Id: string, player1CardTypeValue: number, player2Id: string, player2CardTypeValue: number, loserId: string | null }>();
   public playersComparedHandsReceived$ = this.playersComparedHandsSubject.asObservable();
-
   private playerDiscardedSubject = new Subject<{ targetPlayerId: string, discardedCard: CardDto }>();
   public playerDiscardedReceived$ = this.playerDiscardedSubject.asObservable();
-
   private cardsSwappedSubject = new Subject<{ player1Id: string, player2Id: string }>();
   public cardsSwappedReceived$ = this.cardsSwappedSubject.asObservable();
-
   private roundWinnerSubject = new Subject<{ winnerId: string | null, reason: string, finalHands: { [playerId: string]: number | null } }>();
   public roundWinnerReceived$ = this.roundWinnerSubject.asObservable();
-
   private gameWinnerSubject = new Subject<{ winnerId: string }>();
   public gameWinnerReceived$ = this.gameWinnerSubject.asObservable();
-
-  // --- Removed authSubscription ---
+  // --- End Subjects ---
 
   constructor(
     @Inject(PLATFORM_ID) private platformId: object,
@@ -88,7 +77,6 @@ export class SignalrService implements OnDestroy {
       const isLoggedIn = this.authService.isLoggedIn(); // Read the signal value
       if (!isLoggedIn && this.isBrowser) { // Only react when false and in browser
         console.log('User logged out (detected by signal), stopping SignalR connections.');
-        // Use Promise.all to run stops concurrently without awaiting inside effect
         Promise.all([
           this.stopNotificationConnection(),
           this.stopGameConnection()
