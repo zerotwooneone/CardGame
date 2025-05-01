@@ -68,14 +68,14 @@ export class GameViewComponent implements OnInit, OnDestroy {
 
   private destroy$ = new Subject<void>();
 
-  // Game State Signals/Observables from Service
+  // Game State Signals from Service (public readonly)
   spectatorState: Signal<SpectatorGameStateDto | null> = this.gameStateService.spectatorState;
   playerHand: Signal<CardDto[]> = this.gameStateService.playerHand;
   isMyTurn: Signal<boolean> = this.gameStateService.isMyTurn;
   gamePhase: Signal<string | null> = this.gameStateService.gamePhase;
   gameId: Signal<string | null> = this.gameStateService.gameId;
 
-  // Local UI State Signals
+  // Local UI State Signals (writable)
   selectedCard: WritableSignal<CardDto | null> = signal(null);
   selectedTargetPlayerId: WritableSignal<string | null> = signal(null);
   isLoadingAction: WritableSignal<boolean> = signal(false);
@@ -138,7 +138,7 @@ export class GameViewComponent implements OnInit, OnDestroy {
   ngOnDestroy(): void {
     this.destroy$.next();
     this.destroy$.complete();
-    const currentId = this.gameId();
+    const currentId = this.gameId(); // Read signal value
     if (currentId) {
       this.gameStateService.disconnectFromGame(currentId);
     }
@@ -193,15 +193,15 @@ export class GameViewComponent implements OnInit, OnDestroy {
   // --- Targeting Interaction ---
 
   onPlayerSelected(playerId: string): void {
-    if (!this.isTargetingRequired() || !this.selectedCard()) return; // Only select if targeting needed
+    // Read signals directly
+    if (!this.isTargetingRequired() || !this.selectedCard()) return;
 
     this.selectedTargetPlayerId.set(playerId);
 
-    // If no guess is needed after selecting target, play the card
+    // Read signal directly
     if (!this.isGuessingRequired()) {
       this.confirmAndPlayCard();
     } else {
-      // If guess is needed (Guard), open the guess modal
       this.openGuessModal();
     }
   }
@@ -215,8 +215,7 @@ export class GameViewComponent implements OnInit, OnDestroy {
     const dialogData: ActionModalData = {
       actionType: 'guess-card',
       prompt: `Guess Player ${this.getPlayerName(this.selectedTargetPlayerId())}'s card (not Guard):`,
-      // Map CardType values/names for the modal
-      availableCardTypes: CardTypeMap.filter(ct => ct.value !== 1), // Exclude Guard (value 1)
+      availableCardTypes: CardTypeMap.filter(ct => ct.value !== 1),
       excludeCardTypeValue: 1
     };
 
@@ -226,10 +225,8 @@ export class GameViewComponent implements OnInit, OnDestroy {
 
     dialogRef.afterClosed().subscribe(result => {
       if (result?.selectedCardTypeValue !== undefined) {
-        // User confirmed guess
         this.confirmAndPlayCard(result.selectedCardTypeValue);
       } else {
-        // User cancelled - reset selections
         this.selectedCard.set(null);
         this.selectedTargetPlayerId.set(null);
       }
@@ -239,6 +236,7 @@ export class GameViewComponent implements OnInit, OnDestroy {
   // --- Play Action ---
 
   confirmAndPlayCard(guessedValue?: number): void {
+    // Read signals directly
     const card = this.selectedCard();
     const targetId = this.selectedTargetPlayerId();
     const gameId = this.gameId();
@@ -250,20 +248,19 @@ export class GameViewComponent implements OnInit, OnDestroy {
       return;
     }
 
-    // Final validation before sending to backend
+    // Read signals directly
     if (this.isTargetingRequired() && !targetId) {
       this.showSnackBar("Please select a target player.", 3000);
       return;
     }
     if (this.isGuessingRequired() && guessedValue === undefined) {
       this.showSnackBar("Please select a card type to guess.", 3000);
-      return; // Should have come from modal, but safety check
+      return;
     }
 
     this.isLoadingAction.set(true);
-    this.errorState.set(null); // Use errorState signal
+    this.errorState.set(null);
 
-    // Map guessed value back to type name string if needed by API
     const guessedTypeString = guessedValue !== undefined
       ? CardTypeMap.find(ct => ct.value === guessedValue)?.name
       : null;
@@ -274,12 +271,10 @@ export class GameViewComponent implements OnInit, OnDestroy {
       guessedCardType: guessedTypeString
     };
 
-    // Call gameActionService.playCard
     this.gameActionService.playCard(gameId, payload)
       .pipe(takeUntil(this.destroy$))
       .subscribe({
         next: () => {
-          // Success! State will update via SignalR. Clear local UI state.
           this.isLoadingAction.set(false);
           this.selectedCard.set(null);
           this.selectedTargetPlayerId.set(null);
@@ -287,11 +282,9 @@ export class GameViewComponent implements OnInit, OnDestroy {
         },
         error: (err) => {
           this.isLoadingAction.set(false);
-          // Use errorState signal
           this.errorState.set(err.message || 'Failed to play card.');
-          this.showSnackBar(`Error: ${this.errorState()}`, 5000); // Use signal value
-          // Don't clear selection on error, allow user to retry or change action
-          this.cdr.markForCheck(); // Ensure error message is displayed
+          this.showSnackBar(`Error: ${this.errorState()}`, 5000); // Read signal
+          this.cdr.markForCheck();
         }
       });
   }
@@ -299,7 +292,7 @@ export class GameViewComponent implements OnInit, OnDestroy {
   // --- Helpers ---
   getPlayerName(playerId: string | null | undefined): string {
     if (!playerId) return 'Unknown';
-    // Use optional chaining on spectatorState() signal call
+    // Read signal directly
     return this.spectatorState()?.players.find(p => p.playerId === playerId)?.name ?? 'Unknown';
   }
 
@@ -307,39 +300,19 @@ export class GameViewComponent implements OnInit, OnDestroy {
     this.snackBar.open(message, 'Close', { duration });
   }
 
+  // --- TrackBy Functions ---
+  trackByIndex(index: number, item: any): number {
+    return index;
+  }
+
   trackCardById(index: number, item: CardDto): string {
     return item.id;
   }
 
-  // Corrected type to match SpectatorGameStateDto.players or PlayerHandInfoDto
   trackPlayerById(index: number, item: PlayerHandInfoDto | SpectatorPlayerDto): string {
     return item.playerId;
   }
   // --- End TrackBy Functions ---
 
-
-  // --- Getters for template ---
-  get SpectatorGameState(): SpectatorGameStateDto | null {
-    return this.spectatorState();
-  }
-  get PlayerHandCards(): CardDto[] {
-    return this.playerHand();
-  }
-  get MyPlayerId(): string | null {
-    return this.currentPlayerId();
-  }
-  get SelectedCardId(): string | null {
-    return this.selectedCard()?.id ?? null;
-  }
-  get SelectedTargetId(): string | null {
-    return this.selectedTargetPlayerId();
-  }
-  get IsLoading(): boolean {
-    return this.isLoadingAction();
-  }
-  get ErrorMessage(): string | null {
-    // Getter for the errorState signal
-    return this.errorState();
-  }
 
 }
