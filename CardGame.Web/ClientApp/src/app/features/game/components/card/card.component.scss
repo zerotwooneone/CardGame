@@ -91,7 +91,7 @@
   // Styles for the card front content
   justify-content: space-between; // Push rank to corners
   align-items: stretch;
-  // Color inherited from .card-container
+  background: grey;
 
   .card-rank {
     font-size: 1.2em;
@@ -112,7 +112,6 @@
     font-weight: 600;
     white-space: normal;
     word-wrap: break-word;
-    // Allow name to take up necessary space
     flex-grow: 1;
     display: flex;
     align-items: center;
