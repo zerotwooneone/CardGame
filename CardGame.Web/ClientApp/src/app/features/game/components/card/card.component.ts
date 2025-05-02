@@ -30,20 +30,22 @@ export class CardComponent {
 
   /**
    * Whether the card is currently playable (e.g., in the current player's hand during their turn).
-   */
+  */
   @Input() isPlayable: boolean = false;
 
   /**
-   * Emits the CardDto when a playable card is clicked.
+   * Emits the CardDto when a face-up card with data is clicked.
+   * The parent component determines the action based on game state.
    */
   @Output() cardClicked = new EventEmitter<CardDto>();
 
   onCardClick(): void {
-    // Only emit the event if the card is playable, face-up, and has data
-    if (this.isPlayable && !this.isFaceDown && this.cardData) {
+    // Emit the event if the card is face-up and has data.
+    // Let the parent component decide if the click is valid based on isPlayable or game state.
+    if (!this.isFaceDown && this.cardData) {
       this.cardClicked.emit(this.cardData);
     }
-    // Could potentially emit even if face down if needed for some interaction
+    // Clicking a face-down card does nothing.
   }
 
   // Helper to get card type text (could be expanded for icons etc.)

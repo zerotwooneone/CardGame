@@ -1,4 +1,4 @@
-import { Component, OnInit, OnDestroy, inject, signal, WritableSignal, computed, Signal, ChangeDetectionStrategy, ChangeDetectorRef } from '@angular/core';
+import { Component, OnInit, OnDestroy, inject, signal, WritableSignal, computed, Signal, ChangeDetectionStrategy, ChangeDetectorRef, effect, Injector } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { CommonModule } from '@angular/common';
 import { Subscription, Subject } from 'rxjs';
@@ -313,6 +313,5 @@ export class GameViewComponent implements OnInit, OnDestroy {
     return item.playerId;
   }
   // --- End TrackBy Functions ---
-
 
 }
