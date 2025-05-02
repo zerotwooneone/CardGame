@@ -18,5 +18,5 @@ export interface PlayCardRequestDto {
    * Represented as a string (e.g., "Priest", "Baron").
    * Consider sending the integer value if CardType uses values on backend.
    */
-  guessedCardType?: string | null;
+  guessedCardType?: number | null;
 }

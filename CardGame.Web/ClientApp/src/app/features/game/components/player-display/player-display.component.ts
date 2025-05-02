@@ -26,8 +26,8 @@ import { CardDto } from '../../../../core/models/cardDto';
   changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class PlayerDisplayComponent {
-  /** Player data to display. Can be SpectatorPlayerDto or PlayerHandInfoDto. */
-  @Input() playerData?: PlayerHandInfoDto | null; // Use the DTO that includes necessary info
+  /** Player data to display. PlayerHandInfoDto has playedCardTypes: number[] */
+  @Input() playerData?: PlayerHandInfoDto | null;
 
   /** Is it currently this player's turn? */
   @Input() isCurrentTurn: boolean = false;
@@ -63,38 +63,31 @@ export class PlayerDisplayComponent {
   // Helper to create an array for iterating card placeholders in the template
   get handPlaceholders(): number[] {
     const count = this.playerData?.handCardCount ?? 0;
-    return Array(count).fill(0).map((x, i) => i);
+    return Array(Math.max(0, count)).fill(0).map((x, i) => i);
   }
 
   // Helper to create CardDto objects for the discard pile display
-  // We only have CardType names, so we create dummy CardDtos
+  // Uses the numeric type value from playerData.playedCardTypes
   get discardPileCards(): CardDto[] {
-    return (this.playerData?.playedCardTypes ?? []).map((typeName, index) => ({
+    return (this.playerData?.playedCardTypes ?? []).map((typeValue, index) => ({
       // Generate a pseudo-stable ID based on player and index for *ngFor trackBy
-      id: `${this.playerData?.playerId}_discard_${index}`,
-      type: typeName
-      // AppearanceId is not available from this DTO, use default or map if needed
+      id: `${this.playerData?.playerId}_discard_${index}_${typeValue}`, // Include typeValue for more stability
+      type: typeValue // Assign the numeric type value directly
     }));
   }
 
-  /**
-   * TrackBy function for loops based on index.
-   * @param index The index of the item.
-   * @param item The item itself (unused).
-   * @returns The index.
-   */
-  trackByIndex(index: number, item: any): number { // Added method
+  // --- TrackBy Functions ---
+  trackByIndex(index: number, item: any): number {
     return index;
   }
 
-  /**
-   * TrackBy function for loops over CardDto objects.
-   * @param index The index of the item.
-   * @param item The CardDto item.
-   * @returns The unique card ID.
-   */
   trackCardById(index: number, item: CardDto): string {
     return item.id; // Use unique card ID for tracking
   }
+
+  trackPlayerById(index: number, item: PlayerHandInfoDto): string {
+    return item.playerId;
+  }
+  // --- End TrackBy Functions ---
 
 }

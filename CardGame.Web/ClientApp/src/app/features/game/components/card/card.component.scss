@@ -8,7 +8,7 @@
   height: 120px; // Example size
   border: 1px solid var(--mat-divider-color, rgba(0,0,0,0.12)); // Use divider color for border
   border-radius: 6px;
-  cursor: default;
+  cursor: default; // Default cursor
   position: relative;
   overflow: hidden;
   // Use theme background variable (e.g., for paper/card background)
@@ -20,15 +20,21 @@
   font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
 
   // --- State Styles ---
-  &.playable {
-    cursor: pointer;
-    // Use theme accent color for playable border (adjust hue if needed)
-    border-color: var(--mat-accent-color-500, #4CAF50); // Fallback green
+  // Apply pointer cursor only when the card is face-up and has data,
+  // as these are the only conditions under which a click event is emitted.
+  &:not(.face-down) {
+    cursor: pointer; // Make face-up cards indicate clickability
 
     &:hover {
       transform: translateY(-3px);
       box-shadow: 0 5px 5px -3px rgba(0,0,0,.2), 0 8px 10px 1px rgba(0,0,0,.14), 0 3px 14px 2px rgba(0,0,0,.12); // Material elevation 8
     }
+  }
+
+  // Style specifically for playable cards (e.g., in current player's hand on their turn)
+  &.playable {
+    // Use theme accent color for playable border (adjust hue if needed)
+    border-color: var(--mat-accent-color-500, #4CAF50); // Fallback green
   }
 
   &.selected {
@@ -45,6 +51,12 @@
     background-color: var(--mat-primary-color-700, #303f9f); // Darker primary shade example
     border-color: var(--mat-primary-color-800, #283593);
     color: var(--mat-primary-contrast-color-700, white); // Ensure contrast for text/icons on back
+    cursor: default !important; // Ensure face-down cards are not clickable looking
+    &:hover {
+      // Disable hover effects for face-down cards
+      transform: none;
+      box-shadow: 0 2px 1px -1px rgba(0,0,0,.2), 0 1px 1px 0 rgba(0,0,0,.14), 0 1px 3px 0 rgba(0,0,0,.12);
+    }
   }
 
   // Note: Dark mode is handled automatically by the CSS variables changing

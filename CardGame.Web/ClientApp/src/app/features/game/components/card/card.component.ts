@@ -1,7 +1,9 @@
-import { Component, Input, Output, EventEmitter, ChangeDetectionStrategy } from '@angular/core';
-import { CommonModule } from '@angular/common';
-import { MatCardModule } from '@angular/material/card';
-import {CardDto} from '../../../../core/models/cardDto'; // Optional: for card styling
+import {ChangeDetectionStrategy, Component, EventEmitter, Input, Output} from '@angular/core';
+import {CommonModule} from '@angular/common';
+import {MatCardModule} from '@angular/material/card';
+import {CardDto} from '../../../../core/models/cardDto';
+import {CARD_DETAILS_MAP} from './CARD_DETAILS_MAP'; // Optional: for card styling
+
 
 @Component({
   selector: 'app-card',
@@ -13,10 +15,10 @@ import {CardDto} from '../../../../core/models/cardDto'; // Optional: for card s
 })
 export class CardComponent {
   /**
-   * The data for the card to display (ID, Type).
+   * The data for the card to display (ID, numeric Type/Rank).
    * Undefined if the card is face down or represents an unknown card.
    */
-  @Input() cardData?: CardDto;
+  @Input() cardData?: CardDto; // CardDto.type is now number
 
   /**
    * Whether the card should be displayed face down.
@@ -30,37 +32,34 @@ export class CardComponent {
 
   /**
    * Whether the card is currently playable (e.g., in the current player's hand during their turn).
-  */
+   */
   @Input() isPlayable: boolean = false;
 
   /**
    * Emits the CardDto when a face-up card with data is clicked.
-   * The parent component determines the action based on game state.
    */
   @Output() cardClicked = new EventEmitter<CardDto>();
 
   onCardClick(): void {
     // Emit the event if the card is face-up and has data.
-    // Let the parent component decide if the click is valid based on isPlayable or game state.
     if (!this.isFaceDown && this.cardData) {
       this.cardClicked.emit(this.cardData);
     }
-    // Clicking a face-down card does nothing.
   }
 
-  // Helper to get card type text (could be expanded for icons etc.)
+  /**
+   * Gets the display name of the card based on its numeric type value.
+   */
   get cardText(): string {
-    return this.cardData?.type ?? '?';
+    // Use the map to find the name based on the numeric type
+    return this.cardData?.type ? (CARD_DETAILS_MAP[this.cardData.type]?.name ?? '?') : '?';
   }
 
-  // Helper to get card rank (assuming type name maps to rank or CardType has rank)
-  // This might require more sophisticated mapping based on your CardType setup
+  /**
+   * Gets the rank of the card, which is now directly the numeric type value.
+   */
   get cardRank(): number | string {
-    // Placeholder - map cardData.type to rank
-    const typeRankMap: { [key: string]: number } = {
-      'Guard': 1, 'Priest': 2, 'Baron': 3, 'Handmaid': 4,
-      'Prince': 5, 'King': 6, 'Countess': 7, 'Princess': 8
-    };
-    return this.cardData?.type ? (typeRankMap[this.cardData.type] ?? '?') : '?';
+    // The type property itself is the rank/value
+    return this.cardData?.type ?? '?';
   }
 }

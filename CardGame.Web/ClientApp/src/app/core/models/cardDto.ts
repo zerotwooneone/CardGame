@@ -3,6 +3,6 @@
  */
 export interface CardDto {
   id: string; // Changed from Guid to string for frontend
-  type: string; // e.g., "Guard", "Princess" - Consider sending type value (int) instead?
+  type: number; // e.g., "Guard", "Princess" - Consider sending type value (int) instead?
   // AppearanceId removed
 }

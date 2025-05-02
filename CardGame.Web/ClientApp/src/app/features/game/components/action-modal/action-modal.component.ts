@@ -21,10 +21,9 @@ import {MatRadioModule} from '@angular/material/radio';
     MatButtonModule,
     MatFormFieldModule,
     MatSelectModule,
-    MatDialogModule,
+    MatRadioModule,
     MatDividerModule,
-    MatListModule,
-    MatRadioModule
+    MatListModule
   ],
   templateUrl: './action-modal.component.html',
   styleUrls: ['./action-modal.component.scss']
@@ -32,12 +31,14 @@ import {MatRadioModule} from '@angular/material/radio';
 export class ActionModalComponent implements OnInit {
 
   // Inject dialog data and reference
+  // ActionModalData now expects availableCardTypes as { value: number; name: string }[]
   public data: ActionModalData = inject(MAT_DIALOG_DATA);
   private dialogRef = inject(MatDialogRef<ActionModalComponent, ActionModalResult>); // Specify result type
   private fb = inject(FormBuilder);
 
   actionForm: FormGroup;
   filteredPlayers: { id: string; name: string; isProtected: boolean }[] = [];
+  // This property will hold the filtered card types { value: number; name: string }
   filteredCardTypes: { value: number; name: string }[] = [];
 
   constructor() {
@@ -54,6 +55,7 @@ export class ActionModalComponent implements OnInit {
     if (this.data.actionType === 'select-player') {
       this.actionForm.addControl('selectedPlayerId', this.fb.control(null, Validators.required));
     } else if (this.data.actionType === 'guess-card') {
+      // The control stores the selected numeric value
       this.actionForm.addControl('selectedCardTypeValue', this.fb.control(null, Validators.required));
     }
   }
@@ -64,9 +66,8 @@ export class ActionModalComponent implements OnInit {
       this.filteredPlayers = this.data.availablePlayers.filter(p =>
         p.id !== this.data.currentPlayerId && !p.isProtected
       );
-      // If no valid targets, disable submit? Or handle in parent component before opening?
     } else if (this.data.actionType === 'guess-card' && this.data.availableCardTypes) {
-      // Filter out the excluded card type (e.g., Guard)
+      // Filter out the excluded card type value (e.g., Guard's value 1)
       this.filteredCardTypes = this.data.availableCardTypes.filter(ct =>
         ct.value !== this.data.excludeCardTypeValue
       );
@@ -79,6 +80,7 @@ export class ActionModalComponent implements OnInit {
       if (this.data.actionType === 'select-player') {
         result.selectedPlayerId = this.actionForm.value.selectedPlayerId;
       } else if (this.data.actionType === 'guess-card') {
+        // Return the selected numeric value
         result.selectedCardTypeValue = this.actionForm.value.selectedCardTypeValue;
       }
       this.dialogRef.close(result); // Close dialog and return the result

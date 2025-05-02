@@ -10,7 +10,10 @@
       *ngFor="let player of gameState.players; trackBy: trackPlayerById"
       [playerData]="player"
       [isCurrentTurn]="player.playerId === gameState.currentTurnPlayerId"
-      [isCurrentUser]="player.playerId === currentPlayerId()" [isTargetable]="isTargetingRequired() && player.playerId !== currentPlayerId() && !player.isProtected && player.status === 'Active'" [isSelectedTarget]="player.playerId === selectedTargetPlayerId()" (playerClicked)="onPlayerSelected($event)">
+      [isCurrentUser]="player.playerId === currentPlayerId()"
+      [isTargetable]="isTargetingRequired() && player.playerId !== currentPlayerId() && !player.isProtected && player.status === 'Active'"
+      [isSelectedTarget]="player.playerId === selectedTargetPlayerId()"
+      (playerClicked)="onPlayerSelected($event)">
     </app-player-display>
   </div>
 
@@ -33,10 +36,17 @@
       <div *ngIf="playerHand().length === 0 && gameState.gamePhase !== 'GameOver'"> Waiting for card...
       </div>
     </div>
-    <div class="action-prompts" *ngIf="isMyTurn()"> <div *ngIf="selectedCard()"> <span *ngIf="isTargetingRequired() && !selectedTargetPlayerId()"> Please select a target player for {{ selectedCard()?.type }}. </span>
-      <span *ngIf="isGuessingRequired() && !selectedTargetPlayerId()"> Please select a target player for Guard.
+    <div class="action-prompts" *ngIf="isMyTurn()">
+      <div *ngIf="selectedCard() as card">
+        <span *ngIf="isTargetingRequired() && !selectedTargetPlayerId()">
+              Please select a target player for {{ selectedCardName() }}.
            </span>
-      <span *ngIf="isGuessingRequired() && selectedTargetPlayerId()"> Please guess Player {{ getPlayerName(selectedTargetPlayerId()) }}'s card. </span> </div>
+        <span *ngIf="isGuessingRequired() && !selectedTargetPlayerId()">
+             Please select a target player for Guard.
+           </span>
+        <span *ngIf="isGuessingRequired() && selectedTargetPlayerId()">
+             Please guess Player {{ getPlayerName(selectedTargetPlayerId()) }}'s card. </span>
+      </div>
       <div *ngIf="!selectedCard()"> Select a card to play.
       </div>
       <div *ngIf="isLoadingAction()" class="action-spinner"> <mat-spinner diameter="20"></mat-spinner> <span>Processing...</span>
@@ -45,7 +55,8 @@
     <div *ngIf="errorState()" class="component-error-message"> {{ errorState() }} </div>
   </div>
 
-  <div class="public-cards-area" *ngIf="gameState.publiclySetAsideCards?.length"> <h4>Public Cards</h4>
+  <div class="public-cards-area" *ngIf="gameState.publiclySetAsideCards?.length">
+    <h4>Public Cards</h4>
     <div class="card-slot" *ngFor="let card of gameState.publiclySetAsideCards; trackBy: trackCardById"> <app-card [cardData]="card" [isFaceDown]="false"></app-card>
     </div>
   </div>

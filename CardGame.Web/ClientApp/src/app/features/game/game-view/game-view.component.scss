@@ -79,6 +79,16 @@
   gap: 8px;
 }
 
+// Style for component-level error messages (not form validation errors)
+.component-error-message {
+  text-align: center;
+  padding: 10px;
+  margin-top: 10px;
+  color: var(--mat-warn-color, #f44336); // Use theme warn color variable
+  font-weight: 500;
+}
+
+
 .public-cards-area {
   margin-top: 20px;
   padding: 10px;

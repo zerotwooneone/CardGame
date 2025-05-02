@@ -27,14 +27,13 @@ import {ActionModalResult} from '../actionModalResult';
 import {PlayCardRequestDto} from '../../../core/models/playCardRequestDto';
 import {PlayerHandInfoDto} from '../../../core/models/playerHandInfoDto';
 import {SpectatorPlayerDto} from '../../../core/models/spectatorPlayerDto';
+import {CARD_DETAILS_MAP} from '../components/card/CARD_DETAILS_MAP';
 
-// Placeholder for backend CardType mapping (replace with actual import or definition)
-// This is needed if the backend sends type values (int) but modal needs names/values
-const CardTypeMap: { value: number; name: string }[] = [
-  { value: 1, name: 'Guard' }, { value: 2, name: 'Priest' }, { value: 3, name: 'Baron' },
-  { value: 4, name: 'Handmaid' }, { value: 5, name: 'Prince' }, { value: 6, name: 'King' },
-  { value: 7, name: 'Countess' }, { value: 8, name: 'Princess' }
-];
+const getCardNameFromValue = (value: number | undefined): string => {
+  if (value === undefined) return '?';
+  // Access the imported map directly
+  return CARD_DETAILS_MAP[value]?.name ?? '?';
+};
 
 
 @Component({
@@ -89,23 +88,24 @@ export class GameViewComponent implements OnInit, OnDestroy {
     const state = this.spectatorState();
     const myId = this.currentPlayerId();
     if (!state || !myId) return [];
-    // Filter out self (usually) and protected/eliminated players
     return state.players
       .filter(p => p.playerId !== myId && p.status === 'Active' && !p.isProtected)
-      .map(p => ({ id: p.playerId, name: p.name, isProtected: p.isProtected })); // Map to simpler structure if needed
+      .map(p => ({ id: p.playerId, name: p.name, isProtected: p.isProtected }));
   });
 
   // Computed signal to check if targeting is needed for the selected card
   isTargetingRequired: Signal<boolean> = computed(() => {
     const card = this.selectedCard();
     if (!card) return false;
-    // Define which card types require a target player
-    const targetTypes = ['Guard', 'Priest', 'Baron', 'King']; // Prince handles self implicitly
+    const targetTypes = [1, 2, 3, 6]; // Guard, Priest, Baron, King values
     return targetTypes.includes(card.type);
   });
 
   // Computed signal to check if guessing is needed (Guard)
-  isGuessingRequired: Signal<boolean> = computed(() => this.selectedCard()?.type === 'Guard');
+  isGuessingRequired: Signal<boolean> = computed(() => this.selectedCard()?.type === 1); // Guard value is 1
+
+  // Computed signal for the selected card's name
+  selectedCardName: Signal<string> = computed(() => getCardNameFromValue(this.selectedCard()?.type)); // Use helper
 
   ngOnInit(): void {
     this.errorState.set(null); // Clear error on init
@@ -126,12 +126,9 @@ export class GameViewComponent implements OnInit, OnDestroy {
         } else {
           console.error("No game ID found in route.");
           this.errorState.set("No Game ID specified.");
-          // Optionally navigate away
-          // this.router.navigate(['/lobby']);
         }
       });
 
-    // Subscribe to transient events for UI feedback (e.g., snackbar messages)
     this.subscribeToGameEvents();
   }
 
@@ -145,9 +142,10 @@ export class GameViewComponent implements OnInit, OnDestroy {
   }
 
   private subscribeToGameEvents(): void {
+    // Use helper function for card names in snackbar messages
     this.gameStateService.playerGuessed$
       .pipe(takeUntil(this.destroy$))
-      .subscribe(data => this.showSnackBar(`Guess result: ${data.wasCorrect ? 'Correct!' : 'Incorrect.'}`));
+      .subscribe(data => this.showSnackBar(`Guess (${getCardNameFromValue(data.guessedCardTypeValue)}) result: ${data.wasCorrect ? 'Correct!' : 'Incorrect.'}`));
 
     this.gameStateService.playersComparedHands$
       .pipe(takeUntil(this.destroy$))
@@ -155,7 +153,7 @@ export class GameViewComponent implements OnInit, OnDestroy {
 
     this.gameStateService.playerDiscarded$
       .pipe(takeUntil(this.destroy$))
-      .subscribe(data => this.showSnackBar(`Player ${this.getPlayerName(data.targetPlayerId)} discarded ${data.discardedCard.type}`));
+      .subscribe(data => this.showSnackBar(`Player ${this.getPlayerName(data.targetPlayerId)} discarded ${getCardNameFromValue(data.discardedCard.type)}`)); // Use helper
 
     this.gameStateService.cardsSwapped$
       .pipe(takeUntil(this.destroy$))
@@ -167,23 +165,21 @@ export class GameViewComponent implements OnInit, OnDestroy {
 
     this.gameStateService.gameWinnerAnnounced$
       .pipe(takeUntil(this.destroy$))
-      .subscribe(data => this.showSnackBar(`Game Over! Player ${this.getPlayerName(data.winnerId)} wins the game!`, 10000)); // Longer duration
+      .subscribe(data => this.showSnackBar(`Game Over! Player ${this.getPlayerName(data.winnerId)} wins the game!`, 10000));
   }
 
   // --- Card Interaction ---
 
   onCardSelected(card: CardDto): void {
-    if (!this.isMyTurn()) return; // Can only select cards on your turn
+    if (!this.isMyTurn()) return;
 
-    // If already selected, deselect
     if (this.selectedCard()?.id === card.id) {
       this.selectedCard.set(null);
-      this.selectedTargetPlayerId.set(null); // Also clear target
+      this.selectedTargetPlayerId.set(null);
     } else {
       this.selectedCard.set(card);
-      this.selectedTargetPlayerId.set(null); // Clear target when selecting new card
+      this.selectedTargetPlayerId.set(null);
 
-      // If the selected card doesn't need a target or guess, play it immediately
       if (!this.isTargetingRequired() && !this.isGuessingRequired()) {
         this.confirmAndPlayCard();
       }
@@ -193,12 +189,10 @@ export class GameViewComponent implements OnInit, OnDestroy {
   // --- Targeting Interaction ---
 
   onPlayerSelected(playerId: string): void {
-    // Read signals directly
     if (!this.isTargetingRequired() || !this.selectedCard()) return;
 
     this.selectedTargetPlayerId.set(playerId);
 
-    // Read signal directly
     if (!this.isGuessingRequired()) {
       this.confirmAndPlayCard();
     } else {
@@ -210,12 +204,15 @@ export class GameViewComponent implements OnInit, OnDestroy {
 
   openGuessModal(): void {
     const cardBeingPlayed = this.selectedCard();
-    if (!cardBeingPlayed || cardBeingPlayed.type !== 'Guard') return;
+    if (!cardBeingPlayed || cardBeingPlayed.type !== 1) return;
 
     const dialogData: ActionModalData = {
       actionType: 'guess-card',
       prompt: `Guess Player ${this.getPlayerName(this.selectedTargetPlayerId())}'s card (not Guard):`,
-      availableCardTypes: CardTypeMap.filter(ct => ct.value !== 1),
+      // Use Object.entries and map with helper to get {value, name} for modal
+      availableCardTypes: Object.entries(CARD_DETAILS_MAP)
+        .map(([valueStr, details]) => ({ value: parseInt(valueStr, 10), name: details.name }))
+        .filter(ct => ct.value !== 1), // Exclude Guard (value 1)
       excludeCardTypeValue: 1
     };
 
@@ -236,7 +233,6 @@ export class GameViewComponent implements OnInit, OnDestroy {
   // --- Play Action ---
 
   confirmAndPlayCard(guessedValue?: number): void {
-    // Read signals directly
     const card = this.selectedCard();
     const targetId = this.selectedTargetPlayerId();
     const gameId = this.gameId();
@@ -248,7 +244,6 @@ export class GameViewComponent implements OnInit, OnDestroy {
       return;
     }
 
-    // Read signals directly
     if (this.isTargetingRequired() && !targetId) {
       this.showSnackBar("Please select a target player.", 3000);
       return;
@@ -261,14 +256,11 @@ export class GameViewComponent implements OnInit, OnDestroy {
     this.isLoadingAction.set(true);
     this.errorState.set(null);
 
-    const guessedTypeString = guessedValue !== undefined
-      ? CardTypeMap.find(ct => ct.value === guessedValue)?.name
-      : null;
-
+    // PlayCardRequestDto expects guessedCardType as number?
     const payload: PlayCardRequestDto = {
       cardId: card.id,
       targetPlayerId: targetId,
-      guessedCardType: guessedTypeString
+      guessedCardType: guessedValue // Pass the numeric value directly
     };
 
     this.gameActionService.playCard(gameId, payload)
@@ -283,7 +275,7 @@ export class GameViewComponent implements OnInit, OnDestroy {
         error: (err) => {
           this.isLoadingAction.set(false);
           this.errorState.set(err.message || 'Failed to play card.');
-          this.showSnackBar(`Error: ${this.errorState()}`, 5000); // Read signal
+          this.showSnackBar(`Error: ${this.errorState()}`, 5000);
           this.cdr.markForCheck();
         }
       });
@@ -292,7 +284,6 @@ export class GameViewComponent implements OnInit, OnDestroy {
   // --- Helpers ---
   getPlayerName(playerId: string | null | undefined): string {
     if (!playerId) return 'Unknown';
-    // Read signal directly
     return this.spectatorState()?.players.find(p => p.playerId === playerId)?.name ?? 'Unknown';
   }
 
@@ -301,17 +292,9 @@ export class GameViewComponent implements OnInit, OnDestroy {
   }
 
   // --- TrackBy Functions ---
-  trackByIndex(index: number, item: any): number {
-    return index;
-  }
-
-  trackCardById(index: number, item: CardDto): string {
-    return item.id;
-  }
-
-  trackPlayerById(index: number, item: PlayerHandInfoDto | SpectatorPlayerDto): string {
-    return item.playerId;
-  }
+  trackByIndex(index: number, item: any): number { return index; }
+  trackCardById(index: number, item: CardDto): string { return item.id; }
+  trackPlayerById(index: number, item: PlayerHandInfoDto | SpectatorPlayerDto): string { return item.playerId; }
   // --- End TrackBy Functions ---
 
 }

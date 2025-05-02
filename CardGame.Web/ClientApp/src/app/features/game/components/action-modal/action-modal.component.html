@@ -19,8 +19,7 @@
     <div *ngIf="data.actionType === 'guess-card'" class="radio-group-container">
       <mat-radio-group formControlName="selectedCardTypeValue" required color="primary">
         <mat-radio-button *ngFor="let cardType of filteredCardTypes" [value]="cardType.value" class="radio-button">
-          {{ cardType.name }}
-        </mat-radio-button>
+          {{ cardType.name }} </mat-radio-button>
       </mat-radio-group>
       <mat-error *ngIf="actionForm.get('selectedCardTypeValue')?.hasError('required') && actionForm.get('selectedCardTypeValue')?.touched">
         Card guess is required.
