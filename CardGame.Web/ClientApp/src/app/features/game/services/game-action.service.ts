@@ -2,6 +2,7 @@ import {inject, Injectable} from '@angular/core';
 import {HttpClient, HttpErrorResponse} from '@angular/common/http';
 import {catchError, Observable, throwError} from 'rxjs';
 import {PlayCardRequestDto} from '../../../core/models/playCardRequestDto';
+import { PlayerGameStateDto } from '../../../core/models/playerGameStateDto';
 
 @Injectable({
   // Provided locally within the game feature routing or component if lazy loaded,
@@ -32,8 +33,19 @@ export class GameActionService {
       );
   }
 
-  // --- Add other game action methods here if needed ---
-  // e.g., startGame(), forfeitGame(), etc.
+  /**
+   * Fetches the game state from a specific player's perspective.
+   * @param gameId The ID of the game.
+   * @param playerId The ID of the player whose state is requested.
+   * @returns An observable containing the player-specific game state.
+   */
+  getPlayerState(gameId: string, playerId: string): Observable<PlayerGameStateDto> { // Added method
+    const url = `${this.apiUrl}/${gameId}/players/${playerId}`;
+    return this.http.get<PlayerGameStateDto>(url)
+      .pipe(
+        catchError(this.handleError)
+      );
+  }
 
   /**
    * Basic error handler for HTTP requests.
