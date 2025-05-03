@@ -18,11 +18,10 @@ public class Game // Aggregate Root
     public GamePhase GamePhase { get; private set; } = GamePhase.NotStarted;
     public int RoundNumber { get; private set; } = 0;
     public int TokensNeededToWin { get; private set; } = 4;
-    public Card? SetAsideCard { get; private set; } // The single card set aside face-down
-    public List<Card> PubliclySetAsideCards { get; private set; } = new List<Card>(); // Cards set aside face-up (for 2 players)
+    public Card? SetAsideCard { get; private set; }
+    public List<Card> PubliclySetAsideCards { get; private set; } = new List<Card>();
     public Guid? LastRoundWinnerId { get; private set; }
 
-    // --- Added field to store the definitive card set for the game's deck ---
     private readonly IReadOnlyList<Card> _initialDeckCardSet;
 
     // --- Domain Event Handling ---
@@ -33,38 +32,21 @@ public class Game // Aggregate Root
     private void AddDomainEvent(IDomainEvent domainEvent) { _domainEvents.Add(domainEvent); }
     // --- End Domain Event Handling ---
 
-    // Private constructor for factory methods and persistence/mapping frameworks
     private Game(Guid id, IReadOnlyList<Card> initialDeckCardSet)
     {
         Id = id;
         _initialDeckCardSet = initialDeckCardSet ?? throw new ArgumentNullException(nameof(initialDeckCardSet));
-        Deck = Deck.Load(Enumerable.Empty<Card>()); // Initialize with empty deck placeholder
+        Deck = Deck.Load(Enumerable.Empty<Card>());
     }
 
     // --- Factory Methods ---
-
-    /// <summary>
-    /// Creates a brand new game instance using provided player info (ID and Name).
-    /// Optionally accepts a predefined list of cards for the initial deck.
-    /// </summary>
-    public static Game CreateNewGame(
-        IEnumerable<PlayerInfo> playerInfos,
-        Guid creatorPlayerId,
-        int tokensToWin = 4,
-        IEnumerable<Card>? initialDeckCards = null)
+    public static Game CreateNewGame( IEnumerable<PlayerInfo> playerInfos, Guid creatorPlayerId, int tokensToWin = 4, IEnumerable<Card>? initialDeckCards = null)
     {
         var gameId = Guid.NewGuid();
         List<Card> cardSetToUse;
-
         var providedList = initialDeckCards?.ToList();
-        if (providedList != null && providedList.Count == 16) // Example: Validate count
-        {
-            cardSetToUse = providedList;
-        }
-        else
-        {
-            cardSetToUse = CreateStandardCardList(); // Use internal helper
-        }
+        if (providedList != null && providedList.Count == 16) { cardSetToUse = providedList; }
+        else { cardSetToUse = CreateStandardCardList(); }
 
         var game = new Game(gameId, new ReadOnlyCollection<Card>(cardSetToUse))
         {
@@ -91,23 +73,7 @@ public class Game // Aggregate Root
         return game;
     }
 
-
-    /// <summary>
-    /// Rehydrates a Game aggregate from its persisted state.
-    /// </summary>
-    public static Game Load(
-        Guid id,
-        int roundNumber,
-        GamePhase gamePhase,
-        Guid currentTurnPlayerId,
-        List<Player> players,
-        Deck deck,
-        Card? setAsideCard,
-        List<Card> publiclySetAsideCards,
-        List<Card> discardPile,
-        int tokensToWin,
-        Guid? lastRoundWinnerId,
-        List<Card> initialDeckCardSet)
+    public static Game Load( Guid id, int roundNumber, GamePhase gamePhase, Guid currentTurnPlayerId, List<Player> players, Deck deck, Card? setAsideCard, List<Card> publiclySetAsideCards, List<Card> discardPile, int tokensToWin, Guid? lastRoundWinnerId, List<Card> initialDeckCardSet)
     {
         var game = new Game(id, new ReadOnlyCollection<Card>(initialDeckCardSet ?? CreateStandardCardList()))
         {
@@ -115,7 +81,7 @@ public class Game // Aggregate Root
             GamePhase = gamePhase,
             CurrentTurnPlayerId = currentTurnPlayerId,
             Players = players ?? new List<Player>(),
-            Deck = deck, // Assign the loaded current deck state
+            Deck = deck,
             SetAsideCard = setAsideCard,
             PubliclySetAsideCards = publiclySetAsideCards ?? new List<Card>(),
             DiscardPile = discardPile ?? new List<Card>(),
@@ -126,17 +92,13 @@ public class Game // Aggregate Root
     }
 
     // --- Public Methods (Game Actions) ---
-
-    /// <summary>
-    /// Starts a new round of the game using the game's initial card set.
-    /// </summary>
     public void StartNewRound(IRandomizer? randomizer = null)
     {
         if (GamePhase == GamePhase.GameOver) throw new GameRuleException("Cannot start a new round, the game is over.");
         if (GamePhase == GamePhase.RoundInProgress) throw new GameRuleException("Cannot start a new round while one is in progress.");
 
         RoundNumber++;
-        Deck = Deck.CreateShuffled(_initialDeckCardSet, randomizer); // Use the stored set
+        Deck = Deck.CreateShuffled(_initialDeckCardSet, randomizer);
         DiscardPile.Clear();
         SetAsideCard = null;
         PubliclySetAsideCards.Clear();
@@ -171,7 +133,8 @@ public class Game // Aggregate Root
              playerIds.Add(player.Id);
         }
 
-        if (CheckRoundEndCondition()) return; // Check if dealing emptied deck
+        // Check if dealing emptied the deck. CheckRoundEndCondition calls EndRound if true.
+        if (CheckRoundEndCondition()) return;
 
         // Determine Starting Player
         Guid startingPlayerId;
@@ -181,17 +144,13 @@ public class Game // Aggregate Root
 
         GamePhase = GamePhase.RoundInProgress;
 
-        // Raise event including public set aside cards info (ID and Type)
         AddDomainEvent(new RoundStarted(
             Id, RoundNumber, playerIds, Deck.CardsRemaining, SetAsideCard?.Type,
             PubliclySetAsideCards.Select(c => new PublicCardInfo(c.Id, c.Type)).ToList()
         ));
-        HandleTurnStartDrawing(); // Start the first turn's draw phase
+        HandleTurnStartDrawing();
     }
 
-    /// <summary>
-    /// Handles a player playing a card.
-    /// </summary>
     public void PlayCard(Guid playerId, Card cardToPlayInstance, Guid? targetPlayerId, CardType? guessedCardType)
     {
         var cardType = cardToPlayInstance.Type;
@@ -218,16 +177,25 @@ public class Game // Aggregate Root
             default: throw new ArgumentOutOfRangeException(nameof(cardToPlayInstance), $"Unknown card type: {cardType.Name}");
         }
 
-        bool roundEnded = CheckRoundEndCondition();
-        if (!roundEnded && GamePhase == GamePhase.RoundInProgress)
+        // --- Updated End of Turn Logic ---
+        // Check if the round ended due to the card play (elimination) or if deck was already empty.
+        // CheckRoundEndCondition() internally calls EndRound() if conditions are met.
+        bool roundEndedImmediately = CheckRoundEndCondition();
+
+        // If the round didn't end from the card play itself, advance the turn.
+        // AdvanceTurn() will handle the next player's draw and check again if the deck becomes empty then.
+        if (!roundEndedImmediately && GamePhase == GamePhase.RoundInProgress)
         {
              AdvanceTurn();
         }
+        // If the round *did* end immediately (roundEndedImmediately = true), the EndRound logic
+        // (including AwardToken and potentially StartNewRound or EndGame) has already been triggered
+        // within CheckRoundEndCondition -> EndRound -> AwardToken. No further action needed here.
+        // --- End Updated End of Turn Logic ---
     }
 
     // --- Private Helper Methods ---
 
-    // Moved CreateStandardCardList here from Deck
     private static List<Card> CreateStandardCardList()
     {
         return new List<Card> {
@@ -384,21 +352,24 @@ public class Game // Aggregate Root
         }
     }
 
-    private bool CheckRoundEndCondition()
+   private bool CheckRoundEndCondition()
     {
-        if (GamePhase != GamePhase.RoundInProgress) return false;
+        // Check only if the round is currently marked as in progress
+        if (GamePhase != GamePhase.RoundInProgress) return false; // Already ended or not started
+
         var activePlayers = Players.Where(p => p.Status == PlayerStatus.Active).ToList();
         if (activePlayers.Count <= 1 || Deck.IsEmpty)
         {
             EndRound(activePlayers);
-            return true;
+            return true; // Indicate round has ended
         }
-        return false;
+        return false; // Round continues
     }
 
     private void EndRound(List<Player> activePlayers)
     {
-        if (GamePhase != GamePhase.RoundInProgress) return; // Prevent multiple calls
+        // Prevent multiple calls if already processing end round
+        if (GamePhase != GamePhase.RoundInProgress) return;
 
         GamePhase = GamePhase.RoundOver;
         Guid? winnerId = null;
@@ -413,7 +384,11 @@ public class Game // Aggregate Root
         else // Deck is empty
         {
             reason = "Deck empty, highest card wins";
-            if (!activePlayers.Any()) { /* Draw */ }
+            if (!activePlayers.Any())
+            {
+                winnerId = null; 
+                /* Draw */
+            }
             else
             {
                 var highestRank = activePlayers.Max(p => p.Hand.GetHeldCard()?.Rank ?? -1);
@@ -424,10 +399,18 @@ public class Game // Aggregate Root
             }
         }
 
-        LastRoundWinnerId = winnerId; // Store winner for next round start
+        LastRoundWinnerId = winnerId;
 
         AddDomainEvent(new RoundEnded(Id, winnerId, finalHands, reason));
-        if (winnerId.HasValue) AwardToken(winnerId.Value);
+
+        if (winnerId.HasValue)
+        {
+            AwardToken(winnerId.Value); // Award token (checks game end / starts next round)
+        }
+        else if (GamePhase != GamePhase.GameOver) // Handle draw case: If game not over, start next round
+        {
+             StartNewRound();
+        }
     }
 
     private void AwardToken(Guid playerId)
@@ -435,11 +418,22 @@ public class Game // Aggregate Root
         var player = GetPlayerById(playerId);
         player.AddToken();
         AddDomainEvent(new TokenAwarded(Id, playerId, player.TokensWon));
-        if (player.TokensWon >= TokensNeededToWin) EndGame(playerId);
+
+        if (player.TokensWon >= TokensNeededToWin)
+        {
+            EndGame(playerId); // Sets GamePhase to GameOver
+        }
+
+        // If the game didn't end, automatically start the next round
+        if (GamePhase != GamePhase.GameOver)
+        {
+            StartNewRound(); // Use default randomizer
+        }
     }
 
     private void EndGame(Guid winnerId)
     {
+        if (GamePhase == GamePhase.GameOver) return;
         GamePhase = GamePhase.GameOver;
         AddDomainEvent(new GameEnded(Id, winnerId));
     }
@@ -456,25 +450,31 @@ public class Game // Aggregate Root
         {
             nextPlayerIndex = (nextPlayerIndex + 1) % Players.Count;
             nextPlayer = Players[nextPlayerIndex];
-            if (++loopCheck > Players.Count * 2) break; // Safety break
+            if (++loopCheck > Players.Count * 2) {
+                 if (!CheckRoundEndCondition()) EndRound(new List<Player>());
+                 return;
+            }
         } while (nextPlayer.Status == PlayerStatus.Eliminated);
 
+        // Check if only one player remains active after skipping
+        // This check might be redundant if CheckRoundEndCondition is robust, but safe to keep
         var activePlayers = Players.Count(p => p.Status == PlayerStatus.Active);
-        if(activePlayers <= 1 && loopCheck <= Players.Count * 2) // Check if only one active player remains
+        if(activePlayers <= 1)
         {
-             if (!CheckRoundEndCondition()) { EndRound(Players.Where(p => p.Status == PlayerStatus.Active).ToList()); }
+             if (CheckRoundEndCondition()) return; // Let Check call EndRound
+             EndRound(Players.Where(p => p.Status == PlayerStatus.Active).ToList()); // Force EndRound if Check missed it
              return;
         }
 
         CurrentTurnPlayerId = nextPlayer.Id;
-        HandleTurnStartDrawing();
+        HandleTurnStartDrawing(); // This method now checks for round end after drawing
     }
 
     private void HandleTurnStartDrawing()
     {
         var player = GetPlayerById(CurrentTurnPlayerId);
         if (player.Status != PlayerStatus.Active) return;
-        bool drewCard = false;
+
         if (!Deck.IsEmpty)
         {
             (Card card, Deck remainingDeck) = Deck.Draw();
@@ -482,20 +482,20 @@ public class Game // Aggregate Root
             player.GiveCard(card);
             AddDomainEvent(new PlayerDrewCard(Id, player.Id));
             AddDomainEvent(new DeckChanged(Id, Deck.CardsRemaining));
-            drewCard = true;
         }
-        bool roundEnded = CheckRoundEndCondition(); // Check AFTER draw attempt
+
+        // Check round end condition AFTER the draw attempt.
+        // This handles the case where the draw emptied the deck.
+        // CheckRoundEndCondition() calls EndRound() if true.
+        bool roundEnded = CheckRoundEndCondition();
+
+        // Only raise TurnStarted if the round didn't just end
         if(!roundEnded && GamePhase == GamePhase.RoundInProgress)
         {
             AddDomainEvent(new TurnStarted(Id, CurrentTurnPlayerId, RoundNumber));
         }
     }
 
-    private Player GetPlayerById(Guid playerId)
-    {
-        var player = Players.FirstOrDefault(p => p.Id == playerId);
-        if (player == null) throw new ArgumentException($"Player with ID {playerId} not found in this game.");
-        return player;
-    }
+    private Player GetPlayerById(Guid playerId) { var player = Players.FirstOrDefault(p => p.Id == playerId); if (player == null) throw new ArgumentException($"Player with ID {playerId} not found in this game."); return player; }
 
 }
