@@ -36,7 +36,7 @@ public class HandlePlayerPlayedCardAndSendHandUpdate : INotificationHandler<Doma
             domainEvent.PlayerId, domainEvent.GameId);
 
         // Load the game state to get the player's current hand AFTER the card was played
-        var game = await _gameRepository.GetByIdAsync(domainEvent.GameId, cancellationToken);
+        var game = await _gameRepository.GetByIdAsync(domainEvent.GameId, cancellationToken).ConfigureAwait(false);
         var player = game?.Players.FirstOrDefault(p => p.Id == domainEvent.PlayerId);
 
         if (player != null)
@@ -49,7 +49,7 @@ public class HandlePlayerPlayedCardAndSendHandUpdate : INotificationHandler<Doma
             }).ToList();
 
             // Send the hand update using the notifier service ONLY to the player who acted
-            await _playerNotifier.SendHandUpdateAsync(player.Id, handDto, cancellationToken);
+            await _playerNotifier.SendHandUpdateAsync(player.Id, handDto, cancellationToken).ConfigureAwait(false);
         }
         else
         {

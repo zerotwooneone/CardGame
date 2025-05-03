@@ -133,7 +133,6 @@ public class Game // Aggregate Root
              playerIds.Add(player.Id);
         }
 
-        // Check if dealing emptied the deck. CheckRoundEndCondition calls EndRound if true.
         if (CheckRoundEndCondition()) return;
 
         // Determine Starting Player
@@ -177,21 +176,14 @@ public class Game // Aggregate Root
             default: throw new ArgumentOutOfRangeException(nameof(cardToPlayInstance), $"Unknown card type: {cardType.Name}");
         }
 
-        // --- Updated End of Turn Logic ---
         // Check if the round ended due to the card play (elimination) or if deck was already empty.
-        // CheckRoundEndCondition() internally calls EndRound() if conditions are met.
         bool roundEndedImmediately = CheckRoundEndCondition();
 
         // If the round didn't end from the card play itself, advance the turn.
-        // AdvanceTurn() will handle the next player's draw and check again if the deck becomes empty then.
         if (!roundEndedImmediately && GamePhase == GamePhase.RoundInProgress)
         {
              AdvanceTurn();
         }
-        // If the round *did* end immediately (roundEndedImmediately = true), the EndRound logic
-        // (including AwardToken and potentially StartNewRound or EndGame) has already been triggered
-        // within CheckRoundEndCondition -> EndRound -> AwardToken. No further action needed here.
-        // --- End Updated End of Turn Logic ---
     }
 
     // --- Private Helper Methods ---
@@ -218,19 +210,24 @@ public class Game // Aggregate Root
         var player = GetPlayerById(playerId);
         if (!player.Hand.GetCards().Any(c => c.Id == cardToPlayInstance.Id)) throw new InvalidMoveException($"Player {player.Name} does not hold the specified card instance (ID: {cardToPlayInstance.Id}).");
         if ((cardType == CardType.King || cardType == CardType.Prince) && player.Hand.Contains(CardType.Countess)) throw new GameRuleException($"Player {player.Name} must play the Countess.");
-        bool requiresTarget = cardType == CardType.Guard || cardType == CardType.Priest || cardType == CardType.Baron || cardType == CardType.King || cardType == CardType.Prince;
+
         if (targetPlayerId.HasValue)
         {
-            var targetPlayer = GetPlayerById(targetPlayerId.Value);
+            var targetPlayer = GetPlayerById(targetPlayerId.Value); // Check existence
             if (targetPlayer.Status == PlayerStatus.Eliminated) throw new InvalidMoveException($"Cannot target eliminated player {targetPlayer.Name}.");
-            if (targetPlayer.IsProtected) throw new InvalidMoveException($"Player {targetPlayer.Name} is protected by a Handmaid.");
             if (targetPlayerId.Value == playerId && !CanTargetSelf(cardType) && (cardType == CardType.Guard || cardType == CardType.Priest || cardType == CardType.Baron || cardType == CardType.King)) throw new InvalidMoveException($"Cannot target self with {cardType.Name}.");
         }
-        else if ((cardType == CardType.Guard || cardType == CardType.Priest || cardType == CardType.Baron || cardType == CardType.King))
+        else if ((cardType == CardType.Guard || cardType == CardType.Priest || cardType == CardType.Baron || cardType == CardType.King)) // Cards requiring a target (unless no valid targets exist)
         {
              bool validTargetsExist = Players.Any(p => p.Id != playerId && p.Status == PlayerStatus.Active && !p.IsProtected);
-             if (validTargetsExist) throw new InvalidMoveException($"{cardType.Name} requires a target player.");
+             bool onlyProtectedTargetsExist = !validTargetsExist && Players.Any(p => p.Id != playerId && p.Status == PlayerStatus.Active && p.IsProtected);
+             if (validTargetsExist || onlyProtectedTargetsExist) // If any target exists (protected or not)
+             {
+                  throw new InvalidMoveException($"{cardType.Name} requires a target player.");
+             }
+             // If no active opponents exist at all, the play is allowed but will have no effect (no exception)
         }
+
         if (cardType == CardType.Guard && (targetPlayerId == null || guessedCardType == null || guessedCardType == CardType.Guard)) throw new InvalidMoveException("Guard requires a valid target player and a non-Guard guess.");
     }
 
@@ -239,6 +236,13 @@ public class Game // Aggregate Root
     private void ExecuteGuardEffect(Player actingPlayer, Player? targetPlayer, CardType? guessedCardType)
     {
         if (targetPlayer == null || guessedCardType == null) return;
+        // Check protection BEFORE applying effect
+        if (targetPlayer.IsProtected)
+        {
+            AddDomainEvent(new CardEffectFizzled(Id, actingPlayer.Id, CardType.Guard, targetPlayer.Id, "Target was protected"));
+            return; // Effect fizzles
+        }
+
         bool correctGuess = targetPlayer.Hand.Contains(guessedCardType);
         if (correctGuess)
         {
@@ -250,6 +254,13 @@ public class Game // Aggregate Root
     private void ExecutePriestEffect(Player actingPlayer, Player? targetPlayer)
     {
         if (targetPlayer == null) return;
+        // Check protection BEFORE applying effect
+        if (targetPlayer.IsProtected)
+        {
+             AddDomainEvent(new CardEffectFizzled(Id, actingPlayer.Id, CardType.Priest, targetPlayer.Id, "Target was protected"));
+             return; // Effect fizzles
+        }
+
         var revealedCard = targetPlayer.Hand.GetHeldCard();
         if (revealedCard != null)
         {
@@ -260,9 +271,16 @@ public class Game // Aggregate Root
     private void ExecuteBaronEffect(Player actingPlayer, Player? targetPlayer)
     {
         if (targetPlayer == null) return;
+        // Check protection BEFORE applying effect
+        if (targetPlayer.IsProtected)
+        {
+             AddDomainEvent(new CardEffectFizzled(Id, actingPlayer.Id, CardType.Baron, targetPlayer.Id, "Target was protected"));
+             return; // Effect fizzles
+        }
+
         Card? actingPlayerCard = actingPlayer.Hand.GetHeldCard();
         Card? targetPlayerCard = targetPlayer.Hand.GetHeldCard();
-        if (actingPlayerCard == null || targetPlayerCard == null) return; // Cannot compare if hands are empty/invalid
+        if (actingPlayerCard == null || targetPlayerCard == null) return;
 
         Guid? loserId = null;
         if (actingPlayerCard.Rank > targetPlayerCard.Rank)
@@ -286,37 +304,42 @@ public class Game // Aggregate Root
 
     private void ExecutePrinceEffect(Player targetPlayer)
     {
+        if (targetPlayer.IsProtected)
+        {
+             AddDomainEvent(new CardEffectFizzled(Id, CurrentTurnPlayerId, CardType.Prince, targetPlayer.Id, "Target was protected"));
+             return; // Effect fizzles
+        }
+
         if (targetPlayer.Hand.IsEmpty)
         {
             AddDomainEvent(new PrinceEffectFailed(Id, targetPlayer.Id, "Target hand empty"));
             return;
         }
         Card? discardedCard = targetPlayer.DiscardHand(Deck.IsEmpty);
-        if (discardedCard == null) return; // Should not happen if hand wasn't empty
+        if (discardedCard == null) return;
 
-        AddDomainEvent(new PrinceEffectUsed(Id, CurrentTurnPlayerId, targetPlayer.Id, discardedCard.Type, discardedCard.Id)); // Event includes discarded card type
+        AddDomainEvent(new PrinceEffectUsed(Id, CurrentTurnPlayerId, targetPlayer.Id, discardedCard.Type, discardedCard.Id));
 
         if (discardedCard.Type == CardType.Princess)
         {
             EliminatePlayer(targetPlayer.Id, "discarded the Princess", CardType.Prince);
         }
-        else if (targetPlayer.Status == PlayerStatus.Active) // Don't draw if eliminated
+        else if (targetPlayer.Status == PlayerStatus.Active)
         {
             if (!Deck.IsEmpty)
             {
-                (Card newCard, Deck remainingDeck) = Deck.Draw();
-                Deck = remainingDeck;
-                targetPlayer.GiveCard(newCard);
-                AddDomainEvent(new PlayerDrewCard(Id, targetPlayer.Id));
+                (Card c, Deck d) = Deck.Draw(); 
+                Deck = d; 
+                targetPlayer.GiveCard(c); 
+                AddDomainEvent(new PlayerDrewCard(Id, targetPlayer.Id)); 
                 AddDomainEvent(new DeckChanged(Id, Deck.CardsRemaining));
             }
-            else if (SetAsideCard != null) // Draw set aside card if deck empty
+            else if (SetAsideCard != null)
             {
-                targetPlayer.GiveCard(SetAsideCard);
-                AddDomainEvent(new PlayerDrewCard(Id, targetPlayer.Id));
-                var usedCardType = SetAsideCard.Type;
-                SetAsideCard = null; // Set aside card is now used
-                AddDomainEvent(new SetAsideCardUsed(Id, usedCardType));
+                targetPlayer.GiveCard(SetAsideCard); 
+                AddDomainEvent(new PlayerDrewCard(Id, targetPlayer.Id)); 
+                var usedType = SetAsideCard.Type; SetAsideCard = null; 
+                AddDomainEvent(new SetAsideCardUsed(Id, usedType));
             }
             else
             {
@@ -328,6 +351,11 @@ public class Game // Aggregate Root
     private void ExecuteKingEffect(Player actingPlayer, Player? targetPlayer)
     {
         if (targetPlayer == null) return;
+        if (targetPlayer.IsProtected)
+        {
+             AddDomainEvent(new CardEffectFizzled(Id, actingPlayer.Id, CardType.King, targetPlayer.Id, "Target was protected"));
+             return; // Effect fizzles
+        }
         actingPlayer.SwapHandWith(targetPlayer);
         AddDomainEvent(new KingEffectUsed(Id, actingPlayer.Id, targetPlayer.Id));
     }

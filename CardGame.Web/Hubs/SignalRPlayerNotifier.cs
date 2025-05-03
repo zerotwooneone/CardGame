@@ -162,4 +162,19 @@ public class SignalRPlayerNotifier : IPlayerNotifier
         catch (Exception ex) { _logger.LogError(ex, "Error broadcasting Game Winner to group {GroupName} for Game {GameId}.", groupName, gameId); }
     }
     private static string GetGameGroupName(Guid gameId) => $"Game_{gameId}";
+    
+    public async Task BroadcastCardEffectFizzledAsync(Guid gameId, Guid actorId, int cardTypeValue, Guid targetId, string reason, CancellationToken cancellationToken)
+    {
+        string groupName = GetGameGroupName(gameId);
+        try
+        {
+            // Call the new client method
+            await _hubContext.Clients.Group(groupName).CardEffectFizzled(actorId, cardTypeValue, targetId, reason);
+            _logger.LogInformation("Broadcast CardEffectFizzled ({Reason}) to group {GroupName} for Game {GameId}.", reason, groupName, gameId);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error broadcasting CardEffectFizzled to group {GroupName} for Game {GameId}.", groupName, gameId);
+        }
+    }
 }

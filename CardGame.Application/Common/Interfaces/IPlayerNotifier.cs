@@ -28,4 +28,5 @@ public interface IPlayerNotifier
         CancellationToken cancellationToken);
 
     Task BroadcastGameWinnerAsync(Guid gameId, Guid winnerId, CancellationToken cancellationToken);
+    Task BroadcastCardEffectFizzledAsync(Guid gameId, Guid actorId, int cardTypeValue, Guid targetId, string reason, CancellationToken cancellationToken);
 }

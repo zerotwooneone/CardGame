@@ -35,7 +35,6 @@ const getCardNameFromValue = (value: number | undefined): string => {
   return CARD_DETAILS_MAP[value]?.name ?? '?';
 };
 
-
 @Component({
   selector: 'app-game-view',
   standalone: true,
@@ -83,13 +82,13 @@ export class GameViewComponent implements OnInit, OnDestroy {
   // Computed signal for current player ID
   currentPlayerId: Signal<string | null> = computed(() => this.authService.getCurrentPlayerId());
 
-  // Computed signal for targetable players
   targetablePlayers: Signal<{ id: string; name: string; isProtected: boolean }[]> = computed(() => {
     const state = this.spectatorState();
     const myId = this.currentPlayerId();
     if (!state || !myId) return [];
+    // Filter out self and eliminated players ONLY
     return state.players
-      .filter(p => p.playerId !== myId && p.status === 'Active' && !p.isProtected)
+      .filter(p => p.playerId !== myId && p.status === 'Active')
       .map(p => ({ id: p.playerId, name: p.name, isProtected: p.isProtected }));
   });
 
@@ -191,6 +190,20 @@ export class GameViewComponent implements OnInit, OnDestroy {
   onPlayerSelected(playerId: string): void {
     if (!this.isTargetingRequired() || !this.selectedCard()) return;
 
+    const allOpponents = this.spectatorState()?.players.filter(p => p.playerId !== this.currentPlayerId() && p.status === 'Active') ?? [];
+    const selectedOpponent = allOpponents.find(p => p.playerId === playerId);
+
+    if (!selectedOpponent) {
+      console.warn("Attempted to select an invalid or non-existent player.");
+      return;
+    }
+
+    // If the selected opponent IS protected, we still allow selection,
+    // but the backend will reject the effect. We show feedback in the UI.
+     if (selectedOpponent.isProtected) {
+        this.showSnackBar("This player is protected by a Handmaid!", 2000);
+     }
+
     this.selectedTargetPlayerId.set(playerId);
 
     if (!this.isGuessingRequired()) {
@@ -209,7 +222,6 @@ export class GameViewComponent implements OnInit, OnDestroy {
     const dialogData: ActionModalData = {
       actionType: 'guess-card',
       prompt: `Guess Player ${this.getPlayerName(this.selectedTargetPlayerId())}'s card (not Guard):`,
-      // Use Object.entries and map with helper to get {value, name} for modal
       availableCardTypes: Object.entries(CARD_DETAILS_MAP)
         .map(([valueStr, details]) => ({ value: parseInt(valueStr, 10), name: details.name }))
         .filter(ct => ct.value !== 1), // Exclude Guard (value 1)
@@ -256,11 +268,10 @@ export class GameViewComponent implements OnInit, OnDestroy {
     this.isLoadingAction.set(true);
     this.errorState.set(null);
 
-    // PlayCardRequestDto expects guessedCardType as number?
     const payload: PlayCardRequestDto = {
       cardId: card.id,
       targetPlayerId: targetId,
-      guessedCardType: guessedValue // Pass the numeric value directly
+      guessedCardType: guessedValue
     };
 
     this.gameActionService.playCard(gameId, payload)
