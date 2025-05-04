@@ -1,14 +1,24 @@
-import { Component, Input, Output, EventEmitter, ChangeDetectionStrategy, HostBinding, HostListener } from '@angular/core';
-import { CommonModule } from '@angular/common';
-import { MatCardModule } from '@angular/material/card';
-import { MatIconModule } from '@angular/material/icon';
-import { MatBadgeModule } from '@angular/material/badge'; // For token count
-import { MatTooltipModule } from '@angular/material/tooltip'; // For tooltips
-
+import {
+  ChangeDetectionStrategy,
+  Component,
+  EventEmitter,
+  HostBinding,
+  HostListener,
+  Input,
+  Output
+} from '@angular/core';
+import {CommonModule} from '@angular/common';
+import {MatCardModule} from '@angular/material/card';
+import {MatIconModule} from '@angular/material/icon';
+import {MatBadgeModule} from '@angular/material/badge'; // For token count
+import {MatTooltipModule} from '@angular/material/tooltip'; // For tooltips
 // Import shared models and components
-import { CardComponent } from '../card/card.component';
+import {CardComponent} from '../card/card.component';
 import {PlayerHandInfoDto} from '../../../../core/models/playerHandInfoDto'; // Import CardComponent
-import { CardDto } from '../../../../core/models/cardDto';
+import {CardDto} from '../../../../core/models/cardDto';
+import {SpectatorPlayerDto} from '../../../../core/models/spectatorPlayerDto';
+import {PlayerStatus} from './player.status';
+import {PlayerStatusMap} from './player-status.map';
 
 @Component({
   selector: 'app-player-display',
@@ -26,8 +36,8 @@ import { CardDto } from '../../../../core/models/cardDto';
   changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class PlayerDisplayComponent {
-  /** Player data to display. PlayerHandInfoDto has playedCardTypes: number[] */
-  @Input() playerData?: PlayerHandInfoDto | null;
+  /** Player data to display. DTO now has status: number */
+  @Input() playerData?: PlayerHandInfoDto | SpectatorPlayerDto | null; // Allow either DTO type
 
   /** Is it currently this player's turn? */
   @Input() isCurrentTurn: boolean = false;
@@ -46,7 +56,7 @@ export class PlayerDisplayComponent {
 
   // --- Host Bindings for dynamic styling ---
   @HostBinding('class.current-turn') get turnClass() { return this.isCurrentTurn; }
-  @HostBinding('class.eliminated') get eliminatedClass() { return this.playerData?.status === 'Eliminated'; }
+  @HostBinding('class.eliminated') get eliminatedClass() { return this.playerData?.status === PlayerStatus.Eliminated; }
   @HostBinding('class.protected') get protectedClass() { return this.playerData?.isProtected; }
   @HostBinding('class.targetable') get targetableClass() { return this.isTargetable; }
   @HostBinding('class.selected-target') get selectedTargetClass() { return this.isSelectedTarget; }
@@ -70,10 +80,19 @@ export class PlayerDisplayComponent {
   // Uses the numeric type value from playerData.playedCardTypes
   get discardPileCards(): CardDto[] {
     return (this.playerData?.playedCardTypes ?? []).map((typeValue, index) => ({
-      // Generate a pseudo-stable ID based on player and index for *ngFor trackBy
-      id: `${this.playerData?.playerId}_discard_${index}_${typeValue}`, // Include typeValue for more stability
+      id: `${this.playerData?.playerId}_discard_${index}_${typeValue}`,
       type: typeValue // Assign the numeric type value directly
     }));
+  }
+
+  /** Gets the display name for the player's status */
+  get playerStatusName(): string {
+    // Cast the numeric status to the enum type for map lookup
+    const statusValue = this.playerData?.status as PlayerStatus | undefined;
+    if (statusValue === undefined || !PlayerStatusMap[statusValue]) {
+      return PlayerStatusMap[PlayerStatus.Unknown]; // Default to 'Unknown'
+    }
+    return PlayerStatusMap[statusValue]; // Use the exported map
   }
 
   // --- TrackBy Functions ---
@@ -82,10 +101,10 @@ export class PlayerDisplayComponent {
   }
 
   trackCardById(index: number, item: CardDto): string {
-    return item.id; // Use unique card ID for tracking
+    return item.id;
   }
 
-  trackPlayerById(index: number, item: PlayerHandInfoDto): string {
+  trackPlayerById(index: number, item: PlayerHandInfoDto | SpectatorPlayerDto): string {
     return item.playerId;
   }
   // --- End TrackBy Functions ---

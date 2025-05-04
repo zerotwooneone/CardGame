@@ -5,14 +5,14 @@
       <mat-icon *ngIf="isCurrentUser" class="current-user-indicator" matTooltip="This is you">person</mat-icon>
     </mat-card-title>
     <mat-card-subtitle class="player-status">
-      {{ playerData?.status || 'Unknown' }}
+      {{ playerStatusName }}
       <mat-icon *ngIf="playerData?.isProtected" class="protection-indicator" matTooltip="Protected by Handmaid">shield</mat-icon>
     </mat-card-subtitle>
   </mat-card-header>
 
   <mat-card-content class="player-area">
     <div class="hand-area" [matTooltip]="(playerData?.handCardCount || 0) + ' cards in hand'">
-      <span *ngIf="playerData?.handCardCount === 0 && playerData?.status !== 'Eliminated'">Hand Empty</span>
+      <span *ngIf="playerData?.handCardCount === 0 && playerData?.status !== 2">Hand Empty</span>
       <div class="card-slot" *ngFor="let i of handPlaceholders; trackBy: trackByIndex">
         <app-card [isFaceDown]="true"></app-card>
       </div>

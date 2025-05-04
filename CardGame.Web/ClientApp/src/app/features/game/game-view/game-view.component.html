@@ -11,7 +11,7 @@
       [playerData]="player"
       [isCurrentTurn]="player.playerId === gameState.currentTurnPlayerId"
       [isCurrentUser]="player.playerId === currentPlayerId()"
-      [isTargetable]="isTargetingRequired() && player.playerId !== currentPlayerId() && !player.isProtected && player.status === 'Active'"
+      [isTargetable]="isTargetingRequired() && player.playerId !== currentPlayerId() && player.status === 1"
       [isSelectedTarget]="player.playerId === selectedTargetPlayerId()"
       (playerClicked)="onPlayerSelected($event)">
     </app-player-display>
@@ -26,12 +26,12 @@
         class="card-slot"
         *ngFor="let card of playerHand(); trackBy: trackCardById">
         <app-card
-          [cardData]="card"
-          [isFaceDown]="false"
-          [isPlayable]="isMyTurn()"
-          [isSelected]="card.id === selectedCard()?.id"
-          (cardClicked)="onCardSelected($event)">
-        </app-card>
+        [cardData]="card"
+        [isFaceDown]="false"
+        [isPlayable]="isMyTurn()"
+        [isSelected]="card.id === selectedCard()?.id"
+        (cardClicked)="onCardSelected($event)">
+      </app-card>
       </div>
       <div *ngIf="playerHand().length === 0 && gameState.gamePhase !== 'GameOver'"> Waiting for card...
       </div>
@@ -39,13 +39,13 @@
     <div class="action-prompts" *ngIf="isMyTurn()">
       <div *ngIf="selectedCard() as card">
         <span *ngIf="isTargetingRequired() && !selectedTargetPlayerId()">
-              Please select a target player for {{ selectedCardName() }}.
+          Please select a target player for {{ selectedCardName() }}.
            </span>
-        <span *ngIf="isGuessingRequired() && !selectedTargetPlayerId()">
-             Please select a target player for Guard.
+      <span *ngIf="isGuessingRequired() && !selectedTargetPlayerId()">
+        Please select a target player for Guard.
            </span>
-        <span *ngIf="isGuessingRequired() && selectedTargetPlayerId()">
-             Please guess Player {{ getPlayerName(selectedTargetPlayerId()) }}'s card. </span>
+      <span *ngIf="isGuessingRequired() && selectedTargetPlayerId()">
+        Please guess Player {{ getPlayerName(selectedTargetPlayerId()) }}'s card. </span>
       </div>
       <div *ngIf="!selectedCard()"> Select a card to play.
       </div>

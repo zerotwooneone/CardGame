@@ -88,7 +88,7 @@ export class GameViewComponent implements OnInit, OnDestroy {
     if (!state || !myId) return [];
     // Filter out self and eliminated players ONLY
     return state.players
-      .filter(p => p.playerId !== myId && p.status === 'Active')
+      .filter(p => p.playerId !== myId && p.status === 1) // Check status === 1 (Active)
       .map(p => ({ id: p.playerId, name: p.name, isProtected: p.isProtected }));
   });
 
@@ -199,7 +199,7 @@ export class GameViewComponent implements OnInit, OnDestroy {
   onPlayerSelected(playerId: string): void {
     if (!this.isTargetingRequired() || !this.selectedCard()) return;
 
-    const allOpponents = this.spectatorState()?.players.filter(p => p.playerId !== this.currentPlayerId() && p.status === 'Active') ?? [];
+    const allOpponents = this.spectatorState()?.players.filter(p => p.playerId !== this.currentPlayerId() && p.status === 1) ?? [];
     const selectedOpponent = allOpponents.find(p => p.playerId === playerId);
 
     if (!selectedOpponent) {
@@ -308,7 +308,8 @@ export class GameViewComponent implements OnInit, OnDestroy {
   // --- TrackBy Functions ---
   trackByIndex(index: number, item: any): number { return index; }
   trackCardById(index: number, item: CardDto): string { return item.id; }
-  trackPlayerById(index: number, item: PlayerHandInfoDto | SpectatorPlayerDto): string { return item.playerId; }
-  // --- End TrackBy Functions ---
+  trackPlayerById(index: number, item: SpectatorPlayerDto): string {
+    return item.playerId;
+  }
 
 }

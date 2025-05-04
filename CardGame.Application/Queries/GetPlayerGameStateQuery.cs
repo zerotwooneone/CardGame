@@ -59,7 +59,7 @@ namespace CardGame.Application.Queries;
                 {
                     PlayerId = player.Id,
                     Name = player.Name,
-                    Status = player.Status.Name,
+                    Status = player.Status.Value,
                     HandCardCount = player.Hand.Count, // Show count for all
                     PlayedCardTypes = player.PlayedCards.Select(cardType => cardType.Value).ToList(),
                     TokensWon = player.TokensWon,
