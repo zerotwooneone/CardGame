@@ -56,7 +56,8 @@ export class SignalrService implements OnDestroy {
   public roundWinnerReceived$ = this.roundWinnerSubject.asObservable();
   private gameWinnerSubject = new Subject<{ winnerId: string }>();
   public gameWinnerReceived$ = this.gameWinnerSubject.asObservable();
-  // --- End Subjects ---
+  private cardEffectFizzledSubject = new Subject<{ actorId: string, cardTypeValue: number, targetId: string, reason: string }>();
+  public cardEffectFizzledReceived$ = this.cardEffectFizzledSubject.asObservable();
 
   constructor(
     @Inject(PLATFORM_ID) private platformId: object,
@@ -189,6 +190,11 @@ export class SignalrService implements OnDestroy {
     this.gameHubConnection.on('CardsSwapped', (player1Id: string, player2Id: string) => this.cardsSwappedSubject.next({ player1Id, player2Id }));
     this.gameHubConnection.on('RoundWinnerAnnounced', (winnerId: string | null, reason: string, finalHands: { [playerId: string]: number | null }) => this.roundWinnerSubject.next({ winnerId, reason, finalHands }));
     this.gameHubConnection.on('GameWinnerAnnounced', (winnerId: string) => this.gameWinnerSubject.next({ winnerId }));
+
+    this.gameHubConnection.on('CardEffectFizzled', (actorId: string, cardTypeValue: number, targetId: string, reason: string) => {
+      console.log(`Received CardEffectFizzled: Actor=${actorId}, CardValue=${cardTypeValue}, Target=${targetId}, Reason=${reason}`);
+      this.cardEffectFizzledSubject.next({ actorId, cardTypeValue, targetId, reason });
+    });
 
     // Handle connection lifecycle events using .set()
     this.gameHubConnection.onreconnecting((error?: Error) => {

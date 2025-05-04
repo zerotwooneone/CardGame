@@ -1,13 +1,11 @@
 import {Injectable, signal, WritableSignal, Signal, OnDestroy, effect, Injector, computed, inject} from '@angular/core';
 import {Observable, Subject, Subscription } from 'rxjs';
-
-// Import core services and models
-import { SignalrService, ConnectionState } from '../../../core/services/signalr.service'; // Adjust path
+import { SignalrService, ConnectionState } from '../../../core/services/signalr.service';
 import { AuthService } from '../../../core/services/auth.service';
 import {SpectatorGameStateDto} from '../../../core/models/spectatorGameStateDto';
 import {CardDto} from '../../../core/models/cardDto';
 import {GameActionService} from './game-action.service';
-import {PlayerGameStateDto} from '../../../core/models/playerGameStateDto'; // Adjust path
+import {PlayerGameStateDto} from '../../../core/models/playerGameStateDto';
 
 
 @Injectable({
@@ -46,6 +44,7 @@ export class GameStateService implements OnDestroy {
   public readonly cardsSwapped$: Observable<{ player1Id: string, player2Id: string }>;
   public readonly roundWinnerAnnounced$: Observable<{ winnerId: string | null, reason: string, finalHands: { [playerId: string]: number | null } }>;
   public readonly gameWinnerAnnounced$: Observable<{ winnerId: string }>;
+  public readonly cardEffectFizzled$: Observable<{ actorId: string, cardTypeValue: number, targetId: string, reason: string }>;
 
   // --- Subscriptions ---
   private spectatorStateSubscription?: Subscription;
@@ -66,6 +65,7 @@ export class GameStateService implements OnDestroy {
     this.cardsSwapped$ = this.signalrService.cardsSwappedReceived$;
     this.roundWinnerAnnounced$ = this.signalrService.roundWinnerReceived$;
     this.gameWinnerAnnounced$ = this.signalrService.gameWinnerReceived$;
+    this.cardEffectFizzled$ = this.signalrService.cardEffectFizzledReceived$;
 
     this.setupEffects();
   }

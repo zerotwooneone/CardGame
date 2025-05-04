@@ -165,6 +165,15 @@ export class GameViewComponent implements OnInit, OnDestroy {
     this.gameStateService.gameWinnerAnnounced$
       .pipe(takeUntil(this.destroy$))
       .subscribe(data => this.showSnackBar(`Game Over! Player ${this.getPlayerName(data.winnerId)} wins the game!`, 10000));
+
+    this.gameStateService.cardEffectFizzled$
+      .pipe(takeUntil(this.destroy$))
+      .subscribe(data => {
+        const actorName = this.getPlayerName(data.actorId);
+        const targetName = this.getPlayerName(data.targetId);
+        const cardName = getCardNameFromValue(data.cardTypeValue);
+        this.showSnackBar(`${actorName}'s ${cardName} had no effect on ${targetName} (${data.reason}).`);
+      });
   }
 
   // --- Card Interaction ---
@@ -197,12 +206,6 @@ export class GameViewComponent implements OnInit, OnDestroy {
       console.warn("Attempted to select an invalid or non-existent player.");
       return;
     }
-
-    // If the selected opponent IS protected, we still allow selection,
-    // but the backend will reject the effect. We show feedback in the UI.
-     if (selectedOpponent.isProtected) {
-        this.showSnackBar("This player is protected by a Handmaid!", 2000);
-     }
 
     this.selectedTargetPlayerId.set(playerId);
 
