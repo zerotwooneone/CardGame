@@ -10,7 +10,7 @@ public class PlayerHandInfoDto // Renamed from SpectatorPlayerDto for clarity
     public string Name { get; set; } = string.Empty;
     public string Status { get; set; } = string.Empty;
     public int HandCardCount { get; set; } // Show count for all players
-    public List<string> PlayedCardTypes { get; set; } = new List<string>();
+    public List<int> PlayedCardTypes { get; set; } = new List<int>();
     public int TokensWon { get; set; }
     public bool IsProtected { get; set; }
 }
