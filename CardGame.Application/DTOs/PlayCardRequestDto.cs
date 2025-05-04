@@ -19,5 +19,5 @@ public class PlayCardRequestDto
     /// Optional: The type of card being guessed (used only when playing a Guard).
     /// Represented as a string (e.g., "Priest", "Baron").
     /// </summary>
-    public string? GuessedCardType { get; set; } // Use string for simplicity in DTO
+    public int? GuessedCardType { get; set; } // Use string for simplicity in DTO
 }

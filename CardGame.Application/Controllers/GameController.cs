@@ -144,12 +144,12 @@ public class GameController : ControllerBase
             return BadRequest(new ProblemDetails {Title = "Failed to create game.", Detail = ex.Message});
         }
     }
-    
+
     /// <summary>
     /// Allows the authenticated player to play a card from their hand.
     /// </summary>
     /// <param name="gameId">The ID of the game.</param>
-    /// <param name="request">Details of the card play action, including the specific CardId.</param>
+    /// <param name="request">Details of the card play action, including the specific CardId and optional numeric guessed type.</param>
     /// <returns>Ok on success, or appropriate error status.</returns>
     [HttpPost("{gameId}/play", Name = "PlayCard")]
     [Authorize] // Require authentication
@@ -158,7 +158,7 @@ public class GameController : ControllerBase
     [ProducesResponseType(401)] // Unauthorized
     [ProducesResponseType(403)] // Forbidden (wrong player)
     [ProducesResponseType(404)] // Not Found (game)
-    public async Task<IActionResult> PlayCard(Guid gameId, [FromBody] PlayCardRequestDto request)
+    public async Task<IActionResult> PlayCard(Guid gameId, [FromBody] PlayCardRequestDto request) 
     {
         // 1. Get authenticated player ID
         Guid currentPlayerId = GetCurrentPlayerIdFromClaims();
@@ -167,30 +167,40 @@ public class GameController : ControllerBase
             return Unauthorized();
         }
 
-        // 2. Parse GuessedCardType string into CardType object
-        CardType? guessedType = null;
-        if (!string.IsNullOrEmpty(request.GuessedCardType))
+        // 2. Validate and Convert GuessedCardType (int?) to CardType?
+        CardType? guessedCardTypeDomainObject = null;
+        if (request.GuessedCardType.HasValue)
         {
+            // Validate the integer value
+            int guessedValue = request.GuessedCardType.Value;
+            if (guessedValue == 1) // Cannot guess Guard
+            {
+                ModelState.AddModelError(nameof(request.GuessedCardType), "Cannot guess Guard when playing a Guard.");
+                return BadRequest(new ValidationProblemDetails(ModelState));
+            }
+
             try
             {
-                guessedType = CardType.FromName(request.GuessedCardType, ignoreCase: true);
+                // Convert valid int to CardType object
+                guessedCardTypeDomainObject = CardType.FromValue(guessedValue);
             }
-            catch (Exception) // Catch potential exception from FromName if invalid
+            catch (Exception) // Catch potential error from FromValue if int is invalid (e.g., 0, 9)
             {
-                return BadRequest($"Invalid value provided for GuessedCardType: '{request.GuessedCardType}'.");
+                ModelState.AddModelError(nameof(request.GuessedCardType),
+                    $"Invalid card type value '{guessedValue}' provided for guess.");
+                return BadRequest(new ValidationProblemDetails(ModelState));
             }
         }
 
         try
         {
-            // 3. Create the command, passing the CardId from the request
-            // The handler is now responsible for loading the game and finding the Card instance.
+            // 3. Create the command, passing the CardId and the converted CardType? object
             var command = new PlayCardCommand(
                 gameId,
                 currentPlayerId,
-                request.CardId, // Pass the ID, not the Card object
+                request.CardId,
                 request.TargetPlayerId,
-                guessedType
+                guessedCardTypeDomainObject 
             );
 
             // 4. Send the command
@@ -199,30 +209,33 @@ public class GameController : ControllerBase
             // 5. Return success
             return Ok(); // Simple 200 OK for successful command execution
         }
+        // Catch blocks handle exceptions from handler/domain
         catch (ValidationException ex)
         {
             return BadRequest(CreateValidationProblemDetails(ex));
         }
         catch (InvalidOperationException ex) // Catch fail-fast errors like wrong turn, card not held etc.
         {
-             return BadRequest(new ProblemDetails { Title = "Invalid Operation", Detail = ex.Message });
+            return BadRequest(new ProblemDetails {Title = "Invalid Operation", Detail = ex.Message});
         }
         catch (Domain.Game.GameException.CardNotFoundInHandException ex) // Catch specific domain exception
         {
-             return BadRequest(new ProblemDetails { Title = "Invalid Move", Detail = ex.Message, Extensions = { { "errorCode", ex.ErrorCode } } });
+            return BadRequest(new ProblemDetails
+                {Title = "Invalid Move", Detail = ex.Message, Extensions = {{"errorCode", ex.ErrorCode}}});
         }
         catch (Domain.Exceptions.DomainException ex) // Catch other domain rule violations
         {
-             return BadRequest(new ProblemDetails { Title = "Game Rule Violation", Detail = ex.Message, Extensions = { { "errorCode", ex.ErrorCode } } });
+            return BadRequest(new ProblemDetails
+                {Title = "Game Rule Violation", Detail = ex.Message, Extensions = {{"errorCode", ex.ErrorCode}}});
         }
         catch (KeyNotFoundException ex) // Catch game not found from handler
         {
-             return NotFound(new ProblemDetails{ Title = "Not Found", Detail = ex.Message });
+            return NotFound(new ProblemDetails {Title = "Not Found", Detail = ex.Message});
         }
         catch (Exception ex) // Catch unexpected errors
         {
-             // Log ex
-             return StatusCode(500, new ProblemDetails { Title = "An unexpected error occurred while playing the card."});
+            // Log ex
+            return StatusCode(500, new ProblemDetails {Title = "An unexpected error occurred while playing the card."});
         }
     }
 
