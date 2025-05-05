@@ -35,6 +35,12 @@ if (!app.Environment.IsDevelopment())
 
 app.UseHttpsRedirection();
 app.UseStaticFiles();
+
+// Configure default files (Important for serving the initial HTML)
+// This tells the server to look for default files like index.html, index.htm,
+// or potentially index.csr.html when a request hits the root path ('/')
+app.UseDefaultFiles();
+
 app.UseRouting();
 app.UseAuthentication();
 app.UseAuthorization();
@@ -47,6 +53,6 @@ app.MapControllerRoute(
 app.MapHub<NotificationHub>("/hubs/notification"); 
 app.MapHub<GameHub>("/hubs/game");                 
 
-app.MapFallbackToFile("index.html");
+app.MapFallbackToFile("index.csr.html");
 
 app.Run();
