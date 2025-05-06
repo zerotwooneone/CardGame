@@ -1,0 +1,33 @@
+@if (isLoggedIn()) {
+  <button mat-icon-button [matMenuTriggerFor]="userMenu" aria-label="User Menu">
+    <mat-icon>account_circle</mat-icon>
+  </button>
+
+  <mat-menu #userMenu="matMenu" xPosition="before">
+    <button mat-menu-item disabled>
+      <mat-icon>person</mat-icon>
+      <span>{{ username() }}</span>
+    </button>
+    <mat-divider></mat-divider>
+
+    <button mat-menu-item (click)="generateAndCopyFriendCode()">
+      <mat-icon>share</mat-icon>
+      <span>Get Friend Code</span>
+    </button>
+
+    @if (friendCode()) {
+      <div class="friend-code-display" mat-menu-item>
+        <span class="code-label">Code:</span>
+        <span class="code-text">{{ friendCode() }}</span>
+        <button mat-icon-button (click)="copyCodeAgain()" aria-label="Copy Friend Code again" matTooltip="Copy Code">
+          <mat-icon>content_copy</mat-icon>
+        </button>
+      </div>
+    }
+    <mat-divider></mat-divider>
+    <button mat-menu-item (click)="logout()">
+      <mat-icon>logout</mat-icon>
+      <span>Logout</span>
+    </button>
+  </mat-menu>
+}

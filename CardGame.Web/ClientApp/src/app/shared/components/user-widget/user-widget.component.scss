@@ -1,0 +1,50 @@
+@use '@angular/material' as mat;
+
+// Style the button if needed (e.g., if using hamburger)
+// button[mat-icon-button] { }
+
+// Style the menu items if needed
+// .mat-mdc-menu-item { }
+
+// Style the friend code display area within the menu
+.friend-code-display {
+  display: flex;
+  align-items: center;
+  padding: 0 16px; // Match default menu item padding
+  font-size: 0.8em; // Smaller font for the code
+  cursor: default; // Not clickable itself
+  min-height: 48px; // Match default menu item height
+  gap: 8px;
+
+  &:hover {
+    background: none; // Prevent hover effect on the container div
+  }
+
+  .code-label {
+    font-weight: 500;
+    color: var(--mat-secondary-text-color); // Use theme secondary text color
+  }
+
+  .code-text {
+    flex-grow: 1;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    font-family: monospace; // Monospace font for code
+    background-color: rgba(128, 128, 128, 0.1); // Subtle background
+    padding: 2px 4px;
+    border-radius: 3px;
+  }
+
+  button[mat-icon-button] {
+    width: 24px; // Smaller button
+    height: 24px;
+    line-height: 24px;
+    margin-left: auto; // Push to the right
+    mat-icon {
+      font-size: 18px; // Smaller icon
+      height: 18px;
+      width: 18px;
+    }
+  }
+}

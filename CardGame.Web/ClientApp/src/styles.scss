@@ -100,3 +100,15 @@ body {
   width: 100%;
 }
 
+:host ::ng-deep .snackbar-success {
+  // Use a positive color variable if defined by theme, or fallback to accent/primary
+  --mdc-snackbar-container-color: var(--mat-success-color, var(--mat-accent-color-500, green)); // Example
+  --mdc-snackbar-supporting-text-color: var(--mat-success-contrast-color, white); // Example
+}
+
+:host ::ng-deep .snackbar-error {
+  // Use the standard warn color variables
+  --mdc-snackbar-container-color: var(--mat-warn-color-500, #f44336);
+  --mdc-snackbar-supporting-text-color: var(--mat-warn-contrast-color-500, white);
+}
+
