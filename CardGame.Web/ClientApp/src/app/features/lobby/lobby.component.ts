@@ -18,7 +18,7 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatDividerModule } from '@angular/material/divider';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
-import { Subject } from 'rxjs'; // Added Observable, Subject, Subscription
+import {finalize, Subject} from 'rxjs'; // Added Observable, Subject, Subscription
 import { takeUntil } from 'rxjs/operators'; // Added takeUntil
 
 // Import services needed
@@ -30,7 +30,9 @@ import {MatDialog, MatDialogModule} from '@angular/material/dialog';
 import {UserInfo} from '../../core/models/userInfo';
 import {GameActionService} from '../game/services/game-action.service';
 import {CreateGameDialogResult} from './models/createGameDialogResult';
-import {CreateGameDialogComponent} from './create-game-dialog/create-game-dialog.component'; // Still needed to start connection
+import {CreateGameDialogComponent} from './create-game-dialog/create-game-dialog.component';
+import {CreateGameDialogData} from './models/createGameDialogData';
+import {CreateGameRequestDto} from '../../core/models/createGameRequestDto'; // Still needed to start connection
 
 
 @Component({
@@ -45,20 +47,19 @@ import {CreateGameDialogComponent} from './create-game-dialog/create-game-dialog
     MatProgressSpinnerModule,
     MatDividerModule,
     MatSnackBarModule,
-    MatDialogModule
+    MatDialogModule // Add MatDialogModule
   ],
   templateUrl: './lobby.component.html',
   styleUrls: ['./lobby.component.scss'],
+  // Use OnPush for better performance when relying on observables/signals
   changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class LobbyComponent implements OnInit, OnDestroy {
-  isLoading = false; // Keep for actions like creating game
-  errorMessage: string | null = null;
+  isLoading = signal(false); // Use signal for loading state
+  errorMessage = signal<string | null>(null); // Use signal for error state
 
   // --- State Signals ---
-  // Store invitations received via SignalR
   invitedGames: WritableSignal<Array<{ gameId: string; creatorName: string }>> = signal([]);
-  // Store known friends (loaded from/saved to localStorage)
   knownFriends: WritableSignal<UserInfo[]> = signal([]);
 
   private destroy$ = new Subject<void>();
@@ -70,66 +71,48 @@ export class LobbyComponent implements OnInit, OnDestroy {
   private authService = inject(AuthService);
   private signalrService = inject(SignalrService);
   private snackBar = inject(MatSnackBar);
-  private dialog = inject(MatDialog); // Inject MatDialog
-  private cdr = inject(ChangeDetectorRef); // Inject ChangeDetectorRef
-  private gameActionService = inject(GameActionService); // Inject for Create Game (placeholder)
+  private dialog = inject(MatDialog);
+  private cdr = inject(ChangeDetectorRef);
+  private gameActionService = inject(GameActionService); // Inject GameActionService
 
   constructor() { }
 
   ngOnInit(): void {
     this.loadKnownFriends();
     this.connectToNotifications();
-    // No longer loading available games from API
   }
 
   ngOnDestroy(): void {
     this.destroy$.next();
     this.destroy$.complete();
-    // Optional: Disconnect SignalR here if lobby is the only place it's needed
-    // this.signalrService.stopNotificationConnection();
   }
 
   // --- Known Friends Management ---
   private loadKnownFriends(): void {
-    if (this.signalrService.isBrowser) { // Check if running in browser
+    if (this.signalrService.isBrowser) {
       try {
         const storedJson = localStorage.getItem(this.KNOWN_FRIENDS_STORAGE_KEY);
         if (storedJson) {
           const storedFriends: UserInfo[] = JSON.parse(storedJson);
-          // Basic validation might be good here
           if (Array.isArray(storedFriends)) {
             this.knownFriends.set(storedFriends);
-          } else {
-            localStorage.removeItem(this.KNOWN_FRIENDS_STORAGE_KEY); // Clear invalid data
-          }
+          } else { localStorage.removeItem(this.KNOWN_FRIENDS_STORAGE_KEY); }
         }
       } catch (e) {
         console.error("Error loading known friends from localStorage:", e);
-        localStorage.removeItem(this.KNOWN_FRIENDS_STORAGE_KEY); // Clear potentially corrupt data
+        localStorage.removeItem(this.KNOWN_FRIENDS_STORAGE_KEY);
       }
     }
   }
 
   private addKnownFriend(friendInfo: UserInfo): void {
     if (!this.signalrService.isBrowser) return;
-
     this.knownFriends.update(currentFriends => {
-      // Avoid duplicates based on playerId
-      if (currentFriends.some(f => f.playerId === friendInfo.playerId)) {
-        return currentFriends;
-      }
-      // Add new friend to the start (most recent)
+      if (currentFriends.some(f => f.playerId === friendInfo.playerId)) return currentFriends;
       const updatedFriends = [friendInfo, ...currentFriends];
-      // Limit size
-      if (updatedFriends.length > this.MAX_KNOWN_FRIENDS) {
-        updatedFriends.pop(); // Remove the oldest (last element)
-      }
-      // Save to localStorage
-      try {
-        localStorage.setItem(this.KNOWN_FRIENDS_STORAGE_KEY, JSON.stringify(updatedFriends));
-      } catch (e) {
-        console.error("Error saving known friends to localStorage:", e);
-      }
+      if (updatedFriends.length > this.MAX_KNOWN_FRIENDS) updatedFriends.pop();
+      try { localStorage.setItem(this.KNOWN_FRIENDS_STORAGE_KEY, JSON.stringify(updatedFriends)); }
+      catch (e) { console.error("Error saving known friends to localStorage:", e); }
       return updatedFriends;
     });
   }
@@ -137,64 +120,46 @@ export class LobbyComponent implements OnInit, OnDestroy {
 
 
   connectToNotifications(): void {
-    // Start the notification hub connection via the SignalR service
     this.signalrService.startNotificationConnection()
       .catch(err => {
         console.error("Error starting notification connection from Lobby:", err);
         this.snackBar.open('Could not connect for game invitations.', 'Close', { duration: 3000 });
       });
 
-    // Subscribe to invitations
     this.signalrService.gameInvitationReceived$
       .pipe(takeUntil(this.destroy$))
       .subscribe(({ gameId, creatorName }) => {
         console.log(`LobbyComponent received invitation: GameId=${gameId}, Creator=${creatorName}`);
-
-        // Add to signal if not already present
         this.invitedGames.update(currentInvites => {
-          if (currentInvites.some(inv => inv.gameId === gameId)) {
-            return currentInvites; // Already have this invite
-          }
+          if (currentInvites.some(inv => inv.gameId === gameId)) return currentInvites;
           return [...currentInvites, { gameId, creatorName }];
         });
-
-        // Show snackbar notification
-        const snackBarRef = this.snackBar.open(
-          `${creatorName} invited you to a game!`,
-          'Join',
-          { duration: 10000 }
-        );
+        const snackBarRef = this.snackBar.open(`${creatorName} invited you to a game!`, 'Join', { duration: 10000 });
         snackBarRef.onAction().subscribe(() => this.joinGame(gameId));
-        this.cdr.markForCheck(); // Trigger change detection as this is outside normal flow
+        this.cdr.markForCheck();
       });
   }
 
   openCreateGameDialog(): void {
-    const dialogRef = this.dialog.open<CreateGameDialogComponent, { knownFriends: UserInfo[] }, CreateGameDialogResult | undefined>(
-       CreateGameDialogComponent ,
-      {
-        width: '450px',
-        data: { knownFriends: this.knownFriends() }, // Pass current known friends
-        disableClose: true // Prevent closing by clicking outside
-      }
+    const dialogData: CreateGameDialogData = { knownFriends: this.knownFriends() };
+
+    const dialogRef = this.dialog.open<CreateGameDialogComponent, CreateGameDialogData, CreateGameDialogResult | undefined>(
+      CreateGameDialogComponent,
+      { width: '450px', data: dialogData, disableClose: true }
     );
 
     dialogRef.afterClosed()
       .pipe(takeUntil(this.destroy$))
       .subscribe(result => {
         if (result?.selectedOpponentIds && result.selectedOpponentIds.length > 0) {
-          // User confirmed creation with selected opponents
-          const opponentIds = result.selectedOpponentIds;
           const myId = this.authService.getCurrentPlayerId();
-
           if (!myId) {
             this.showSnackBar('Error: Could not identify current user.', 5000);
             return;
           }
 
-          const allPlayerIds = [myId, ...opponentIds];
+          const allPlayerIds = [myId, ...result.selectedOpponentIds];
 
-          // Basic validation (should match command/backend validation)
           if (allPlayerIds.length < 2 || allPlayerIds.length > 4) {
             this.showSnackBar(`Error: Games must have 2-4 players (found ${allPlayerIds.length}).`, 5000);
             return;
@@ -204,50 +169,56 @@ export class LobbyComponent implements OnInit, OnDestroy {
             return;
           }
 
-          // Update known friends list with any newly validated ones from the dialog
+          // Update known friends list
           if (result.newlyValidatedFriendCodes?.length) {
             result.newlyValidatedFriendCodes.forEach(code => {
               try {
                 const friendInfo: UserInfo = JSON.parse(code);
-                // Add basic validation if needed before adding
-                if(friendInfo.playerId && friendInfo.username) {
-                  this.addKnownFriend(friendInfo);
-                }
-              } catch (e) {
-                console.warn("Dialog returned invalid friend code string:", code);
-              }
+                if(friendInfo.playerId && friendInfo.username) { this.addKnownFriend(friendInfo); }
+              } catch (e) { console.warn("Dialog returned invalid friend code string:", code); }
             });
           }
 
-          // Call backend to create game (placeholder for API call)
-          this.initiateGameCreation(allPlayerIds);
+          // Call backend to create game
+          this.createGame(allPlayerIds); // Pass the combined list of IDs
 
         } else {
-          // User cancelled
           console.log('Create game cancelled');
         }
       });
   }
 
-  initiateGameCreation(playerIds: string[]): void {
-    this.isLoading = true;
-    this.errorMessage = null;
-    console.log("TODO: Call backend API to create game with Player IDs:", playerIds);
+  // --- Updated: Method to call the backend API ---
+  createGame(playerIds: string[]): void {
+    this.isLoading.set(true);
+    this.errorMessage.set(null);
 
-    // --- Placeholder for actual backend call ---
-    // const command = new CreateGameCommand(playerIds.map(id => Guid.parse(id)), Guid.parse(this.authService.getCurrentPlayerId()!), null);
-    // this.mediator.send(command)... or this.gameActionService.createGame(...)
-    setTimeout(() => { // Simulate API call
-      this.isLoading = false;
-      // On success, maybe navigate or wait for SignalR update?
-      // For now, just show success message
-      this.showSnackBar(`Game creation initiated with ${playerIds.length} players.`, 3000);
-      // Maybe clear invitations list?
-      // this.invitedGames.set([]);
-      this.cdr.markForCheck();
-    }, 1500);
-    // --- End Placeholder ---
+    const payload: CreateGameRequestDto = {
+      PlayerIds: playerIds // Pass the string array of Player IDs
+      // TokensToWin: null // Optional: Get from UI if needed
+    };
+
+    this.gameActionService.createGame(payload) // Use the injected service
+      .pipe(
+        takeUntil(this.destroy$),
+        finalize(() => this.isLoading.set(false)) // Ensure loading stops
+      )
+      .subscribe({
+        next: (newGameId) => {
+          this.showSnackBar(`Game ${newGameId.substring(0,8)}... created successfully!`, 3000);
+          // Navigate to the newly created game
+          this.router.navigate(['/game', newGameId]);
+          // Clear invitations list? Or let SignalR update handle it?
+          // this.invitedGames.set([]);
+        },
+        error: (err) => {
+          this.errorMessage.set(err.message || 'Failed to create game.');
+          this.showSnackBar(`Error: ${this.errorMessage()}`, 5000);
+          this.cdr.markForCheck(); // Trigger change detection for error
+        }
+      });
   }
+  // --- End Update ---
 
 
   joinGame(gameId: string): void {

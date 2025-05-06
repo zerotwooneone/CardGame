@@ -3,6 +3,7 @@ import {HttpClient, HttpErrorResponse} from '@angular/common/http';
 import {catchError, Observable, throwError} from 'rxjs';
 import {PlayCardRequestDto} from '../../../core/models/playCardRequestDto';
 import { PlayerGameStateDto } from '../../../core/models/playerGameStateDto';
+import {CreateGameRequestDto} from '../../../core/models/createGameRequestDto';
 
 @Injectable({
   // Provided locally within the game feature routing or component if lazy loaded,
@@ -42,6 +43,20 @@ export class GameActionService {
   getPlayerState(gameId: string, playerId: string): Observable<PlayerGameStateDto> { // Added method
     const url = `${this.apiUrl}/${gameId}/players/${playerId}`;
     return this.http.get<PlayerGameStateDto>(url)
+      .pipe(
+        catchError(this.handleError)
+      );
+  }
+
+  /**
+   * Sends a request to the backend API to create a new game.
+   * @param payload The details for the new game (Player IDs, optional TokensToWin).
+   * @returns An observable containing the ID (string) of the newly created game.
+   */
+  createGame(payload: CreateGameRequestDto): Observable<string> { // Changed return type to string (Guid)
+    const url = `${this.apiUrl}`; // POST to /api/Game
+    // Backend returns the Guid string of the new game
+    return this.http.post<string>(url, payload)
       .pipe(
         catchError(this.handleError)
       );

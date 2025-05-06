@@ -6,7 +6,7 @@
 
     <mat-card-content>
       <div class="lobby-actions">
-        <button mat-raised-button color="primary" (click)="openCreateGameDialog()" [disabled]="isLoading">
+        <button mat-raised-button color="primary" (click)="openCreateGameDialog()" [disabled]="isLoading()">
           <mat-icon>add</mat-icon> Create New Game
         </button>
       </div>
@@ -15,27 +15,28 @@
 
       <div class="invitation-list-container">
         <h2>Game Invitations</h2>
-        <div *ngIf="isLoading" class="spinner-container">
+        <div *ngIf="isLoading()" class="spinner-container">
           <mat-spinner diameter="50"></mat-spinner>
         </div>
 
-        <div *ngIf="!isLoading && errorMessage" class="error-message">
-          {{ errorMessage }}
+        <div *ngIf="!isLoading() && errorMessage()" class="error-message">
+          {{ errorMessage() }}
         </div>
 
-        <mat-list *ngIf="!isLoading && !errorMessage && invitedGames().length > 0" role="list">
+        <mat-list *ngIf="!isLoading() && !errorMessage() && invitedGames().length > 0" role="list">
           <mat-list-item *ngFor="let invite of invitedGames(); trackBy: trackGameInvite" role="listitem" class="game-list-item">
             <mat-icon matListItemIcon>mark_email_unread</mat-icon>
             <div matListItemTitle>Invite from {{ invite.creatorName }}</div>
             <div matListItemLine>
-              <span>Game ID: {{ invite.gameId.substring(0, 8) }}...</span> </div>
+              <span>Game ID: {{ invite.gameId.substring(0, 8) }}...</span>
+            </div>
             <button mat-icon-button color="accent" (click)="joinGame(invite.gameId)" aria-label="Join Game" matTooltip="Join Game">
               <mat-icon>login</mat-icon>
             </button>
           </mat-list-item>
         </mat-list>
 
-        <div *ngIf="!isLoading && !errorMessage && invitedGames().length === 0" class="no-games">
+        <div *ngIf="!isLoading() && !errorMessage() && invitedGames().length === 0" class="no-games">
           No pending game invitations.
         </div>
       </div>
