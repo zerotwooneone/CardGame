@@ -13,19 +13,19 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  width: 100%; // Ensure header takes full width for spacing
+  width: 100%;
 }
 
 .lobby-actions {
   display: flex;
-  justify-content: space-between;
+  justify-content: space-between; // Keep space between create/refresh
   align-items: center;
   padding: 16px 0;
-  flex-wrap: wrap; // Allow wrapping on smaller screens
-  gap: 10px; // Add gap between buttons
+  flex-wrap: wrap;
+  gap: 10px;
 }
 
-.game-list-container {
+.invitation-list-container { // Renamed class
   margin-top: 20px;
 
   h2 {
@@ -43,32 +43,28 @@
 .error-message {
   text-align: center;
   padding: 20px;
-  color: var(--mat-form-field-error-text-color, var(--mdc-theme-error, #f44336)); // Use CSS Variable
+  color: var(--mat-warn-color, #f44336); // Use CSS Variable
 }
 
-.no-games {
+.no-games { // Renamed class
   text-align: center;
   padding: 20px;
   font-style: italic;
-  // Use theme's disabled/hint color if available via CSS variable
-  color: var(--mat-disabled-list-option-label-text-color, grey); // Example variable
+  color: var(--mat-disabled-text-color, grey); // Use CSS Variable
 }
 
-.game-list-item {
-  // Add some hover effect maybe
+.game-list-item { // Renamed class
   &:hover {
-    background-color: rgba(0, 0, 0, 0.04); // Subtle hover
-    cursor: pointer; // Indicate clickable
+    background-color: rgba(0, 0, 0, 0.04);
+    cursor: pointer;
   }
 
   // Ensure elements align nicely
-  // Selector might need adjustment based on Angular/Material version
-  ::ng-deep .mdc-list-item__content {
+  ::ng-deep .mdc-list-item__content { // Adjust selector if needed
     display: flex;
     align-items: center;
     width: 100%;
   }
-
 
   // Push join button to the right
   button[mat-icon-button] {

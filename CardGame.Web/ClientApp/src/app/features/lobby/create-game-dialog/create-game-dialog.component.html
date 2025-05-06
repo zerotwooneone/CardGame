@@ -1,0 +1,71 @@
+<h2 mat-dialog-title>Create New Game</h2>
+
+<mat-dialog-content class="dialog-content">
+  <p>Select 1 to 3 opponents from your known friends list or add new friends using their Friend Code.</p>
+
+  <form [formGroup]="createGameForm">
+    <mat-form-field appearance="outline" class="full-width">
+      <mat-label>Add New Friend(s) by Code</mat-label>
+      <textarea matInput
+                formControlName="friendCodeInput"
+                cdkTextareaAutosize
+                #autosize="cdkTextareaAutosize"
+                cdkAutosizeMinRows="2"
+                cdkAutosizeMaxRows="5"
+                placeholder="Paste one or more Friend Codes here (JSON format, one per line or as JSON array)"></textarea>
+      <button mat-icon-button matSuffix (click)="validateAndAddFriendCodes()" type="button"
+              matTooltip="Validate and Add Codes" [disabled]="!createGameForm.get('friendCodeInput')?.value?.trim()">
+        <mat-icon>add_circle_outline</mat-icon>
+      </button>
+    </mat-form-field>
+  </form>
+
+  <mat-divider></mat-divider>
+
+  <div class="friend-selection-area">
+    <div class="friend-list known-friends">
+      <h3>Known Friends (Select 1-3 Total)</h3>
+      <mat-list role="list" *ngIf="knownFriendSelections().length > 0; else noKnownFriends">
+        <mat-list-item *ngFor="let friend of knownFriendSelections()" role="listitem">
+          <mat-checkbox
+            [checked]="friend.selected"
+            (change)="toggleKnownFriendSelection(friend)"
+            [disabled]="!friend.selected && totalSelectedOpponents() >= 3"
+            color="primary">
+            {{ friend.username }} ({{ friend.playerId.substring(0, 6) }}...)
+          </mat-checkbox>
+        </mat-list-item>
+      </mat-list>
+      <ng-template #noKnownFriends>
+        <p class="hint-text">No known friends yet. Add some using their Friend Code!</p>
+      </ng-template>
+    </div>
+
+    <div class="friend-list new-friends">
+      <h3>Newly Added Opponents</h3>
+      <mat-list role="list" *ngIf="newlyValidatedFriends().length > 0; else noNewFriends">
+        <mat-list-item *ngFor="let friend of newlyValidatedFriends()" role="listitem">
+          <mat-icon matListItemIcon color="primary">person_add</mat-icon>
+          <div matListItemTitle>{{ friend.username }}</div>
+          <div matListItemLine>{{ friend.playerId.substring(0, 8) }}...</div>
+          <button mat-icon-button color="warn" (click)="removeNewlyAddedFriend(friend)" matTooltip="Remove New Friend">
+            <mat-icon>remove_circle_outline</mat-icon>
+          </button>
+        </mat-list-item>
+      </mat-list>
+      <ng-template #noNewFriends>
+        <p class="hint-text">Add opponents using the input above.</p>
+      </ng-template>
+    </div>
+  </div>
+
+  <p class="total-selected">Total Opponents Selected: {{ totalSelectedOpponents() }}</p>
+
+</mat-dialog-content>
+
+<mat-dialog-actions align="end">
+  <button mat-button (click)="onCancel()">Cancel</button>
+  <button mat-raised-button color="primary" (click)="onConfirm()" [disabled]="!isValidOpponentCount()">
+    Create Game ({{ totalSelectedOpponents() + 1 }} Players)
+  </button>
+</mat-dialog-actions>

@@ -1,0 +1,69 @@
+.dialog-content {
+  min-height: 300px; // Ensure some space
+}
+
+.full-width {
+  width: 100%;
+  margin-bottom: 15px;
+}
+
+textarea[matInput] {
+  resize: vertical; // Allow vertical resize only
+}
+
+mat-divider {
+  margin: 15px 0;
+}
+
+.friend-selection-area {
+  display: flex;
+  gap: 20px;
+  margin-bottom: 15px;
+
+  @media (max-width: 450px) {
+    flex-direction: column; // Stack on small screens
+  }
+}
+
+.friend-list {
+  flex: 1; // Take up available space
+  max-height: 200px; // Limit height and allow scroll
+  overflow-y: auto;
+  border: 1px solid rgba(128, 128, 128, 0.15);
+  padding: 8px;
+  border-radius: 4px;
+
+  h3 {
+    margin-top: 0;
+    margin-bottom: 8px;
+    font-size: 1em;
+    font-weight: 500;
+    border-bottom: 1px solid rgba(128, 128, 128, 0.1);
+    padding-bottom: 4px;
+  }
+
+  mat-list-item {
+    height: 40px !important; // Adjust density
+    .mdc-list-item__content { // Target internal content for alignment
+      display: flex;
+      align-items: center;
+    }
+    button[mat-icon-button] {
+      margin-left: auto; // Push remove button right
+    }
+  }
+}
+
+.hint-text {
+  font-size: 0.85em;
+  font-style: italic;
+  color: grey; // Use theme hint color variable
+  text-align: center;
+  padding: 10px;
+}
+
+.total-selected {
+  text-align: center;
+  font-weight: 500;
+  margin-top: 10px;
+}
