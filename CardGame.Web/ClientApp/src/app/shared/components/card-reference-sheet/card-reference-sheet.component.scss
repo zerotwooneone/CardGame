@@ -31,6 +31,18 @@
   padding-bottom: 12px;
   align-items: flex-start; // Align icon with first line of text
 
+  // Target the internal content wrapper of mat-list-item for text wrapping
+  // The exact selector might vary slightly between Material versions.
+  // Inspect the element in browser dev tools if this doesn't work.
+  // For MDC-based components (Angular Material v15+):
+  ::ng-deep .mdc-list-item__content, // General content wrapper
+  ::ng-deep .mat-mdc-list-item-text-wrapper { // Specific text wrapper
+    white-space: normal !important; // Allow text to wrap
+    overflow: visible !important; // Ensure content isn't clipped
+    text-overflow: clip !important; // Prevent ellipsis
+    display: block; // Ensure it takes block layout for wrapping
+  }
+
   .card-rank-icon {
     margin-right: 16px;
     color: var(--mat-icon-color); // Use theme variable
@@ -52,6 +64,7 @@
     font-size: 0.9em;
     white-space: normal; // Allow text to wrap
     line-height: 1.4;
+    display: block;
   }
 
   .card-special-note {
