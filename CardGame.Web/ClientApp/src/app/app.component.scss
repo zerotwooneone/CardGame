@@ -23,7 +23,7 @@
 }
 
 .card-reference-sidenav {
-  width: 320px; // Adjust width as needed
+  width: 350px; // Increased width for better text wrapping
   max-width: 90vw; // Ensure it doesn't take too much space on small screens
   // Use theme variables for background
   // This will be automatically applied if your global theme is set up correctly.
@@ -35,5 +35,7 @@
     display: flex;
     flex-direction: column;
     height: 100%;
+    width: 100%; // Make sure it uses the full width of the sidenav
+    overflow-y: auto; // Allow internal scrolling if content is too long
   }
 }

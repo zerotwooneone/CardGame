@@ -30,41 +30,45 @@
   padding-top: 12px;
   padding-bottom: 12px;
   align-items: flex-start; // Align icon with first line of text
+  width: 100%; 
+  box-sizing: border-box; // Include padding and border in the element's total width and height
 
-  // Target the internal content wrapper of mat-list-item for text wrapping
-  // The exact selector might vary slightly between Material versions.
-  // Inspect the element in browser dev tools if this doesn't work.
-  // For MDC-based components (Angular Material v15+):
-  ::ng-deep .mdc-list-item__content, // General content wrapper
-  ::ng-deep .mat-mdc-list-item-text-wrapper { // Specific text wrapper
-    white-space: normal !important; // Allow text to wrap
-    overflow: visible !important; // Ensure content isn't clipped
-    text-overflow: clip !important; // Prevent ellipsis
-    display: block; // Ensure it takes block layout for wrapping
+  ::ng-deep .mdc-list-item__content, 
+  ::ng-deep .mat-mdc-list-item-text-wrapper, 
+  ::ng-deep .mat-mdc-list-item__primary-text, 
+  ::ng-deep .mat-mdc-list-item__secondary-text {
+    white-space: normal !important; 
+    overflow: visible !important; 
+    text-overflow: clip !important; 
+    display: block !important; 
   }
 
   .card-rank-icon {
     margin-right: 16px;
-    color: var(--mat-icon-color); // Use theme variable
+    color: var(--mat-icon-color); 
     // Example: Color icons based on rank or type
     // &.rank-1 { color: mat.get-theme-color($theme, primary, 100); }
   }
 
   .card-name {
     font-weight: 500;
+    white-space: normal; 
   }
 
   .card-count {
     font-size: 0.85em;
-    color: var(--mat-secondary-text-color); // Use theme variable
+    color: var(--mat-secondary-text-color); 
     margin-bottom: 4px;
   }
 
   .card-effect {
     font-size: 0.9em;
-    white-space: normal; // Allow text to wrap
+    white-space: normal !important; 
+    overflow-wrap: break-word;   
+    word-wrap: break-word;       
+    word-break: break-word;      
     line-height: 1.4;
-    display: block;
+    display: block;              
   }
 
   .card-special-note {
@@ -73,16 +77,21 @@
     margin-top: 6px;
     padding: 6px;
     border-radius: 4px;
-    background-color: rgba(128, 128, 128, 0.08); // Subtle background
-    color: var(--mat-hint-text-color); // Use theme variable
+    background-color: rgba(128, 128, 128, 0.08); 
+    color: var(--mat-hint-text-color); 
     display: flex;
     align-items: center;
+    white-space: normal; 
+    overflow-wrap: break-word;
+    word-wrap: break-word;
+    word-break: break-word;
 
     .note-icon {
       font-size: 16px;
       width: 16px;
       height: 16px;
       margin-right: 6px;
+      flex-shrink: 0; 
     }
   }
 }
