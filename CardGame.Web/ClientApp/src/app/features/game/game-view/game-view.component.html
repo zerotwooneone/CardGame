@@ -1,6 +1,5 @@
 <div class="game-view-container" *ngIf="spectatorState() as gameState; else loadingOrErrorTemplate"> <div class="game-info-bar">
   <span>Round: {{ gameState.roundNumber }}</span>
-  <span>Phase: {{ gameState.gamePhase }}</span>
   <span>Deck: {{ gameState.deckCardsRemaining }} cards left</span>
   <span>Tokens to Win: {{ gameState.tokensNeededToWin }}</span>
 </div>
@@ -13,7 +12,8 @@
       [isCurrentUser]="player.playerId === currentPlayerId()"
       [isTargetable]="isTargetingRequired() && player.playerId !== currentPlayerId() && player.status === 1"
       [isSelectedTarget]="player.playerId === selectedTargetPlayerId()"
-      (playerClicked)="onPlayerSelected($event)">
+      (playerClicked)="onPlayerSelected($event)"
+      (discardCardInfoClicked)="onCardInfoClicked($event)">
     </app-player-display>
   </div>
 
@@ -30,7 +30,8 @@
         [isFaceDown]="false"
         [isPlayable]="isMyTurn()"
         [isSelected]="card.id === selectedCard()?.id"
-        (cardClicked)="onCardSelected($event)">
+        (cardClicked)="onCardSelected($event)"
+        (infoClicked)="onCardInfoClicked($event)">
       </app-card>
       </div>
       <div *ngIf="playerHand().length === 0 && gameState.gamePhase !== 'GameOver'"> Waiting for card...

@@ -21,7 +21,10 @@
     <div class="discard-area" matTooltip="Discard Pile">
       <span *ngIf="discardPileCards.length === 0">Discard Empty</span>
       <div class="card-slot" *ngFor="let card of discardPileCards; trackBy: trackCardById">
-        <app-card [isFaceDown]="false" [cardData]="card"></app-card>
+        <app-card
+          [isFaceDown]="false"
+          [cardData]="card"
+          (infoClicked)="onDiscardCardInfoClicked($event)"></app-card>
       </div>
     </div>
   </mat-card-content>

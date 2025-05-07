@@ -10,11 +10,10 @@ import {
 import {CommonModule} from '@angular/common';
 import {MatCardModule} from '@angular/material/card';
 import {MatIconModule} from '@angular/material/icon';
-import {MatBadgeModule} from '@angular/material/badge'; // For token count
-import {MatTooltipModule} from '@angular/material/tooltip'; // For tooltips
-// Import shared models and components
+import {MatBadgeModule} from '@angular/material/badge';
+import {MatTooltipModule} from '@angular/material/tooltip';
 import {CardComponent} from '../card/card.component';
-import {PlayerHandInfoDto} from '../../../../core/models/playerHandInfoDto'; // Import CardComponent
+import {PlayerHandInfoDto} from '../../../../core/models/playerHandInfoDto';
 import {CardDto} from '../../../../core/models/cardDto';
 import {SpectatorPlayerDto} from '../../../../core/models/spectatorPlayerDto';
 import {PlayerStatus} from './player.status';
@@ -29,7 +28,7 @@ import {PlayerStatusMap} from './player-status.map';
     MatIconModule,
     MatBadgeModule,
     MatTooltipModule,
-    CardComponent // Import CardComponent here
+    CardComponent
   ],
   templateUrl: './player-display.component.html',
   styleUrls: ['./player-display.component.scss'],
@@ -53,6 +52,10 @@ export class PlayerDisplayComponent {
 
   /** Emits the player's ID when this component is clicked and is targetable. */
   @Output() playerClicked = new EventEmitter<string>();
+
+  /** Emits the card rank (type value) when an info icon on a discard pile card is clicked. */
+  @Output() discardCardInfoClicked = new EventEmitter<number>(); // New Output
+
 
   // --- Host Bindings for dynamic styling ---
   @HostBinding('class.current-turn') get turnClass() { return this.isCurrentTurn; }
@@ -93,6 +96,10 @@ export class PlayerDisplayComponent {
       return PlayerStatusMap[PlayerStatus.Unknown]; // Default to 'Unknown'
     }
     return PlayerStatusMap[statusValue]; // Use the exported map
+  }
+
+  onDiscardCardInfoClicked(cardRank: number): void {
+    this.discardCardInfoClicked.emit(cardRank);
   }
 
   // --- TrackBy Functions ---

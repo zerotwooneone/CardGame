@@ -1,37 +1,31 @@
 import { Component, OnInit, OnDestroy, inject, signal, WritableSignal, computed, Signal, ChangeDetectionStrategy, ChangeDetectorRef, effect, Injector } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { CommonModule } from '@angular/common';
-import { Subscription, Subject } from 'rxjs';
-import { filter, switchMap, takeUntil, tap } from 'rxjs/operators';
+import { Subject } from 'rxjs';
+import { takeUntil } from 'rxjs/operators';
 import { MatDialog, MatDialogModule } from '@angular/material/dialog';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatTooltipModule } from '@angular/material/tooltip';
-
-// Services
-import { GameStateService } from '../services/game-state.service'; // Adjust path
-import { GameActionService } from '../services/game-action.service'; // Adjust path
-import { AuthService } from '../../../core/services/auth.service'; // Adjust path
-import { SignalrService } from '../../../core/services/signalr.service'; // Adjust path
-
-// Models & Components
-import { PlayerDisplayComponent } from '../components/player-display/player-display.component'; // Adjust path
-import { CardComponent } from '../components/card/card.component'; // Adjust path
+import { GameStateService } from '../services/game-state.service';
+import { GameActionService } from '../services/game-action.service';
+import { AuthService } from '../../../core/services/auth.service';
+import { PlayerDisplayComponent } from '../components/player-display/player-display.component';
+import { CardComponent } from '../components/card/card.component';
 import { ActionModalComponent } from '../components/action-modal/action-modal.component';
 import {SpectatorGameStateDto} from '../../../core/models/spectatorGameStateDto'; // Adjust pathm/class representation if needed for mapping
 import { CardDto } from '../../../core/models/cardDto';
 import {ActionModalData} from '../actionModalData';
 import {ActionModalResult} from '../actionModalResult';
 import {PlayCardRequestDto} from '../../../core/models/playCardRequestDto';
-import {PlayerHandInfoDto} from '../../../core/models/playerHandInfoDto';
 import {SpectatorPlayerDto} from '../../../core/models/spectatorPlayerDto';
 import {CARD_DETAILS_MAP} from '../components/card/CARD_DETAILS_MAP';
+import {UiInteractionService} from '../../../core/services/ui-interaction-service.service';
 
 const getCardNameFromValue = (value: number | undefined): string => {
   if (value === undefined) return '?';
-  // Access the imported map directly
   return CARD_DETAILS_MAP[value]?.name ?? '?';
 };
 
@@ -62,7 +56,8 @@ export class GameViewComponent implements OnInit, OnDestroy {
   private authService = inject(AuthService);
   private dialog = inject(MatDialog);
   private snackBar = inject(MatSnackBar);
-  private cdr = inject(ChangeDetectorRef); // Inject ChangeDetectorRef
+  private cdr = inject(ChangeDetectorRef);
+  private uiInteractionService = inject(UiInteractionService);
 
   private destroy$ = new Subject<void>();
 
@@ -293,6 +288,11 @@ export class GameViewComponent implements OnInit, OnDestroy {
           this.cdr.markForCheck();
         }
       });
+  }
+
+  onCardInfoClicked(cardRank: number): void {
+    console.log('GameView: Card info clicked for rank:', cardRank);
+    this.uiInteractionService.requestScrollToCardReference(cardRank);
   }
 
   // --- Helpers ---

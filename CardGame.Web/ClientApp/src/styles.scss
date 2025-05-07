@@ -46,18 +46,53 @@ $cardgame-dark-theme: mat.m2-define-dark-theme((
 // Alternatively, define common structural themes separately.
 @include mat.all-component-themes($cardgame-light-theme);
 
+// Define global CSS custom properties for the light theme
+:root {
+  // General application background and text
+  --mat-app-background-color: #{mat.get-theme-color($cardgame-light-theme, background, background)};
+  --mat-app-text-color: #{mat.get-theme-color($cardgame-light-theme, foreground, base)};
+
+  // Specific for cards (can be same as app or different)
+  --mat-card-background-color: #{mat.get-theme-color($cardgame-light-theme, background, card)}; // Material 'card' background
+  --mat-card-text-color: #{mat.get-theme-color($cardgame-light-theme, foreground, text)};     // Material 'text' foreground
+
+  // Other useful theme colors as CSS variables
+  --mat-primary-color-500: #{mat.get-theme-color($cardgame-light-theme, primary, 500)};
+  --mat-primary-color-300: #{mat.get-theme-color($cardgame-light-theme, primary, 300)};
+  --mat-accent-color-500: #{mat.get-theme-color($cardgame-light-theme, accent, 500)};
+  --mat-accent-color-300: #{mat.get-theme-color($cardgame-light-theme, accent, 300)};
+  --mat-warn-color-500: #{mat.get-theme-color($cardgame-light-theme, warn, 500)};
+  --mat-divider-color: #{mat.get-theme-color($cardgame-light-theme, foreground, divider)};
+  --mat-secondary-text-color: #{mat.get-theme-color($cardgame-light-theme, foreground, secondary-text)};
+  --mat-disabled-text-color: #{mat.get-theme-color($cardgame-light-theme, foreground, disabled-text)};
+  --mat-primary-contrast-color-500: #{mat.get-theme-color($cardgame-light-theme, primary, 500-contrast)};
+  // Add more as needed
+}
+
 // Apply the dark theme colors when the user prefers dark mode
 @media (prefers-color-scheme: dark) {
   // Apply only the color styles for the dark theme.
   // This overrides the light theme colors applied above.
   @include mat.all-component-colors($cardgame-dark-theme);
 
-  // Optional: Add specific global overrides for dark theme if needed
-  // for non-Material components or base elements.
-  // body {
-  //   background-color: mat.get-theme-color(mat.get-theme-background-palette($cardgame-dark-theme), background);
-  //   color: mat.get-theme-color(mat.get-theme-foreground-palette($cardgame-dark-theme), base);
-  // }
+  :root, body.dark-theme { // Apply to :root or body.dark-theme for specificity
+    --mat-app-background-color: #{mat.get-theme-color($cardgame-dark-theme, background, background)};
+    --mat-app-text-color: #{mat.get-theme-color($cardgame-dark-theme, foreground, base)};
+
+    --mat-card-background-color: #{mat.get-theme-color($cardgame-dark-theme, background, card)};
+    --mat-card-text-color: #{mat.get-theme-color($cardgame-dark-theme, foreground, text)};
+
+    --mat-primary-color-500: #{mat.get-theme-color($cardgame-dark-theme, primary, 500)};
+    --mat-primary-color-300: #{mat.get-theme-color($cardgame-dark-theme, primary, 300)};
+    --mat-accent-color-500: #{mat.get-theme-color($cardgame-dark-theme, accent, 500)};
+    --mat-accent-color-300: #{mat.get-theme-color($cardgame-dark-theme, accent, 300)};
+    --mat-warn-color-500: #{mat.get-theme-color($cardgame-dark-theme, warn, 500)};
+    --mat-divider-color: #{mat.get-theme-color($cardgame-dark-theme, foreground, divider)};
+    --mat-secondary-text-color: #{mat.get-theme-color($cardgame-dark-theme, foreground, secondary-text)};
+    --mat-disabled-text-color: #{mat.get-theme-color($cardgame-dark-theme, foreground, disabled-text)};
+    --mat-primary-contrast-color-500: #{mat.get-theme-color($cardgame-dark-theme, primary, 500-contrast)};
+    // Add more as needed
+  }
 }
 
 

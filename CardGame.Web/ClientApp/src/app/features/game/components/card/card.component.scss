@@ -11,56 +11,41 @@
   cursor: default; // Default cursor
   position: relative;
   overflow: hidden;
-  // Use theme background variable (e.g., for paper/card background)
   background-color: var(--mat-card-background-color, white);
-  // Use theme text variable for default text
   color: var(--mat-card-text-color, var(--mat-app-text-color, black));
-  box-shadow: 0 2px 1px -1px rgba(0,0,0,.2), 0 1px 1px 0 rgba(0,0,0,.14), 0 1px 3px 0 rgba(0,0,0,.12); // Standard Material elevation 1
+  box-shadow: 0 2px 1px -1px rgba(0,0,0,.2), 0 1px 1px 0 rgba(0,0,0,.14), 0 1px 3px 0 rgba(0,0,0,.12);
   transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out, border-color 0.2s ease-in-out;
   font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
 
-  // --- State Styles ---
-  // Apply pointer cursor only when the card is face-up and has data,
-  // as these are the only conditions under which a click event is emitted.
   &:not(.face-down) {
-    cursor: pointer; // Make face-up cards indicate clickability
-
+    cursor: pointer;
     &:hover {
       transform: translateY(-3px);
-      box-shadow: 0 5px 5px -3px rgba(0,0,0,.2), 0 8px 10px 1px rgba(0,0,0,.14), 0 3px 14px 2px rgba(0,0,0,.12); // Material elevation 8
+      box-shadow: 0 5px 5px -3px rgba(0,0,0,.2), 0 8px 10px 1px rgba(0,0,0,.14), 0 3px 14px 2px rgba(0,0,0,.12);
     }
   }
 
-  // Style specifically for playable cards (e.g., in current player's hand on their turn)
   &.playable {
-    // Use theme accent color for playable border (adjust hue if needed)
-    border-color: var(--mat-accent-color-500, #4CAF50); // Fallback green
+    border-color: var(--mat-accent-color-500, #4CAF50);
   }
 
   &.selected {
-    // Use theme primary color for selected border
-    border-color: var(--mat-primary-color-500, #3f51b5); // Fallback indigo
+    border-color: var(--mat-primary-color-500, #3f51b5);
     border-width: 2px;
-    transform: scale(1.05); // Slightly larger when selected
-    // Use primary color with transparency for glow
+    transform: scale(1.05);
     box-shadow: 0 0 10px 2px var(--mat-primary-color-300, rgba(63, 81, 181, 0.5));
   }
 
   &.face-down {
-    // Use a distinct color for the back, could be primary or accent, or a neutral grey
-    background-color: var(--mat-primary-color-700, #303f9f); // Darker primary shade example
+    background-color: var(--mat-primary-color-700, #303f9f);
     border-color: var(--mat-primary-color-800, #283593);
-    color: var(--mat-primary-contrast-color-700, white); // Ensure contrast for text/icons on back
-    cursor: default !important; // Ensure face-down cards are not clickable looking
+    color: var(--mat-primary-contrast-color-700, white);
+    cursor: default !important;
     &:hover {
-      // Disable hover effects for face-down cards
       transform: none;
       box-shadow: 0 2px 1px -1px rgba(0,0,0,.2), 0 1px 1px 0 rgba(0,0,0,.14), 0 1px 3px 0 rgba(0,0,0,.12);
     }
   }
-
-  // Note: Dark mode is handled automatically by the CSS variables changing
-  // based on the globally applied theme (e.g., body.dark-theme)
 }
 
 .card-face {
@@ -73,39 +58,29 @@
   flex-direction: column;
   justify-content: center;
   align-items: center;
-  backface-visibility: hidden; // For potential flip animation
+  backface-visibility: hidden;
   padding: 5px;
   box-sizing: border-box;
 }
 
 .card-back {
-  // Styles for the card back design
   .card-back-design {
     font-size: 2em;
     font-weight: bold;
-    // Color is inherited from .face-down rule now
   }
 }
 
 .card-front {
-  // Styles for the card front content
-  justify-content: space-between; // Push rank to corners
+  justify-content: space-between;
   align-items: stretch;
-  background: grey;
+  position: relative; // Needed for absolute positioning of info button
 
   .card-rank {
     font-size: 1.2em;
     font-weight: bold;
   }
-
-  .top-left {
-    align-self: flex-start;
-  }
-
-  .bottom-right {
-    align-self: flex-end;
-  }
-
+  .top-left { align-self: flex-start; }
+  .bottom-right { align-self: flex-end; }
   .card-name {
     font-size: 0.9em;
     text-align: center;
@@ -117,18 +92,35 @@
     align-items: center;
     justify-content: center;
   }
+  .card-id { /* Optional debug display */ }
+}
 
-  .card-id { // Optional debug display
-    position: absolute;
-    bottom: 2px;
-    left: 2px;
-    font-size: 0.5em;
-    color: var(--mat-secondary-text-color, rgba(0,0,0,0.54)); // Use hint/secondary text color
+// --- Added styles for info button ---
+.card-info-button {
+  position: absolute;
+  top: 1px;      // Adjusted for better placement
+  right: 1px;     // Adjusted for better placement
+  width: 28px;    // Slightly larger touch target
+  height: 28px;
+  line-height: 28px;
+  padding: 0;
+  // Use a subtle color that works on both light/dark card backgrounds
+  // or use a theme variable for icon buttons if available
+  color: var(--mat-icon-button-icon-color, inherit); // Inherit from card-front or card-container
+
+  mat-icon {
+    font-size: 18px;
+    width: 18px;
+    height: 18px;
   }
 
+  &:hover {
+    background-color: rgba(0,0,0,0.08); // Subtle hover
+  }
 }
+// --- End added styles ---
 
 .card-placeholder {
   font-size: 3em;
-  color: var(--mat-disabled-text-color, rgba(0,0,0,0.38)); // Use disabled text color
+  color: var(--mat-disabled-text-color, rgba(0,0,0,0.38));
 }

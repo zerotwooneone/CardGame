@@ -1,7 +1,7 @@
 <mat-sidenav-container class="app-sidenav-container">
   <mat-sidenav-content>
     <mat-toolbar color="primary" class="app-toolbar">
-      <button mat-icon-button (click)="toggleCardReference()" aria-label="Toggle Card Reference">
+      <button mat-icon-button (click)="toggleCardReference()" aria-label="Toggle Card Reference" matTooltip="Card Reference">
         <mat-icon>menu_book</mat-icon> </button>
       <span>{{ title }}</span>
       <span class="spacer"></span>
@@ -14,7 +14,8 @@
 
   </mat-sidenav-content>
 
-  <mat-sidenav #cardRefSidenav mode="over" position="end" class="card-reference-sidenav" (keydown.escape)="cardRefSidenav.close()" (backdropClick)="cardRefSidenav.close()">
+  <mat-sidenav #cardRefSidenav mode="over" position="end" class="card-reference-sidenav"
+               (keydown.escape)="cardRefSidenav.close()">
     <app-card-reference-sheet (closeClicked)="cardRefSidenav.close()"></app-card-reference-sheet>
   </mat-sidenav>
 

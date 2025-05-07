@@ -16,7 +16,9 @@
 
 .app-content {
   padding: 16px; // Add some padding to the main content area
-  height: calc(100% - 64px); // Adjust based on toolbar height
+  // Adjust height to account for toolbar, assuming toolbar height is standard 64px (desktop) or 56px (mobile)
+  // This can be made more dynamic with CSS variables or by observing toolbar height.
+  height: calc(100vh - 64px);
   overflow-y: auto; // Allow content to scroll if it exceeds viewport
 }
 
@@ -24,7 +26,9 @@
   width: 320px; // Adjust width as needed
   max-width: 90vw; // Ensure it doesn't take too much space on small screens
   // Use theme variables for background
-  background-color: var(--mat-sidenav-container-background-color);
+  // This will be automatically applied if your global theme is set up correctly.
+  // background-color: var(--mat-sidenav-container-background-color); // Sidenav container background
+  // color: var(--mat-sidenav-content-text-color); // Sidenav content text color
 
   // Ensure content within sidenav is scrollable if it overflows
   app-card-reference-sheet {
