@@ -1,0 +1,35 @@
+@use '@angular/material' as mat;
+
+.app-sidenav-container {
+  height: 100vh; // Fill the entire viewport height
+}
+
+.app-toolbar {
+  position: sticky;
+  top: 0;
+  z-index: 1000; // Ensure toolbar stays on top
+}
+
+.spacer {
+  flex: 1 1 auto;
+}
+
+.app-content {
+  padding: 16px; // Add some padding to the main content area
+  height: calc(100% - 64px); // Adjust based on toolbar height
+  overflow-y: auto; // Allow content to scroll if it exceeds viewport
+}
+
+.card-reference-sidenav {
+  width: 320px; // Adjust width as needed
+  max-width: 90vw; // Ensure it doesn't take too much space on small screens
+  // Use theme variables for background
+  background-color: var(--mat-sidenav-container-background-color);
+
+  // Ensure content within sidenav is scrollable if it overflows
+  app-card-reference-sheet {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+  }
+}

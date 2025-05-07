@@ -1,6 +1,21 @@
-<mat-toolbar color="primary">
-  <span>Love Letter Game</span>
-  <span class="spacer"></span>
-  <app-user-widget></app-user-widget> </mat-toolbar>
+<mat-sidenav-container class="app-sidenav-container">
+  <mat-sidenav-content>
+    <mat-toolbar color="primary" class="app-toolbar">
+      <button mat-icon-button (click)="toggleCardReference()" aria-label="Toggle Card Reference">
+        <mat-icon>menu_book</mat-icon> </button>
+      <span>{{ title }}</span>
+      <span class="spacer"></span>
+      <app-user-widget></app-user-widget>
+    </mat-toolbar>
 
-<router-outlet />
+    <div class="app-content">
+      <router-outlet></router-outlet>
+    </div>
+
+  </mat-sidenav-content>
+
+  <mat-sidenav #cardRefSidenav mode="over" position="end" class="card-reference-sidenav" (keydown.escape)="cardRefSidenav.close()" (backdropClick)="cardRefSidenav.close()">
+    <app-card-reference-sheet (closeClicked)="cardRefSidenav.close()"></app-card-reference-sheet>
+  </mat-sidenav>
+
+</mat-sidenav-container>

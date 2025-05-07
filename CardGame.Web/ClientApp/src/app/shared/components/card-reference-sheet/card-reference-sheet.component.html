@@ -1,0 +1,21 @@
+<div class="reference-sheet-header">
+  <h2>Card Reference</h2>
+  <button mat-icon-button (click)="onClose()" aria-label="Close card reference">
+    <mat-icon>close</mat-icon>
+  </button>
+</div>
+<mat-divider></mat-divider>
+<mat-list role="list" class="reference-list">
+  <div *ngFor="let card of cardReferences;  let last = last; trackBy: trackByRank">
+    <mat-list-item role="listitem" class="reference-item" [id]="'card-ref-' + card.rank">
+      <mat-icon matListItemIcon class="card-rank-icon">{{ 'filter_' + card.rank }}</mat-icon> <div matListItemTitle class="card-name">{{ card.name }} ({{ card.rank }})</div>
+      <div matListItemLine class="card-count">In deck: {{ card.countInDeck }}</div>
+      <div matListItemLine class="card-effect">{{ card.effectDescription }}</div>
+      <div *ngIf="card.specialNote" matListItemLine class="card-special-note">
+        <mat-icon class="note-icon">info_outline</mat-icon>
+        <span>{{ card.specialNote }}</span>
+      </div>
+    </mat-list-item>
+    <mat-divider *ngIf="!last"></mat-divider>
+  </div>
+</mat-list>

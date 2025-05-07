@@ -1,0 +1,75 @@
+@use '@angular/material' as mat;
+
+:host {
+  display: block;
+  height: 100%; // Fill sidenav height
+  overflow-y: auto; // Allow scrolling for the content
+  background-color: var(--mat-sidenav-content-background-color); // Use theme variable
+  color: var(--mat-sidenav-content-text-color); // Use theme variable
+}
+
+.reference-sheet-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--mat-divider-color); // Use theme variable
+
+  h2 {
+    margin: 0;
+    font-size: 1.25em;
+  }
+}
+
+.reference-list {
+  padding-top: 0; // Remove default padding if header is present
+}
+
+.reference-item {
+  height: auto !important; // Allow item to grow based on content
+  padding-top: 12px;
+  padding-bottom: 12px;
+  align-items: flex-start; // Align icon with first line of text
+
+  .card-rank-icon {
+    margin-right: 16px;
+    color: var(--mat-icon-color); // Use theme variable
+    // Example: Color icons based on rank or type
+    // &.rank-1 { color: mat.get-theme-color($theme, primary, 100); }
+  }
+
+  .card-name {
+    font-weight: 500;
+  }
+
+  .card-count {
+    font-size: 0.85em;
+    color: var(--mat-secondary-text-color); // Use theme variable
+    margin-bottom: 4px;
+  }
+
+  .card-effect {
+    font-size: 0.9em;
+    white-space: normal; // Allow text to wrap
+    line-height: 1.4;
+  }
+
+  .card-special-note {
+    font-size: 0.85em;
+    font-style: italic;
+    margin-top: 6px;
+    padding: 6px;
+    border-radius: 4px;
+    background-color: rgba(128, 128, 128, 0.08); // Subtle background
+    color: var(--mat-hint-text-color); // Use theme variable
+    display: flex;
+    align-items: center;
+
+    .note-icon {
+      font-size: 16px;
+      width: 16px;
+      height: 16px;
+      margin-right: 6px;
+    }
+  }
+}
