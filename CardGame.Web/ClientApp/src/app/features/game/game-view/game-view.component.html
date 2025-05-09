@@ -1,8 +1,9 @@
-<div class="game-view-container" *ngIf="spectatorState() as gameState; else loadingOrErrorTemplate"> <div class="game-info-bar">
-  <span>Round: {{ gameState.roundNumber }}</span>
-  <span>Deck: {{ gameState.deckCardsRemaining }} cards left</span>
-  <span>Tokens to Win: {{ gameState.tokensNeededToWin }}</span>
-</div>
+<div class="game-view-container" *ngIf="spectatorState() as gameState; else loadingOrErrorTemplate">
+  <div class="game-info-bar">
+    <span>Round: {{ gameState.roundNumber }}</span>
+    <span>Deck: {{ gameState.deckCardsRemaining }} cards left</span>
+    <span>Tokens to Win: {{ gameState.tokensNeededToWin }}</span>
+  </div>
 
   <div class="players-area">
     <app-player-display
@@ -17,48 +18,55 @@
     </app-player-display>
   </div>
 
-  <div
-    class="current-player-hand-area"
-    *ngIf="currentPlayerId()">
+  <div class="current-player-hand-area" *ngIf="currentPlayerId()">
     <h3>Your Hand</h3>
     <div class="hand-cards">
-      <div
-        class="card-slot"
-        *ngFor="let card of playerHand(); trackBy: trackCardById">
+      <div class="card-slot" *ngFor="let card of playerHand(); trackBy: trackCardById">
         <app-card
-        [cardData]="card"
-        [isFaceDown]="false"
-        [isPlayable]="isMyTurn()"
-        [isSelected]="card.id === selectedCard()?.id"
-        (cardClicked)="onCardSelected($event)"
-        (infoClicked)="onCardInfoClicked($event)">
-      </app-card>
+          [cardData]="card"
+          [isFaceDown]="false"
+          [isPlayable]="isMyTurn()"
+          [isSelected]="card.id === selectedCard()?.id"
+          (cardClicked)="onCardSelected($event)"
+          (infoClicked)="onCardInfoClicked($event)">
+        </app-card>
       </div>
-      <div *ngIf="playerHand().length === 0 && gameState.gamePhase !== 'GameOver'"> Waiting for card...
+      <div *ngIf="playerHand().length === 0 && gameState.gamePhase !== 'GameOver'">
+        Waiting for card...
       </div>
     </div>
     <div class="action-prompts" *ngIf="isMyTurn()">
       <div *ngIf="selectedCard() as card">
-        <span *ngIf="isTargetingRequired() && !selectedTargetPlayerId()">
-          Please select a target player for {{ selectedCardName() }}.
+           <span *ngIf="isTargetingRequired() && !selectedTargetPlayerId()">
+             Please select a target player for {{ selectedCardName() }}.
            </span>
-      <span *ngIf="isGuessingRequired() && !selectedTargetPlayerId()">
-        Please select a target player for Guard.
+        <span *ngIf="isGuessingRequired() && !selectedTargetPlayerId()">
+             Please select a target player for Guard.
            </span>
-      <span *ngIf="isGuessingRequired() && selectedTargetPlayerId()">
-        Please guess Player {{ getPlayerName(selectedTargetPlayerId()) }}'s card. </span>
+        <span *ngIf="isGuessingRequired() && selectedTargetPlayerId()">
+             Please guess Player {{ getPlayerName(selectedTargetPlayerId()) }}'s card.
+           </span>
       </div>
-      <div *ngIf="!selectedCard()"> Select a card to play.
+      <div *ngIf="!selectedCard()">
+        Select a card to play.
       </div>
-      <div *ngIf="isLoadingAction()" class="action-spinner"> <mat-spinner diameter="20"></mat-spinner> <span>Processing...</span>
+      <div *ngIf="isLoadingAction()" class="action-spinner">
+        <mat-spinner diameter="20"></mat-spinner> <span>Processing...</span>
       </div>
     </div>
-    <div *ngIf="errorState()" class="component-error-message"> {{ errorState() }} </div>
+    <div *ngIf="errorState()" class="component-error-message">
+      {{ errorState() }}
+    </div>
   </div>
 
   <div class="public-cards-area" *ngIf="gameState.publiclySetAsideCards?.length">
     <h4>Public Cards</h4>
-    <div class="card-slot" *ngFor="let card of gameState.publiclySetAsideCards; trackBy: trackCardById"> <app-card [cardData]="card" [isFaceDown]="false"></app-card>
+    <div class="card-slot" *ngFor="let card of gameState.publiclySetAsideCards; trackBy: trackCardById">
+      <app-card
+        [cardData]="card"
+        [isFaceDown]="false"
+        (infoClicked)="onCardInfoClicked($event)">
+      </app-card>
     </div>
   </div>
 

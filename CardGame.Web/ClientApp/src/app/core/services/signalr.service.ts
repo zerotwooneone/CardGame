@@ -5,7 +5,8 @@ import { Subject } from 'rxjs'; // Removed BehaviorSubject import
 
 import { AuthService } from './auth.service';
 import {SpectatorGameStateDto} from '../models/spectatorGameStateDto';
-import {CardDto} from '../models/cardDto'; // Optional: Inject to check login status
+import {CardDto} from '../models/cardDto';
+import {RoundEndSummaryDto} from '../models/roundEndSummaryDto'; // Optional: Inject to check login status
 
 // Define connection states
 export enum ConnectionState {
@@ -52,8 +53,8 @@ export class SignalrService implements OnDestroy {
   public playerDiscardedReceived$ = this.playerDiscardedSubject.asObservable();
   private cardsSwappedSubject = new Subject<{ player1Id: string, player2Id: string }>();
   public cardsSwappedReceived$ = this.cardsSwappedSubject.asObservable();
-  private roundWinnerSubject = new Subject<{ winnerId: string | null, reason: string, finalHands: { [playerId: string]: number | null } }>();
-  public roundWinnerReceived$ = this.roundWinnerSubject.asObservable();
+  private roundSummarySubject = new Subject<RoundEndSummaryDto>(); // Changed name and type
+  public roundSummaryReceived$ = this.roundSummarySubject.asObservable();
   private gameWinnerSubject = new Subject<{ winnerId: string }>();
   public gameWinnerReceived$ = this.gameWinnerSubject.asObservable();
   private cardEffectFizzledSubject = new Subject<{ actorId: string, cardTypeValue: number, targetId: string, reason: string }>();
@@ -188,7 +189,10 @@ export class SignalrService implements OnDestroy {
     this.gameHubConnection.on('PlayersComparedHands', (player1Id: string, player1CardTypeValue: number, player2Id: string, player2CardTypeValue: number, loserId: string | null) => this.playersComparedHandsSubject.next({ player1Id, player1CardTypeValue, player2Id, player2CardTypeValue, loserId }));
     this.gameHubConnection.on('PlayerDiscarded', (targetPlayerId: string, discardedCard: CardDto) => this.playerDiscardedSubject.next({ targetPlayerId, discardedCard }));
     this.gameHubConnection.on('CardsSwapped', (player1Id: string, player2Id: string) => this.cardsSwappedSubject.next({ player1Id, player2Id }));
-    this.gameHubConnection.on('RoundWinnerAnnounced', (winnerId: string | null, reason: string, finalHands: { [playerId: string]: number | null }) => this.roundWinnerSubject.next({ winnerId, reason, finalHands }));
+    this.gameHubConnection.on('ShowRoundSummary', (summaryData: RoundEndSummaryDto) => { // Matches IGameClient method name
+      console.log('Received Round Summary (ShowRoundSummary):', summaryData);
+      this.roundSummarySubject.next(summaryData); // Emit the full DTO
+    });
     this.gameHubConnection.on('GameWinnerAnnounced', (winnerId: string) => this.gameWinnerSubject.next({ winnerId }));
 
     this.gameHubConnection.on('CardEffectFizzled', (actorId: string, cardTypeValue: number, targetId: string, reason: string) => {

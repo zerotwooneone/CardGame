@@ -1,0 +1,108 @@
+@use '@angular/material' as mat;
+
+.dialog-container {
+  display: flex;
+  flex-direction: column;
+  max-height: 80vh; // Prevent dialog from being too tall
+}
+
+.dialog-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  border-bottom: 1px solid var(--mat-divider-color, rgba(0,0,0,0.12));
+  padding-bottom: 12px;
+  margin-bottom: 0; // Remove default margin
+}
+
+.title-icon {
+  color: var(--mat-primary-color-500); // Use theme primary color
+}
+
+.dialog-content {
+  padding: 20px 24px; // Standard dialog padding
+  overflow-y: auto; // Allow content to scroll
+}
+
+.round-reason, .round-winner {
+  font-size: 1.1em;
+  margin-bottom: 8px;
+}
+
+.round-winner {
+  font-weight: 500;
+}
+
+.section-divider {
+  margin: 16px 0;
+}
+
+.player-summaries-container {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); // Responsive grid
+  gap: 16px;
+  margin-top: 10px;
+}
+
+.player-summary-card {
+  mat-card-header {
+    padding-bottom: 8px;
+  }
+  mat-card-title {
+    font-size: 1em;
+  }
+  mat-card-subtitle {
+    font-size: 0.85em;
+  }
+  mat-card-content {
+    padding-top: 8px;
+  }
+
+  &.round-winner-card {
+    // Highlight the winner's card
+    border: 2px solid var(--mat-accent-color-A200, gold); // Use theme accent or a gold color
+    box-shadow: 0 0 10px var(--mat-accent-color-A100, lightgoldenrodyellow);
+  }
+}
+
+.summary-section {
+  margin-bottom: 12px;
+  h4 {
+    font-size: 0.9em;
+    font-weight: 500;
+    margin-bottom: 6px;
+    color: var(--mat-secondary-text-color);
+  }
+}
+
+.final-hand-display {
+  display: flex;
+  justify-content: center; // Center the single card
+  align-items: center;
+  min-height: 130px; // Approximate height of a card
+  // background-color: rgba(0,0,0,0.02); // Very subtle background
+  border-radius: 4px;
+}
+
+.discard-pile-display {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  min-height: 40px; // Min height even if empty
+}
+
+.card-slot-summary {
+  // Scale down cards in summary if needed
+  app-card {
+    transform: scale(0.85); // Make cards slightly smaller
+    transform-origin: top left;
+  }
+}
+
+.no-card-text {
+  font-style: italic;
+  font-size: 0.9em;
+  color: var(--mat-disabled-text-color);
+  text-align: center;
+  width: 100%;
+}

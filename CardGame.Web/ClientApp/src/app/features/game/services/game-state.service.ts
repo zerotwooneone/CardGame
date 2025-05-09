@@ -6,9 +6,11 @@ import {SpectatorGameStateDto} from '../../../core/models/spectatorGameStateDto'
 import {CardDto} from '../../../core/models/cardDto';
 import {GameActionService} from './game-action.service';
 import {PlayerGameStateDto} from '../../../core/models/playerGameStateDto';
+import {RoundEndSummaryDto} from '../../../core/models/roundEndSummaryDto';
 
 
 @Injectable({
+  // Provide locally within the game feature or root if needed elsewhere
   providedIn: 'any'
 })
 export class GameStateService implements OnDestroy {
@@ -16,14 +18,14 @@ export class GameStateService implements OnDestroy {
   // --- Private Writable Signals holding the state ---
   private spectatorStateSignal: WritableSignal<SpectatorGameStateDto | null> = signal(null);
   private playerHandSignal: WritableSignal<CardDto[]> = signal([]);
-  private isLoadingState: WritableSignal<boolean> = signal(false); // Added loading signal
-  private errorState: WritableSignal<string | null> = signal(null); // Added error signal
+  private isLoadingState: WritableSignal<boolean> = signal(false);
+  private errorState: WritableSignal<string | null> = signal(null);
 
   // --- Public Readonly Signals for consumption ---
   public spectatorState: Signal<SpectatorGameStateDto | null> = this.spectatorStateSignal.asReadonly();
   public playerHand: Signal<CardDto[]> = this.playerHandSignal.asReadonly();
-  public isLoading: Signal<boolean> = this.isLoadingState.asReadonly(); // Expose loading state
-  public error: Signal<string | null> = this.errorState.asReadonly(); // Expose error state
+  public isLoading: Signal<boolean> = this.isLoadingState.asReadonly();
+  public error: Signal<string | null> = this.errorState.asReadonly();
 
 
   // --- Computed Signals for derived state ---
@@ -37,12 +39,14 @@ export class GameStateService implements OnDestroy {
   public gamePhase: Signal<string | null> = computed(() => this.spectatorState()?.gamePhase ?? null);
 
   // --- Observables for transient events ---
+  // Declare properties first
   public readonly opponentHandRevealed$: Observable<{ opponentId: string, revealedCard: CardDto }>;
   public readonly playerGuessed$: Observable<{ guesserId: string, targetId: string, guessedCardTypeValue: number, wasCorrect: boolean }>;
   public readonly playersComparedHands$: Observable<{ player1Id: string, player1CardTypeValue: number, player2Id: string, player2CardTypeValue: number, loserId: string | null }>;
   public readonly playerDiscarded$: Observable<{ targetPlayerId: string, discardedCard: CardDto }>;
   public readonly cardsSwapped$: Observable<{ player1Id: string, player2Id: string }>;
-  public readonly roundWinnerAnnounced$: Observable<{ winnerId: string | null, reason: string, finalHands: { [playerId: string]: number | null } }>;
+  // This observable is correctly typed to RoundEndSummaryDto
+  public readonly roundWinnerAnnounced$: Observable<RoundEndSummaryDto>;
   public readonly gameWinnerAnnounced$: Observable<{ winnerId: string }>;
   public readonly cardEffectFizzled$: Observable<{ actorId: string, cardTypeValue: number, targetId: string, reason: string }>;
 
@@ -57,13 +61,15 @@ export class GameStateService implements OnDestroy {
   private injector = inject(Injector);
 
   constructor() {
-    // Assign Observables
+    // Assign Observables in constructor
+    // This ensures this.signalrService is initialized before being accessed
     this.opponentHandRevealed$ = this.signalrService.opponentHandRevealReceived$;
     this.playerGuessed$ = this.signalrService.playerGuessedReceived$;
     this.playersComparedHands$ = this.signalrService.playersComparedHandsReceived$;
     this.playerDiscarded$ = this.signalrService.playerDiscardedReceived$;
     this.cardsSwapped$ = this.signalrService.cardsSwappedReceived$;
-    this.roundWinnerAnnounced$ = this.signalrService.roundWinnerReceived$;
+    // Correctly assigns the observable from SignalrService
+    this.roundWinnerAnnounced$ = this.signalrService.roundSummaryReceived$; // Previously roundWinnerReceived$
     this.gameWinnerAnnounced$ = this.signalrService.gameWinnerReceived$;
     this.cardEffectFizzled$ = this.signalrService.cardEffectFizzledReceived$;
 
@@ -73,7 +79,6 @@ export class GameStateService implements OnDestroy {
   ngOnDestroy(): void {
     this.unsubscribeAll();
     // Effects tied to the injector are automatically cleaned up
-    // Ensure connections are stopped if component using service is destroyed
     const currentId = this.gameId();
     if (currentId) {
       this.disconnectFromGame(currentId);
@@ -85,7 +90,7 @@ export class GameStateService implements OnDestroy {
     // Effect to react to isLoggedIn signal changes
     effect(() => {
       const isLoggedIn = this.authService.isLoggedIn();
-      const isBrowser = this.signalrService.isBrowser;
+      const isBrowser = this.signalrService.isBrowser; // Use public readonly property
       if (!isLoggedIn && isBrowser) {
         console.log('User logged out (detected by signal), stopping SignalR connections.');
         Promise.all([
@@ -97,11 +102,12 @@ export class GameStateService implements OnDestroy {
 
     // Effect to react to gameConnectionState signal changes
     effect(() => {
-      const state = this.signalrService.gameConnectionState();
+      const state = this.signalrService.gameConnectionState(); // Read the signal
       if (state === ConnectionState.Disconnected && this.signalrService.isBrowser) {
         console.log('GameStateService: GameHub disconnected (detected by signal), clearing state.');
         this.clearState(); // Clear state on disconnect
       }
+      // Could add logic here for ConnectionState.Reconnected to rejoin groups if needed
     }, { injector: this.injector });
   }
 
@@ -119,10 +125,7 @@ export class GameStateService implements OnDestroy {
     this.spectatorStateSubscription = this.signalrService.spectatorGameStateReceived$.subscribe(
       state => {
         console.log('GameStateService: Received spectator state update via SignalR.');
-        // Update spectator state, but preserve player hand from PlayerGameStateDto if possible
         this.spectatorStateSignal.set(state);
-        // Note: This might overwrite hand count briefly if PlayerGameState loaded first.
-        // Consider merging logic if needed.
       }
     );
 
@@ -170,7 +173,6 @@ export class GameStateService implements OnDestroy {
     try {
       // 1. Fetch initial Player Game State via API
       console.log(`GameStateService: Fetching initial state for Game ${gameId}, Player ${myPlayerId}`);
-      // Use firstValueFrom or subscribe/unsubscribe pattern for single API call
       const initialState = await this.fetchInitialPlayerState(gameId, myPlayerId);
 
       // 2. Set initial state from API response
@@ -207,12 +209,15 @@ export class GameStateService implements OnDestroy {
   private fetchInitialPlayerState(gameId: string, playerId: string): Promise<PlayerGameStateDto> {
     return new Promise((resolve, reject) => {
       const sub = this.gameActionService.getPlayerState(gameId, playerId)
-        .pipe(
-          // finalize(() => sub?.unsubscribe()) // Ensure unsubscribe
-        )
         .subscribe({
-          next: (state) => resolve(state),
-          error: (err) => reject(err)
+          next: (state) => {
+            sub.unsubscribe(); // Manually unsubscribe after first value
+            resolve(state);
+          },
+          error: (err) => {
+            sub.unsubscribe(); // Manually unsubscribe on error
+            reject(err);
+          }
         });
     });
   }

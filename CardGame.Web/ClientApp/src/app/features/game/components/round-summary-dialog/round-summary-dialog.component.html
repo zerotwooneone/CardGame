@@ -1,0 +1,62 @@
+<div class="dialog-container">
+  <h2 mat-dialog-title class="dialog-title">
+    <mat-icon class="title-icon" *ngIf="data.winnerPlayerId">emoji_events</mat-icon>
+    <mat-icon class="title-icon" *ngIf="!data.winnerPlayerId">info</mat-icon>
+    Round Over!
+  </h2>
+
+  <mat-dialog-content class="dialog-content">
+    <p class="round-reason"><strong>Reason:</strong> {{ data.reason }}</p>
+    <p class="round-winner" *ngIf="data.winnerPlayerId && winnerName">
+      <strong>Winner:</strong> {{ winnerName }}
+    </p>
+    <p class="round-winner" *ngIf="!data.winnerPlayerId">
+      <strong>Result:</strong> Draw
+    </p>
+
+    <mat-divider class="section-divider"></mat-divider>
+
+    <h3>Player Summaries:</h3>
+    <div class="player-summaries-container">
+      <div *ngFor="let player of data.playerSummaries; trackBy: trackPlayerSummary" class="player-summary-card">
+        <mat-card [class.round-winner-card]="player.playerId === data.winnerPlayerId">
+          <mat-card-header>
+            <mat-card-title>{{ player.playerName }}</mat-card-title>
+            <mat-card-subtitle>Tokens: {{ player.tokensWon }}</mat-card-subtitle>
+          </mat-card-header>
+          <mat-card-content>
+            <div class="summary-section">
+              <h4>Final Hand:</h4>
+              <div class="final-hand-display">
+                <app-card *ngIf="player.finalHeldCard"
+                          [cardData]="player.finalHeldCard"
+                          [isFaceDown]="false">
+                </app-card>
+                <span *ngIf="!player.finalHeldCard" class="no-card-text">
+                  (Eliminated or No Card)
+                </span>
+              </div>
+            </div>
+            <div class="summary-section">
+              <h4>Discard Pile (This Round):</h4>
+              <div class="discard-pile-display" *ngIf="player.discardPileValues.length > 0; else emptyDiscard">
+                <div class="card-slot-summary" *ngFor="let cardValue of player.discardPileValues; trackBy: trackCardValue; let i = index">
+                  <app-card [cardData]="getDiscardCardDto(cardValue, player, i)" [isFaceDown]="false"></app-card>
+                </div>
+              </div>
+              <ng-template #emptyDiscard>
+                <span class="no-card-text">Empty</span>
+              </ng-template>
+            </div>
+          </mat-card-content>
+        </mat-card>
+      </div>
+    </div>
+  </mat-dialog-content>
+
+  <mat-dialog-actions align="end">
+    <button mat-raised-button color="primary" (click)="onDismiss()">
+      Continue
+    </button>
+  </mat-dialog-actions>
+</div>

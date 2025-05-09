@@ -23,6 +23,9 @@ import {PlayCardRequestDto} from '../../../core/models/playCardRequestDto';
 import {SpectatorPlayerDto} from '../../../core/models/spectatorPlayerDto';
 import {CARD_DETAILS_MAP} from '../components/card/CARD_DETAILS_MAP';
 import {UiInteractionService} from '../../../core/services/ui-interaction-service.service';
+import {RoundEndSummaryDto} from '../../../core/models/roundEndSummaryDto';
+import {PlayerHandInfoDto} from '../../../core/models/playerHandInfoDto';
+import {RoundSummaryDialogComponent} from '../components/round-summary-dialog/round-summary-dialog.component';
 
 const getCardNameFromValue = (value: number | undefined): string => {
   if (value === undefined) return '?';
@@ -72,7 +75,7 @@ export class GameViewComponent implements OnInit, OnDestroy {
   selectedCard: WritableSignal<CardDto | null> = signal(null);
   selectedTargetPlayerId: WritableSignal<string | null> = signal(null);
   isLoadingAction: WritableSignal<boolean> = signal(false);
-  errorState: WritableSignal<string | null> = signal(null); // Use this signal for errors
+  errorState: WritableSignal<string | null> = signal(null);
 
   // Computed signal for current player ID
   currentPlayerId: Signal<string | null> = computed(() => this.authService.getCurrentPlayerId());
@@ -102,65 +105,62 @@ export class GameViewComponent implements OnInit, OnDestroy {
   selectedCardName: Signal<string> = computed(() => getCardNameFromValue(this.selectedCard()?.type)); // Use helper
 
   ngOnInit(): void {
-    this.errorState.set(null); // Clear error on init
-
+    this.errorState.set(null);
     this.route.paramMap
       .pipe(takeUntil(this.destroy$))
       .subscribe(params => {
         const id = params.get('id');
         if (id) {
-          this.gameStateService.clearState(); // Clear previous state
+          this.gameStateService.clearState();
           this.gameStateService.connectToGame(id)
             .catch(err => {
               console.error("Error connecting to game:", err);
               this.errorState.set("Could not connect to the game.");
               this.snackBar.open('Error connecting to game.', 'Close', { duration: 3000 });
-              this.cdr.markForCheck(); // Trigger change detection for error message
+              this.cdr.markForCheck();
             });
         } else {
           console.error("No game ID found in route.");
           this.errorState.set("No Game ID specified.");
         }
       });
-
     this.subscribeToGameEvents();
   }
 
   ngOnDestroy(): void {
     this.destroy$.next();
     this.destroy$.complete();
-    const currentId = this.gameId(); // Read signal value
+    const currentId = this.gameId();
     if (currentId) {
       this.gameStateService.disconnectFromGame(currentId);
     }
   }
 
   private subscribeToGameEvents(): void {
-    // Use helper function for card names in snackbar messages
     this.gameStateService.playerGuessed$
       .pipe(takeUntil(this.destroy$))
       .subscribe(data => this.showSnackBar(`Guess (${getCardNameFromValue(data.guessedCardTypeValue)}) result: ${data.wasCorrect ? 'Correct!' : 'Incorrect.'}`));
-
     this.gameStateService.playersComparedHands$
       .pipe(takeUntil(this.destroy$))
       .subscribe(data => this.showSnackBar(`Baron: ${data.loserId ? `Player ${this.getPlayerName(data.loserId)} is out!` : 'Tie!'}`));
-
     this.gameStateService.playerDiscarded$
       .pipe(takeUntil(this.destroy$))
-      .subscribe(data => this.showSnackBar(`Player ${this.getPlayerName(data.targetPlayerId)} discarded ${getCardNameFromValue(data.discardedCard.type)}`)); // Use helper
-
+      .subscribe(data => this.showSnackBar(`Player ${this.getPlayerName(data.targetPlayerId)} discarded ${getCardNameFromValue(data.discardedCard.type)}`));
     this.gameStateService.cardsSwapped$
       .pipe(takeUntil(this.destroy$))
       .subscribe(data => this.showSnackBar(`Player ${this.getPlayerName(data.player1Id)} swapped hands with Player ${this.getPlayerName(data.player2Id)}`));
 
     this.gameStateService.roundWinnerAnnounced$
       .pipe(takeUntil(this.destroy$))
-      .subscribe(data => this.showSnackBar(`Round Over! ${data.winnerId ? `Player ${this.getPlayerName(data.winnerId)} wins.` : 'Draw.'} Reason: ${data.reason}`));
+      .subscribe((summaryData: RoundEndSummaryDto) => {
+        const winnerName = summaryData.winnerPlayerId ? this.getPlayerName(summaryData.winnerPlayerId) : null;
+        this.showSnackBar(`Round Over! ${winnerName ? `${winnerName} wins.` : 'Draw.'} Reason: ${summaryData.reason}`);
+        this.openRoundSummaryDialog(summaryData);
+      });
 
     this.gameStateService.gameWinnerAnnounced$
       .pipe(takeUntil(this.destroy$))
       .subscribe(data => this.showSnackBar(`Game Over! Player ${this.getPlayerName(data.winnerId)} wins the game!`, 10000));
-
     this.gameStateService.cardEffectFizzled$
       .pipe(takeUntil(this.destroy$))
       .subscribe(data => {
@@ -170,8 +170,6 @@ export class GameViewComponent implements OnInit, OnDestroy {
         this.showSnackBar(`${actorName}'s ${cardName} had no effect on ${targetName} (${data.reason}).`);
       });
   }
-
-  // --- Card Interaction ---
 
   onCardSelected(card: CardDto): void {
     if (!this.isMyTurn()) return;
@@ -210,9 +208,6 @@ export class GameViewComponent implements OnInit, OnDestroy {
       this.openGuessModal();
     }
   }
-
-  // --- Action Confirmation / Modal ---
-
   openGuessModal(): void {
     const cardBeingPlayed = this.selectedCard();
     if (!cardBeingPlayed || cardBeingPlayed.type !== 1) return;
@@ -239,8 +234,6 @@ export class GameViewComponent implements OnInit, OnDestroy {
       }
     });
   }
-
-  // --- Play Action ---
 
   confirmAndPlayCard(guessedValue?: number): void {
     const card = this.selectedCard();
@@ -290,6 +283,23 @@ export class GameViewComponent implements OnInit, OnDestroy {
       });
   }
 
+  openRoundSummaryDialog(summaryData: RoundEndSummaryDto): void {
+    const dialogRef = this.dialog.open<RoundSummaryDialogComponent, RoundEndSummaryDto, void>(
+      RoundSummaryDialogComponent,
+      {
+        width: '500px', // Adjust as needed
+        maxWidth: '90vw',
+        data: summaryData,
+        disableClose: true
+      }
+    );
+
+    dialogRef.afterClosed().subscribe(() => {
+      console.debug('Round summary dialog closed.');
+      this.cdr.markForCheck(); // Ensure UI updates if anything changed indirectly
+    });
+  }
+
   onCardInfoClicked(cardRank: number): void {
     console.log('GameView: Card info clicked for rank:', cardRank);
     this.uiInteractionService.requestScrollToCardReference(cardRank);
@@ -300,7 +310,6 @@ export class GameViewComponent implements OnInit, OnDestroy {
     if (!playerId) return 'Unknown';
     return this.spectatorState()?.players.find(p => p.playerId === playerId)?.name ?? 'Unknown';
   }
-
   showSnackBar(message: string, duration: number = 3000): void {
     this.snackBar.open(message, 'Close', { duration });
   }
@@ -308,8 +317,5 @@ export class GameViewComponent implements OnInit, OnDestroy {
   // --- TrackBy Functions ---
   trackByIndex(index: number, item: any): number { return index; }
   trackCardById(index: number, item: CardDto): string { return item.id; }
-  trackPlayerById(index: number, item: SpectatorPlayerDto): string {
-    return item.playerId;
-  }
-
+  trackPlayerById(index: number, item: PlayerHandInfoDto | SpectatorPlayerDto): string { return item.playerId; }
 }
