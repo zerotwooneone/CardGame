@@ -396,67 +396,84 @@ public class Game // Aggregate Root
 
     private void EndRound(List<Player> activePlayers)
     {
-        // Prevent multiple calls if already processing end round
-        if (GamePhase != GamePhase.RoundInProgress) return;
+        if (GamePhase != GamePhase.RoundInProgress) return; // Prevent multiple calls
 
-        GamePhase = GamePhase.RoundOver;
+        GamePhase = GamePhase.RoundOver; // Mark round as over first
         Guid? winnerId = null;
         string reason;
-        var finalHands = Players.ToDictionary(p => p.Id, p => p.Hand.GetHeldCard()?.Type);
+        Player? winningPlayer = null;
 
         if (activePlayers.Count == 1)
         {
-            winnerId = activePlayers.Single().Id;
+            winningPlayer = activePlayers.Single();
+            winnerId = winningPlayer.Id;
             reason = "Last player standing";
         }
         else // Deck is empty
         {
             reason = "Deck empty, highest card wins";
-            if (!activePlayers.Any())
-            {
-                winnerId = null; 
-                /* Draw */
-            }
+            if (!activePlayers.Any()) { winnerId = null; }
             else
             {
                 var highestRank = activePlayers.Max(p => p.Hand.GetHeldCard()?.Rank ?? -1);
                 var potentialWinners = activePlayers.Where(p => (p.Hand.GetHeldCard()?.Rank ?? -1) == highestRank).ToList();
-                if (potentialWinners.Count == 1) winnerId = potentialWinners.Single().Id;
-                else winnerId = potentialWinners.FirstOrDefault()?.Id; // Simplified tie-breaker
-                if(potentialWinners.Count > 1) reason += " (Tie broken arbitrarily)";
+
+                if (potentialWinners.Count == 1) { winningPlayer = potentialWinners.Single(); }
+                else // Tie in rank, compare discard piles
+                {
+                    int highestDiscardSum = -1;
+                    List<Player> finalWinners = new List<Player>();
+                    foreach (var potentialWinner in potentialWinners)
+                    {
+                        int currentSum = potentialWinner.PlayedCards.Select(c=> c.Value).Sum();
+                        if (currentSum > highestDiscardSum) { highestDiscardSum = currentSum; finalWinners.Clear(); finalWinners.Add(potentialWinner); }
+                        else if (currentSum == highestDiscardSum) { finalWinners.Add(potentialWinner); }
+                    }
+                    if (finalWinners.Count == 1) { winningPlayer = finalWinners.Single(); reason += " (Tie broken by discard sum)"; }
+                    else { reason += " (Tie in rank and discard sum)"; } // No single winner
+                }
+                winnerId = winningPlayer?.Id;
             }
         }
 
         LastRoundWinnerId = winnerId;
 
-        AddDomainEvent(new RoundEnded(Id, winnerId, finalHands, reason));
-
-        if (winnerId.HasValue)
+        // If there's a winner, award token *before* creating summaries for RoundEnded event
+        if (winningPlayer != null)
         {
-            AwardToken(winnerId.Value); // Award token (checks game end / starts next round)
+            AwardTokenToPlayer(winningPlayer); // This increments TokensWon and raises TokenAwarded
         }
-        else if (GamePhase != GamePhase.GameOver) // Handle draw case: If game not over, start next round
+
+        // Create detailed player summaries *after* token has been awarded
+        var playerSummaries = Players.Select(p => new PlayerRoundEndSummary(
+            PlayerId: p.Id,
+            PlayerName: p.Name,
+            FinalHeldCard: p.Status == PlayerStatus.Active ? p.Hand.GetHeldCard() : null,
+            DiscardPileValues: p.PlayedCards.Select(c=> c.Value).ToList(),
+            TokensWon: p.TokensWon // This now includes the token for the just-ended round
+        )).ToList();
+
+        AddDomainEvent(new RoundEnded(Id, winnerId, reason, playerSummaries));
+
+        // Check for game end or start next round
+        if (winningPlayer != null && winningPlayer.TokensWon >= TokensNeededToWin)
         {
-             StartNewRound();
+            EndGame(winningPlayer.Id);
+        }
+        else if (GamePhase != GamePhase.GameOver) // If game not over (either by win or no winner)
+        {
+             StartNewRound(); // Automatically start the next round
         }
     }
-
-    private void AwardToken(Guid playerId)
+    
+    /// <summary>
+    /// Awards a token to the player and raises the TokenAwarded event.
+    /// Game end check is now handled after this call in EndRound.
+    /// </summary>
+    private void AwardTokenToPlayer(Player player)
     {
-        var player = GetPlayerById(playerId);
-        player.AddToken();
-        AddDomainEvent(new TokenAwarded(Id, playerId, player.TokensWon));
-
-        if (player.TokensWon >= TokensNeededToWin)
-        {
-            EndGame(playerId); // Sets GamePhase to GameOver
-        }
-
-        // If the game didn't end, automatically start the next round
-        if (GamePhase != GamePhase.GameOver)
-        {
-            StartNewRound(); // Use default randomizer
-        }
+        player.AddToken(); // This increments player.TokensWon
+        AddDomainEvent(new TokenAwarded(Id, player.Id, player.TokensWon));
     }
 
     private void EndGame(Guid winnerId)

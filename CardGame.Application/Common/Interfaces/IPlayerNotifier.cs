@@ -29,4 +29,12 @@ public interface IPlayerNotifier
 
     Task BroadcastGameWinnerAsync(Guid gameId, Guid winnerId, CancellationToken cancellationToken);
     Task BroadcastCardEffectFizzledAsync(Guid gameId, Guid actorId, int cardTypeValue, Guid targetId, string reason, CancellationToken cancellationToken);
+    
+    /// <summary>
+    /// Broadcasts the summary of a completed round.
+    /// </summary>
+    /// <param name="gameId">The ID of the game.</param>
+    /// <param name="summaryData">The round summary DTO.</param>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    Task BroadcastRoundSummaryAsync(Guid gameId, RoundEndSummaryDto summaryData, CancellationToken cancellationToken);
 }

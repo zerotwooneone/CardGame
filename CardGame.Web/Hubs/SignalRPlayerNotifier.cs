@@ -177,4 +177,19 @@ public class SignalRPlayerNotifier : IPlayerNotifier
             _logger.LogError(ex, "Error broadcasting CardEffectFizzled to group {GroupName} for Game {GameId}.", groupName, gameId);
         }
     }
+    
+    public async Task BroadcastRoundSummaryAsync(Guid gameId, RoundEndSummaryDto summaryData, CancellationToken cancellationToken) // Changed signature
+    {
+        string groupName = GetGameGroupName(gameId);
+        try
+        {
+            // Call the updated client method with the new DTO
+            await _hubContext.Clients.Group(groupName).ShowRoundSummary(summaryData);
+            _logger.LogInformation("Broadcast Round Summary to group {GroupName} for Game {GameId}.", groupName, gameId);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error broadcasting Round Summary to group {GroupName} for Game {GameId}.", groupName, gameId);
+        }
+    }
 }

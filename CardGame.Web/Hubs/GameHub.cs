@@ -154,4 +154,6 @@ public interface IGameClient
     /// <param name="winnerId">The ID of the player who won the game.</param>
     Task GameWinnerAnnounced(Guid winnerId);
     Task CardEffectFizzled(Guid actorId, int cardTypeValue, Guid targetId, string reason);
+    
+    Task ShowRoundSummary(RoundEndSummaryDto summaryData);
 }
