@@ -1,5 +1,6 @@
-﻿import {PlayerHandInfoDto} from "./playerHandInfoDto";
+import {PlayerHandInfoDto} from "./playerHandInfoDto";
 import {CardDto} from "./cardDto";
+import { GameLogEntryDto } from './gameLogEntryDto';
 
 /**
  * Represents the game state from the perspective of a specific player,
@@ -16,4 +17,5 @@ export interface PlayerGameStateDto {
   discardPile: CardDto[];
   publiclySetAsideCards: CardDto[]; // Added here as well
   playerHand: CardDto[]; // Actual hand cards for the requesting player
+  gameLog: GameLogEntryDto[];
 }

@@ -43,22 +43,10 @@ export class SignalrService implements OnDestroy {
   public spectatorGameStateReceived$ = this.spectatorGameStateSubject.asObservable();
   private playerHandSubject = new Subject<CardDto[]>();
   public playerHandReceived$ = this.playerHandSubject.asObservable();
-  private opponentHandRevealSubject = new Subject<{ opponentId: string, revealedCard: CardDto }>();
-  public opponentHandRevealReceived$ = this.opponentHandRevealSubject.asObservable();
-  private playerGuessedSubject = new Subject<{ guesserId: string, targetId: string, guessedCardTypeValue: number, wasCorrect: boolean }>();
-  public playerGuessedReceived$ = this.playerGuessedSubject.asObservable();
-  private playersComparedHandsSubject = new Subject<{ player1Id: string, player1CardTypeValue: number, player2Id: string, player2CardTypeValue: number, loserId: string | null }>();
-  public playersComparedHandsReceived$ = this.playersComparedHandsSubject.asObservable();
-  private playerDiscardedSubject = new Subject<{ targetPlayerId: string, discardedCard: CardDto }>();
-  public playerDiscardedReceived$ = this.playerDiscardedSubject.asObservable();
-  private cardsSwappedSubject = new Subject<{ player1Id: string, player2Id: string }>();
-  public cardsSwappedReceived$ = this.cardsSwappedSubject.asObservable();
   private roundSummarySubject = new Subject<RoundEndSummaryDto>(); // Changed name and type
   public roundSummaryReceived$ = this.roundSummarySubject.asObservable();
   private gameWinnerSubject = new Subject<{ winnerId: string }>();
   public gameWinnerReceived$ = this.gameWinnerSubject.asObservable();
-  private cardEffectFizzledSubject = new Subject<{ actorId: string, cardTypeValue: number, targetId: string, reason: string }>();
-  public cardEffectFizzledReceived$ = this.cardEffectFizzledSubject.asObservable();
 
   constructor(
     @Inject(PLATFORM_ID) private platformId: object,
@@ -184,21 +172,11 @@ export class SignalrService implements OnDestroy {
     // Register handlers... (using .next() on Subjects is still correct here)
     this.gameHubConnection.on('UpdateSpectatorGameState', (gameState: SpectatorGameStateDto) => this.spectatorGameStateSubject.next(gameState));
     this.gameHubConnection.on('UpdatePlayerHand', (currentHand: CardDto[]) => this.playerHandSubject.next(currentHand));
-    this.gameHubConnection.on('RevealOpponentHand', (opponentId: string, revealedCard: CardDto) => this.opponentHandRevealSubject.next({ opponentId, revealedCard }));
-    this.gameHubConnection.on('PlayerGuessed', (guesserId: string, targetId: string, guessedCardTypeValue: number, wasCorrect: boolean) => this.playerGuessedSubject.next({ guesserId, targetId, guessedCardTypeValue, wasCorrect }));
-    this.gameHubConnection.on('PlayersComparedHands', (player1Id: string, player1CardTypeValue: number, player2Id: string, player2CardTypeValue: number, loserId: string | null) => this.playersComparedHandsSubject.next({ player1Id, player1CardTypeValue, player2Id, player2CardTypeValue, loserId }));
-    this.gameHubConnection.on('PlayerDiscarded', (targetPlayerId: string, discardedCard: CardDto) => this.playerDiscardedSubject.next({ targetPlayerId, discardedCard }));
-    this.gameHubConnection.on('CardsSwapped', (player1Id: string, player2Id: string) => this.cardsSwappedSubject.next({ player1Id, player2Id }));
     this.gameHubConnection.on('ShowRoundSummary', (summaryData: RoundEndSummaryDto) => { // Matches IGameClient method name
       console.log('Received Round Summary (ShowRoundSummary):', summaryData);
       this.roundSummarySubject.next(summaryData); // Emit the full DTO
     });
     this.gameHubConnection.on('GameWinnerAnnounced', (winnerId: string) => this.gameWinnerSubject.next({ winnerId }));
-
-    this.gameHubConnection.on('CardEffectFizzled', (actorId: string, cardTypeValue: number, targetId: string, reason: string) => {
-      console.log(`Received CardEffectFizzled: Actor=${actorId}, CardValue=${cardTypeValue}, Target=${targetId}, Reason=${reason}`);
-      this.cardEffectFizzledSubject.next({ actorId, cardTypeValue, targetId, reason });
-    });
 
     // Handle connection lifecycle events using .set()
     this.gameHubConnection.onreconnecting((error?: Error) => {

@@ -7,6 +7,7 @@ import {CardDto} from '../../../core/models/cardDto';
 import {GameActionService} from './game-action.service';
 import {PlayerGameStateDto} from '../../../core/models/playerGameStateDto';
 import {RoundEndSummaryDto} from '../../../core/models/roundEndSummaryDto';
+import { GameLogEntryDto } from '../../../core/models/gameLogEntryDto'; // Import GameLogEntryDto
 
 
 @Injectable({
@@ -16,39 +17,49 @@ import {RoundEndSummaryDto} from '../../../core/models/roundEndSummaryDto';
 export class GameStateService implements OnDestroy {
 
   // --- Private Writable Signals holding the state ---
-  private spectatorStateSignal: WritableSignal<SpectatorGameStateDto | null> = signal(null);
+  // Renamed and re-typed to hold either player or spectator state
+  private combinedStateSignal: WritableSignal<PlayerGameStateDto | SpectatorGameStateDto | null> = signal(null);
   private playerHandSignal: WritableSignal<CardDto[]> = signal([]);
   private isLoadingState: WritableSignal<boolean> = signal(false);
   private errorState: WritableSignal<string | null> = signal(null);
 
   // --- Public Readonly Signals for consumption ---
-  public spectatorState: Signal<SpectatorGameStateDto | null> = this.spectatorStateSignal.asReadonly();
+  // Renamed to reflect its combined nature
+  public gameState: Signal<PlayerGameStateDto | SpectatorGameStateDto | null> = this.combinedStateSignal.asReadonly();
   public playerHand: Signal<CardDto[]> = this.playerHandSignal.asReadonly();
   public isLoading: Signal<boolean> = this.isLoadingState.asReadonly();
   public error: Signal<string | null> = this.errorState.asReadonly();
-
+  public gameLogs: Signal<GameLogEntryDto[]> = computed(() => { // Modified gameLogs computation
+    const state = this.combinedStateSignal();
+    if (state && 'gameLog' in state && Array.isArray(state.gameLog)) { // PlayerGameStateDto
+      return state.gameLog;
+    }
+    if (state && 'logEntries' in state && Array.isArray(state.logEntries)) { // SpectatorGameStateDto
+      return state.logEntries;
+    }
+    return [];
+  });
 
   // --- Computed Signals for derived state ---
-  public gameId: Signal<string | null> = computed(() => this.spectatorState()?.gameId ?? null);
-  public currentTurnPlayerId: Signal<string | null> = computed(() => this.spectatorState()?.currentTurnPlayerId ?? null);
+  // Updated to use combinedStateSignal
+  public gameId: Signal<string | null> = computed(() => this.combinedStateSignal()?.gameId ?? null);
+  public currentTurnPlayerId: Signal<string | null> = computed(() => this.combinedStateSignal()?.currentTurnPlayerId ?? null);
   public isMyTurn: Signal<boolean> = computed(() => {
     const myId = this.authService.getCurrentPlayerId();
-    const currentTurnId = this.currentTurnPlayerId();
+    const currentTurnId = this.currentTurnPlayerId(); // Uses the updated computed signal above
     return !!myId && !!currentTurnId && myId === currentTurnId;
   });
-  public gamePhase: Signal<string | null> = computed(() => this.spectatorState()?.gamePhase ?? null);
+  public gamePhase: Signal<string | null> = computed(() => {
+    const state = this.combinedStateSignal();
+    // GamePhase is a string in PlayerGameStateDto, number in SpectatorGameStateDto in backend, but string on frontend models.
+    // Assuming frontend models are consistent (string for gamePhase)
+    return state?.gamePhase ?? null;
+  });
 
   // --- Observables for transient events ---
   // Declare properties first
-  public readonly opponentHandRevealed$: Observable<{ opponentId: string, revealedCard: CardDto }>;
-  public readonly playerGuessed$: Observable<{ guesserId: string, targetId: string, guessedCardTypeValue: number, wasCorrect: boolean }>;
-  public readonly playersComparedHands$: Observable<{ player1Id: string, player1CardTypeValue: number, player2Id: string, player2CardTypeValue: number, loserId: string | null }>;
-  public readonly playerDiscarded$: Observable<{ targetPlayerId: string, discardedCard: CardDto }>;
-  public readonly cardsSwapped$: Observable<{ player1Id: string, player2Id: string }>;
-  // This observable is correctly typed to RoundEndSummaryDto
   public readonly roundWinnerAnnounced$: Observable<RoundEndSummaryDto>;
   public readonly gameWinnerAnnounced$: Observable<{ winnerId: string }>;
-  public readonly cardEffectFizzled$: Observable<{ actorId: string, cardTypeValue: number, targetId: string, reason: string }>;
 
   // --- Subscriptions ---
   private spectatorStateSubscription?: Subscription;
@@ -63,15 +74,9 @@ export class GameStateService implements OnDestroy {
   constructor() {
     // Assign Observables in constructor
     // This ensures this.signalrService is initialized before being accessed
-    this.opponentHandRevealed$ = this.signalrService.opponentHandRevealReceived$;
-    this.playerGuessed$ = this.signalrService.playerGuessedReceived$;
-    this.playersComparedHands$ = this.signalrService.playersComparedHandsReceived$;
-    this.playerDiscarded$ = this.signalrService.playerDiscardedReceived$;
-    this.cardsSwapped$ = this.signalrService.cardsSwappedReceived$;
     // Correctly assigns the observable from SignalrService
     this.roundWinnerAnnounced$ = this.signalrService.roundSummaryReceived$; // Previously roundWinnerReceived$
     this.gameWinnerAnnounced$ = this.signalrService.gameWinnerReceived$;
-    this.cardEffectFizzled$ = this.signalrService.cardEffectFizzledReceived$;
 
     this.setupEffects();
   }
@@ -123,9 +128,9 @@ export class GameStateService implements OnDestroy {
 
     // Subscribe to spectator state updates
     this.spectatorStateSubscription = this.signalrService.spectatorGameStateReceived$.subscribe(
-      state => {
+      state => { // state here is SpectatorGameStateDto
         console.log('GameStateService: Received spectator state update via SignalR.');
-        this.spectatorStateSignal.set(state);
+        this.combinedStateSignal.set(state); // Update combinedStateSignal
       }
     );
 
@@ -140,7 +145,7 @@ export class GameStateService implements OnDestroy {
 
   /** Clears all current game state */
   public clearState(): void {
-    this.spectatorStateSignal.set(null);
+    this.combinedStateSignal.set(null); // Update to clear combinedStateSignal
     this.playerHandSignal.set([]);
     this.isLoadingState.set(false);
     this.errorState.set(null);
@@ -173,10 +178,10 @@ export class GameStateService implements OnDestroy {
     try {
       // 1. Fetch initial Player Game State via API
       console.log(`GameStateService: Fetching initial state for Game ${gameId}, Player ${myPlayerId}`);
-      const initialState = await this.fetchInitialPlayerState(gameId, myPlayerId);
+      const initialState = await this.fetchInitialPlayerState(gameId, myPlayerId); // initialState is PlayerGameStateDto
 
       // 2. Set initial state from API response
-      this.spectatorStateSignal.set(initialState); // Set the full state initially
+      this.combinedStateSignal.set(initialState); // Set combinedStateSignal with PlayerGameStateDto
       this.playerHandSignal.set(initialState.playerHand ?? []); // Set the initial hand
       console.log("GameStateService: Initial state loaded.");
 
@@ -210,8 +215,12 @@ export class GameStateService implements OnDestroy {
     return new Promise((resolve, reject) => {
       const sub = this.gameActionService.getPlayerState(gameId, playerId)
         .subscribe({
-          next: (state) => {
-            sub.unsubscribe(); // Manually unsubscribe after first value
+          next: (state) => { // state here is PlayerGameStateDto
+            if (!state) {
+              reject(new Error("Initial game state not received or is null."));
+              return;
+            }
+            // No explicit mapping needed here, combinedStateSignal handles PlayerGameStateDto directly
             resolve(state);
           },
           error: (err) => {
@@ -245,4 +254,3 @@ export class GameStateService implements OnDestroy {
   }
 
 }
-

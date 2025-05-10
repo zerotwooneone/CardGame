@@ -1,4 +1,4 @@
-﻿namespace CardGame.Application.DTOs;
+namespace CardGame.Application.DTOs;
 
 /// <summary>
 /// Represents the game state from the perspective of a specific player,
@@ -14,6 +14,11 @@ public class PlayerGameStateDto
     public List<PlayerHandInfoDto> Players { get; set; } = new List<PlayerHandInfoDto>();
     public int DeckCardsRemaining { get; set; }
     public List<CardDto> DiscardPile { get; set; } = new List<CardDto>();
+
+    /// <summary>
+    /// Gets or sets the game log entries.
+    /// </summary>
+    public List<GameLogEntryDto> GameLog { get; set; } = new List<GameLogEntryDto>();
 
     /// <summary>
     /// Gets or sets the actual cards in the requesting player's hand.

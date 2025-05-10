@@ -1,4 +1,4 @@
-﻿using CardGame.Application.DTOs;
+using CardGame.Application.DTOs;
 using CardGame.Application.Queries;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
@@ -114,46 +114,10 @@ public interface IGameClient
     Task UpdatePlayerHand(List<CardDto> currentHand);
     
     /// <summary>
-    /// Sends the details of an opponent's revealed card (via Priest) to the requesting player.
-    /// </summary>
-    /// <param name="opponentId">The ID of the opponent whose card was revealed.</param>
-    /// <param name="revealedCard">The card DTO of the revealed card.</param>
-    Task RevealOpponentHand(Guid opponentId, CardDto revealedCard);
-
-    /// <summary>
-    /// Informs clients in the game group about the result of a Guard guess.
-    /// </summary>
-    Task PlayerGuessed(Guid guesserId, Guid targetId, int guessedCardType, bool wasCorrect);
-
-    /// <summary>
-    /// Informs clients in the game group about the result of a Baron comparison.
-    /// </summary>
-    Task PlayersComparedHands(Guid player1Id, int player1CardType, Guid player2Id, int player2CardType, Guid? loserId);
-
-    /// <summary>
-    /// Informs clients in the game group that a player was forced to discard their hand (Prince effect).
-    /// </summary>
-    Task PlayerDiscarded(Guid targetPlayerId, CardDto discardedCard); // Send discarded card info
-
-    /// <summary>
-    /// Informs clients in the game group that two players swapped hands (King effect).
-    /// </summary>
-    Task CardsSwapped(Guid player1Id, Guid player2Id);
-    
-    /// <summary>
-    /// Announces the winner of a round to the game group.
-    /// </summary>
-    /// <param name="winnerId">The ID of the player who won the round (null if draw).</param>
-    /// <param name="reason">Why the round ended (e.g., "Last player standing").</param>
-    /// <param name="finalHands">Optional: Information about final hands if needed by UI.</param>
-    Task RoundWinnerAnnounced(Guid? winnerId, string reason, Dictionary<Guid, int?> finalHands); // Send CardType values
-
-    /// <summary>
     /// Announces the winner of the game to the game group.
     /// </summary>
     /// <param name="winnerId">The ID of the player who won the game.</param>
     Task GameWinnerAnnounced(Guid winnerId);
-    Task CardEffectFizzled(Guid actorId, int cardTypeValue, Guid targetId, string reason);
     
     Task ShowRoundSummary(RoundEndSummaryDto summaryData);
 }

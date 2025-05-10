@@ -1,4 +1,4 @@
-﻿using CardGame.Application.DTOs;
+using CardGame.Application.DTOs;
 using CardGame.Domain.Interfaces;
 using CardGame.Domain.Types;
 using MediatR;
@@ -39,6 +39,32 @@ namespace CardGame.Application.Queries;
                 return null;
             }
 
+            // Map GameLogEntries to GameLogEntryDto, filtering for privacy
+            var gameLogDtos = new List<GameLogEntryDto>();
+            foreach (var logEntry in game.LogEntries) // Domain log entries are newest first
+            {
+                // Include public logs OR private logs belonging to the requesting player
+                if (!logEntry.IsPrivate || (logEntry.IsPrivate && logEntry.ActingPlayerId == request.RequestingPlayerId))
+                {
+                    gameLogDtos.Add(new GameLogEntryDto
+                    {
+                        Id = logEntry.Id,
+                        Timestamp = logEntry.Timestamp,
+                        EventType = logEntry.EventType,
+                        // EventTypeName is a getter in DTO, no need to set here
+                        ActingPlayerId = logEntry.ActingPlayerId,
+                        ActingPlayerName = logEntry.ActingPlayerName,
+                        TargetPlayerId = logEntry.TargetPlayerId,
+                        TargetPlayerName = logEntry.TargetPlayerName,
+                        RevealedCardId = logEntry.RevealedCardId,
+                        RevealedCardType = logEntry.RevealedCardType, 
+                        // RevealedCardName is a getter in DTO
+                        IsPrivate = logEntry.IsPrivate, // Keep original privacy flag for potential client-side display choices
+                        Message = logEntry.Message
+                    });
+                }
+            }
+
             // Map to DTO
             var playerStateDto = new PlayerGameStateDto
             {
@@ -74,7 +100,8 @@ namespace CardGame.Application.Queries;
                                     Type = card.Type.Value,
                                     Id = card.Id
                                 }).ToList()
-                             : new List<CardDto>() // Empty list if eliminated
+                             : new List<CardDto>(), // Empty list if eliminated
+                GameLog = gameLogDtos // Assign the mapped and filtered log entries
             };
 
             return playerStateDto;

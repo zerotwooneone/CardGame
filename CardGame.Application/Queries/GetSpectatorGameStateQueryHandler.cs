@@ -1,4 +1,4 @@
-﻿using CardGame.Application.DTOs;
+using CardGame.Application.DTOs;
 using CardGame.Domain.Interfaces;
 using MediatR;
 
@@ -49,7 +49,25 @@ public class GetSpectatorGameStateQueryHandler : IRequestHandler<GetSpectatorGam
                 PlayedCardTypes = player.PlayedCards.Select(cardType => cardType.Value).ToList(), // Only the types played
                 TokensWon = player.TokensWon,
                 IsProtected = player.IsProtected
-            }).ToList()
+            }).ToList(),
+            LogEntries = game.LogEntries
+                .Where(log => !log.IsPrivate) // Filter out private logs for spectator view
+                .Select(log => new GameLogEntryDto
+                {
+                    Id = log.Id,
+                    Timestamp = log.Timestamp,
+                    EventType = log.EventType,
+                    ActingPlayerId = log.ActingPlayerId,
+                    ActingPlayerName = log.ActingPlayerName,
+                    TargetPlayerId = log.TargetPlayerId,
+                    TargetPlayerName = log.TargetPlayerName,
+                    RevealedCardId = log.RevealedCardId,
+                    RevealedCardType = log.RevealedCardType,
+                    IsPrivate = log.IsPrivate, // Will be false here
+                    Message = log.Message
+                })
+                .OrderByDescending(log => log.Timestamp) // Ensure logs are newest first
+                .ToList()
         };
 
         return spectatorDto;

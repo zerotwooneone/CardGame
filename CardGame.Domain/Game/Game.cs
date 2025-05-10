@@ -1,4 +1,4 @@
-﻿using System.Collections.ObjectModel;
+using System.Collections.ObjectModel;
 using CardGame.Domain.Common;
 using CardGame.Domain.Exceptions;
 using CardGame.Domain.Game.Event;
@@ -21,6 +21,7 @@ public class Game // Aggregate Root
     public Card? SetAsideCard { get; private set; }
     public List<Card> PubliclySetAsideCards { get; private set; } = new List<Card>();
     public Guid? LastRoundWinnerId { get; private set; }
+    private readonly List<GameLogEntry> _logEntries = new(); // New log entry list
 
     private readonly IReadOnlyList<Card> _initialDeckCardSet;
 
@@ -31,6 +32,8 @@ public class Game // Aggregate Root
     public void ClearDomainEvents() { _domainEvents.Clear(); }
     private void AddDomainEvent(IDomainEvent domainEvent) { _domainEvents.Add(domainEvent); }
     // --- End Domain Event Handling ---
+
+    public IReadOnlyList<GameLogEntry> LogEntries => _logEntries.AsReadOnly(); // Public accessor for log entries
 
     private Game(Guid id, IReadOnlyList<Card> initialDeckCardSet)
     {
@@ -543,4 +546,10 @@ public class Game // Aggregate Root
 
     private Player GetPlayerById(Guid playerId) { var player = Players.FirstOrDefault(p => p.Id == playerId); if (player == null) throw new ArgumentException($"Player with ID {playerId} not found in this game."); return player; }
 
+    // New method to add log entries
+    public void AddLogEntry(GameLogEntry entry)
+    {
+        if (entry == null) throw new ArgumentNullException(nameof(entry));
+        _logEntries.Insert(0, entry); // Insert at the beginning to keep newest first
+    }
 }

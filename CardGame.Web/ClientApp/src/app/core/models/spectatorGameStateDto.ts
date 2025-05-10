@@ -1,18 +1,20 @@
-﻿import {SpectatorPlayerDto} from "./spectatorPlayerDto";
+import {SpectatorPlayerDto} from "./spectatorPlayerDto";
 import {CardDto} from "./cardDto";
+import { GameLogEntryDto } from './gameLogEntryDto'; 
 
 /**
  * Represents the publicly visible state of a game for spectators.
  */
 export interface SpectatorGameStateDto {
-  gameId: string; // Changed from Guid
+  gameId: string; 
   roundNumber: number;
-  gamePhase: string; // e.g., "RoundInProgress", "GameOver"
-  currentTurnPlayerId: string; // Changed from Guid
+  gamePhase: string; 
+  currentTurnPlayerId: string; 
   tokensNeededToWin: number;
   players: SpectatorPlayerDto[];
-  deckCardsRemaining: number; // Count only
-  discardPile: CardDto[]; // Show discarded cards
-  publiclySetAsideCards: CardDto[]; // Added: Cards set aside face-up (2-player games)
+  deckCardsRemaining: number; 
+  discardPile: CardDto[]; 
+  publiclySetAsideCards: CardDto[]; 
+  logEntries: GameLogEntryDto[]; 
   // Note: SetAsideCard (face-down) is omitted as its identity is secret.
 }

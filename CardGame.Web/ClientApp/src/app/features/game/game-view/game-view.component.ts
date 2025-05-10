@@ -26,6 +26,8 @@ import {UiInteractionService} from '../../../core/services/ui-interaction-servic
 import {RoundEndSummaryDto} from '../../../core/models/roundEndSummaryDto';
 import {PlayerHandInfoDto} from '../../../core/models/playerHandInfoDto';
 import {RoundSummaryDialogComponent} from '../components/round-summary-dialog/round-summary-dialog.component';
+import { GameLogComponent } from '../components/game-log/game-log.component';
+import {PlayerGameStateDto} from '../../../core/models/playerGameStateDto';
 
 const getCardNameFromValue = (value: number | undefined): string => {
   if (value === undefined) return '?';
@@ -44,7 +46,8 @@ const getCardNameFromValue = (value: number | undefined): string => {
     MatProgressSpinnerModule,
     MatTooltipModule,
     PlayerDisplayComponent,
-    CardComponent
+    CardComponent,
+    GameLogComponent
   ],
   templateUrl: './game-view.component.html',
   styleUrls: ['./game-view.component.scss'],
@@ -65,7 +68,7 @@ export class GameViewComponent implements OnInit, OnDestroy {
   private destroy$ = new Subject<void>();
 
   // Game State Signals from Service (public readonly)
-  spectatorState: Signal<SpectatorGameStateDto | null> = this.gameStateService.spectatorState;
+  spectatorState: Signal<PlayerGameStateDto | SpectatorGameStateDto | null> = this.gameStateService.gameState;
   playerHand: Signal<CardDto[]> = this.gameStateService.playerHand;
   isMyTurn: Signal<boolean> = this.gameStateService.isMyTurn;
   gamePhase: Signal<string | null> = this.gameStateService.gamePhase;
@@ -137,19 +140,6 @@ export class GameViewComponent implements OnInit, OnDestroy {
   }
 
   private subscribeToGameEvents(): void {
-    this.gameStateService.playerGuessed$
-      .pipe(takeUntil(this.destroy$))
-      .subscribe(data => this.showSnackBar(`Guess (${getCardNameFromValue(data.guessedCardTypeValue)}) result: ${data.wasCorrect ? 'Correct!' : 'Incorrect.'}`));
-    this.gameStateService.playersComparedHands$
-      .pipe(takeUntil(this.destroy$))
-      .subscribe(data => this.showSnackBar(`Baron: ${data.loserId ? `Player ${this.getPlayerName(data.loserId)} is out!` : 'Tie!'}`));
-    this.gameStateService.playerDiscarded$
-      .pipe(takeUntil(this.destroy$))
-      .subscribe(data => this.showSnackBar(`Player ${this.getPlayerName(data.targetPlayerId)} discarded ${getCardNameFromValue(data.discardedCard.type)}`));
-    this.gameStateService.cardsSwapped$
-      .pipe(takeUntil(this.destroy$))
-      .subscribe(data => this.showSnackBar(`Player ${this.getPlayerName(data.player1Id)} swapped hands with Player ${this.getPlayerName(data.player2Id)}`));
-
     this.gameStateService.roundWinnerAnnounced$
       .pipe(takeUntil(this.destroy$))
       .subscribe((summaryData: RoundEndSummaryDto) => {
@@ -161,14 +151,6 @@ export class GameViewComponent implements OnInit, OnDestroy {
     this.gameStateService.gameWinnerAnnounced$
       .pipe(takeUntil(this.destroy$))
       .subscribe(data => this.showSnackBar(`Game Over! Player ${this.getPlayerName(data.winnerId)} wins the game!`, 10000));
-    this.gameStateService.cardEffectFizzled$
-      .pipe(takeUntil(this.destroy$))
-      .subscribe(data => {
-        const actorName = this.getPlayerName(data.actorId);
-        const targetName = this.getPlayerName(data.targetId);
-        const cardName = getCardNameFromValue(data.cardTypeValue);
-        this.showSnackBar(`${actorName}'s ${cardName} had no effect on ${targetName} (${data.reason}).`);
-      });
   }
 
   onCardSelected(card: CardDto): void {
