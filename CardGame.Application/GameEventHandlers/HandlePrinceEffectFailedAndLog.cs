@@ -62,7 +62,7 @@ public class HandlePrinceEffectFailedAndLog : INotificationHandler<DomainEventNo
         );
 
         game.AddLogEntry(logEntry);
-        await _gameRepository.SaveAsync(game, cancellationToken).ConfigureAwait(false);
+        // await _gameRepository.SaveAsync(game, cancellationToken).ConfigureAwait(false);
 
         _logger.LogInformation("Logged PrinceEffectFailed: {LogMessage} in Game {GameId}", logMessage, game.Id);
     }

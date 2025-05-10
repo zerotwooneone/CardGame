@@ -73,7 +73,7 @@ public class HandleCardEffectFizzledAndNotify : INotificationHandler<DomainEvent
         );
         game.AddLogEntry(logEntry);
 
-        await _gameRepository.SaveAsync(game, cancellationToken).ConfigureAwait(false);
+        // await _gameRepository.SaveAsync(game, cancellationToken).ConfigureAwait(false);
 
         // // Call the broadcast method on the notifier service
         // await _playerNotifier.BroadcastCardEffectFizzledAsync(

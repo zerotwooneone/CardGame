@@ -51,7 +51,6 @@ public class HandleGameEndedAndLog : INotificationHandler<DomainEventNotificatio
                 isPrivate: false
             );
             game.AddLogEntry(logEntryGeneric);
-            await _gameRepository.SaveAsync(game, cancellationToken).ConfigureAwait(false);
             _logger.LogInformation("Logged GameEnded (winner details missing): {LogMessage} in Game {GameId}", logMessageGeneric, game.Id);
             return;
         }
@@ -67,8 +66,6 @@ public class HandleGameEndedAndLog : INotificationHandler<DomainEventNotificatio
         );
 
         game.AddLogEntry(logEntry);
-        await _gameRepository.SaveAsync(game, cancellationToken).ConfigureAwait(false);
-
         _logger.LogInformation("Logged GameEnded: {LogMessage} in Game {GameId}", logMessage, game.Id);
     }
 }

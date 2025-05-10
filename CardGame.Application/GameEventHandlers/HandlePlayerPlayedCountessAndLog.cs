@@ -55,7 +55,7 @@ public class HandlePlayerPlayedCountessAndLog : INotificationHandler<DomainEvent
         );
 
         game.AddLogEntry(logEntry);
-        await _gameRepository.SaveAsync(game, cancellationToken).ConfigureAwait(false);
+        // await _gameRepository.SaveAsync(game, cancellationToken).ConfigureAwait(false);
 
         _logger.LogInformation("Logged PlayerPlayedCountess: {LogMessage} in Game {GameId}", logMessage, game.Id);
     }

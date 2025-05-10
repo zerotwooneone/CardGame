@@ -82,7 +82,7 @@ public class HandleBaronComparisonResultAndNotify : INotificationHandler<DomainE
         );
         game.AddLogEntry(logEntry);
 
-        await _gameRepository.SaveAsync(game, cancellationToken).ConfigureAwait(false);
+        // await _gameRepository.SaveAsync(game, cancellationToken).ConfigureAwait(false);
 
         // Deprecated SignalR broadcast, game state updates will carry log
         // await _playerNotifier.BroadcastBaronComparisonAsync(

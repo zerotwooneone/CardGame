@@ -59,7 +59,7 @@ public class HandleKingEffectUsedAndLog : INotificationHandler<DomainEventNotifi
         );
 
         game.AddLogEntry(logEntry);
-        await _gameRepository.SaveAsync(game, cancellationToken).ConfigureAwait(false);
+        // await _gameRepository.SaveAsync(game, cancellationToken).ConfigureAwait(false);
 
         _logger.LogInformation("Logged KingEffectUsed: {LogMessage} in Game {GameId}", logMessage, game.Id);
     }
