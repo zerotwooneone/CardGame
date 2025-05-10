@@ -13,22 +13,18 @@ namespace CardGame.Application.GameEventHandlers;
 
 /// <summary>
 /// Handles the wrapped PriestEffectUsed domain event to send the revealed
-/// card information (ID and Type) directly to the player who played the Priest,
-/// and logs the event to the game log.
+/// card information (ID and Type) directly to the player who played the Priest.
 /// </summary>
 public class HandlePriestEffectUsedAndNotify : INotificationHandler<DomainEventNotification<PriestEffectUsed>>
 {
     private readonly IPlayerNotifier _playerNotifier;
-    private readonly IGameRepository _gameRepository; 
     private readonly ILogger<HandlePriestEffectUsedAndNotify> _logger;
 
     public HandlePriestEffectUsedAndNotify(
         IPlayerNotifier playerNotifier,
-        IGameRepository gameRepository, 
         ILogger<HandlePriestEffectUsedAndNotify> logger)
     {
         _playerNotifier = playerNotifier ?? throw new ArgumentNullException(nameof(playerNotifier));
-        _gameRepository = gameRepository ?? throw new ArgumentNullException(nameof(gameRepository)); 
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
     }
 
@@ -37,49 +33,13 @@ public class HandlePriestEffectUsedAndNotify : INotificationHandler<DomainEventN
     {
         var domainEvent = notification.DomainEvent;
         _logger.LogDebug(
-            "Handling PriestEffectUsed by Player {PriestPlayerId} targeting {TargetPlayerId} in Game {GameId}. Revealed CardId: {RevealedCardId}",
-            domainEvent.PriestPlayerId, domainEvent.TargetPlayerId, domainEvent.GameId, domainEvent.RevealedCardId);
+            "Handling PriestEffectUsed event for Game {GameId}. Player {PriestPlayerId} targeted {TargetPlayerId}. Revealed Card Type: {RevealedCardType}. Private log created in Game.cs.",
+            domainEvent.GameId, domainEvent.PriestPlayerId, domainEvent.TargetPlayerId, domainEvent.RevealedCardType.ToString());
 
-        var game = await _gameRepository.GetByIdAsync(domainEvent.GameId, cancellationToken).ConfigureAwait(false);
-        if (game == null)
-        {
-            _logger.LogWarning("Game {GameId} not found for PriestEffectUsed event.", domainEvent.GameId);
-            return;
-        }
 
-        var actingPlayer = game.Players.FirstOrDefault(p => p.Id == domainEvent.PriestPlayerId);
-        var targetPlayer = game.Players.FirstOrDefault(p => p.Id == domainEvent.TargetPlayerId);
+        _logger.LogInformation("Priest reveal notification sent to player {PriestPlayerId} for game {GameId}.", domainEvent.PriestPlayerId, domainEvent.GameId);
 
-        if (actingPlayer == null || targetPlayer == null)
-        {
-            _logger.LogWarning("Acting or Target Player not found for PriestEffectUsed event in Game {GameId}. ActingPlayerId: {ActingPlayerId}, TargetPlayerId: {TargetPlayerId}", 
-                domainEvent.GameId, domainEvent.PriestPlayerId, domainEvent.TargetPlayerId);
-            return;
-        }
-
-        var actingPlayerName = actingPlayer.Name;
-        var targetPlayerName = targetPlayer.Name;
-
-        // The public log entry for playing the Priest is now handled by HandlePlayerPlayedCardAndNotify.
-        // Create and add private game log entry for the revealed card (for the acting player)
-        string revealedCardName = domainEvent.RevealedCardType.ToString(); // Or a more friendly name
-        var privateLogMessage = $"You used Priest on {targetPlayerName} and saw they have a {revealedCardName}.";
-        var privateLogEntry = new GameLogEntry(
-            eventType: GameLogEventType.PriestEffect, // Specific event for the Priest's effect
-            actingPlayerId: domainEvent.PriestPlayerId,
-            actingPlayerName: actingPlayerName,
-            isPrivate: true, // This log is private to the acting player
-            message: privateLogMessage,
-            targetPlayerId: domainEvent.TargetPlayerId, // Still relevant to know who was targeted
-            targetPlayerName: targetPlayerName,
-            // PlayedCardType is contextually known (Priest), but can be included for completeness in structured data
-            playedCardType: CardType.Priest, // The card that was played to trigger this effect
-            revealedCardId: domainEvent.RevealedCardId, // The ID of the card that was revealed
-            revealedByPriestCardType: domainEvent.RevealedCardType // The type of card that was revealed
-        );
-        game.AddLogEntry(privateLogEntry);
-
-        // No SaveAsync here, PlayCardCommandHandler handles saving before event publishing.
-        await Task.CompletedTask;
+        // No SaveAsync needed, as all state changes (including log entries) are part of the Game aggregate
+        // and saved by the command handler (PlayCardCommandHandler) BEFORE this event is published.
     }
 }

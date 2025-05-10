@@ -146,6 +146,18 @@ public class Game // Aggregate Root
 
         GamePhase = GamePhase.RoundInProgress;
 
+        string startingPlayerName = GetPlayerById(startingPlayerId).Name;
+        string roundStartMessage = $"Round {RoundNumber} has started. {startingPlayerName} will go first.";
+        if (SetAsideCard != null) roundStartMessage += $" A card was set aside face down.";
+        if (PubliclySetAsideCards.Any()) roundStartMessage += $" {PubliclySetAsideCards.Count} cards were set aside face up.";
+        
+        AddGameLogEntry(new GameLogEntry(
+            GameLogEventType.RoundStart,
+            null, // No specific acting player for round start
+            null, // No specific acting player name
+            roundStartMessage
+        ));
+
         AddDomainEvent(new RoundStarted(
             Id, RoundNumber, playerIds, Deck.CardsRemaining, SetAsideCard?.Type,
             PubliclySetAsideCards.Select(c => new PublicCardInfo(c.Id, c.Type)).ToList()
@@ -163,6 +175,26 @@ public class Game // Aggregate Root
         actingPlayer.PlayCard(cardToPlayInstance);
         DiscardPile.Add(cardToPlayInstance);
 
+        string actingPlayerName = actingPlayer.Name;
+        string? targetPlayerName = targetPlayer?.Name;
+        string playedCardStringName = cardType.ToString();
+        string message;
+
+        message = $"{actingPlayerName} played {playedCardStringName}.";
+
+        var logEntry = new GameLogEntry(
+            GameLogEventType.CardPlayed,
+            playerId,
+            actingPlayerName,
+            message,
+            false // isPrivate
+        )
+        {
+            PlayedCardType = cardType,
+            PlayedCardValue = cardType.Value
+        };
+        AddGameLogEntry(logEntry);
+
         AddDomainEvent(new PlayerPlayedCard(Id, playerId, cardType, targetPlayerId, guessedCardType));
 
         // Dispatch to specific card logic
@@ -172,7 +204,8 @@ public class Game // Aggregate Root
             case var _ when cardType == CardType.Priest: ExecutePriestEffect(actingPlayer, targetPlayer); break;
             case var _ when cardType == CardType.Baron: ExecuteBaronEffect(actingPlayer, targetPlayer); break;
             case var _ when cardType == CardType.Handmaid: ExecuteHandmaidEffect(actingPlayer); break;
-            case var _ when cardType == CardType.Prince: ExecutePrinceEffect(targetPlayer ?? actingPlayer); break;
+            case var _ when cardType == CardType.Prince: ExecutePrinceEffect(actingPlayer, targetPlayer ?? actingPlayer);
+                break; // Pass actingPlayer if target is self or null
             case var _ when cardType == CardType.King: ExecuteKingEffect(actingPlayer, targetPlayer); break;
             case var _ when cardType == CardType.Countess: ExecuteCountessEffect(actingPlayer); break;
             case var _ when cardType == CardType.Princess: ExecutePrincessEffect(actingPlayer, cardToPlayInstance); break;
@@ -238,94 +271,352 @@ public class Game // Aggregate Root
 
     private void ExecuteGuardEffect(Player actingPlayer, Player? targetPlayer, CardType? guessedCardType)
     {
-        if (targetPlayer == null || guessedCardType == null) return;
+        if (targetPlayer == null || guessedCardType == null) 
+        {
+            throw new GameRuleException("Guard requires a valid target player and a non-Guard guess.");
+        }
+
+        string actingPlayerName = actingPlayer.Name;
+        string targetPlayerName = targetPlayer.Name;
+
         // Check protection BEFORE applying effect
         if (targetPlayer.IsProtected)
         {
+            string fizzleMessage = $"{actingPlayerName}'s Guard against {targetPlayerName} had no effect because {targetPlayerName} is protected by a Handmaid.";
+            AddGameLogEntry(new GameLogEntry(
+                GameLogEventType.EffectFizzled,
+                actingPlayer.Id,
+                actingPlayerName,
+                targetPlayer.Id,
+                targetPlayerName,
+                fizzleMessage
+            ) 
+            {
+                PlayedCardType = CardType.Guard,
+                FizzleReason = "Target was protected"
+            });
             AddDomainEvent(new CardEffectFizzled(Id, actingPlayer.Id, CardType.Guard, targetPlayer.Id, "Target was protected"));
             return; // Effect fizzles
         }
 
-        bool correctGuess = targetPlayer.Hand.Contains(guessedCardType);
+        bool correctGuess = targetPlayer.Hand.Contains(guessedCardType); // .Value as guessedCardType is CardType?
         if (correctGuess)
         {
-            EliminatePlayer(targetPlayer.Id, $"guessed correctly by {actingPlayer.Name} with a Guard", CardType.Guard);
+            string hitMessage = $"{actingPlayerName} correctly guessed that {targetPlayerName} held a {guessedCardType.Value.ToString()} with their Guard! {targetPlayerName} is eliminated.";
+            AddGameLogEntry(new GameLogEntry(
+                GameLogEventType.GuardHit, 
+                actingPlayer.Id,
+                actingPlayerName,
+                targetPlayer.Id,
+                targetPlayerName,
+                hitMessage
+            )
+            {
+                PlayedCardType = CardType.Guard,
+                GuessedCardType = guessedCardType,
+                WasGuessCorrect = true
+            });
+            EliminatePlayer(targetPlayer.Id, $"guessed correctly by {actingPlayerName} with a Guard", CardType.Guard);
+        }
+        else // Incorrect Guess
+        {
+            string missMessage = $"{actingPlayerName} guessed that {targetPlayerName} held a {guessedCardType.Value.ToString()}, but was incorrect.";
+            AddGameLogEntry(new GameLogEntry(
+                GameLogEventType.GuardMiss, 
+                actingPlayer.Id,
+                actingPlayerName,
+                targetPlayer.Id,
+                targetPlayerName,
+                missMessage
+            )
+            {
+                PlayedCardType = CardType.Guard,
+                GuessedCardType = guessedCardType,
+                WasGuessCorrect = false
+            });
         }
         AddDomainEvent(new GuardGuessResult(Id, actingPlayer.Id, targetPlayer.Id, guessedCardType, correctGuess));
     }
 
-    private void ExecutePriestEffect(Player actingPlayer, Player? targetPlayer)
+    private void ExecutePriestEffect(Player actingPlayer, Player? targetPlayer) // Signature changed to Player?
     {
-        if (targetPlayer == null) return;
-        // Check protection BEFORE applying effect
-        if (targetPlayer.IsProtected)
+        if (targetPlayer == null)
         {
-             AddDomainEvent(new CardEffectFizzled(Id, actingPlayer.Id, CardType.Priest, targetPlayer.Id, "Target was protected"));
-             return; // Effect fizzles
+            throw new GameRuleException("Priest requires a valid target player.");
         }
 
-        var revealedCard = targetPlayer.Hand.GetHeldCard();
-        if (revealedCard != null)
+        string actingPlayerName = actingPlayer.Name;
+        string targetPlayerName = targetPlayer.Name;
+
+        if (targetPlayer.IsProtected)
         {
-            AddDomainEvent(new PriestEffectUsed(Id, actingPlayer.Id, targetPlayer.Id, revealedCard.Id, revealedCard.Type));
+            string fizzleMessage = $"{actingPlayerName}'s Priest targeting {targetPlayerName} had no effect because {targetPlayerName} is protected by a Handmaid.";
+            AddGameLogEntry(new GameLogEntry(
+                GameLogEventType.EffectFizzled,
+                actingPlayer.Id,
+                actingPlayerName,
+                targetPlayer.Id,
+                targetPlayerName,
+                fizzleMessage
+            ) 
+            {
+                PlayedCardType = CardType.Priest,
+                FizzleReason = "Target was protected"
+            });
+            AddDomainEvent(new CardEffectFizzled(Id, actingPlayer.Id, CardType.Priest, targetPlayer.Id, "Target was protected"));
+            return; // Effect fizzles
         }
+
+        Card revealedCard = targetPlayer.Hand.GetHeldCard() ?? throw new InvalidOperationException($"Target player {targetPlayer.Id} has no card to reveal.");
+        string revealedCardStringName = revealedCard.Type.ToString();
+
+        // Public log about the action (without revealing the card)
+        string publicLogMessage = $"{actingPlayerName} used Priest on {targetPlayerName} to look at their hand.";
+        AddGameLogEntry(new GameLogEntry(
+            GameLogEventType.PriestEffect, // General event type for Priest action
+            actingPlayer.Id,
+            actingPlayerName,
+            targetPlayer.Id,
+            targetPlayerName,
+            publicLogMessage
+        )
+        {
+            PlayedCardType = CardType.Priest
+        });
+
+        // Private log for the acting player
+        string privateLogMessage = $"You used Priest on {targetPlayerName} and saw their {revealedCardStringName}.";
+        AddGameLogEntry(new GameLogEntry(
+            GameLogEventType.PriestEffect,
+            actingPlayer.Id,
+            actingPlayerName, 
+            targetPlayer.Id,
+            targetPlayerName, 
+            privateLogMessage,
+            true // isPrivate set to true
+        ) 
+        {
+            PlayedCardType = CardType.Priest,
+            RevealedCardType = revealedCard.Type // Corrected property name
+        });
+
+        // Domain event to notify the specific player (handler will use this)
+        AddDomainEvent(new PriestEffectUsed(Id, actingPlayer.Id, targetPlayer.Id, revealedCard.Id, revealedCard.Type));
     }
 
-    private void ExecuteBaronEffect(Player actingPlayer, Player? targetPlayer)
+    private void ExecuteBaronEffect(Player actingPlayer, Player? targetPlayer) // Signature changed to Player?
     {
-        if (targetPlayer == null) return;
+        if (targetPlayer == null)
+        {
+            throw new GameRuleException("Baron requires a valid target player.");
+        }
+
+        string actingPlayerName = actingPlayer.Name;
+        string targetPlayerName = targetPlayer.Name;
+
         // Check protection BEFORE applying effect
         if (targetPlayer.IsProtected)
         {
-             AddDomainEvent(new CardEffectFizzled(Id, actingPlayer.Id, CardType.Baron, targetPlayer.Id, "Target was protected"));
-             return; // Effect fizzles
+            string fizzleMessage = $"{actingPlayerName}'s Baron against {targetPlayerName} had no effect because {targetPlayerName} is protected by a Handmaid.";
+            AddGameLogEntry(new GameLogEntry(
+                GameLogEventType.EffectFizzled,
+                actingPlayer.Id,
+                actingPlayerName,
+                targetPlayer.Id,
+                targetPlayerName,
+                fizzleMessage
+            ) 
+            {
+                PlayedCardType = CardType.Baron,
+                FizzleReason = "Target was protected"
+            });
+            AddDomainEvent(new CardEffectFizzled(Id, actingPlayer.Id, CardType.Baron, targetPlayer.Id, "Target was protected"));
+            return; // Effect fizzles
         }
 
         Card? actingPlayerCard = actingPlayer.Hand.GetHeldCard();
         Card? targetPlayerCard = targetPlayer.Hand.GetHeldCard();
-        if (actingPlayerCard == null || targetPlayerCard == null) return;
 
-        Guid? loserId = null;
-        if (actingPlayerCard.Rank > targetPlayerCard.Rank)
+        if (actingPlayerCard == null || targetPlayerCard == null) 
         {
-            loserId = targetPlayer.Id;
-            EliminatePlayer(targetPlayer.Id, $"lost Baron comparison to {actingPlayer.Name}", CardType.Baron);
+            throw new GameRuleException("Baron requires both players to have a card in their hand."); 
         }
-        else if (targetPlayerCard.Rank > actingPlayerCard.Rank)
+
+        Player? eliminatedPlayer = null;
+        string outcomeMessage;
+
+        if (actingPlayerCard.Type.Value > targetPlayerCard.Type.Value)
         {
-            loserId = actingPlayer.Id;
-            EliminatePlayer(actingPlayer.Id, $"lost Baron comparison to {targetPlayer.Name}", CardType.Baron);
+            eliminatedPlayer = targetPlayer;
+            EliminatePlayer(targetPlayer.Id, $"lost Baron comparison to {actingPlayerName} (their {targetPlayerCard.Type.ToString()} vs {actingPlayerCard.Type.ToString()})", CardType.Baron);
+            outcomeMessage = $"{actingPlayerName} (holding {actingPlayerCard.Type.ToString()}) won the Baron comparison against {targetPlayerName} (holding {targetPlayerCard.Type.ToString()}). {targetPlayerName} is eliminated.";
         }
-        AddDomainEvent(new BaronComparisonResult(Id, actingPlayer.Id, actingPlayerCard.Type, targetPlayer.Id, targetPlayerCard.Type, loserId));
+        else if (targetPlayerCard.Type.Value > actingPlayerCard.Type.Value)
+        {
+            eliminatedPlayer = actingPlayer;
+            EliminatePlayer(actingPlayer.Id, $"lost Baron comparison to {targetPlayerName} (their {actingPlayerCard.Type.ToString()} vs {targetPlayerCard.Type.ToString()})", CardType.Baron);
+            outcomeMessage = $"{targetPlayerName} (holding {targetPlayerCard.Type.ToString()}) won the Baron comparison against {actingPlayerName} (holding {actingPlayerCard.Type.ToString()}). {actingPlayerName} is eliminated.";
+        }
+        else // Draw
+        {
+            outcomeMessage = $"{actingPlayerName} (holding {actingPlayerCard.Type.ToString()}) and {targetPlayerName} (holding {targetPlayerCard.Type.ToString()}) tied in the Baron comparison. No one is eliminated.";
+        }
+
+        AddGameLogEntry(new GameLogEntry(
+            GameLogEventType.BaronCompare,
+            actingPlayer.Id, 
+            actingPlayerName,
+            targetPlayer.Id,
+            targetPlayerName,
+            outcomeMessage
+        ) 
+        {
+            PlayedCardType = CardType.Baron, 
+            Player1ComparedCardType = actingPlayerCard.Type, 
+            Player2ComparedCardType = targetPlayerCard.Type, 
+            BaronLoserPlayerId = eliminatedPlayer?.Id 
+        });
+
+        AddDomainEvent(new BaronComparisonResult(
+            Id,
+            actingPlayer.Id,
+            actingPlayerCard.Type,
+            targetPlayer.Id,
+            targetPlayerCard.Type,
+            eliminatedPlayer?.Id
+        ));
+    }
+
+    private void ExecuteKingEffect(Player actingPlayer, Player? targetPlayer) 
+    {
+        if (targetPlayer == null)
+        {
+            throw new GameRuleException("King requires a valid target player.");
+        }
+
+        string actingPlayerName = actingPlayer.Name;
+        string targetPlayerName = targetPlayer.Name;
+
+        if (targetPlayer.IsProtected)
+        {
+            string fizzleMessage = $"{actingPlayerName}'s King targeting {targetPlayerName} had no effect because {targetPlayerName} is protected by a Handmaid.";
+            AddGameLogEntry(new GameLogEntry(
+                GameLogEventType.EffectFizzled,
+                actingPlayer.Id,
+                actingPlayerName,
+                targetPlayer.Id,
+                targetPlayerName,
+                fizzleMessage
+            ) 
+            {
+                PlayedCardType = CardType.King,
+                FizzleReason = "Target was protected"
+            });
+            AddDomainEvent(new CardEffectFizzled(Id, actingPlayer.Id, CardType.King, targetPlayer.Id, "Target was protected"));
+            return;
+        }
+
+        Card? actingPlayerCard = actingPlayer.Hand.GetHeldCard();
+        Card? targetPlayerCard = targetPlayer.Hand.GetHeldCard();
+
+        if (actingPlayerCard == null || targetPlayerCard == null)
+        {
+            throw new GameRuleException("King requires both players to have a card in their hand.");
+        }
+
+        actingPlayer.Hand.Remove(actingPlayerCard);
+        targetPlayer.Hand.Remove(targetPlayerCard);
+        actingPlayer.Hand.Add(targetPlayerCard);
+        targetPlayer.Hand.Add(actingPlayerCard);
+
+        string successMessage = $"{actingPlayerName} used King and swapped hands with {targetPlayerName}.";
+        AddGameLogEntry(new GameLogEntry(
+            GameLogEventType.KingTrade,
+            actingPlayer.Id,
+            actingPlayerName,
+            targetPlayer.Id,
+            targetPlayerName,
+            successMessage
+        ) 
+        {
+            PlayedCardType = CardType.King
+        });
+
+        AddDomainEvent(new KingEffectUsed(Id, actingPlayer.Id, targetPlayer.Id));
     }
 
     private void ExecuteHandmaidEffect(Player actingPlayer)
     {
         actingPlayer.SetProtection(true);
+
+        string message = $"{actingPlayer.Name} played Handmaid and is protected until their next turn.";
+        AddGameLogEntry(new GameLogEntry(
+            GameLogEventType.HandmaidProtection, // Corrected EventType
+            actingPlayer.Id,
+            actingPlayer.Name,
+            message
+        ) 
+        {
+            PlayedCardType = CardType.Handmaid
+        });
+
         AddDomainEvent(new HandmaidProtectionSet(Id, actingPlayer.Id));
     }
 
-    private void ExecutePrinceEffect(Player targetPlayer)
+    private void ExecutePrinceEffect(Player actingPlayer, Player targetPlayer)
     {
+        string actingPlayerName = actingPlayer.Name;
+        string targetPlayerName = targetPlayer.Name;
+
         if (targetPlayer.IsProtected)
         {
-             AddDomainEvent(new CardEffectFizzled(Id, CurrentTurnPlayerId, CardType.Prince, targetPlayer.Id, "Target was protected"));
-             return; // Effect fizzles
+            string fizzleMessage = $"{actingPlayerName}'s Prince targeting {targetPlayerName} had no effect because {targetPlayerName} is protected by a Handmaid.";
+            AddGameLogEntry(new GameLogEntry(
+                GameLogEventType.EffectFizzled,
+                actingPlayer.Id,
+                actingPlayerName,
+                targetPlayer.Id,
+                targetPlayerName,
+                fizzleMessage
+            ) 
+            {
+                PlayedCardType = CardType.Prince,
+                FizzleReason = "Target was protected"
+            });
+            AddDomainEvent(new CardEffectFizzled(Id, actingPlayer.Id, CardType.Prince, targetPlayer.Id, "Target was protected"));
+            return;
         }
 
         if (targetPlayer.Hand.IsEmpty)
         {
-            AddDomainEvent(new PrinceEffectFailed(Id, targetPlayer.Id, "Target hand empty"));
-            return;
+            throw new GameRuleException("Prince requires the target player's hand to not be empty."); 
         }
-        Card? discardedCard = targetPlayer.DiscardHand(Deck.IsEmpty);
-        if (discardedCard == null) return;
 
-        AddDomainEvent(new PrinceEffectUsed(Id, CurrentTurnPlayerId, targetPlayer.Id, discardedCard.Type, discardedCard.Id));
+        Card? discardedCard = targetPlayer.DiscardHand(Deck.IsEmpty);
+        if (discardedCard == null)
+        {
+             return;
+        }
+
+        string discardLogMessage = $"{actingPlayerName} used Prince on {targetPlayerName}. {targetPlayerName} discarded their {discardedCard.Type.ToString()}.";
+        AddGameLogEntry(new GameLogEntry(
+            GameLogEventType.PrinceDiscard, // Corrected EventType
+            actingPlayer.Id,
+            actingPlayerName,
+            targetPlayer.Id,
+            targetPlayerName,
+            discardLogMessage
+        ) 
+        {
+            PlayedCardType = CardType.Prince,
+            DiscardedByPrinceCardType = discardedCard.Type // Corrected property name
+        });
+
+        AddDomainEvent(new PrinceEffectUsed(Id, actingPlayer.Id, targetPlayer.Id, discardedCard.Type, discardedCard.Id));
 
         if (discardedCard.Type == CardType.Princess)
         {
-            EliminatePlayer(targetPlayer.Id, "discarded the Princess", CardType.Prince);
+            EliminatePlayer(targetPlayer.Id, "discarding the Princess to a Prince", CardType.Prince);
         }
         else if (targetPlayer.Status == PlayerStatus.Active)
         {
@@ -351,18 +642,6 @@ public class Game // Aggregate Root
         }
     }
 
-    private void ExecuteKingEffect(Player actingPlayer, Player? targetPlayer)
-    {
-        if (targetPlayer == null) return;
-        if (targetPlayer.IsProtected)
-        {
-             AddDomainEvent(new CardEffectFizzled(Id, actingPlayer.Id, CardType.King, targetPlayer.Id, "Target was protected"));
-             return; // Effect fizzles
-        }
-        actingPlayer.SwapHandWith(targetPlayer);
-        AddDomainEvent(new KingEffectUsed(Id, actingPlayer.Id, targetPlayer.Id));
-    }
-
     private void ExecuteCountessEffect(Player actingPlayer)
     {
         AddDomainEvent(new PlayerPlayedCountess(Id, actingPlayer.Id));
@@ -373,14 +652,29 @@ public class Game // Aggregate Root
         EliminatePlayer(actingPlayer.Id, "discarded the Princess", princessCardInstance.Type);
     }
 
-    private void EliminatePlayer(Guid playerId, string reason, CardType? cardResponsible)
+    private void EliminatePlayer(Guid playerId, string reason, CardType? cardResponsible = null)
     {
         var player = GetPlayerById(playerId);
         if (player.Status == PlayerStatus.Active)
         {
             player.Eliminate();
+            string playerName = player.Name;
+            string logMessage = $"{playerName} was eliminated because they {reason}.";
+            AddGameLogEntry(new GameLogEntry(
+                GameLogEventType.PlayerEliminated,
+                player.Id,      // The player who was eliminated
+                playerName,
+                logMessage
+            ) 
+            {
+                CardResponsibleForElimination = cardResponsible // Corrected property name
+            });
             AddDomainEvent(new PlayerEliminated(Id, playerId, reason, cardResponsible));
         }
+        
+        // If only one player remains, round end is handled by CheckRoundEndCondition
+
+        CheckRoundEndCondition(); // Check if the round ends due to this elimination
     }
 
    private bool CheckRoundEndCondition()
@@ -405,17 +699,23 @@ public class Game // Aggregate Root
         Guid? winnerId = null;
         string reason;
         Player? winningPlayer = null;
+        string roundEndMessage;
 
         if (activePlayers.Count == 1)
         {
             winningPlayer = activePlayers.Single();
             winnerId = winningPlayer.Id;
             reason = "Last player standing";
+            roundEndMessage = $"Round {RoundNumber} ended. {winningPlayer.Name} wins as the last player standing.";
         }
         else // Deck is empty
         {
             reason = "Deck empty, highest card wins";
-            if (!activePlayers.Any()) { winnerId = null; }
+            if (!activePlayers.Any()) 
+            {
+                winnerId = null; 
+                roundEndMessage = $"Round {RoundNumber} ended. No winner as deck is empty and no active players remain.";
+            }
             else
             {
                 var highestRank = activePlayers.Max(p => p.Hand.GetHeldCard()?.Rank ?? -1);
@@ -436,10 +736,28 @@ public class Game // Aggregate Root
                     else { reason += " (Tie in rank and discard sum)"; } // No single winner
                 }
                 winnerId = winningPlayer?.Id;
+                if (winningPlayer != null)
+                {
+                    roundEndMessage = $"Round {RoundNumber} ended. {winningPlayer.Name} wins: {reason}.";
+                }
+                else
+                {
+                    roundEndMessage = $"Round {RoundNumber} ended. Tie: {reason}.";
+                }
             }
         }
 
         LastRoundWinnerId = winnerId;
+        
+        AddGameLogEntry(new GameLogEntry(
+            GameLogEventType.RoundEnd,
+            winningPlayer.Id, // Winner is the 'acting' player in this context
+            winningPlayer?.Name,
+            roundEndMessage
+        )
+        {
+            RoundEndReason = reason
+        });
 
         // If there's a winner, award token *before* creating summaries for RoundEnded event
         if (winningPlayer != null)
@@ -476,6 +794,16 @@ public class Game // Aggregate Root
     private void AwardTokenToPlayer(Player player)
     {
         player.AddToken(); // This increments player.TokensWon
+        string tokenMessage = $"{player.Name} was awarded a token of affection. They now have {player.TokensWon} token(s).";
+        AddGameLogEntry(new GameLogEntry(
+            GameLogEventType.TokenAwarded,
+            player.Id,
+            player.Name,
+            tokenMessage
+        )
+        {
+            TokensHeld = player.TokensWon
+        });
         AddDomainEvent(new TokenAwarded(Id, player.Id, player.TokensWon));
     }
 
@@ -483,6 +811,13 @@ public class Game // Aggregate Root
     {
         if (GamePhase == GamePhase.GameOver) return;
         GamePhase = GamePhase.GameOver;
+        string endMessage = $"Game ended. {GetPlayerById(winnerId).Name} wins with {TokensNeededToWin} token(s).";
+        AddGameLogEntry(new GameLogEntry(
+            GameLogEventType.GameEnd,
+            winnerId,
+            GetPlayerById(winnerId).Name,
+            endMessage
+        ));
         AddDomainEvent(new GameEnded(Id, winnerId));
     }
 
@@ -523,24 +858,46 @@ public class Game // Aggregate Root
         var player = GetPlayerById(CurrentTurnPlayerId);
         if (player.Status != PlayerStatus.Active) return;
 
+        Card? drawnCard = null; // Keep track of the card drawn this turn
         if (!Deck.IsEmpty)
         {
             (Card card, Deck remainingDeck) = Deck.Draw();
             Deck = remainingDeck;
             player.GiveCard(card);
-            AddDomainEvent(new PlayerDrewCard(Id, player.Id));
+            drawnCard = card; // Store the drawn card
+
+            string drawMessage = $"{player.Name} drew a card.";
+            AddGameLogEntry(new GameLogEntry(
+                GameLogEventType.PlayerDrewCard, 
+                player.Id, 
+                player.Name, 
+                drawMessage,
+                true // This log is private to the player who drew
+            )
+            {
+                CardDrawnType = drawnCard.Type
+            });
+
+            AddDomainEvent(new PlayerDrewCard(Id, player.Id)); // Domain event for system use
             AddDomainEvent(new DeckChanged(Id, Deck.CardsRemaining));
         }
 
         // Check round end condition AFTER the draw attempt.
-        // This handles the case where the draw emptied the deck.
+        // This handles the case where the draw emptied the deck or player drew a game-ending card (if such logic existed).
         // CheckRoundEndCondition() calls EndRound() if true.
         bool roundEnded = CheckRoundEndCondition();
 
-        // Only raise TurnStarted if the round didn't just end
+        // Only raise TurnStarted event and log if the round didn't just end
         if(!roundEnded && GamePhase == GamePhase.RoundInProgress)
         {
-            AddDomainEvent(new TurnStarted(Id, CurrentTurnPlayerId, RoundNumber));
+            string turnStartMessage = $"{player.Name}'s turn has started.";
+            AddGameLogEntry(new GameLogEntry(
+                GameLogEventType.TurnStart,
+                player.Id,
+                player.Name,
+                turnStartMessage
+            ));
+            AddDomainEvent(new TurnStarted(Id, CurrentTurnPlayerId, RoundNumber)); // Domain event for system use
         }
     }
 
@@ -551,5 +908,10 @@ public class Game // Aggregate Root
     {
         if (entry == null) throw new ArgumentNullException(nameof(entry));
         _logEntries.Insert(0, entry); // Insert at the beginning to keep newest first
+    }
+
+    private void AddGameLogEntry(GameLogEntry logEntry)
+    {
+        _logEntries.Insert(0, logEntry); // Keep newest first
     }
 }

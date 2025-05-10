@@ -4,173 +4,123 @@ namespace CardGame.Domain;
 
 public class GameLogEntry
 {
-    public Guid Id { get; private set; }
-    public DateTimeOffset Timestamp { get; private set; }
-    public GameLogEventType EventType { get; private set; }
-    public Guid ActingPlayerId { get; private set; }
-    public string ActingPlayerName { get; private set; }
-    public Guid? TargetPlayerId { get; private set; }
-    public string? TargetPlayerName { get; private set; }
-    public Guid? RevealedCardId { get; private set; }
-    public CardType? RevealedCardType { get; private set; } // Existing, used for Priest/general reveal
-    public bool IsPrivate { get; private set; }
-    public string? Message { get; private set; }
+    public Guid Id { get; private set; } 
+    public DateTimeOffset Timestamp { get; private set; } 
+    public GameLogEventType EventType { get; set; } 
+    public Guid? ActingPlayerId { get; set; }
+    public string ActingPlayerName { get; set; }
+    public Guid? TargetPlayerId { get; set; }
+    public string? TargetPlayerName { get; set; }
+    public Guid? RevealedCardId { get; set; }
+    public CardType? RevealedCardType { get; set; } 
+    public bool IsPrivate { get; set; }
+    public string? Message { get; set; }
 
     // --- New Structured Properties for Visual Story --- 
-    public CardType? PlayedCardType { get; private set; }
-    public int? PlayedCardValue { get; private set; }
+    public CardType? PlayedCardType { get; set; } 
+    public int? PlayedCardValue { get; set; }   
 
     // For Guard Guess
-    public CardType? GuessedCardType { get; private set; }
-    public int? GuessedCardValue { get; private set; }
-    public bool? WasGuessCorrect { get; private set; }
+    public CardType? GuessedCardType { get; set; } 
+    public int? GuessedCardValue { get; set; }   
+    public bool? WasGuessCorrect { get; set; }   
 
     // For Baron Comparison
-    public CardType? Player1ComparedCardType { get; private set; } // ActingPlayer's card
-    public int? Player1ComparedCardValue { get; private set; }
-    public CardType? Player2ComparedCardType { get; private set; } // TargetPlayer's card
-    public int? Player2ComparedCardValue { get; private set; }
-    public Guid? BaronLoserPlayerId { get; private set; }
+    public CardType? Player1ComparedCardType { get; set; } 
+    public int? Player1ComparedCardValue { get; set; }   
+    public CardType? Player2ComparedCardType { get; set; } 
+    public int? Player2ComparedCardValue { get; set; }   
+    public Guid? BaronLoserPlayerId { get; set; }        
 
     // For Prince Discard
-    public CardType? DiscardedByPrinceCardType { get; private set; }
-    public int? DiscardedByPrinceCardValue { get; private set; }
+    public CardType? DiscardedByPrinceCardType { get; set; } 
+    public int? DiscardedByPrinceCardValue { get; set; }   
+
+    // For Eliminations
+    public CardType? CardResponsibleForElimination { get; set; } 
 
     // For Fizzled Effects (played card is in PlayedCardType)
-    public string? FizzleReason { get; private set; }
+    public string? FizzleReason { get; set; } 
 
     // For Round/Game End
-    public Guid? WinnerPlayerId { get; private set; }
-    public string? RoundEndReason { get; private set; }
-    public List<GameLogPlayerRoundSummary>? RoundPlayerSummaries { get; private set; }
+    public Guid? WinnerPlayerId { get; set; } 
+    public string? RoundEndReason { get; set; } 
+    public List<GameLogPlayerRoundSummary>? RoundPlayerSummaries { get; set; }
+    public int? TokensHeld { get; set; }
+    public CardType? CardDrawnType { get; set; }
 
-    // Constructor for Priest Effect (or similar targeted card reveal)
-    public GameLogEntry(GameLogEventType eventType, Guid actingPlayerId, string actingPlayerName, Guid targetPlayerId, string targetPlayerName, Guid revealedCardId, CardType revealedCardType, bool isPrivate)
+    // Base constructor - initializes essential fields. Others can be set via property initializers.
+    public GameLogEntry(GameLogEventType eventType, Guid? actingPlayerId, string actingPlayerName, string? message, bool isPrivate = false)
     {
-        // Consider a check if eventType is appropriate, or make it more generic
         Id = Guid.NewGuid();
         Timestamp = DateTimeOffset.UtcNow;
         EventType = eventType;
         ActingPlayerId = actingPlayerId;
-        ActingPlayerName = actingPlayerName ?? throw new ArgumentNullException(nameof(actingPlayerName));
-        TargetPlayerId = targetPlayerId;
-        TargetPlayerName = targetPlayerName ?? throw new ArgumentNullException(nameof(targetPlayerName));
-        RevealedCardId = revealedCardId;
-        RevealedCardType = revealedCardType ?? throw new ArgumentNullException(nameof(revealedCardType));
+        ActingPlayerName = actingPlayerName;
+        Message = message;
         IsPrivate = isPrivate;
-        Message = null;
-    }
-    
-    public GameLogEntry(GameLogEventType eventType, Guid actingPlayerId, string actingPlayerName, Guid targetPlayerId, string targetPlayerName, string message, bool isPrivate)
-    {
-        // Consider a check if eventType is appropriate, or make it more generic
-        Id = Guid.NewGuid();
-        Timestamp = DateTimeOffset.UtcNow;
-        EventType = eventType;
-        ActingPlayerId = actingPlayerId;
-        ActingPlayerName = actingPlayerName ?? throw new ArgumentNullException(nameof(actingPlayerName));
-        TargetPlayerId = targetPlayerId;
-        TargetPlayerName = targetPlayerName ?? throw new ArgumentNullException(nameof(targetPlayerName));
-        IsPrivate = isPrivate;
-        Message = message ?? throw new ArgumentNullException(nameof(message));;
-    }
-
-    // Constructor for general events (e.g., Handmaid, status changes, simple messages)
-    public GameLogEntry(GameLogEventType eventType, Guid actingPlayerId, string actingPlayerName, string message, bool isPrivate)
-    {
-        Id = Guid.NewGuid();
-        Timestamp = DateTimeOffset.UtcNow;
-        EventType = eventType;
-        ActingPlayerId = actingPlayerId;
-        ActingPlayerName = actingPlayerName ?? throw new ArgumentNullException(nameof(actingPlayerName));
+        // Initialize other nullable properties to null by default
         TargetPlayerId = null;
         TargetPlayerName = null;
         RevealedCardId = null;
         RevealedCardType = null;
-        IsPrivate = isPrivate;
-        Message = message ?? throw new ArgumentNullException(nameof(message));
+        PlayedCardType = null;
+        PlayedCardValue = null;
+        GuessedCardType = null;
+        GuessedCardValue = null;
+        WasGuessCorrect = null;
+        Player1ComparedCardType = null;
+        Player1ComparedCardValue = null;
+        Player2ComparedCardType = null;
+        Player2ComparedCardValue = null;
+        BaronLoserPlayerId = null;
+        DiscardedByPrinceCardType = null;
+        DiscardedByPrinceCardValue = null;
+        CardResponsibleForElimination = null;
+        FizzleReason = null;
+        WinnerPlayerId = null;
+        RoundEndReason = null;
+        RoundPlayerSummaries = null;
+    }
+
+    // Constructor for events with a target player
+    public GameLogEntry(GameLogEventType eventType, Guid actingPlayerId, string actingPlayerName, Guid targetPlayerId, string targetPlayerName, string? message, bool isPrivate = false)
+        : this(eventType, actingPlayerId, actingPlayerName, message, isPrivate)
+    {
+        TargetPlayerId = targetPlayerId;
+        TargetPlayerName = targetPlayerName;
     }
 
     // Constructor for simple, public, non-player-specific events (e.g., Round End with no winner)
     public GameLogEntry(GameLogEventType eventType, string message)
+        : this(eventType, Guid.Empty, "Game", message, false) // Assuming Guid.Empty and "Game" for system events
     {
-        Id = Guid.NewGuid();
-        Timestamp = DateTimeOffset.UtcNow;
-        EventType = eventType;
-        ActingPlayerId = Guid.Empty; // Or a specific system/game ID
-        ActingPlayerName = "Game"; // Or system name
-        IsPrivate = false;
-        Message = message ?? throw new ArgumentNullException(nameof(message));
     }
 
-    // New Comprehensive Constructor (Example - may need refinement and other variants)
-    public GameLogEntry(
-        GameLogEventType eventType,
-        Guid actingPlayerId,
-        string actingPlayerName,
-        bool isPrivate,
-        string? message = null, // Message is now optional for this constructor
-        Guid? targetPlayerId = null,
-        string? targetPlayerName = null,
-        CardType? playedCardType = null,
-        CardType? guessedCardType = null,
-        bool? wasGuessCorrect = null,
-        CardType? player1ComparedCardType = null, // Baron
-        CardType? player2ComparedCardType = null, // Baron
-        Guid? baronLoserPlayerId = null,       // Baron
-        CardType? discardedByPrinceCardType = null,
-        Guid? revealedCardId = null,
-        CardType? revealedByPriestCardType = null, // Specific for Priest if different from general RevealedCardType
-        string? fizzleReason = null,
-        Guid? winnerPlayerId = null,
-        string? roundEndReason = null,
-        List<GameLogPlayerRoundSummary>? roundPlayerSummaries = null
-    )
+    // Private parameterless constructor for EF Core or deserialization if needed
+    private GameLogEntry() 
     {
-        Id = Guid.NewGuid();
-        Timestamp = DateTimeOffset.UtcNow;
-        EventType = eventType;
-        ActingPlayerId = actingPlayerId;
-        ActingPlayerName = actingPlayerName ?? throw new ArgumentNullException(nameof(actingPlayerName));
-        IsPrivate = isPrivate;
-        Message = message; // Can still be set for fallback or simple text
-
-        TargetPlayerId = targetPlayerId;
-        TargetPlayerName = targetPlayerName;
-
-        PlayedCardType = playedCardType;
-        PlayedCardValue = playedCardType?.Value; // Assuming CardType has a .Value property or similar
-
-        GuessedCardType = guessedCardType;
-        GuessedCardValue = guessedCardType?.Value;
-        WasGuessCorrect = wasGuessCorrect;
-
-        Player1ComparedCardType = player1ComparedCardType;
-        Player1ComparedCardValue = player1ComparedCardType?.Value;
-        Player2ComparedCardType = player2ComparedCardType;
-        Player2ComparedCardValue = player2ComparedCardType?.Value;
-        BaronLoserPlayerId = baronLoserPlayerId;
-
-        DiscardedByPrinceCardType = discardedByPrinceCardType;
-        DiscardedByPrinceCardValue = discardedByPrinceCardType?.Value;
-
-        RevealedCardId = revealedCardId; 
-        // If revealedByPriestCardType is used, set RevealedCardType (the general property)
-        RevealedCardType = revealedByPriestCardType ?? RevealedCardType; 
-        // Ensure RevealedCardValue is also set if RevealedCardType is set through this param
-        // For now, RevealedCardId is not in this constructor, add if needed for Priest through this path.
-
-        FizzleReason = fizzleReason;
-        WinnerPlayerId = winnerPlayerId;
-        RoundEndReason = roundEndReason;
-        RoundPlayerSummaries = roundPlayerSummaries;
+        // Required for EF Core to materialize objects from DB
+        // Initialize critical non-nullable properties to sensible defaults if possible
+        Id = Guid.NewGuid(); // Should be overwritten by DB value
+        Timestamp = DateTimeOffset.UtcNow; // Should be overwritten
+        ActingPlayerName = string.Empty; // Should be overwritten
+        Message = string.Empty; // Should be overwritten
     }
 
-    // Private constructor for EF Core or other ORMs if needed
-    private GameLogEntry() { 
-        ActingPlayerName = string.Empty; 
-        // Initialize other string properties to empty if they are non-nullable and not set in all constructors
-        // For nullable strings, null is fine.
-        RoundPlayerSummaries = new List<GameLogPlayerRoundSummary>(); // Initialize list for EF
+    // --- Nested class for player summaries in round/game end logs ---
+    public class GameLogPlayerRoundSummary
+    {
+        public Guid PlayerId { get; set; }
+        public string PlayerName { get; set; }
+        public List<CardType> CardsHeld { get; set; } = new List<CardType>();
+        public int Score { get; set; } // e.g., tokens won
+        public bool WasActive { get; set; } // Was player active at round end?
+
+        public GameLogPlayerRoundSummary(Guid playerId, string playerName)
+        {
+            PlayerId = playerId;
+            PlayerName = playerName;
+        }
     }
 }

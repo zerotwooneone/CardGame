@@ -9,7 +9,7 @@ public class GameLogEntryDto
     public DateTimeOffset Timestamp { get; set; }
     public GameLogEventType EventType { get; set; }
     public string EventTypeName => EventType.ToString(); // For easier display on client
-    public Guid ActingPlayerId { get; set; }
+    public Guid? ActingPlayerId { get; set; }
     public string ActingPlayerName { get; set; } = string.Empty;
     public Guid? TargetPlayerId { get; set; }
     public string? TargetPlayerName { get; set; }

@@ -17,15 +17,12 @@ public class HandleRoundEndedAndNotify : INotificationHandler<DomainEventNotific
 {
     private readonly IPlayerNotifier _playerNotifier;
     private readonly ILogger<HandleRoundEndedAndNotify> _logger;
-    private readonly IGameRepository _gameRepository; 
 
     public HandleRoundEndedAndNotify(IPlayerNotifier playerNotifier, 
-                                   ILogger<HandleRoundEndedAndNotify> logger,
-                                   IGameRepository gameRepository) 
+                                   ILogger<HandleRoundEndedAndNotify> logger) 
     {
         _playerNotifier = playerNotifier ?? throw new ArgumentNullException(nameof(playerNotifier));
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
-        _gameRepository = gameRepository ?? throw new ArgumentNullException(nameof(gameRepository)); 
     }
 
     public async Task Handle(DomainEventNotification<RoundEnded> notification, CancellationToken cancellationToken)
@@ -33,66 +30,7 @@ public class HandleRoundEndedAndNotify : INotificationHandler<DomainEventNotific
         var domainEvent = notification.DomainEvent;
         _logger.LogInformation("Handling RoundEnded for Game {GameId}. Winner: {WinnerId}, Reason: {Reason}", 
             domainEvent.GameId, domainEvent.WinnerPlayerId ?? Guid.Empty, domainEvent.Reason);
-
-        var game = await _gameRepository.GetByIdAsync(domainEvent.GameId, cancellationToken).ConfigureAwait(false);
-        if (game == null)
-        {
-            _logger.LogWarning("Game {GameId} not found for RoundEnded event.", domainEvent.GameId);
-            return;
-        }
-
-        string? winnerName = null;
-        if (domainEvent.WinnerPlayerId.HasValue)
-        {
-            var winnerPlayer = game.Players.FirstOrDefault(p => p.Id == domainEvent.WinnerPlayerId.Value);
-            if (winnerPlayer != null)
-            {
-                winnerName = winnerPlayer.Name;
-            }
-            else
-            {
-                _logger.LogWarning("Winner player with ID {WinnerId} not found in game {GameId} for RoundEnded event.", domainEvent.WinnerPlayerId.Value, domainEvent.GameId);
-            }
-        }
-
-        string message;
-        if (winnerName != null)
-        {
-            message = $"Round ended. {winnerName} wins the round! Reason: {domainEvent.Reason}.";
-        }
-        else
-        {
-            message = $"Round ended. Reason: {domainEvent.Reason}. No single winner declared.";
-        }
-
-        var logPlayerSummaries = domainEvent.PlayerSummaries.Select(s => 
-            new GameLogPlayerRoundSummary(
-                PlayerId: s.PlayerId,
-                PlayerName: s.PlayerName,
-                FinalHeldCardType: s.FinalHeldCard?.Type,
-                FinalHeldCardId: s.FinalHeldCard?.Id,
-                DiscardPileValues: s.DiscardPileValues,
-                TokensWon: s.TokensWon
-            )).ToList();
-
-        var logEntry = new GameLogEntry(
-            eventType: GameLogEventType.RoundEnd, 
-            // ActingPlayerId for RoundEnd could be considered a system/game action
-            // Using Guid.Empty or a predefined system Guid might be appropriate if a player didn't directly cause it.
-            // For simplicity, using the winner if available, otherwise Guid.Empty.
-            actingPlayerId: domainEvent.WinnerPlayerId ?? Guid.Empty, 
-            actingPlayerName: winnerName ?? "Game", // If no winner, attribute to 'Game'
-            isPrivate: false,
-            message: message, 
-            winnerPlayerId: domainEvent.WinnerPlayerId,
-            roundEndReason: domainEvent.Reason,
-            roundPlayerSummaries: logPlayerSummaries
-        );
-        game.AddLogEntry(logEntry);
-
-        // The command handler that triggered the RoundEnded event (e.g., after PlayCard or specific game phase check)
-        // should be responsible for saving the game state which now includes this log entry.
-        // await _gameRepository.SaveAsync(game, cancellationToken).ConfigureAwait(false); // Removed
+        
 
         // --- Construct the RoundEndSummaryDto for broadcasting --- 
         var playerSummaryDtos = domainEvent.PlayerSummaries.Select(summary =>
