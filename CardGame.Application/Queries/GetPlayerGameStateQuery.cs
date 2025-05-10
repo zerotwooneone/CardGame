@@ -39,31 +39,41 @@ namespace CardGame.Application.Queries;
                 return null;
             }
 
-            // Map GameLogEntries to GameLogEntryDto, filtering for privacy
-            var gameLogDtos = new List<GameLogEntryDto>();
-            foreach (var logEntry in game.LogEntries) // Domain log entries are newest first
-            {
-                // Include public logs OR private logs belonging to the requesting player
-                if (!logEntry.IsPrivate || (logEntry.IsPrivate && logEntry.ActingPlayerId == request.RequestingPlayerId))
+            // Filter and map log entries
+            var gameLogDtos = game.LogEntries
+                .Where(log => !log.IsPrivate || (log.IsPrivate && (log.ActingPlayerId == request.RequestingPlayerId || log.TargetPlayerId == request.RequestingPlayerId)))
+                .Select(log => new GameLogEntryDto
                 {
-                    gameLogDtos.Add(new GameLogEntryDto
-                    {
-                        Id = logEntry.Id,
-                        Timestamp = logEntry.Timestamp,
-                        EventType = logEntry.EventType,
-                        // EventTypeName is a getter in DTO, no need to set here
-                        ActingPlayerId = logEntry.ActingPlayerId,
-                        ActingPlayerName = logEntry.ActingPlayerName,
-                        TargetPlayerId = logEntry.TargetPlayerId,
-                        TargetPlayerName = logEntry.TargetPlayerName,
-                        RevealedCardId = logEntry.RevealedCardId,
-                        RevealedCardType = logEntry.RevealedCardType, 
-                        // RevealedCardName is a getter in DTO
-                        IsPrivate = logEntry.IsPrivate, // Keep original privacy flag for potential client-side display choices
-                        Message = logEntry.Message
-                    });
-                }
-            }
+                    Id = log.Id,
+                    Timestamp = log.Timestamp,
+                    EventType = log.EventType,
+                    ActingPlayerId = log.ActingPlayerId,
+                    ActingPlayerName = log.ActingPlayerName,
+                    TargetPlayerId = log.TargetPlayerId,
+                    TargetPlayerName = log.TargetPlayerName,
+                    RevealedCardId = log.RevealedCardId,
+                    RevealedCardType = log.RevealedCardType,
+                    IsPrivate = log.IsPrivate,
+                    Message = log.Message,
+
+                    // --- New Mappings ---
+                    PlayedCardType = log.PlayedCardType,
+                    GuessedCardType = log.GuessedCardType,
+                    WasGuessCorrect = log.WasGuessCorrect,
+
+                    Player1ComparedCardType = log.Player1ComparedCardType,
+                    Player2ComparedCardType = log.Player2ComparedCardType,
+                    BaronLoserPlayerId = log.BaronLoserPlayerId,
+
+                    DiscardedByPrinceCardType = log.DiscardedByPrinceCardType,
+                    
+                    FizzleReason = log.FizzleReason,
+                    
+                    WinnerPlayerId = log.WinnerPlayerId,
+                    RoundEndReason = log.RoundEndReason
+                })
+                .OrderByDescending(log => log.Timestamp) // Ensure logs are newest first
+                .ToList();
 
             // Map to DTO
             var playerStateDto = new PlayerGameStateDto

@@ -1,4 +1,4 @@
-﻿using CardGame.Application.Common.Interfaces;
+using CardGame.Application.Common.Interfaces;
 using CardGame.Application.Common.Notifications;
 using CardGame.Application.DTOs;
 using CardGame.Domain.Game.Event;
@@ -40,8 +40,28 @@ public class HandleKingEffectUsedAndNotify : INotificationHandler<DomainEventNot
             return;
         }
 
-        // Send update to Player 1
         var player1 = game.Players.FirstOrDefault(p => p.Id == domainEvent.Player1Id);
+        var player2 = game.Players.FirstOrDefault(p => p.Id == domainEvent.Player2Id);
+
+        if (player1 == null || player2 == null)
+        {
+            _logger.LogWarning("One or both players not found for KingEffectUsed. P1: {Player1Id}, P2: {Player2Id}, Game: {GameId}", 
+                domainEvent.Player1Id, domainEvent.Player2Id, domainEvent.GameId);
+            return;
+        }
+
+        // The GameLogEntry for playing the King is now handled by HandlePlayerPlayedCardAndNotify.
+        // This handler's responsibility is to notify players of their new hands, which it already does.
+        // No specific "effect" log beyond the card play itself is typically needed for King,
+        // as the hand swap is reflected in player states.
+
+        // Ensure game state is saved if this handler was previously responsible for it due to logging.
+        // However, PlayCardCommandHandler saves *before* events are published. PlayerNotifier might save if it modifies state.
+        // For now, assuming no save is needed here as it primarily notifies.
+        // If playerNotifier.SendHandUpdateAsync could indirectly modify and require a save, that's a separate concern.
+        // Based on current refactoring, log-related SaveAsync calls are removed from these event-specific handlers.
+
+        // Send update to Player 1
         if (player1 != null)
         {
             var hand1Dto = player1.Hand.GetCards()
@@ -55,7 +75,6 @@ public class HandleKingEffectUsedAndNotify : INotificationHandler<DomainEventNot
         }
 
         // Send update to Player 2
-        var player2 = game.Players.FirstOrDefault(p => p.Id == domainEvent.Player2Id);
         if (player2 != null)
         {
             var hand2Dto = player2.Hand.GetCards()

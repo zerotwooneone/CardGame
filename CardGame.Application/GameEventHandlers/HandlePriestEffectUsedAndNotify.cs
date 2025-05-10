@@ -7,6 +7,7 @@ using MediatR;
 using Microsoft.Extensions.Logging;
 using System.Linq;
 using CardGame.Domain.Interfaces;
+using CardGame.Domain.Types;
 
 namespace CardGame.Application.GameEventHandlers;
 
@@ -59,19 +60,26 @@ public class HandlePriestEffectUsedAndNotify : INotificationHandler<DomainEventN
         var actingPlayerName = actingPlayer.Name;
         var targetPlayerName = targetPlayer.Name;
 
-        // Create and add game log entry
-        var logEntry = new GameLogEntry(
-            eventType: GameLogEventType.PriestEffect,
+        // The public log entry for playing the Priest is now handled by HandlePlayerPlayedCardAndNotify.
+        // Create and add private game log entry for the revealed card (for the acting player)
+        string revealedCardName = domainEvent.RevealedCardType.ToString(); // Or a more friendly name
+        var privateLogMessage = $"You used Priest on {targetPlayerName} and saw they have a {revealedCardName}.";
+        var privateLogEntry = new GameLogEntry(
+            eventType: GameLogEventType.PriestEffect, // Specific event for the Priest's effect
             actingPlayerId: domainEvent.PriestPlayerId,
             actingPlayerName: actingPlayerName,
-            targetPlayerId: domainEvent.TargetPlayerId,
+            isPrivate: true, // This log is private to the acting player
+            message: privateLogMessage,
+            targetPlayerId: domainEvent.TargetPlayerId, // Still relevant to know who was targeted
             targetPlayerName: targetPlayerName,
-            revealedCardId: domainEvent.RevealedCardId,
-            revealedCardType: domainEvent.RevealedCardType,
-            isPrivate: true // Priest reveal is private to the acting player
+            // PlayedCardType is contextually known (Priest), but can be included for completeness in structured data
+            playedCardType: CardType.Priest, // The card that was played to trigger this effect
+            revealedCardId: domainEvent.RevealedCardId, // The ID of the card that was revealed
+            revealedByPriestCardType: domainEvent.RevealedCardType // The type of card that was revealed
         );
-        game.AddLogEntry(logEntry);
+        game.AddLogEntry(privateLogEntry);
 
-        await _gameRepository.SaveAsync(game, cancellationToken).ConfigureAwait(false);
+        // No SaveAsync here, PlayCardCommandHandler handles saving before event publishing.
+        await Task.CompletedTask;
     }
 }

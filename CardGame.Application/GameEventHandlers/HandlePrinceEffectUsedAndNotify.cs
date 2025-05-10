@@ -6,7 +6,8 @@ using MediatR;
 using Microsoft.Extensions.Logging;
 using CardGame.Domain; 
 using CardGame.Domain.Interfaces; 
-using System.Linq; 
+using System.Linq;
+using CardGame.Domain.Types;
 
 namespace CardGame.Application.GameEventHandlers;
 
@@ -43,45 +44,40 @@ public class HandlePrinceEffectUsedAndNotify : INotificationHandler<DomainEventN
             return;
         }
 
+        // Log Entry 1 (Prince Played) is now handled by HandlePlayerPlayedCardAndNotify.
+
+        // Log Entry 2: Card Discarded due to Prince
         var actorPlayer = game.Players.FirstOrDefault(p => p.Id == domainEvent.ActorPlayerId);
         var targetPlayer = game.Players.FirstOrDefault(p => p.Id == domainEvent.TargetPlayerId);
 
-        if (actorPlayer == null || targetPlayer == null)
+        if (actorPlayer == null || targetPlayer == null) // Should have been caught earlier, but good check
         {
             _logger.LogWarning("Actor or Target Player not found for PrinceEffectUsed event in Game {GameId}. ActorId: {ActorId}, TargetId: {TargetId}", 
                 domainEvent.GameId, domainEvent.ActorPlayerId, domainEvent.TargetPlayerId);
             return;
         }
 
-        // Format the message for the log entry
-        // Assuming domainEvent.DiscardedCardType is CardGame.Domain.Types.CardType
-        string discardedCardName = domainEvent.DiscardedCardType.ToString(); // Or a more friendly name
-        string message;
-        if (actorPlayer.Id == targetPlayer.Id)
+        string discardedCardName = domainEvent.DiscardedCardType.ToString();
+        string discardMessage = $"{targetPlayer.Name} was forced by Prince to discard a {discardedCardName}.";
+        if (domainEvent.DiscardedCardType == CardType.Princess)
         {
-            message = $"{actorPlayer.Name} used Prince on themself, discarding {discardedCardName}.";
-        }
-        else
-        {
-            message = $"{actorPlayer.Name} used Prince on {targetPlayer.Name}, forcing them to discard {discardedCardName}.";
+            discardMessage += $" It was the Princess! {targetPlayer.Name} is knocked out of the round.";
         }
 
-        // if (domainEvent.WasPrincessDiscarded)
-        // {
-        //     message += $" {targetPlayer.Name} discarded the Princess and was knocked out!";
-        // }
-
-        var logEntry = new GameLogEntry(
-            eventType: GameLogEventType.PrinceDiscard, // Corrected enum value
-            actingPlayerId: domainEvent.ActorPlayerId, 
-            actingPlayerName: actorPlayer.Name,
-            targetPlayerId: domainEvent.TargetPlayerId, 
-            targetPlayerName: targetPlayer.Name,
-            message: message, // Use the formatted message
-            isPrivate: false // Prince effect results are public
+        var princeDiscardLogEntry = new GameLogEntry(
+            eventType: GameLogEventType.PrinceDiscard,
+            actingPlayerId: domainEvent.TargetPlayerId, // Player who was forced to discard
+            actingPlayerName: targetPlayer.Name,
+            isPrivate: false,
+            message: discardMessage,
+            targetPlayerId: domainEvent.ActorPlayerId, // Linking back to who played the Prince
+            targetPlayerName: actorPlayer.Name, // Name of the player who played prince
+            playedCardType: CardType.Prince, // Card that caused the discard (Prince)
+            discardedByPrinceCardType: domainEvent.DiscardedCardType
         );
-        game.AddLogEntry(logEntry);
+        game.AddLogEntry(princeDiscardLogEntry);
 
-        await _gameRepository.SaveAsync(game, cancellationToken).ConfigureAwait(false);
+        // No SaveAsync here, PlayCardCommandHandler handles saving before event publishing.
+        await Task.CompletedTask;
     }
 }

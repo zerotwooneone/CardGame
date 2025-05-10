@@ -5,7 +5,8 @@ using MediatR;
 using Microsoft.Extensions.Logging;
 using CardGame.Domain; 
 using CardGame.Domain.Interfaces; 
-using System.Linq; 
+using System.Linq;
+using CardGame.Domain.Types;
 
 namespace CardGame.Application.GameEventHandlers;
 
@@ -67,18 +68,23 @@ public class HandleBaronComparisonResultAndNotify : INotificationHandler<DomainE
         }
 
         var logEntry = new GameLogEntry(
-            eventType: GameLogEventType.BaronCompare, // Corrected enum value
+            eventType: GameLogEventType.BaronCompare,
             actingPlayerId: domainEvent.Player1Id, 
             actingPlayerName: player1.Name,
+            isPrivate: false, // Baron comparison results are public
+            message: message, // Keep pre-formatted message for now
             targetPlayerId: domainEvent.Player2Id,
             targetPlayerName: player2.Name,
-            message: message, // Use the formatted message
-            isPrivate: false // Baron comparison results are public
+            playedCardType: CardType.Baron, // Explicitly set the card played
+            player1ComparedCardType: domainEvent.Player1Card, // Player 1's card in comparison
+            player2ComparedCardType: domainEvent.Player2Card, // Player 2's card in comparison
+            baronLoserPlayerId: domainEvent.LoserPlayerId // ID of the player who lost, if any
         );
         game.AddLogEntry(logEntry);
 
         await _gameRepository.SaveAsync(game, cancellationToken).ConfigureAwait(false);
 
+        // Deprecated SignalR broadcast, game state updates will carry log
         // await _playerNotifier.BroadcastBaronComparisonAsync(
         //     domainEvent.GameId,
         //     domainEvent.Player1Id,

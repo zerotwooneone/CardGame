@@ -41,7 +41,7 @@ public class HandleRoundEndedAndNotify : INotificationHandler<DomainEventNotific
             return;
         }
 
-        string winnerName = null;
+        string? winnerName = null;
         if (domainEvent.WinnerPlayerId.HasValue)
         {
             var winnerPlayer = game.Players.FirstOrDefault(p => p.Id == domainEvent.WinnerPlayerId.Value);
@@ -55,30 +55,46 @@ public class HandleRoundEndedAndNotify : INotificationHandler<DomainEventNotific
             }
         }
 
-        // Format the message for the log entry
         string message;
         if (winnerName != null)
         {
-            message = $"Round ended. {winnerName} wins! Reason: {domainEvent.Reason}.";
+            message = $"Round ended. {winnerName} wins the round! Reason: {domainEvent.Reason}.";
         }
         else
         {
-            message = $"Round ended. Reason: {domainEvent.Reason}. No winner declared (e.g., all players out or deck empty).";
+            message = $"Round ended. Reason: {domainEvent.Reason}. No single winner declared.";
         }
 
-        // Add details about final hands if desired, for example:
-        // var finalHandsSummary = string.Join(", ", domainEvent.PlayerSummaries.Select(ps => $"{ps.PlayerName} ({ps.FinalHeldCard?.Rank ?? 'No Card'}) [{ps.TokensWon} tokens]"));
-        // message += $" Final hands: {finalHandsSummary}.";
+        var logPlayerSummaries = domainEvent.PlayerSummaries.Select(s => 
+            new GameLogPlayerRoundSummary(
+                PlayerId: s.PlayerId,
+                PlayerName: s.PlayerName,
+                FinalHeldCardType: s.FinalHeldCard?.Type,
+                FinalHeldCardId: s.FinalHeldCard?.Id,
+                DiscardPileValues: s.DiscardPileValues,
+                TokensWon: s.TokensWon
+            )).ToList();
 
         var logEntry = new GameLogEntry(
             eventType: GameLogEventType.RoundEnd, 
-            message: message 
+            // ActingPlayerId for RoundEnd could be considered a system/game action
+            // Using Guid.Empty or a predefined system Guid might be appropriate if a player didn't directly cause it.
+            // For simplicity, using the winner if available, otherwise Guid.Empty.
+            actingPlayerId: domainEvent.WinnerPlayerId ?? Guid.Empty, 
+            actingPlayerName: winnerName ?? "Game", // If no winner, attribute to 'Game'
+            isPrivate: false,
+            message: message, 
+            winnerPlayerId: domainEvent.WinnerPlayerId,
+            roundEndReason: domainEvent.Reason,
+            roundPlayerSummaries: logPlayerSummaries
         );
         game.AddLogEntry(logEntry);
 
-        await _gameRepository.SaveAsync(game, cancellationToken).ConfigureAwait(false);
+        // The command handler that triggered the RoundEnded event (e.g., after PlayCard or specific game phase check)
+        // should be responsible for saving the game state which now includes this log entry.
+        // await _gameRepository.SaveAsync(game, cancellationToken).ConfigureAwait(false); // Removed
 
-        // --- Construct the RoundEndSummaryDto ---
+        // --- Construct the RoundEndSummaryDto for broadcasting --- 
         var playerSummaryDtos = domainEvent.PlayerSummaries.Select(summary =>
             new RoundEndPlayerSummaryDto 
             {

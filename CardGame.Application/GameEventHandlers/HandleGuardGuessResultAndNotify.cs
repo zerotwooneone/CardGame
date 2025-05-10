@@ -5,7 +5,8 @@ using MediatR;
 using Microsoft.Extensions.Logging;
 using CardGame.Domain; 
 using CardGame.Domain.Interfaces; 
-using System.Linq; 
+using System.Linq;
+using CardGame.Domain.Types;
 
 namespace CardGame.Application.GameEventHandlers;
 
@@ -58,18 +59,22 @@ public class HandleGuardGuessResultAndNotify : INotificationHandler<DomainEventN
         string message = $"{guesserPlayer.Name} used Guard, guessing that {targetPlayer.Name} had a {guessedCardName}. The guess was {outcome}.";
 
         var logEntry = new GameLogEntry(
-            eventType: GameLogEventType.GuardGuess, // Corrected enum value
+            eventType: GameLogEventType.GuardGuess,
             actingPlayerId: domainEvent.GuesserId,
             actingPlayerName: guesserPlayer.Name,
+            isPrivate: false, // Guard guess results are public
+            message: message, // Keep pre-formatted message for now
             targetPlayerId: domainEvent.TargetId,
             targetPlayerName: targetPlayer.Name,
-            message: message, // Use the formatted message
-            isPrivate: false // Guard guess results are public
+            playedCardType: CardType.Guard, // Explicitly set the card played
+            guessedCardType: domainEvent.GuessedCardType, // The card that was guessed
+            wasGuessCorrect: domainEvent.WasCorrect
         );
         game.AddLogEntry(logEntry);
 
-        await _gameRepository.SaveAsync(game, cancellationToken).ConfigureAwait(false);
+        // await _gameRepository.SaveAsync(game, cancellationToken).ConfigureAwait(false);
 
+        // Deprecated SignalR broadcast, game state updates will carry log
         // await _playerNotifier.BroadcastGuardGuessAsync(
         //     domainEvent.GameId,
         //     domainEvent.GuesserId,

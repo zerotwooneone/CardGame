@@ -60,7 +60,7 @@ public class HandlePlayerEliminatedAndLog : INotificationHandler<DomainEventNoti
         }
 
         var logEntry = new GameLogEntry(
-            eventType: GameLogEventType.PlayerKnockedOut,
+            eventType: GameLogEventType.PlayerEliminated,
             // For a 'knocked out' event, the 'eliminatedPlayer' is the one primarily affected.
             // If we want to show who 'acted' to knock them out, that info is in the 'Reason' or prior logs.
             actingPlayerId: domainEvent.PlayerId, // The player who got knocked out is the subject.

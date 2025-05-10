@@ -64,7 +64,22 @@ public class GetSpectatorGameStateQueryHandler : IRequestHandler<GetSpectatorGam
                     RevealedCardId = log.RevealedCardId,
                     RevealedCardType = log.RevealedCardType,
                     IsPrivate = log.IsPrivate, // Will be false here
-                    Message = log.Message
+                    Message = log.Message,
+
+                    PlayedCardType = log.PlayedCardType,
+                    GuessedCardType = log.GuessedCardType,
+                    WasGuessCorrect = log.WasGuessCorrect,
+
+                    Player1ComparedCardType = log.Player1ComparedCardType,
+                    Player2ComparedCardType = log.Player2ComparedCardType,
+                    BaronLoserPlayerId = log.BaronLoserPlayerId,
+
+                    DiscardedByPrinceCardType = log.DiscardedByPrinceCardType,
+                    
+                    FizzleReason = log.FizzleReason,
+                    
+                    WinnerPlayerId = log.WinnerPlayerId,
+                    RoundEndReason = log.RoundEndReason
                 })
                 .OrderByDescending(log => log.Timestamp) // Ensure logs are newest first
                 .ToList()
