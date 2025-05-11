@@ -1,0 +1,9 @@
+<div class="guard-miss">
+  <span class="player-name">{{ logEntry.actingPlayerName }}</span>
+  <app-card [cardData]="{ id: '', type: CardType.Guard }" [isFaceDown]="false"></app-card>
+  <span class="icon">❌</span>
+  <span>missed</span>
+  <span class="player-name">{{ logEntry.targetPlayerName }}</span>
+  <span>(Guessed</span>
+  <app-card [cardData]="{ id: '', type: logEntry.guessedCardType ?? 0 }" [isFaceDown]="false"></app-card><span>)</span>
+</div>

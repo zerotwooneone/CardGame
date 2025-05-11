@@ -3,11 +3,43 @@ import { CommonModule, DatePipe } from '@angular/common';
 import { GameStateService } from '../../services/game-state.service';
 import { GameLogEntryDto } from '../../../../core/models/gameLogEntryDto';
 import { CARD_DETAILS_MAP } from '../card/CARD_DETAILS_MAP'; // For card names
+import { PriestEffectVisualizerComponent } from './visualizers/priest-effect-visualizer/priest-effect-visualizer.component';
+import { HandmaidProtectionVisualizerComponent } from './visualizers/handmaid-protection-visualizer/handmaid-protection-visualizer.component';
+import { EffectFizzledVisualizerComponent } from './visualizers/effect-fizzled-visualizer/effect-fizzled-visualizer.component';
+import { PlayerEliminatedVisualizerComponent } from './visualizers/player-eliminated-visualizer/player-eliminated-visualizer.component';
+import { BaronCompareVisualizerComponent } from './visualizers/baron-compare-visualizer/baron-compare-visualizer.component';
+import { PrinceDiscardVisualizerComponent } from './visualizers/prince-discard-visualizer/prince-discard-visualizer.component';
+import { KingTradeVisualizerComponent } from './visualizers/king-trade-visualizer/king-trade-visualizer.component';
+import { CountessDiscardVisualizerComponent } from './visualizers/countess-discard-visualizer/countess-discard-visualizer.component';
+import { RoundEndVisualizerComponent } from './visualizers/round-end-visualizer/round-end-visualizer.component';
+import { TokenAwardedVisualizerComponent } from './visualizers/token-awarded-visualizer/token-awarded-visualizer.component';
+import { GuardHitVisualizerComponent } from './visualizers/guard-hit-visualizer/guard-hit-visualizer.component';
+import { GuardMissVisualizerComponent } from './visualizers/guard-miss-visualizer/guard-miss-visualizer.component';
+import { RoundStartVisualizerComponent } from './visualizers/round-start-visualizer/round-start-visualizer.component';
+import { TurnStartVisualizerComponent } from './visualizers/turn-start-visualizer/turn-start-visualizer.component';
+import { CardPlayedVisualizerComponent } from './visualizers/card-played-visualizer/card-played-visualizer.component';
 
 @Component({
   selector: 'app-game-log',
   standalone: true,
-  imports: [CommonModule],
+  imports: [
+    CommonModule,
+    PriestEffectVisualizerComponent,
+    HandmaidProtectionVisualizerComponent,
+    EffectFizzledVisualizerComponent,
+    PlayerEliminatedVisualizerComponent,
+    BaronCompareVisualizerComponent,
+    PrinceDiscardVisualizerComponent,
+    KingTradeVisualizerComponent,
+    CountessDiscardVisualizerComponent,
+    RoundEndVisualizerComponent,
+    TokenAwardedVisualizerComponent,
+    GuardHitVisualizerComponent,
+    GuardMissVisualizerComponent,
+    RoundStartVisualizerComponent,
+    TurnStartVisualizerComponent,
+    CardPlayedVisualizerComponent
+  ],
   templateUrl: './game-log.component.html',
   styleUrls: ['./game-log.component.scss'],
   providers: [DatePipe], // Add DatePipe to providers

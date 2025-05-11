@@ -1,0 +1,25 @@
+:host {
+  display: contents; 
+  align-items: center;
+  gap: 8px; 
+}
+
+.player-name {
+  font-weight: bold;
+  white-space: nowrap;
+}
+
+.icon-medium {
+  width: 24px; 
+  height: 24px;
+  object-fit: contain;
+}
+
+/* Assuming app-card is a shared component, its styles might be global or encapsulated.
+   If you need to style app-card specifically within this context, you might do so here,
+   but prefer using ::ng-deep sparingly or ensuring app-card is flexible via inputs/CSS custom properties.
+app-card {
+  display: inline-block;
+  vertical-align: middle;
+}
+*/

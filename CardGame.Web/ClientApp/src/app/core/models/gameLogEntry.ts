@@ -1,5 +1,5 @@
 ﻿import {CardDto} from './cardDto';
-import {GameLogEntryType} from './gameLogEntryType';
+import {GameLogEntryType} from './cardType';
 
 export interface GameLogEntry {
   id: string; // Unique ID for the log entry (e.g., timestamp + random suffix)

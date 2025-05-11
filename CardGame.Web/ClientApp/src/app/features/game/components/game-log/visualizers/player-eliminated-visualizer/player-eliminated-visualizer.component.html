@@ -1,0 +1,9 @@
+<div class="player-eliminated">
+  <span class="player-name">{{ logEntry.actingPlayerId ? logEntry.targetPlayerName : logEntry.actingPlayerName }}</span>
+  <span class="icon">🚫</span>
+  <span>was eliminated</span>
+  <ng-container *ngIf="logEntry.cardResponsibleForElimination">
+    <span>by</span>
+    <app-card [cardData]="{ id: '', type: logEntry.cardResponsibleForElimination }" [isFaceDown]="false"></app-card>
+  </ng-container>
+</div>

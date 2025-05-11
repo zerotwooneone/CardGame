@@ -3,6 +3,23 @@
     Game log is currently empty.
   </div>
   <div *ngFor="let log of gameLogs(); trackBy: trackByLogId" class="log-entry">
-    <span [innerHTML]="formatLogMessage(log)"></span>
-  </div> 
+    <ng-container [ngSwitch]="log.eventType">
+      <app-card-played-visualizer *ngSwitchCase="0" [logEntry]="log"></app-card-played-visualizer>
+      <app-priest-effect-visualizer *ngSwitchCase="1" [logEntry]="log"></app-priest-effect-visualizer>
+      <app-handmaid-protection-visualizer *ngSwitchCase="2" [logEntry]="log"></app-handmaid-protection-visualizer>
+      <app-effect-fizzled-visualizer *ngSwitchCase="3" [logEntry]="log"></app-effect-fizzled-visualizer>
+      <app-player-eliminated-visualizer *ngSwitchCase="5" [logEntry]="log"></app-player-eliminated-visualizer>
+      <app-baron-compare-visualizer *ngSwitchCase="6" [logEntry]="log"></app-baron-compare-visualizer>
+      <app-prince-discard-visualizer *ngSwitchCase="7" [logEntry]="log"></app-prince-discard-visualizer>
+      <app-king-trade-visualizer *ngSwitchCase="9" [logEntry]="log"></app-king-trade-visualizer>
+      <app-countess-discard-visualizer *ngSwitchCase="10" [logEntry]="log"></app-countess-discard-visualizer>
+      <app-round-end-visualizer *ngSwitchCase="11" [logEntry]="log"></app-round-end-visualizer>
+      <app-token-awarded-visualizer *ngSwitchCase="13" [logEntry]="log"></app-token-awarded-visualizer>
+      <app-guard-hit-visualizer *ngSwitchCase="14" [logEntry]="log"></app-guard-hit-visualizer>
+      <app-guard-miss-visualizer *ngSwitchCase="15" [logEntry]="log"></app-guard-miss-visualizer>
+      <app-round-start-visualizer *ngSwitchCase="17" [logEntry]="log"></app-round-start-visualizer>
+      <app-turn-start-visualizer *ngSwitchCase="18" [logEntry]="log"></app-turn-start-visualizer>
+      <span *ngSwitchDefault [innerHTML]="formatLogMessage(log)"></span>
+    </ng-container>
+  </div>
 </div>

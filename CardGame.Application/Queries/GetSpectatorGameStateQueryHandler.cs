@@ -67,19 +67,34 @@ public class GetSpectatorGameStateQueryHandler : IRequestHandler<GetSpectatorGam
                     Message = log.Message,
 
                     PlayedCardType = log.PlayedCardType,
+                    PlayedCardValue = log.PlayedCardValue,
                     GuessedCardType = log.GuessedCardType,
+                    GuessedCardValue = log.GuessedCardValue,
                     WasGuessCorrect = log.WasGuessCorrect,
 
                     Player1ComparedCardType = log.Player1ComparedCardType,
+                    Player1ComparedCardValue = log.Player1ComparedCardValue,
                     Player2ComparedCardType = log.Player2ComparedCardType,
+                    Player2ComparedCardValue = log.Player2ComparedCardValue,
                     BaronLoserPlayerId = log.BaronLoserPlayerId,
 
                     DiscardedByPrinceCardType = log.DiscardedByPrinceCardType,
-                    
+                    DiscardedByPrinceCardValue = log.DiscardedByPrinceCardValue,
+                    CardResponsibleForElimination = log.CardResponsibleForElimination,
+
                     FizzleReason = log.FizzleReason,
-                    
+
                     WinnerPlayerId = log.WinnerPlayerId,
-                    RoundEndReason = log.RoundEndReason
+                    RoundEndReason = log.RoundEndReason,
+                    RoundPlayerSummaries = log.RoundPlayerSummaries != null ? log.RoundPlayerSummaries.Select(s => new GameLogEntryDto.GameLogPlayerRoundSummaryDto {
+                        PlayerId = s.PlayerId,
+                        PlayerName = s.PlayerName,
+                        CardsHeld = s.CardsHeld,
+                        Score = s.Score,
+                        WasActive = s.WasActive
+                    }).ToList() : null,
+                    TokensHeld = log.TokensHeld,
+                    CardDrawnType = log.CardDrawnType
                 })
                 .OrderByDescending(log => log.Timestamp) // Ensure logs are newest first
                 .ToList()

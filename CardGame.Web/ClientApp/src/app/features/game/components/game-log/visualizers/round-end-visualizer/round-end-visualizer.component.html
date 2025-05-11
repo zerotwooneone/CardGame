@@ -1,0 +1,12 @@
+<div class="round-end">
+  <span class="icon">🏁</span>
+  <span>Round ended</span>
+  <ng-container *ngIf="logEntry.winnerPlayerId">
+    <span>- Winner:</span>
+    <span class="player-name">{{ logEntry.winnerPlayerId }}</span>
+  </ng-container>
+  <ng-container *ngIf="!logEntry.winnerPlayerId">
+    <span>- It's a draw!</span>
+  </ng-container>
+  <span *ngIf="logEntry.roundEndReason">({{ logEntry.roundEndReason }})</span>
+</div>
