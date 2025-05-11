@@ -1,14 +1,24 @@
-<div class="baron-compare">
-  <span class="player-name">{{ logEntry.actingPlayerName }}</span> played Baron and compared with <span class="player-name">{{ logEntry.targetPlayerName }}</span>.
-  <app-card [cardData]="{ id: '', type: logEntry.player1ComparedCardValue ?? 0 }" [isFaceDown]="false" (infoClicked)="onCardInfoClicked($event)"></app-card>
-  <span class="icon">⚔️</span>
-  <app-card [cardData]="{ id: '', type: logEntry.player2ComparedCardValue ?? 0 }" [isFaceDown]="false" (infoClicked)="onCardInfoClicked($event)"></app-card>
-  <ng-container *ngIf="logEntry.baronLoserPlayerId">
-    <span class="icon">🏆</span>
-    <span>{{ logEntry.baronLoserPlayerId === logEntry.actingPlayerId ? logEntry.targetPlayerName : logEntry.actingPlayerName }} wins</span>
+<div class="log-visualizer-entry" *ngIf="logEntry">
+  <div class="player-card-combo">
+    <span class="player-name-log">{{ logEntry.actingPlayerName }}</span>
+    <app-card [cardData]="{ id: '', type: CardType.Baron }" [isFaceDown]="false" (infoClicked)="onBaronCardInfoClicked()"></app-card>
+  </div>
+  <span>compared with</span>
+  <span class="player-name-log">{{ logEntry.targetPlayerName }}</span>.
+  <span>Cards:</span>
+  <app-card [cardData]="{ id: '', type: logEntry.player1ComparedCardValue ?? 0 }" [isFaceDown]="false" (infoClicked)="onPlayer1ComparedCardInfoClicked()"></app-card>
+  <img src="assets/icons/swords.svg" alt="vs" class="log-icon-small" /> 
+  <app-card [cardData]="{ id: '', type: logEntry.player2ComparedCardValue ?? 0 }" [isFaceDown]="false" (infoClicked)="onPlayer2ComparedCardInfoClicked()"></app-card>.
+
+  <span>Result:</span>
+  <ng-container *ngIf="logEntry.baronLoserPlayerId !== undefined && logEntry.baronLoserPlayerId !== null">
+    <span class="player-name-log">
+      {{ logEntry.baronLoserPlayerId === logEntry.actingPlayerId ? logEntry.targetPlayerName : logEntry.actingPlayerName }}
+    </span>
+    <img src="assets/icons/trophy.svg" alt="wins" class="log-icon-small" /> 
   </ng-container>
-  <ng-container *ngIf="!logEntry.baronLoserPlayerId">
-    <span class="icon">🤝</span>
-    <span>It's a tie</span>
+  <ng-container *ngIf="logEntry.baronLoserPlayerId === undefined || logEntry.baronLoserPlayerId === null">
+    <span>Tie</span>
+    <img src="assets/icons/handshake.svg" alt="tie" class="log-icon-small" /> 
   </ng-container>
 </div>

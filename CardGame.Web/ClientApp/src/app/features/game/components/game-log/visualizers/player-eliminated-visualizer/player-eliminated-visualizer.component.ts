@@ -22,4 +22,10 @@ export class PlayerEliminatedVisualizerComponent {
       this.uiInteractionService.requestScrollToCardReference(cardType);
     }
   }
+
+  onResponsibleCardInfoClicked() {
+    if (this.logEntry.cardResponsibleForEliminationValue !== undefined && this.logEntry.cardResponsibleForEliminationValue !== null) {
+      this.uiInteractionService.requestScrollToCardReference(this.logEntry.cardResponsibleForEliminationValue);
+    }
+  }
 }

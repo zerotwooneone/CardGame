@@ -1,25 +1,13 @@
+@import '../visualizer.scss';
+
 :host {
-  display: contents; 
-  align-items: center;
-  gap: 8px; 
+  @extend %visualizer-host;
 }
 
-.player-name {
-  font-weight: bold;
-  white-space: nowrap;
-}
-
-.icon-medium {
-  width: 24px; 
-  height: 24px;
-  object-fit: contain;
-}
-
-/* Assuming app-card is a shared component, its styles might be global or encapsulated.
-   If you need to style app-card specifically within this context, you might do so here,
-   but prefer using ::ng-deep sparingly or ensuring app-card is flexible via inputs/CSS custom properties.
-app-card {
-  display: inline-block;
-  vertical-align: middle;
-}
-*/
+// Specific styles for app-card within this visualizer can remain if needed.
+// All other styles like .priest-effect-container, .actor-info, .target-info, .player-name, .icon-medium
+// should now be removed as they are handled by common classes/extends.
+// app-card {
+//   // Example: make cards a bit smaller in the log
+//   // transform: scale(0.8);
+// }

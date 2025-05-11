@@ -1,9 +1,10 @@
-<div class="guard-miss">
-  <span class="player-name">{{ logEntry.actingPlayerName }}</span>
-  <app-card [cardData]="{ id: '', type: CardType.Guard }" [isFaceDown]="false" (infoClicked)="onGuardCardInfoClicked()"></app-card>
-  <span class="icon">❌</span>
+<div class="log-visualizer-entry" *ngIf="logEntry">
+  <div class="player-card-combo">
+    <span class="player-name-log">{{ logEntry.actingPlayerName }}</span>
+    <app-card [cardData]="{ id: '', type: CardType.Guard }" [isFaceDown]="false" (infoClicked)="onGuardCardInfoClicked()"></app-card>
+  </div>
   <span>missed</span>
-  <span class="player-name">{{ logEntry.targetPlayerName }}</span>
-  <span>(Guessed</span>
-  <app-card [cardData]="{ id: '', type: logEntry.guessedCardValue ?? 0 }" [isFaceDown]="false" (infoClicked)="onGuessedCardInfoClicked()"></app-card><span>)</span>
+  <span class="player-name-log">{{ logEntry.targetPlayerName }}</span>.
+  <span>Guessed:</span>
+  <app-card [cardData]="{ id: '', type: logEntry.guessedCardValue ?? 0 }" [isFaceDown]="false" (infoClicked)="onGuessedCardInfoClicked()"></app-card>
 </div>

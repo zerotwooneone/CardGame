@@ -1,8 +1,11 @@
-<div class="player-eliminated">
-  <span class="player-name">{{ logEntry.actingPlayerName }}</span> was eliminated.
-  <ng-container *ngIf="logEntry.cardResponsibleForEliminationValue">
-    (by <app-card [cardData]="{ id: '', type: logEntry.cardResponsibleForEliminationValue }" 
-                  [isFaceDown]="false"
-                  (infoClicked)="onCardInfoClicked($event)"></app-card>)
+<div class="log-visualizer-entry" *ngIf="logEntry">
+  <span class="player-name-log">{{ logEntry.actingPlayerName }}</span>
+  <span>was eliminated</span>
+  <img src="assets/icons/skull.svg" alt="eliminated" class="log-icon-small" />
+  <ng-container *ngIf="logEntry.cardResponsibleForEliminationValue !== undefined && logEntry.cardResponsibleForEliminationValue !== null">
+    <span>. By:</span>
+    <app-card [cardData]="{ id: '', type: logEntry.cardResponsibleForEliminationValue }" 
+              [isFaceDown]="false"
+              (infoClicked)="onResponsibleCardInfoClicked()"></app-card>
   </ng-container>
 </div>

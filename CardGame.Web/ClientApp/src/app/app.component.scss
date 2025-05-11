@@ -23,12 +23,16 @@
 }
 
 .card-reference-sidenav {
-  width: 350px; // Increased width for better text wrapping
-  max-width: 90vw; // Ensure it doesn't take too much space on small screens
-  // Use theme variables for background
-  // This will be automatically applied if your global theme is set up correctly.
-  // background-color: var(--mat-sidenav-container-background-color); // Sidenav container background
-  // color: var(--mat-sidenav-content-text-color); // Sidenav content text color
+  max-width: 75vw; 
+  min-width: 300px; // A reasonable min-width so it doesn't get too squished
+  width: 450px; // A default width if 75vw is very large
+
+  // Ensure content within the sidenav scrolls if it overflows, especially vertically
+  // The app-card-reference-sheet itself might handle its internal scrolling, 
+  // but this is a good general practice for the sidenav container.
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto; 
 
   // Ensure content within sidenav is scrollable if it overflows
   app-card-reference-sheet {
@@ -36,6 +40,11 @@
     flex-direction: column;
     height: 100%;
     width: 100%; // Make sure it uses the full width of the sidenav
-    overflow-y: auto; // Allow internal scrolling if content is too long
   }
+}
+
+::ng-deep .card-reference-sidenav app-card-reference-sheet {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
 }

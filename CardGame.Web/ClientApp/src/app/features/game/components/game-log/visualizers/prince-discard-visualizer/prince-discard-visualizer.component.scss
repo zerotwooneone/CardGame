@@ -1,7 +1,10 @@
-.prince-discard {
-  display: flex;
-  align-items: center;
-  gap: 8px;
+@import '../visualizer.scss';
+
+:host {
+  @extend %visualizer-host;
 }
-.player-name { font-weight: bold; }
-.icon { font-size: 22px; }
+
+// Optional: Adjust app-card sizing if needed for the log
+// app-card {
+//   transform: scale(0.8); // Example: make cards a bit smaller
+// }

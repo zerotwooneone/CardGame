@@ -1,7 +1,5 @@
-.baron-compare {
-  display: flex;
-  align-items: center;
-  gap: 8px;
+@import '../visualizer.scss';
+
+:host {
+  @extend %visualizer-host;
 }
-.player-name { font-weight: bold; }
-.icon { font-size: 22px; }

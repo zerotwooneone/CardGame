@@ -1,6 +1,17 @@
+:host {
+  display: block;
+  width: 100%; // Ensure it takes up the full width of its container
+}
+
 .round-start {
   display: flex;
   align-items: center;
   gap: 8px;
 }
 .icon { font-size: 22px; }
+
+.round-start-message {
+  font-weight: bold;
+  color: var(--app-primary-color, #007bff); // Using a CSS variable for color
+  padding: 4px 0;
+}

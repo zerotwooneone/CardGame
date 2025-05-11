@@ -1,0 +1,60 @@
+
+// Common styles for game log visualizer components
+
+// For the host element of each visualizer component
+// This will be used in each visualizer's SCSS like:
+// :host {
+//   @extend %visualizer-host;
+// }
+%visualizer-host {
+  display: block;
+  width: 100%;
+}
+
+// Main container within each visualizer
+// e.g., <div class="log-visualizer-entry">...</div>
+.log-visualizer-entry {
+  display: flex;
+  align-items: center; // Or flex-start if that's more common
+  gap: 8px;
+  flex-wrap: wrap;
+  padding: 4px 0;
+}
+
+// For grouping player name and their card
+// e.g., <div class="player-card-combo">...</div>
+.player-card-combo {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start; // Or center
+  gap: 2px;
+}
+
+// Common styling for player names within visualizers
+.player-name-log {
+  font-weight: bold;
+  font-size: 0.9em;
+  color: #555; // Consider using a CSS variable from your theme if available
+  white-space: nowrap;
+}
+
+// Common styling for icons used in visualizers
+.log-icon-medium {
+  width: 24px;
+  height: 24px;
+  object-fit: contain;
+  flex-shrink: 0;
+}
+
+.log-icon-small {
+  width: 18px;
+  height: 18px;
+  object-fit: contain;
+  flex-shrink: 0;
+}
+
+// Optional: Adjustments for app-card when used in the log
+// .log-visualizer-entry app-card {
+//   transform: scale(0.85);
+//   transform-origin: left center;
+// }
