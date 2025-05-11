@@ -1,10 +1,10 @@
 import { CommonModule } from '@angular/common';
-import {Component, EventEmitter, inject, OnInit, Output} from '@angular/core';
+import {Component, EventEmitter, inject, OnInit, Output, ViewChild} from '@angular/core';
 import {MatListModule} from '@angular/material/list';
 import {MatIconModule} from '@angular/material/icon';
 import {MatDividerModule} from '@angular/material/divider';
 import {MatButtonModule} from '@angular/material/button';
-import {MatTabsModule} from '@angular/material/tabs';
+import {MatTabsModule, MatTabGroup} from '@angular/material/tabs';
 import {CardReferenceService} from '../../../core/services/card-reference.service';
 import {CardReferenceItem} from '../../../core/models/cardReferenceItem';
 import {GameLogComponent} from '../../../features/game/components/game-log/game-log.component';
@@ -27,6 +27,7 @@ import {GameLogComponent} from '../../../features/game/components/game-log/game-
 export class CardReferenceSheetComponent implements OnInit {
   private cardReferenceService = inject(CardReferenceService);
 
+  @ViewChild('tabGroup') tabGroup!: MatTabGroup;
   @Output() closeClicked = new EventEmitter<void>();
 
   cardReferences: CardReferenceItem[] = [];
@@ -37,6 +38,11 @@ export class CardReferenceSheetComponent implements OnInit {
 
   onClose(): void {
     this.closeClicked.emit();
+  }
+
+  // Method to programmatically select a tab
+  selectCardReferenceTab(): void {
+    this.tabGroup.selectedIndex = 0;
   }
 
   // Helper for ngFor trackBy

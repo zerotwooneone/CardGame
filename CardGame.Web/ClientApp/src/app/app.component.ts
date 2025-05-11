@@ -31,6 +31,7 @@ export class AppComponent implements OnInit, OnDestroy {
   title = 'CardGame';
 
   @ViewChild('cardRefSidenav') cardRefSidenav!: MatSidenav;
+  @ViewChild(CardReferenceSheetComponent) cardReferenceSheet!: CardReferenceSheetComponent;
 
   // Inject UiInteractionService
   private uiInteractionService = inject(UiInteractionService);
@@ -60,6 +61,9 @@ export class AppComponent implements OnInit, OnDestroy {
    * @param cardRank The rank of the card to scroll to.
    */
   private openAndScrollToCardReference(cardRank: number): void {
+    // Ensure the "Cards" tab is selected before opening/scrolling
+    this.cardReferenceSheet?.selectCardReferenceTab(); // 0 is assumed to be the 'Cards' tab index
+
     this.cardRefSidenav.open().then((result) => {
       // The promise resolves when the open animation is complete ('open')
       // or if it was already open ('open').
