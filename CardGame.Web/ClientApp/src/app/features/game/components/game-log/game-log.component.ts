@@ -5,8 +5,8 @@ import {
   Signal,
   ElementRef,
   ViewChild,
-  AfterViewChecked,
-  effect
+  effect,
+  computed
 } from '@angular/core';
 import { CommonModule, DatePipe } from '@angular/common';
 import { GameStateService } from '../../services/game-state.service';
@@ -27,6 +27,9 @@ import { GuardMissVisualizerComponent } from './visualizers/guard-miss-visualize
 import { RoundStartVisualizerComponent } from './visualizers/round-start-visualizer/round-start-visualizer.component';
 import { TurnStartVisualizerComponent } from './visualizers/turn-start-visualizer/turn-start-visualizer.component';
 import { CardPlayedVisualizerComponent } from './visualizers/card-played-visualizer/card-played-visualizer.component';
+
+// Define the allowed event types
+const ALLOWED_EVENT_TYPES = new Set([0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18]);
 
 @Component({
   selector: 'app-game-log',
@@ -54,7 +57,7 @@ import { CardPlayedVisualizerComponent } from './visualizers/card-played-visuali
   providers: [DatePipe],
   changeDetection: ChangeDetectionStrategy.OnPush
 })
-export class GameLogComponent implements AfterViewChecked {
+export class GameLogComponent {
   private datePipe = inject(DatePipe);
 
   @ViewChild('logContainer') private logContainer!: ElementRef;
@@ -63,17 +66,17 @@ export class GameLogComponent implements AfterViewChecked {
   readonly gameLogs: Signal<GameLogEntryDto[]>;
 
   constructor() {
-    // Effect to scroll to bottom when gameLogs change
+    // Now, gameLogs is a computed signal
+    this.gameLogs = computed(() => {
+      const allLogs = this.gameStateService.gameLogs(); // Get all logs from the service
+      return allLogs.filter(log => ALLOWED_EVENT_TYPES.has(log.eventType));
+    });
+
+    // Effect to scroll to bottom when gameLogs (the computed signal) change
     effect(() => {
       const l =this.gameLogs(); // Access the signal to trigger the effect on change
       this.scrollToBottom();
     });
-    this.gameLogs = this.gameStateService.gameLogs;
-  }
-
-  ngAfterViewChecked(): void {
-    // Initial scroll to bottom after view is checked
-    this.scrollToBottom();
   }
 
   private scrollToBottom(): void {

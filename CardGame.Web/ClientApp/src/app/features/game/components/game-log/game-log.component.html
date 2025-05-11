@@ -19,7 +19,7 @@
       <app-guard-miss-visualizer *ngSwitchCase="15" [logEntry]="log"></app-guard-miss-visualizer>
       <app-round-start-visualizer *ngSwitchCase="17" [logEntry]="log"></app-round-start-visualizer>
       <app-turn-start-visualizer *ngSwitchCase="18" [logEntry]="log"></app-turn-start-visualizer>
-      
+      <span *ngSwitchDefault [innerHTML]="formatLogMessage(log)"></span>
     </ng-container>
   </div>
 </div>
