@@ -15,32 +15,27 @@ public class GameLogEntryDto
     public Guid? TargetPlayerId { get; set; }
     public string? TargetPlayerName { get; set; }
     public Guid? RevealedCardId { get; set; }
-    public CardType? RevealedCardType { get; set; }
+    public int? RevealedCardValue { get; set; }
     public bool IsPrivate { get; set; }
     public string? Message { get; set; }
 
     // --- Structured Properties ---
-    public CardType? PlayedCardType { get; set; }
     public int? PlayedCardValue { get; set; }
 
     // For Guard Guess
-    public CardType? GuessedCardType { get; set; }
     public int? GuessedCardValue { get; set; }
     public bool? WasGuessCorrect { get; set; }
 
     // For Baron Comparison
-    public CardType? Player1ComparedCardType { get; set; }
     public int? Player1ComparedCardValue { get; set; }
-    public CardType? Player2ComparedCardType { get; set; }
     public int? Player2ComparedCardValue { get; set; }
     public Guid? BaronLoserPlayerId { get; set; }
 
     // For Prince Discard
-    public CardType? DiscardedByPrinceCardType { get; set; }
     public int? DiscardedByPrinceCardValue { get; set; }
 
     // For Eliminations
-    public CardType? CardResponsibleForElimination { get; set; }
+    public int? CardResponsibleForEliminationValue { get; set; }
 
     // For Fizzled Effects
     public string? FizzleReason { get; set; }
@@ -48,17 +43,6 @@ public class GameLogEntryDto
     // For Round/Game End
     public Guid? WinnerPlayerId { get; set; }
     public string? RoundEndReason { get; set; }
-    public List<GameLogPlayerRoundSummaryDto>? RoundPlayerSummaries { get; set; }
     public int? TokensHeld { get; set; }
-    public CardType? CardDrawnType { get; set; }
-
-    // --- Nested DTO for player summaries ---
-    public class GameLogPlayerRoundSummaryDto
-    {
-        public Guid PlayerId { get; set; }
-        public string PlayerName { get; set; } = string.Empty;
-        public List<CardType> CardsHeld { get; set; } = new List<CardType>();
-        public int Score { get; set; }
-        public bool WasActive { get; set; }
-    }
+    public int? CardDrawnValue { get; set; }
 }

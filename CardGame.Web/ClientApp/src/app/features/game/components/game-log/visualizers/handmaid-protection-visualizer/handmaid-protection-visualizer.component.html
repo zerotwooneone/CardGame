@@ -1,6 +1,6 @@
 <div class="handmaid-protection">
   <span class="player-name">{{ logEntry.actingPlayerName }}</span>
-  <app-card [cardData]="{ id: '', type: CardType.Handmaid }" [isFaceDown]="false"></app-card>
+  <app-card [cardData]="{ id: '', type: CardType.Handmaid }" [isFaceDown]="false" (infoClicked)="onCardInfoClicked($event)"></app-card>
   <span class="icon">🛡️</span>
   <span>is protected by Handmaid.</span>
 </div>

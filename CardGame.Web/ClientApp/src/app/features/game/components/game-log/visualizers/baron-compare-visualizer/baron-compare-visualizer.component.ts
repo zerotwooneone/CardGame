@@ -1,7 +1,8 @@
-import { Component, Input } from '@angular/core';
+import { Component, Input, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import {CardComponent} from '../../../card/card.component';
 import {GameLogEntryDto} from '../../../../../../core/models/gameLogEntryDto';
+import { UiInteractionService } from '../../../../../../core/services/ui-interaction-service.service';
 
 @Component({
   selector: 'app-baron-compare-visualizer',
@@ -12,4 +13,11 @@ import {GameLogEntryDto} from '../../../../../../core/models/gameLogEntryDto';
 })
 export class BaronCompareVisualizerComponent {
   @Input() logEntry!: GameLogEntryDto;
+  private uiInteractionService = inject(UiInteractionService);
+
+  onCardInfoClicked(cardType: number): void {
+    if (cardType) {
+      this.uiInteractionService.requestScrollToCardReference(cardType);
+    }
+  }
 }

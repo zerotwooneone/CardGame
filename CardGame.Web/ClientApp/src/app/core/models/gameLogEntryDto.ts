@@ -1,5 +1,5 @@
 import { GameLogEventType } from './gameLogEventType';
-import { CardType } from './cardType';
+import {CardType} from './cardType';
 
 export interface GameLogEntryDto {
   id: string;
@@ -11,42 +11,28 @@ export interface GameLogEntryDto {
   targetPlayerId?: string;
   targetPlayerName?: string;
   revealedCardId?: string;
-  revealedCardType?: CardType;
+  revealedCardValue?: CardType;
   isPrivate: boolean;
   message?: string;
 
   // Structured properties
-  playedCardType?: CardType;
-  playedCardValue?: number;
+  playedCardValue?: CardType;
 
-  guessedCardType?: CardType;
-  guessedCardValue?: number;
+  guessedCardValue?: CardType;
   wasGuessCorrect?: boolean;
 
-  player1ComparedCardType?: CardType;
-  player1ComparedCardValue?: number;
-  player2ComparedCardType?: CardType;
-  player2ComparedCardValue?: number;
+  player1ComparedCardValue?: CardType;
+  player2ComparedCardValue?: CardType;
   baronLoserPlayerId?: string;
 
-  discardedByPrinceCardType?: CardType;
-  discardedByPrinceCardValue?: number;
+  discardedByPrinceCardValue?: CardType;
 
-  cardResponsibleForElimination?: CardType;
+  cardResponsibleForEliminationValue?: CardType;
 
   fizzleReason?: string;
 
   winnerPlayerId?: string;
   roundEndReason?: string;
-  roundPlayerSummaries?: GameLogPlayerRoundSummaryDto[];
   tokensHeld?: number;
-  cardDrawnType?: CardType;
-}
-
-export interface GameLogPlayerRoundSummaryDto {
-  playerId: string;
-  playerName: string;
-  cardsHeld: CardType[];
-  score: number;
-  wasActive: boolean;
+  cardDrawnValue?: CardType;
 }

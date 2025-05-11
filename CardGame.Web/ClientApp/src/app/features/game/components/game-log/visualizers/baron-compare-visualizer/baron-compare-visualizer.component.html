@@ -1,9 +1,8 @@
 <div class="baron-compare">
-  <span class="player-name">{{ logEntry.actingPlayerName }}</span>
-  <app-card [cardData]="{ id: '', type: logEntry.player1ComparedCardType ?? 0 }" [isFaceDown]="false"></app-card>
+  <span class="player-name">{{ logEntry.actingPlayerName }}</span> played Baron and compared with <span class="player-name">{{ logEntry.targetPlayerName }}</span>.
+  <app-card [cardData]="{ id: '', type: logEntry.player1ComparedCardValue ?? 0 }" [isFaceDown]="false" (infoClicked)="onCardInfoClicked($event)"></app-card>
   <span class="icon">⚔️</span>
-  <span class="player-name">{{ logEntry.targetPlayerName }}</span>
-  <app-card [cardData]="{ id: '', type: logEntry.player2ComparedCardType ?? 0 }" [isFaceDown]="false"></app-card>
+  <app-card [cardData]="{ id: '', type: logEntry.player2ComparedCardValue ?? 0 }" [isFaceDown]="false" (infoClicked)="onCardInfoClicked($event)"></app-card>
   <ng-container *ngIf="logEntry.baronLoserPlayerId">
     <span class="icon">🏆</span>
     <span>{{ logEntry.baronLoserPlayerId === logEntry.actingPlayerId ? logEntry.targetPlayerName : logEntry.actingPlayerName }} wins</span>

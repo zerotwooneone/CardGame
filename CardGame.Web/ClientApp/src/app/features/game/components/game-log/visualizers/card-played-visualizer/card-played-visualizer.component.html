@@ -1,5 +1,7 @@
 <div class="card-played">
   <span class="player-name">{{ logEntry.actingPlayerName }}</span>
   <span>played</span>
-  <app-card [cardData]="{ id: '', type: logEntry.playedCardType ?? 0 }" [isFaceDown]="false"></app-card>
+  <app-card [cardData]="{ id: '', type: logEntry.playedCardValue ?? 0 }"
+            [isFaceDown]="false"
+            (infoClicked)="onCardInfoClicked($event)"></app-card>
 </div>

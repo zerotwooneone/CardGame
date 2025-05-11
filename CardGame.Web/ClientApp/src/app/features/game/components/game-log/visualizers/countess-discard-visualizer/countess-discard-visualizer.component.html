@@ -1,5 +1,5 @@
 <div class="countess-discard">
   <span class="player-name">{{ logEntry.actingPlayerName }}</span>
-  <app-card [cardData]="{ id: '', type: CardType.Countess }" [isFaceDown]="false"></app-card>
+  <app-card [cardData]="{ id: '', type: CardType.Countess }" [isFaceDown]="false" (infoClicked)="onCardInfoClicked($event)"></app-card>
   <span>discarded the Countess</span>
 </div>

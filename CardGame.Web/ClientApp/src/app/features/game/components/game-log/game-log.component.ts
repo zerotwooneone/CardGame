@@ -90,7 +90,7 @@ export class GameLogComponent implements AfterViewChecked {
     let message = `[${this.datePipe.transform(log.timestamp, 'HH:mm:ss')}] `;
     const actingPlayerName = log.actingPlayerName === 'Game' ? 'Game' : `Player ${log.actingPlayerName}`;
     const targetPlayerName = log.targetPlayerName ? `Player ${log.targetPlayerName}` : '';
-    const revealedCardName = log.revealedCardType ? CARD_DETAILS_MAP[log.revealedCardType]?.name : '';
+    const revealedCardName = log.revealedCardValue ? CARD_DETAILS_MAP[log.revealedCardValue]?.name : '';
 
     if (log.message) {
       // For generic messages, try to replace placeholders if any
