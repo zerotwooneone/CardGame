@@ -7,7 +7,7 @@
   <span class="player-name-log">{{ logEntry.targetPlayerName }}</span>.
   <span>Cards:</span>
   <app-card [cardData]="{ id: '', type: logEntry.player1ComparedCardValue ?? 0 }" [isFaceDown]="false" (infoClicked)="onPlayer1ComparedCardInfoClicked()"></app-card>
-  <img src="assets/icons/swords.svg" alt="vs" class="log-icon-small" /> 
+  <span class="log-emoji">⚔️</span> 
   <app-card [cardData]="{ id: '', type: logEntry.player2ComparedCardValue ?? 0 }" [isFaceDown]="false" (infoClicked)="onPlayer2ComparedCardInfoClicked()"></app-card>.
 
   <span>Result:</span>
@@ -15,10 +15,10 @@
     <span class="player-name-log">
       {{ logEntry.baronLoserPlayerId === logEntry.actingPlayerId ? logEntry.targetPlayerName : logEntry.actingPlayerName }}
     </span>
-    <img src="assets/icons/trophy.svg" alt="wins" class="log-icon-small" /> 
+    <span class="log-emoji">🏆</span> 
   </ng-container>
   <ng-container *ngIf="logEntry.baronLoserPlayerId === undefined || logEntry.baronLoserPlayerId === null">
     <span>Tie</span>
-    <img src="assets/icons/handshake.svg" alt="tie" class="log-icon-small" /> 
+    <span class="log-emoji">🤝</span> 
   </ng-container>
 </div>

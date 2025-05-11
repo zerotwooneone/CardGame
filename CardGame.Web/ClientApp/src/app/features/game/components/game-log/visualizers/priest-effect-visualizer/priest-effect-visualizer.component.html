@@ -3,7 +3,8 @@
     <span class="player-name-log">{{ logEntry.actingPlayerName }}</span>
     <app-card [cardData]="{ id: '', type: CardType.Priest }" [isFaceDown]="false" (infoClicked)="onPriestCardInfoClicked()"></app-card>
   </div>
-  <img src="assets/icons/eye.svg" alt="looks at" class="log-icon-medium" />
+  <span class="log-emoji">👀</span>
+  <span class="log-text"> at </span>
   <div class="player-card-combo">
     <span class="player-name-log">{{ logEntry.targetPlayerName }}'s hand:</span>
     <ng-container *ngIf="canSeeRevealedCard && logEntry.revealedCardValue !== undefined && logEntry.revealedCardValue !== null">

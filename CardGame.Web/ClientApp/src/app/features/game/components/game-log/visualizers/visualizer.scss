@@ -58,3 +58,11 @@
 //   transform: scale(0.85);
 //   transform-origin: left center;
 // }
+
+.log-emoji {
+  font-size: 1.2em; // Default size, can be overridden by specific visualizer if needed
+  line-height: 1;
+  flex-shrink: 0;   // Prevent shrinking in flex containers
+  // Add margin or padding if emojis need more spacing around them
+  // margin: 0 2px;
+}
