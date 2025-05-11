@@ -6,7 +6,7 @@ import {MatMenuModule} from '@angular/material/menu';
 import {MatDividerModule} from '@angular/material/divider';
 import {MatSnackBar, MatSnackBarModule} from '@angular/material/snack-bar';
 import {AuthService} from '../../../core/services/auth.service';
-import { Router } from '@angular/router';
+import { Router, RouterModule } from '@angular/router';
 import { UserInfo } from '../../../core/models/userInfo';
 import {ClipboardModule, Clipboard} from '@angular/cdk/clipboard';
 
@@ -20,7 +20,8 @@ import {ClipboardModule, Clipboard} from '@angular/cdk/clipboard';
     MatMenuModule,
     MatDividerModule,
     MatSnackBarModule,
-    ClipboardModule
+    ClipboardModule,
+    RouterModule
   ],
   templateUrl: './user-widget.component.html',
   styleUrls: ['./user-widget.component.scss'],
