@@ -12,7 +12,7 @@ import { GameLogEntryDto } from '../../../core/models/gameLogEntryDto'; // Impor
 
 @Injectable({
   // Provide locally within the game feature or root if needed elsewhere
-  providedIn: 'any'
+  providedIn: 'root'
 })
 export class GameStateService implements OnDestroy {
 
@@ -29,13 +29,10 @@ export class GameStateService implements OnDestroy {
   public playerHand: Signal<CardDto[]> = this.playerHandSignal.asReadonly();
   public isLoading: Signal<boolean> = this.isLoadingState.asReadonly();
   public error: Signal<string | null> = this.errorState.asReadonly();
-  public gameLogs: Signal<GameLogEntryDto[]> = computed(() => { // Modified gameLogs computation
+  public gameLogs: Signal<GameLogEntryDto[]> = computed(() => {
     const state = this.combinedStateSignal();
-    if (state && 'gameLog' in state && Array.isArray(state.gameLog)) { // PlayerGameStateDto
+    if (state && state.gameLog && Array.isArray(state.gameLog)) {
       return state.gameLog;
-    }
-    if (state && 'logEntries' in state && Array.isArray(state.logEntries)) { // SpectatorGameStateDto
-      return state.logEntries;
     }
     return [];
   });
@@ -129,7 +126,7 @@ export class GameStateService implements OnDestroy {
     // Subscribe to spectator state updates
     this.spectatorStateSubscription = this.signalrService.spectatorGameStateReceived$.subscribe(
       state => { // state here is SpectatorGameStateDto
-        console.log('GameStateService: Received spectator state update via SignalR.');
+        console.log(`GameStateService Received spectator state update via SignalR.`);
         this.combinedStateSignal.set(state); // Update combinedStateSignal
       }
     );

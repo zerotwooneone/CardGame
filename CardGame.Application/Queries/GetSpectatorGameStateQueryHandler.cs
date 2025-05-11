@@ -50,7 +50,7 @@ public class GetSpectatorGameStateQueryHandler : IRequestHandler<GetSpectatorGam
                 TokensWon = player.TokensWon,
                 IsProtected = player.IsProtected
             }).ToList(),
-            LogEntries = game.LogEntries
+            GameLog = game.LogEntries
                 .Where(log => !log.IsPrivate) // Filter out private logs for spectator view
                 .Select(log => new GameLogEntryDto
                 {

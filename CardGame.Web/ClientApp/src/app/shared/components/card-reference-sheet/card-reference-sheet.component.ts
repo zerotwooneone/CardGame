@@ -4,8 +4,10 @@ import {MatListModule} from '@angular/material/list';
 import {MatIconModule} from '@angular/material/icon';
 import {MatDividerModule} from '@angular/material/divider';
 import {MatButtonModule} from '@angular/material/button';
+import {MatTabsModule} from '@angular/material/tabs';
 import {CardReferenceService} from '../../../core/services/card-reference.service';
 import {CardReferenceItem} from '../../../core/models/cardReferenceItem';
+import {GameLogComponent} from '../../../features/game/components/game-log/game-log.component';
 
 @Component({
   selector: 'app-card-reference-sheet',
@@ -15,7 +17,9 @@ import {CardReferenceItem} from '../../../core/models/cardReferenceItem';
     MatListModule,
     MatIconModule,
     MatDividerModule,
-    MatButtonModule
+    MatButtonModule,
+    MatTabsModule,
+    GameLogComponent
   ],
   templateUrl: './card-reference-sheet.component.html',
   styleUrls: ['./card-reference-sheet.component.scss']

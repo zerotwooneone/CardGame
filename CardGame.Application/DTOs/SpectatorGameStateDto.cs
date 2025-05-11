@@ -13,7 +13,7 @@ public class SpectatorGameStateDto
     public List<SpectatorPlayerDto> Players { get; set; } = new List<SpectatorPlayerDto>();
     public int DeckCardsRemaining { get; set; } // Count only
     public List<CardDto> DiscardPile { get; set; } = new List<CardDto>(); // Show discarded cards
-    public List<GameLogEntryDto> LogEntries { get; set; } = new List<GameLogEntryDto>(); // New: Game Logs
+    public List<GameLogEntryDto> GameLog { get; set; } = new List<GameLogEntryDto>(); // New: Game Logs
     // Note: SetAsideCard is omitted as its identity is secret.
     // Note: Player hands are omitted, only counts are shown via SpectatorPlayerDto.
 }

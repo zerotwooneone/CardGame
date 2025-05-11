@@ -1,4 +1,13 @@
-import { Component, ChangeDetectionStrategy, inject, Signal, ElementRef, ViewChild, AfterViewChecked, effect } from '@angular/core';
+import {
+  Component,
+  ChangeDetectionStrategy,
+  inject,
+  Signal,
+  ElementRef,
+  ViewChild,
+  AfterViewChecked,
+  effect
+} from '@angular/core';
 import { CommonModule, DatePipe } from '@angular/common';
 import { GameStateService } from '../../services/game-state.service';
 import { GameLogEntryDto } from '../../../../core/models/gameLogEntryDto';
@@ -42,23 +51,24 @@ import { CardPlayedVisualizerComponent } from './visualizers/card-played-visuali
   ],
   templateUrl: './game-log.component.html',
   styleUrls: ['./game-log.component.scss'],
-  providers: [DatePipe], // Add DatePipe to providers
+  providers: [DatePipe],
   changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class GameLogComponent implements AfterViewChecked {
-  private gameStateService = inject(GameStateService);
   private datePipe = inject(DatePipe);
 
   @ViewChild('logContainer') private logContainer!: ElementRef;
+  private readonly gameStateService = inject(GameStateService);
 
-  gameLogs: Signal<GameLogEntryDto[]> = this.gameStateService.gameLogs;
+  readonly gameLogs: Signal<GameLogEntryDto[]>;
 
   constructor() {
     // Effect to scroll to bottom when gameLogs change
     effect(() => {
-      this.gameLogs(); // Access the signal to trigger the effect on change
+      const l =this.gameLogs(); // Access the signal to trigger the effect on change
       this.scrollToBottom();
     });
+    this.gameLogs = this.gameStateService.gameLogs;
   }
 
   ngAfterViewChecked(): void {

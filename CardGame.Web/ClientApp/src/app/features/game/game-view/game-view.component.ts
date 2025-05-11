@@ -15,7 +15,7 @@ import { AuthService } from '../../../core/services/auth.service';
 import { PlayerDisplayComponent } from '../components/player-display/player-display.component';
 import { CardComponent } from '../components/card/card.component';
 import { ActionModalComponent } from '../components/action-modal/action-modal.component';
-import {SpectatorGameStateDto} from '../../../core/models/spectatorGameStateDto'; // Adjust pathm/class representation if needed for mapping
+import {SpectatorGameStateDto} from '../../../core/models/spectatorGameStateDto';
 import { CardDto } from '../../../core/models/cardDto';
 import {ActionModalData} from '../actionModalData';
 import {ActionModalResult} from '../actionModalResult';
@@ -26,7 +26,6 @@ import {UiInteractionService} from '../../../core/services/ui-interaction-servic
 import {RoundEndSummaryDto} from '../../../core/models/roundEndSummaryDto';
 import {PlayerHandInfoDto} from '../../../core/models/playerHandInfoDto';
 import {RoundSummaryDialogComponent} from '../components/round-summary-dialog/round-summary-dialog.component';
-import { GameLogComponent } from '../components/game-log/game-log.component';
 import {PlayerGameStateDto} from '../../../core/models/playerGameStateDto';
 
 const getCardNameFromValue = (value: number | undefined): string => {
@@ -46,8 +45,7 @@ const getCardNameFromValue = (value: number | undefined): string => {
     MatProgressSpinnerModule,
     MatTooltipModule,
     PlayerDisplayComponent,
-    CardComponent,
-    GameLogComponent
+    CardComponent
   ],
   templateUrl: './game-view.component.html',
   styleUrls: ['./game-view.component.scss'],
