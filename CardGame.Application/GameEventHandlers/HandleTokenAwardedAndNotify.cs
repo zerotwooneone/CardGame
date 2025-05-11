@@ -61,6 +61,6 @@ public class HandleTokenAwardedAndNotify : INotificationHandler<DomainEventNotif
         // The handler that triggered TokenAwarded (e.g., HandleRoundEnded) or a subsequent command handler
         // should be responsible for saving the game state.
 
-        await Task.CompletedTask;
+        await Task.CompletedTask.ConfigureAwait(false);
     }
 }

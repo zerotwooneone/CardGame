@@ -1,4 +1,4 @@
-﻿using CardGame.Application.Common.Interfaces;
+using CardGame.Application.Common.Interfaces;
 using CardGame.Domain.Common;
 using CardGame.Domain.Interfaces;
 using CardGame.Infrastructure.Persistance;
@@ -23,6 +23,7 @@ public static class DependencyInjection
         // When you switch to a real DB, you'd register your EF Core context (usually Scoped)
         // and the real repository implementation (usually Scoped).
         services.AddSingleton<IGameRepository, InMemoryGameRepository>();
+        services.AddSingleton<IDeckRepository, DeckRepository>();
 
         // Example for EF Core (when you add it later):
         /*

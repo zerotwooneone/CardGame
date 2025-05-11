@@ -23,18 +23,12 @@ public class HandlePlayerPlayedCardAndNotify : INotificationHandler<DomainEventN
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
     }
 
-    public async Task Handle(DomainEventNotification<PlayerPlayedCard> notification, CancellationToken cancellationToken)
+    public Task Handle(DomainEventNotification<PlayerPlayedCard> notification, CancellationToken cancellationToken)
     {
         var domainEvent = notification.DomainEvent;
         _logger.LogDebug("Handling PlayerPlayedCard event for Game {GameId}. Player {PlayerId} played {CardType}. Logging is now done in Game.PlayCard.", 
             domainEvent.GameId, domainEvent.PlayerId, domainEvent.PlayedCard.ToString());
-
-        // Logic for fetching game, players, and creating/adding GameLogEntry has been moved to Game.PlayCard()
-        // and is persisted by the PlayCardCommandHandler before this event is published.
-
-        // If this handler had other responsibilities (e.g., specific SignalR notifications beyond general game state updates),
-        // they would remain here. For now, it's just a confirmation log.
-
-        await Task.CompletedTask;
+        
+        return Task.CompletedTask;
     }
 }
