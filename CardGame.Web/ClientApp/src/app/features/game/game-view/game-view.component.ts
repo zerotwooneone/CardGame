@@ -71,11 +71,13 @@ export class GameViewComponent implements OnInit, OnDestroy {
   isMyTurn: Signal<boolean> = this.gameStateService.isMyTurn;
   gamePhase: Signal<string | null> = this.gameStateService.gamePhase;
   gameId: Signal<string | null> = this.gameStateService.gameId;
+  isSpectating: Signal<boolean> = this.gameStateService.isSpectating;
+  isLoadingFromService: Signal<boolean> = this.gameStateService.isLoading;
+  errorFromService: Signal<string | null> = this.gameStateService.error;
 
   // Local UI State Signals (writable)
   selectedCard: WritableSignal<CardDto | null> = signal(null);
   selectedTargetPlayerId: WritableSignal<string | null> = signal(null);
-  isLoadingAction: WritableSignal<boolean> = signal(false);
   errorState: WritableSignal<string | null> = signal(null);
 
   // Computed signal for current player ID
@@ -105,6 +107,7 @@ export class GameViewComponent implements OnInit, OnDestroy {
   // Computed signal for the selected card's name
   selectedCardName: Signal<string> = computed(() => getCardNameFromValue(this.selectedCard()?.type)); // Use helper
 
+  private injector = inject(Injector);
   ngOnInit(): void {
     this.errorState.set(null);
     this.route.paramMap
@@ -113,19 +116,26 @@ export class GameViewComponent implements OnInit, OnDestroy {
         const id = params.get('id');
         if (id) {
           this.gameStateService.clearState();
-          this.gameStateService.connectToGame(id)
+          const currentUserId = this.authService.getCurrentPlayerId();
+          this.gameStateService.initializeGameConnection(id, currentUserId)
             .catch(err => {
-              console.error("Error connecting to game:", err);
-              this.errorState.set("Could not connect to the game.");
-              this.snackBar.open('Error connecting to game.', 'Close', { duration: 3000 });
+              console.error("GameViewComponent: Error connecting to game:", err);
               this.cdr.markForCheck();
             });
         } else {
           console.error("No game ID found in route.");
           this.errorState.set("No Game ID specified.");
+          this.cdr.markForCheck();
         }
       });
     this.subscribeToGameEvents();
+
+    effect(() => {
+      const serviceError = this.errorFromService();
+      if (serviceError) {
+        this.snackBar.open(serviceError, 'Close', { duration: 5000 });
+      }
+    }, { injector: this.injector });
   }
 
   ngOnDestroy(): void {
@@ -152,7 +162,7 @@ export class GameViewComponent implements OnInit, OnDestroy {
   }
 
   onCardSelected(card: CardDto): void {
-    if (!this.isMyTurn()) return;
+    if (!this.isMyTurn() || this.isSpectating()) return;
 
     if (this.selectedCard()?.id === card.id) {
       this.selectedCard.set(null);
@@ -170,7 +180,7 @@ export class GameViewComponent implements OnInit, OnDestroy {
   // --- Targeting Interaction ---
 
   onPlayerSelected(playerId: string): void {
-    if (!this.isTargetingRequired() || !this.selectedCard()) return;
+    if (!this.isTargetingRequired() || !this.selectedCard() || this.isSpectating()) return;
 
     const allOpponents = this.spectatorState()?.players.filter(p => p.playerId !== this.currentPlayerId() && p.status === 1) ?? [];
     const selectedOpponent = allOpponents.find(p => p.playerId === playerId);
@@ -188,9 +198,10 @@ export class GameViewComponent implements OnInit, OnDestroy {
       this.openGuessModal();
     }
   }
+
   openGuessModal(): void {
     const cardBeingPlayed = this.selectedCard();
-    if (!cardBeingPlayed || cardBeingPlayed.type !== 1) return;
+    if (!cardBeingPlayed || cardBeingPlayed.type !== 1 || this.isSpectating()) return;
 
     const dialogData: ActionModalData = {
       actionType: 'guess-card',
@@ -215,14 +226,16 @@ export class GameViewComponent implements OnInit, OnDestroy {
     });
   }
 
-  confirmAndPlayCard(guessedValue?: number): void {
-    const card = this.selectedCard();
+  confirmAndPlayCard(guessedCardValue?: number): void {
+    if (this.isSpectating()) return;
+
+    const cardToPlay = this.selectedCard();
     const targetId = this.selectedTargetPlayerId();
     const gameId = this.gameId();
     const myId = this.currentPlayerId();
 
-    if (!card || !gameId || !myId) {
-      console.error("Cannot play card, missing required state.", { card, gameId, myId });
+    if (!cardToPlay || !gameId || !myId) {
+      console.error("Cannot play card, missing required state.", { cardToPlay, gameId, myId });
       this.showSnackBar("Error: Cannot determine required game state to play card.", 5000);
       return;
     }
@@ -231,31 +244,26 @@ export class GameViewComponent implements OnInit, OnDestroy {
       this.showSnackBar("Please select a target player.", 3000);
       return;
     }
-    if (this.isGuessingRequired() && guessedValue === undefined) {
+    if (this.isGuessingRequired() && guessedCardValue === undefined) {
       this.showSnackBar("Please select a card type to guess.", 3000);
       return;
     }
 
-    this.isLoadingAction.set(true);
-    this.errorState.set(null);
-
     const payload: PlayCardRequestDto = {
-      cardId: card.id,
+      cardId: cardToPlay.id,
       targetPlayerId: targetId,
-      guessedCardType: guessedValue
+      guessedCardType: guessedCardValue
     };
 
     this.gameActionService.playCard(gameId, payload)
       .pipe(takeUntil(this.destroy$))
       .subscribe({
         next: () => {
-          this.isLoadingAction.set(false);
           this.selectedCard.set(null);
           this.selectedTargetPlayerId.set(null);
           console.log("PlayCard action sent successfully.");
         },
         error: (err) => {
-          this.isLoadingAction.set(false);
           this.errorState.set(err.message || 'Failed to play card.');
           this.showSnackBar(`Error: ${this.errorState()}`, 5000);
           this.cdr.markForCheck();
@@ -286,10 +294,13 @@ export class GameViewComponent implements OnInit, OnDestroy {
   }
 
   // --- Helpers ---
-  getPlayerName(playerId: string | null | undefined): string {
+  getPlayerName(playerId: string | null): string {
     if (!playerId) return 'Unknown';
-    return this.spectatorState()?.players.find(p => p.playerId === playerId)?.name ?? 'Unknown';
+    const state = this.spectatorState();
+    const player = state?.players.find(p => p.playerId === playerId);
+    return player?.name ?? 'Unknown Player';
   }
+
   showSnackBar(message: string, duration: number = 3000): void {
     this.snackBar.open(message, 'Close', { duration });
   }

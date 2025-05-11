@@ -18,7 +18,7 @@
     </app-player-display>
   </div>
 
-  <div class="current-player-hand-area" *ngIf="currentPlayerId()">
+  <div class="current-player-hand-area" *ngIf="!isSpectating() && currentPlayerId()">
     <h3>Your Hand</h3>
     <div class="hand-cards">
       <div class="card-slot" *ngFor="let card of playerHand(); trackBy: trackCardById">
@@ -50,9 +50,6 @@
       <div *ngIf="!selectedCard()">
         Select a card to play.
       </div>
-      <div *ngIf="isLoadingAction()" class="action-spinner">
-        <mat-spinner diameter="20"></mat-spinner> <span>Processing...</span>
-      </div>
     </div>
     <div *ngIf="errorState()" class="component-error-message">
       {{ errorState() }}
@@ -73,7 +70,7 @@
 </div>
 
 <ng-template #loadingOrErrorTemplate>
-  <div class="loading-container" *ngIf="!errorState(); else errorTemplate">
+  <div class="loading-container" *ngIf="isLoadingFromService(); else errorTemplate">
     <mat-spinner diameter="60"></mat-spinner>
     <p>Loading Game...</p>
   </div>
@@ -82,7 +79,7 @@
 <ng-template #errorTemplate>
   <div class="error-container">
     <h2>Error Loading Game</h2>
-    <p>{{ errorState() }}</p>
+    <p>{{ errorFromService() }}</p> <!-- Use errorFromService -->
     <button mat-stroked-button color="warn" routerLink="/lobby">Return to Lobby</button>
   </div>
 </ng-template>

@@ -1,5 +1,5 @@
 import {Injectable, signal, WritableSignal, Signal, OnDestroy, effect, Injector, computed, inject} from '@angular/core';
-import {Observable, Subject, Subscription } from 'rxjs';
+import {Observable, Subject, Subscription, firstValueFrom } from 'rxjs';
 import { SignalrService, ConnectionState } from '../../../core/services/signalr.service';
 import { AuthService } from '../../../core/services/auth.service';
 import {SpectatorGameStateDto} from '../../../core/models/spectatorGameStateDto';
@@ -24,6 +24,7 @@ export class GameStateService implements OnDestroy {
   private errorState: WritableSignal<string | null> = signal(null);
 
   // --- Public Readonly Signals for consumption ---
+  public isSpectating: WritableSignal<boolean> = signal(false); // New signal for spectator mode
   // Renamed to reflect its combined nature
   public gameState: Signal<PlayerGameStateDto | SpectatorGameStateDto | null> = this.combinedStateSignal.asReadonly();
   public playerHand: Signal<CardDto[]> = this.playerHandSignal.asReadonly();
@@ -83,7 +84,9 @@ export class GameStateService implements OnDestroy {
     // Effects tied to the injector are automatically cleaned up
     const currentId = this.gameId();
     if (currentId) {
-      this.disconnectFromGame(currentId);
+      // Ensure disconnect is also safe for spectator vs player if different logic needed
+      this.signalrService.leaveGameGroup(currentId); 
+      // No need to stop game connection here, as it might be shared or handled by SignalR service itself on app close/logout
     }
   }
 
@@ -171,6 +174,7 @@ export class GameStateService implements OnDestroy {
     this.isLoadingState.set(true);
     this.errorState.set(null);
     this.clearState(); // Clear previous game state
+    this.isSpectating.set(false); // Default to not spectating
 
     try {
       // 1. Fetch initial Player Game State via API
@@ -207,6 +211,70 @@ export class GameStateService implements OnDestroy {
     }
   }
 
+  /**
+   * Initializes the connection to a game, determining whether to load
+   * player-specific state or spectator state.
+   * @param gameId The ID of the game to connect to.
+   * @param currentUserId The ID of the current user, if logged in. Null otherwise.
+   * @returns Promise<boolean> True if in spectator mode, false otherwise.
+   */
+  public async initializeGameConnection(gameId: string, currentUserId: string | null): Promise<boolean> {
+    if (!this.signalrService.isBrowser) return true; // Default to spectating SSR/Pre-render
+
+    this.isLoadingState.set(true);
+    this.errorState.set(null);
+    this.clearState();
+    let isSpectator = true; // Assume spectator mode initially
+
+    try {
+      if (currentUserId) {
+        console.log(`GameStateService: Attempting to fetch player state for Game ${gameId}, Player ${currentUserId}`);
+        try {
+          const playerState = await this.fetchInitialPlayerState(gameId, currentUserId);
+          this.combinedStateSignal.set(playerState);
+          this.playerHandSignal.set(playerState.playerHand ?? []);
+          console.log("GameStateService: Player state loaded.");
+          isSpectator = false;
+        } catch (playerStateError: any) {
+          console.warn(`GameStateService: Could not fetch player state (User: ${currentUserId}, Game: ${gameId}). Error: ${playerStateError?.message}. Falling back to spectator mode.`);
+          // If player state fails (e.g., not a player in this game), we fall through to spectator mode.
+        }
+      }
+
+      if (isSpectator) {
+        console.log(`GameStateService: Fetching spectator state for Game ${gameId}`);
+        const spectatorState = await this.fetchInitialSpectatorState(gameId);
+        this.combinedStateSignal.set(spectatorState);
+        this.playerHandSignal.set([]); // Ensure hand is empty for spectators
+        console.log("GameStateService: Spectator state loaded.");
+      }
+      
+      this.isSpectating.set(isSpectator); 
+
+      // Common SignalR setup for both players and spectators
+      if (this.signalrService.gameConnectionState() !== ConnectionState.Connected &&
+          this.signalrService.gameConnectionState() !== ConnectionState.Connecting) {
+        await this.signalrService.startGameConnection();
+      }
+
+      if (this.signalrService.gameConnectionState() === ConnectionState.Connected) {
+        await this.signalrService.joinGameGroup(gameId);
+      } else {
+        throw new Error("Failed to establish SignalR connection for game updates.");
+      }
+      this.setupSignalRSubscriptions();
+      this.isLoadingState.set(false);
+      return isSpectator;
+
+    } catch (error: any) {
+      console.error(`GameStateService: Error initializing game connection for ${gameId}:`, error);
+      this.errorState.set(error?.message || 'Failed to connect to the game.');
+      this.isLoadingState.set(false);
+      this.isSpectating.set(true); // Ensure spectator mode on error
+      throw error; // Re-throw for the component to handle if needed
+    }
+  }
+
   /** Helper to fetch initial state with error handling */
   private fetchInitialPlayerState(gameId: string, playerId: string): Promise<PlayerGameStateDto> {
     return new Promise((resolve, reject) => {
@@ -228,14 +296,20 @@ export class GameStateService implements OnDestroy {
     });
   }
 
+  /** Fetches initial spectator game state from the API. */
+  private async fetchInitialSpectatorState(gameId: string): Promise<SpectatorGameStateDto> {
+    console.log(`GameStateService: Fetching initial spectator state for Game ${gameId}`);
+    // This will require a new method in GameActionService
+    return firstValueFrom(this.gameActionService.getSpectatorGameState(gameId));
+  }
 
   /**
-   * Leaves the specified game group and potentially stops the connection.
+   * Disconnects from the current game's SignalR group.
    */
-  public async disconnectFromGame(gameId: string): Promise<void> {
+  public disconnectFromGame(gameId: string): void {
     this.unsubscribeAll(); // Unsubscribe from SignalR events
     if (this.signalrService.gameConnectionState() === ConnectionState.Connected) {
-      await this.signalrService.leaveGameGroup(gameId);
+      this.signalrService.leaveGameGroup(gameId);
     }
     // Optionally stop the connection if appropriate
     // await this.signalrService.stopGameConnection();

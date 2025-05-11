@@ -4,6 +4,7 @@ import {catchError, Observable, throwError} from 'rxjs';
 import {PlayCardRequestDto} from '../../../core/models/playCardRequestDto';
 import { PlayerGameStateDto } from '../../../core/models/playerGameStateDto';
 import {CreateGameRequestDto} from '../../../core/models/createGameRequestDto';
+import { SpectatorGameStateDto } from '../../../core/models/spectatorGameStateDto';
 
 @Injectable({
   // Provided locally within the game feature routing or component if lazy loaded,
@@ -40,9 +41,22 @@ export class GameActionService {
    * @param playerId The ID of the player whose state is requested.
    * @returns An observable containing the player-specific game state.
    */
-  getPlayerState(gameId: string, playerId: string): Observable<PlayerGameStateDto> { // Added method
+  getPlayerState(gameId: string, playerId: string): Observable<PlayerGameStateDto> {
     const url = `${this.apiUrl}/${gameId}/players/${playerId}`;
     return this.http.get<PlayerGameStateDto>(url)
+      .pipe(
+        catchError(this.handleError)
+      );
+  }
+
+  /**
+   * Fetches the game state from a spectator's perspective.
+   * @param gameId The ID of the game.
+   * @returns An observable containing the spectator-specific game state.
+   */
+  getSpectatorGameState(gameId: string): Observable<SpectatorGameStateDto> {
+    const url = `${this.apiUrl}/${gameId}`;
+    return this.http.get<SpectatorGameStateDto>(url)
       .pipe(
         catchError(this.handleError)
       );
@@ -53,7 +67,7 @@ export class GameActionService {
    * @param payload The details for the new game (Player IDs, optional TokensToWin).
    * @returns An observable containing the ID (string) of the newly created game.
    */
-  createGame(payload: CreateGameRequestDto): Observable<string> { // Changed return type to string (Guid)
+  createGame(payload: CreateGameRequestDto): Observable<string> {
     const url = `${this.apiUrl}`; // POST to /api/Game
     // Backend returns the Guid string of the new game
     return this.http.post<string>(url, payload)

@@ -10,7 +10,6 @@ namespace CardGame.Web.Hubs;
 /// SignalR hub for handling real-time communication related to specific game instances.
 /// Manages groups based on Game IDs for broadcasting game state updates.
 /// </summary>
-[Authorize] 
 public class GameHub : Hub<IGameClient> // Specify client interface for strong typing
 {
     private readonly ILogger<GameHub> _logger;
