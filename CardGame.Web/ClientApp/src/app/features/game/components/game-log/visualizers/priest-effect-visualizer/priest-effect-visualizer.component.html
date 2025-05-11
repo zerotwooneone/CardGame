@@ -1,10 +1,10 @@
 <ng-container *ngIf="logEntry">
   <span class="player-name">{{ logEntry.actingPlayerName }}</span>
-  <app-card [cardData]="{ id: '', type: CardType.Priest }" [isFaceDown]="false" (infoClicked)="onCardInfoClicked($event)"></app-card>
+  <app-card [cardData]="{ id: '', type: CardType.Priest }" [isFaceDown]="false" (infoClicked)="onPriestCardInfoClicked()"></app-card>
   <img src="assets/icons/eye.svg" alt="looks at" class="icon-medium" />
   <span class="player-name">{{ logEntry.targetPlayerName }}'s hand:</span>
   <ng-container *ngIf="canSeeRevealedCard && logEntry.revealedCardValue !== undefined && logEntry.revealedCardValue !== null">
-    <app-card [cardData]="{ id: '', type: logEntry.revealedCardValue }" [isFaceDown]="false" (infoClicked)="onCardInfoClicked($event)"></app-card>
+    <app-card [cardData]="{ id: '', type: logEntry.revealedCardValue }" [isFaceDown]="false" (infoClicked)="onRevealedCardInfoClicked()"></app-card>
   </ng-container>
   <ng-container *ngIf="!canSeeRevealedCard">
     <app-card [cardData]="{ id: '', type: 0 }" [isFaceDown]="true"></app-card>

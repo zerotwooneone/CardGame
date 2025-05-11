@@ -15,11 +15,15 @@ import { UiInteractionService } from '../../../../../../core/services/ui-interac
 export class GuardMissVisualizerComponent {
   @Input() logEntry!: GameLogEntryDto;
   private uiInteractionService = inject(UiInteractionService);
-  CardType = CardType;
+  public CardType = CardType;
 
-  onCardInfoClicked(cardType: number): void {
-    if (cardType) {
-      this.uiInteractionService.requestScrollToCardReference(cardType);
+  onGuardCardInfoClicked(): void {
+    this.uiInteractionService.requestScrollToCardReference(CardType.Guard);
+  }
+
+  onGuessedCardInfoClicked(): void {
+    if (this.logEntry.guessedCardValue) {
+      this.uiInteractionService.requestScrollToCardReference(this.logEntry.guessedCardValue);
     }
   }
 }

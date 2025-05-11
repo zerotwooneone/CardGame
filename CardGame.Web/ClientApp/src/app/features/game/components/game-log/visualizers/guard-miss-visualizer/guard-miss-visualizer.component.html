@@ -1,6 +1,9 @@
 <div class="guard-miss">
-  <span class="player-name">{{ logEntry.actingPlayerName }}</span> played Guard and incorrectly guessed <span class="player-name">{{ logEntry.targetPlayerName }}</span> held:
-  <app-card [cardData]="{ id: '', type: CardType.Guard }" [isFaceDown]="false" (infoClicked)="onCardInfoClicked($event)"></app-card>
-  <img src="assets/icons/arrow-right.svg" alt="guessed" class="icon-small" />
-  <app-card [cardData]="{ id: '', type: logEntry.guessedCardValue ?? 0 }" [isFaceDown]="false" (infoClicked)="onCardInfoClicked($event)"></app-card>
+  <span class="player-name">{{ logEntry.actingPlayerName }}</span>
+  <app-card [cardData]="{ id: '', type: CardType.Guard }" [isFaceDown]="false" (infoClicked)="onGuardCardInfoClicked()"></app-card>
+  <span class="icon">❌</span>
+  <span>missed</span>
+  <span class="player-name">{{ logEntry.targetPlayerName }}</span>
+  <span>(Guessed</span>
+  <app-card [cardData]="{ id: '', type: logEntry.guessedCardValue ?? 0 }" [isFaceDown]="false" (infoClicked)="onGuessedCardInfoClicked()"></app-card><span>)</span>
 </div>

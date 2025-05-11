@@ -32,10 +32,13 @@ export class PriestEffectVisualizerComponent implements OnInit {
     }
   }
 
+  onPriestCardInfoClicked(): void {
+    this.uiInteractionService.requestScrollToCardReference(CardType.Priest);
+  }
 
-  public onCardInfoClicked(cardType: number): void {
-    if (cardType) {
-      this.uiInteractionService.requestScrollToCardReference(cardType);
+  onRevealedCardInfoClicked(): void {
+    if (this.logEntry.revealedCardValue) {
+      this.uiInteractionService.requestScrollToCardReference(this.logEntry.revealedCardValue);
     }
   }
 }

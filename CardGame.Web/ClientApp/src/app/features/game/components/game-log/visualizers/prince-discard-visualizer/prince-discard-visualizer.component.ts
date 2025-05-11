@@ -14,12 +14,16 @@ import { UiInteractionService } from '../../../../../../core/services/ui-interac
 })
 export class PrinceDiscardVisualizerComponent {
   @Input() logEntry!: GameLogEntryDto;
-  protected readonly CardType = CardType;
+  public CardType = CardType;
   private uiInteractionService = inject(UiInteractionService);
 
-  onCardInfoClicked(cardType: number): void {
-    if (cardType) {
-      this.uiInteractionService.requestScrollToCardReference(cardType);
+  onPrinceCardInfoClicked(): void {
+    this.uiInteractionService.requestScrollToCardReference(CardType.Prince);
+  }
+
+  onDiscardedCardInfoClicked(): void {
+    if (this.logEntry.discardedByPrinceCardValue) {
+      this.uiInteractionService.requestScrollToCardReference(this.logEntry.discardedByPrinceCardValue);
     }
   }
 }

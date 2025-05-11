@@ -1,6 +1,6 @@
 <div class="guard-hit">
   <span class="player-name">{{ logEntry.actingPlayerName }}</span> played Guard and correctly guessed <span class="player-name">{{ logEntry.targetPlayerName }}</span> held:
-  <app-card [cardData]="{ id: '', type: CardType.Guard }" [isFaceDown]="false" (infoClicked)="onCardInfoClicked($event)"></app-card>
+  <app-card [cardData]="{ id: '', type: CardType.Guard }" [isFaceDown]="false" (infoClicked)="onGuardCardInfoClicked()"></app-card>
   <img src="assets/icons/arrow-right.svg" alt="guessed" class="icon-small" />
-  <app-card [cardData]="{ id: '', type: logEntry.guessedCardValue ?? 0 }" [isFaceDown]="false" (infoClicked)="onCardInfoClicked($event)"></app-card>
+  <app-card [cardData]="{ id: '', type: logEntry.guessedCardValue ?? 0 }" [isFaceDown]="false" (infoClicked)="onGuessedCardInfoClicked()"></app-card>
 </div>

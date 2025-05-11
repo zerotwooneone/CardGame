@@ -1,6 +1,6 @@
 <div class="prince-discard">
   <span class="player-name">{{ logEntry.actingPlayerName }}</span> played Prince, forcing <span class="player-name">{{ logEntry.targetPlayerName }}</span> to discard:
-  <app-card [cardData]="{ id: '', type: CardType.Prince }" [isFaceDown]="false" (infoClicked)="onCardInfoClicked($event)"></app-card>
+  <app-card [cardData]="{ id: '', type: CardType.Prince }" [isFaceDown]="false" (infoClicked)="onPrinceCardInfoClicked()"></app-card>
   <img src="assets/icons/arrow-right.svg" alt="forces discard" class="icon-small" />
-  <app-card [cardData]="{ id: '', type: logEntry.discardedByPrinceCardValue ?? 0 }" [isFaceDown]="false" (infoClicked)="onCardInfoClicked($event)"></app-card>
+  <app-card [cardData]="{ id: '', type: logEntry.discardedByPrinceCardValue ?? 0 }" [isFaceDown]="false" (infoClicked)="onDiscardedCardInfoClicked()"></app-card>
 </div>
