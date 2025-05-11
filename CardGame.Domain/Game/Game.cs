@@ -190,8 +190,7 @@ public class Game // Aggregate Root
             false // isPrivate
         )
         {
-            PlayedCardType = cardType,
-            PlayedCardValue = cardType.Value
+            PlayedCardType = cardType
         };
         AddGameLogEntry(logEntry);
 
@@ -397,7 +396,7 @@ public class Game // Aggregate Root
         ) 
         {
             PlayedCardType = CardType.Priest,
-            RevealedCardType = revealedCard.Type // Corrected property name
+            RevealedCardType = revealedCard.Type
         });
 
         // Domain event to notify the specific player (handler will use this)
@@ -471,8 +470,8 @@ public class Game // Aggregate Root
             outcomeMessage
         ) 
         {
-            PlayedCardType = CardType.Baron, 
-            Player1ComparedCardType = actingPlayerCard.Type, 
+            PlayedCardType = CardType.Baron,
+            Player1ComparedCardType = actingPlayerCard.Type,
             Player2ComparedCardType = targetPlayerCard.Type, 
             BaronLoserPlayerId = eliminatedPlayer?.Id 
         });
@@ -609,7 +608,7 @@ public class Game // Aggregate Root
         ) 
         {
             PlayedCardType = CardType.Prince,
-            DiscardedByPrinceCardType = discardedCard.Type // Corrected property name
+            DiscardedByPrinceCardType = discardedCard.Type
         });
 
         AddDomainEvent(new PrinceEffectUsed(Id, actingPlayer.Id, targetPlayer.Id, discardedCard.Type, discardedCard.Id));

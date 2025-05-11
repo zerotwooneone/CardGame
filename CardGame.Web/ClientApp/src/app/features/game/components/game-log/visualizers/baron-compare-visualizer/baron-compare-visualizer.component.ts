@@ -16,17 +16,6 @@ export class BaronCompareVisualizerComponent {
   @Input() logEntry!: GameLogEntryDto;
   private uiInteractionService = inject(UiInteractionService);
 
-  // Keep this generic one or remove if all calls become specific
-  onCardInfoClicked(cardType: CardType | undefined) {
-    if (cardType !== undefined && cardType !== null) { // Check for null as well
-      this.uiInteractionService.requestScrollToCardReference(cardType);
-    }
-  }
-
-  onBaronCardInfoClicked() {
-    this.uiInteractionService.requestScrollToCardReference(CardType.Baron);
-  }
-
   onPlayer1ComparedCardInfoClicked() {
     if (this.logEntry.player1ComparedCardValue !== undefined && this.logEntry.player1ComparedCardValue !== null) {
       this.uiInteractionService.requestScrollToCardReference(this.logEntry.player1ComparedCardValue);

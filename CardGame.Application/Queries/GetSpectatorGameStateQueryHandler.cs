@@ -66,15 +66,15 @@ public class GetSpectatorGameStateQueryHandler : IRequestHandler<GetSpectatorGam
                     IsPrivate = log.IsPrivate, // Will be false here
                     Message = log.Message,
 
-                    PlayedCardValue = log.PlayedCardValue,
-                    GuessedCardValue = log.GuessedCardValue,
+                    PlayedCardValue = log.PlayedCardType?.Value,
+                    GuessedCardValue = log.GuessedCardType?.Value,
                     WasGuessCorrect = log.WasGuessCorrect,
 
-                    Player1ComparedCardValue = log.Player1ComparedCardValue,
-                    Player2ComparedCardValue = log.Player2ComparedCardValue,
+                    Player1ComparedCardValue = log.Player1ComparedCardType?.Value,
+                    Player2ComparedCardValue = log.Player2ComparedCardType?.Value,
                     BaronLoserPlayerId = log.BaronLoserPlayerId,
 
-                    DiscardedByPrinceCardValue = log.DiscardedByPrinceCardValue,
+                    DiscardedByPrinceCardValue = log.DiscardedByPrinceCardType?.Value,
                     CardResponsibleForEliminationValue = log.CardResponsibleForElimination?.Value,
 
                     FizzleReason = log.FizzleReason,

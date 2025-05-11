@@ -17,24 +17,19 @@ public class GameLogEntry
     public string? Message { get; set; }
 
     // --- New Structured Properties for Visual Story --- 
-    public CardType? PlayedCardType { get; set; } 
-    public int? PlayedCardValue { get; set; }   
+    public CardType? PlayedCardType { get; set; }
 
     // For Guard Guess
     public CardType? GuessedCardType { get; set; } 
-    public int? GuessedCardValue { get; set; }   
     public bool? WasGuessCorrect { get; set; }   
 
     // For Baron Comparison
     public CardType? Player1ComparedCardType { get; set; } 
-    public int? Player1ComparedCardValue { get; set; }   
     public CardType? Player2ComparedCardType { get; set; } 
-    public int? Player2ComparedCardValue { get; set; }   
     public Guid? BaronLoserPlayerId { get; set; }        
 
     // For Prince Discard
     public CardType? DiscardedByPrinceCardType { get; set; } 
-    public int? DiscardedByPrinceCardValue { get; set; }   
 
     // For Eliminations
     public CardType? CardResponsibleForElimination { get; set; } 
@@ -65,17 +60,12 @@ public class GameLogEntry
         RevealedCardId = null;
         RevealedCardType = null;
         PlayedCardType = null;
-        PlayedCardValue = null;
         GuessedCardType = null;
-        GuessedCardValue = null;
         WasGuessCorrect = null;
         Player1ComparedCardType = null;
-        Player1ComparedCardValue = null;
         Player2ComparedCardType = null;
-        Player2ComparedCardValue = null;
         BaronLoserPlayerId = null;
         DiscardedByPrinceCardType = null;
-        DiscardedByPrinceCardValue = null;
         CardResponsibleForElimination = null;
         FizzleReason = null;
         WinnerPlayerId = null;
