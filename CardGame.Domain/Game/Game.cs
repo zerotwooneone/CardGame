@@ -670,10 +670,6 @@ public class Game // Aggregate Root
             });
             AddDomainEvent(new PlayerEliminated(Id, playerId, reason, cardResponsible));
         }
-        
-        // If only one player remains, round end is handled by CheckRoundEndCondition
-
-        CheckRoundEndCondition(); // Check if the round ends due to this elimination
     }
 
    private bool CheckRoundEndCondition()
