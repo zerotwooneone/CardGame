@@ -4,7 +4,6 @@ using CardGame.Domain.Interfaces;
 using CardGame.Domain.Tests.Helpers;
 using CardGame.Domain.Tests.TestDoubles;
 using CardGame.Domain.Types;
-using Castle.Components.DictionaryAdapter;
 using FluentAssertions;
 using FluentAssertions.Execution;
 using FluentAssertions.Equivalency;
@@ -28,15 +27,22 @@ public class GameAggregateTests
     {
         return new List<Card>
         {
-            new Card(TestDeckHelper.CardId_Pss, CardType.Princess),
-            new Card(TestDeckHelper.CardId_C, CardType.Countess),
-            new Card(TestDeckHelper.CardId_K, CardType.King), new Card(TestDeckHelper.CardId_Pr1, CardType.Prince),
-            new Card(TestDeckHelper.CardId_Pr2, CardType.Prince), new Card(TestDeckHelper.CardId_H1, CardType.Handmaid),
-            new Card(TestDeckHelper.CardId_H2, CardType.Handmaid), new Card(TestDeckHelper.CardId_B1, CardType.Baron),
-            new Card(TestDeckHelper.CardId_B2, CardType.Baron), new Card(TestDeckHelper.CardId_P1, CardType.Priest),
-            new Card(TestDeckHelper.CardId_P2, CardType.Priest), new Card(TestDeckHelper.CardId_G1, CardType.Guard),
-            new Card(TestDeckHelper.CardId_G2, CardType.Guard), new Card(TestDeckHelper.CardId_G3, CardType.Guard),
-            new Card(TestDeckHelper.CardId_G4, CardType.Guard), new Card(TestDeckHelper.CardId_G5, CardType.Guard),
+            new Card(CardType.Princess.Name, CardType.Princess),
+            new Card(CardType.Countess.Name, CardType.Countess),
+            new Card(CardType.King.Name, CardType.King), 
+            new Card(CardType.Prince.Name, CardType.Prince),
+            new Card(CardType.Prince.Name, CardType.Prince), 
+            new Card(CardType.Handmaid.Name, CardType.Handmaid),
+            new Card(CardType.Handmaid.Name, CardType.Handmaid), 
+            new Card(CardType.Baron.Name, CardType.Baron),
+            new Card(CardType.Baron.Name, CardType.Baron), 
+            new Card(CardType.Priest.Name, CardType.Priest),
+            new Card(CardType.Priest.Name, CardType.Priest), 
+            new Card(CardType.Guard.Name, CardType.Guard),
+            new Card(CardType.Guard.Name, CardType.Guard), 
+            new Card(CardType.Guard.Name, CardType.Guard),
+            new Card(CardType.Guard.Name, CardType.Guard), 
+            new Card(CardType.Guard.Name, CardType.Guard),
         };
     }
 
@@ -52,20 +58,22 @@ public class GameAggregateTests
         var specificDeck = new List<Card>
         {
             /* ... deck definition ... */
-            new Card(TestDeckHelper.CardId_Pss, CardType.Princess),
-            new Card(TestDeckHelper.CardId_C, CardType.Countess),
-            new Card(TestDeckHelper.CardId_K, CardType.King), new Card(TestDeckHelper.CardId_Pr1, CardType.Prince),
-            new Card(TestDeckHelper.CardId_Pr2, CardType.Prince), new Card(TestDeckHelper.CardId_H1, CardType.Handmaid),
-            new Card(TestDeckHelper.CardId_H2, CardType.Handmaid),
-            new Card(TestDeckHelper.CardId_G1, CardType.Guard), // P2 Draws
-            new Card(TestDeckHelper.CardId_B1, CardType.Baron), // P1 Draws
-            new Card(TestDeckHelper.CardId_B2, CardType.Baron), // P2 Dealt
-            new Card(TestDeckHelper.CardId_G3, CardType.Guard), // P1 Dealt
-            new Card(TestDeckHelper.CardId_P1, CardType.Priest), // Public Set Aside 3
-            new Card(TestDeckHelper.CardId_G4, CardType.Guard), // Public Set Aside 2
-            new Card(TestDeckHelper.CardId_G5, CardType.Guard), // Public Set Aside 1
-            new Card(TestDeckHelper.CardId_P2, CardType.Priest), // Private Set Aside
-            new Card(TestDeckHelper.CardId_G2, CardType.Guard) // Bottom card
+            new Card(CardType.Princess.Name, CardType.Princess),
+            new Card(CardType.Countess.Name, CardType.Countess),
+            new Card(CardType.King.Name, CardType.King), 
+            new Card(CardType.Prince.Name, CardType.Prince),
+            new Card(CardType.Prince.Name, CardType.Prince), 
+            new Card(CardType.Handmaid.Name, CardType.Handmaid),
+            new Card(CardType.Handmaid.Name, CardType.Handmaid),
+            new Card(CardType.Guard.Name, CardType.Guard), // P2 Draws
+            new Card(CardType.Baron.Name, CardType.Baron), // P1 Draws
+            new Card(CardType.Baron.Name, CardType.Baron), // P2 Dealt
+            new Card(CardType.Guard.Name, CardType.Guard), // P1 Dealt
+            new Card(CardType.Priest.Name, CardType.Priest), // Public Set Aside 3
+            new Card(CardType.Guard.Name, CardType.Guard), // Public Set Aside 2
+            new Card(CardType.Guard.Name, CardType.Guard), // Public Set Aside 1
+            new Card(CardType.Priest.Name, CardType.Priest), // Private Set Aside
+            new Card(CardType.Guard.Name, CardType.Guard) // Bottom card
         };
         Card p1DealtCard = specificDeck[11]; // P1
         Card p2DealtCard = specificDeck[10]; // G3
@@ -97,7 +105,7 @@ public class GameAggregateTests
             var player2HandCardTypes = player2.Hand.GetCards().Select(c => c.Type).ToList();
             player2HandCardTypes.Should().BeEquivalentTo(new[] {CardType.Guard, CardType.Baron});
             player2.Hand.GetCards().Should().Contain(p2DealtCard);
-            player2.Hand.GetCards().Should().Contain(c => c.Id == TestDeckHelper.CardId_B1);
+            player2.Hand.GetCards().Should().Contain(c => c.AppearanceId == CardType.Baron.Name);
 
             var events = game.DomainEvents.ToList();
             events.Should().HaveCount(5);
@@ -107,7 +115,7 @@ public class GameAggregateTests
                 ExcludeEventMetadata<PlayerPlayedCard>());
 
             events.Should().ContainSingle(e => e is PriestEffectUsed).Which.Should().BeEquivalentTo(
-                new PriestEffectUsed(game.Id, player1.Id, targetPlayerId, p2DealtCard.Id, p2DealtCard.Type),
+                new PriestEffectUsed(game.Id, player1.Id, targetPlayerId, p2DealtCard.AppearanceId, p2DealtCard.Type),
                 ExcludeEventMetadata<PriestEffectUsed>());
 
             events.Should().ContainSingle(e => e is TurnStarted).Which.Should().BeEquivalentTo(
@@ -130,22 +138,22 @@ public class GameAggregateTests
             var creatorId = aliceInfo.Id;
             var tokensNeededToWin = 1;
             var specificDeck = new List<Card> { /* ... deck definition ... */
-                 new Card(TestDeckHelper.CardId_Pss, CardType.Princess), 
-                 new Card(TestDeckHelper.CardId_C, CardType.Countess),
-                new Card(TestDeckHelper.CardId_K, CardType.King), 
-                new Card(TestDeckHelper.CardId_Pr1, CardType.Prince), 
-                new Card(TestDeckHelper.CardId_Pr2, CardType.Prince),
-                new Card(TestDeckHelper.CardId_H1, CardType.Handmaid), 
-                new Card(TestDeckHelper.CardId_H2, CardType.Handmaid), 
-                new Card(TestDeckHelper.CardId_B1, CardType.Baron),
-                new Card(TestDeckHelper.CardId_B2, CardType.Baron),   // P2 Draws
-                new Card(TestDeckHelper.CardId_P1, CardType.Priest),  // P1 Draws
-                new Card(TestDeckHelper.CardId_P2, CardType.Priest),  // P2 Dealt
-                new Card(TestDeckHelper.CardId_G3, CardType.Guard),   // P1 Dealt
-                new Card(TestDeckHelper.CardId_G1, CardType.Guard),   // Public Set Aside 3
-                new Card(TestDeckHelper.CardId_G2, CardType.Guard),   // Public Set Aside 2
-                new Card(TestDeckHelper.CardId_G4, CardType.Guard),   // Public Set Aside 1
-                new Card(TestDeckHelper.CardId_G5, CardType.Guard)    // Private Set Aside
+                new Card(CardType.Princess.Name, CardType.Princess), 
+                new Card(CardType.Countess.Name, CardType.Countess),
+                new Card(CardType.King.Name, CardType.King), 
+                new Card(CardType.Prince.Name, CardType.Prince), 
+                new Card(CardType.Prince.Name, CardType.Prince),
+                new Card(CardType.Handmaid.Name, CardType.Handmaid), 
+                new Card(CardType.Handmaid.Name, CardType.Handmaid), 
+                new Card(CardType.Baron.Name, CardType.Baron),
+                new Card(CardType.Baron.Name, CardType.Baron),   // P2 Draws
+                new Card(CardType.Priest.Name, CardType.Priest),  // P1 Draws
+                new Card(CardType.Priest.Name, CardType.Priest),  // P2 Dealt
+                new Card(CardType.Guard.Name, CardType.Guard),   // P1 Dealt
+                new Card(CardType.Guard.Name, CardType.Guard),   // Public Set Aside 3
+                new Card(CardType.Guard.Name, CardType.Guard),   // Public Set Aside 2
+                new Card(CardType.Guard.Name, CardType.Guard),   // Public Set Aside 1
+                new Card(CardType.Guard.Name, CardType.Guard)    // Private Set Aside
             };
             Card p1DealtCard = specificDeck[11]; // G3
             Card p2DealtCard = specificDeck[10]; // P2 (Priest)
@@ -212,9 +220,9 @@ public class GameAggregateTests
             int tokensToWin = 4;
             var p1Id = Guid.NewGuid();
             var p2Id = Guid.NewGuid();
-            var p1Card_King = new Card(TestDeckHelper.CardId_K, CardType.King);
-            var p1Card_Handmaid = new Card(TestDeckHelper.CardId_H1, CardType.Handmaid);
-            var p2Card_Princess = new Card(TestDeckHelper.CardId_Pss, CardType.Princess);
+            var p1Card_King = new Card(CardType.King.Name, CardType.King);
+            var p1Card_Handmaid = new Card(CardType.Handmaid.Name, CardType.Handmaid);
+            var p2Card_Princess = new Card(CardType.Princess.Name, CardType.Princess);
             var aliceHand = Hand.Load(new List<Card> { p1Card_King, p1Card_Handmaid });
             var alice = Player.Load(p1Id, "Alice", PlayerStatus.Active, aliceHand, new List<CardType>(), 0, false);
             var bobHand = Hand.Load(new List<Card> { p2Card_Princess });

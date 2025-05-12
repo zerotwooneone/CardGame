@@ -14,9 +14,9 @@ public record PrinceEffectUsed : IDomainEvent
     public Guid ActorPlayerId { get; }
     public Guid TargetPlayerId { get; }
     public CardType DiscardedCardType { get; }
-    public Guid DiscardedCardId { get; }
+    public string DiscardedCardId { get; }
 
-    public PrinceEffectUsed(Guid gameId, Guid actorPlayerId, Guid targetPlayerId, CardType discardedCardType, Guid discardedCardId, Guid? correlationId = null)
+    public PrinceEffectUsed(Guid gameId, Guid actorPlayerId, Guid targetPlayerId, CardType discardedCardType, string discardedCardId, Guid? correlationId = null)
     {
         EventId = Guid.NewGuid();
         OccurredOn = DateTimeOffset.UtcNow;

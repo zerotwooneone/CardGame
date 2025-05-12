@@ -42,7 +42,7 @@ public class HandleRoundEndedAndNotify : INotificationHandler<DomainEventNotific
                     ? null
                     : new CardDto
                     {
-                        Id = summary.FinalHeldCard.Id, 
+                        Id = summary.FinalHeldCard.AppearanceId, 
                         Type = summary.FinalHeldCard.Rank 
                     },
                 DiscardPileValues = summary.DiscardPileValues, 

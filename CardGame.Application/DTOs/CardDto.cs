@@ -6,5 +6,5 @@
 public class CardDto
 {
     public int Type { get; set; } 
-    public Guid Id { get; set; }
+    public string Id { get; set; }
 }

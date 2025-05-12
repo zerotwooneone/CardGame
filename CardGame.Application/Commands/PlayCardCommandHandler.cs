@@ -67,7 +67,7 @@ public class PlayCardCommandHandler : IRequestHandler<PlayCardCommand>
         }
 
         // 5. Find the specific card instance in the player's hand using the ID
-        var cardToPlayInstance = player.Hand.GetCards().FirstOrDefault(c => c.Id == request.CardToPlayId);
+        var cardToPlayInstance = player.Hand.GetCards().FirstOrDefault(c => c.AppearanceId == request.CardToPlayId);
         if (cardToPlayInstance == null)
         {
             // Throw specific exception if card ID not found in hand

@@ -44,7 +44,7 @@ public class HandlePlayerPlayedCardAndSendHandUpdate : INotificationHandler<Doma
             // Map the player's current hand (which should now have 1 card) to DTOs
             var handDto = player.Hand.GetCards().Select(c => new CardDto
             {
-                Id = c.Id, // Ensure DTO has Id
+                Id = c.AppearanceId, // Ensure DTO has Id
                 Type = c.Type.Value // Send numeric type value
             }).ToList();
 

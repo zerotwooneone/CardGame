@@ -8,7 +8,7 @@ public class PlayCardRequestDto
     /// The unique ID of the specific card instance being played from the player's hand.
     /// </summary>
     [Required]
-    public Guid CardId { get; set; }
+    public string CardId { get; set; }
 
     /// <summary>
     /// Optional: The ID of the player being targeted by the card effect (if applicable).

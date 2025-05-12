@@ -10,9 +10,11 @@ namespace CardGame.Application.Commands;
 public record PlayCardCommand(
     Guid GameId,
     Guid PlayerId, // ID of the player making the move (authenticated user)
-    Guid CardToPlayId, // Changed from Card to Guid
+    string CardToPlayId, // Changed from Card to Guid
     Guid? TargetPlayerId,
-    CardType? GuessedCardType // Pass the parsed CardType
+    CardType? GuessedCardType
+
+    // Pass the parsed CardType
 ) : IRequest; // Simple command, returns Unit (void) on success
 
 // --- Optional: FluentValidation for Command ---

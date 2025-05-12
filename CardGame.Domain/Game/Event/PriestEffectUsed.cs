@@ -14,10 +14,10 @@ public record PriestEffectUsed : IDomainEvent
     public Guid PriestPlayerId { get; }
     public Guid TargetPlayerId { get; }
     // Changed from RevealedCardType to specific card info
-    public Guid RevealedCardId { get; }
+    public string RevealedCardId { get; }
     public CardType RevealedCardType { get; } // Keep type for convenience
 
-    public PriestEffectUsed(Guid gameId, Guid priestPlayerId, Guid targetPlayerId, Guid revealedCardId, CardType revealedCardType, Guid? correlationId = null) // Updated constructor
+    public PriestEffectUsed(Guid gameId, Guid priestPlayerId, Guid targetPlayerId, string revealedCardId, CardType revealedCardType, Guid? correlationId = null) // Updated constructor
     {
         EventId = Guid.NewGuid();
         OccurredOn = DateTimeOffset.UtcNow;

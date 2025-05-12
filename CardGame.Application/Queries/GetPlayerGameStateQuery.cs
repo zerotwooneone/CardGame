@@ -89,7 +89,7 @@ namespace CardGame.Application.Queries;
                 DiscardPile = game.DiscardPile.Select(card => new CardDto
                 {
                     Type = card.Type.Value,
-                    Id = card.Id
+                    Id = card.AppearanceId
                 }).ToList(),
 
                 // Map player info - show hand count for everyone
@@ -110,7 +110,7 @@ namespace CardGame.Application.Queries;
                              ? requestingPlayer.Hand.GetCards().Select(card => new CardDto
                                 {
                                     Type = card.Type.Value,
-                                    Id = card.Id
+                                    Id = card.AppearanceId
                                 }).ToList()
                              : new List<CardDto>(), // Empty list if eliminated
                 GameLog = gameLogDtos // Assign the mapped and filtered log entries

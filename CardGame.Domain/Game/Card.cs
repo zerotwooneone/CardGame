@@ -17,7 +17,7 @@ public record Card // Using record for immutability and value equality
     /// consumers (like the UI or specific game variants) to track and
     /// differentiate individual card objects, potentially for appearance variations.
     /// </summary>
-    public Guid Id { get; }
+    public string AppearanceId { get; }
 
     /// <summary>
     /// Gets the functional type of the card (Guard, Priest, etc.).
@@ -29,13 +29,13 @@ public record Card // Using record for immutability and value equality
     /// <summary>
     /// Initializes a new instance of the Card record.
     /// </summary>
-    /// <param name="id">The unique identifier for this card instance.</param>
+    /// <param name="appearanceId">The unique identifier for this card instance.</param>
     /// <param name="type">The functional type of the card.</param>
-    public Card(Guid id, CardType type)
+    public Card(string appearanceId, CardType type)
     {
-        Id = id;
+        AppearanceId = appearanceId;
         Type = type ?? throw new ArgumentNullException(nameof(type));
-    }
+    }   
 
     /// <summary>
     /// Gets the rank of the card based on its type.

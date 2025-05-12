@@ -160,7 +160,7 @@ public class Game // Aggregate Root
 
         AddDomainEvent(new RoundStarted(
             Id, RoundNumber, playerIds, Deck.CardsRemaining, SetAsideCard?.Type,
-            PubliclySetAsideCards.Select(c => new PublicCardInfo(c.Id, c.Type)).ToList()
+            PubliclySetAsideCards.Select(c => new PublicCardInfo(c.AppearanceId, c.Type)).ToList()
         ));
         HandleTurnStartDrawing();
     }
@@ -226,14 +226,14 @@ public class Game // Aggregate Root
     private static List<Card> CreateStandardCardList()
     {
         return new List<Card> {
-            new Card(Guid.NewGuid(), CardType.Princess), new Card(Guid.NewGuid(), CardType.Countess),
-            new Card(Guid.NewGuid(), CardType.King), new Card(Guid.NewGuid(), CardType.Prince),
-            new Card(Guid.NewGuid(), CardType.Prince), new Card(Guid.NewGuid(), CardType.Handmaid),
-            new Card(Guid.NewGuid(), CardType.Handmaid), new Card(Guid.NewGuid(), CardType.Baron),
-            new Card(Guid.NewGuid(), CardType.Baron), new Card(Guid.NewGuid(), CardType.Priest),
-            new Card(Guid.NewGuid(), CardType.Priest), new Card(Guid.NewGuid(), CardType.Guard),
-            new Card(Guid.NewGuid(), CardType.Guard), new Card(Guid.NewGuid(), CardType.Guard),
-            new Card(Guid.NewGuid(), CardType.Guard), new Card(Guid.NewGuid(), CardType.Guard),
+            new Card(Guid.NewGuid().ToString(), CardType.Princess), new Card(Guid.NewGuid().ToString(), CardType.Countess),
+            new Card(Guid.NewGuid().ToString(), CardType.King), new Card(Guid.NewGuid().ToString(), CardType.Prince),
+            new Card(Guid.NewGuid().ToString(), CardType.Prince), new Card(Guid.NewGuid().ToString(), CardType.Handmaid),
+            new Card(Guid.NewGuid().ToString(), CardType.Handmaid), new Card(Guid.NewGuid().ToString(), CardType.Baron),
+            new Card(Guid.NewGuid().ToString(), CardType.Baron), new Card(Guid.NewGuid().ToString(), CardType.Priest),
+            new Card(Guid.NewGuid().ToString(), CardType.Priest), new Card(Guid.NewGuid().ToString(), CardType.Guard),
+            new Card(Guid.NewGuid().ToString(), CardType.Guard), new Card(Guid.NewGuid().ToString(), CardType.Guard),
+            new Card(Guid.NewGuid().ToString(), CardType.Guard), new Card(Guid.NewGuid().ToString(), CardType.Guard),
         };
     }
 
@@ -243,7 +243,7 @@ public class Game // Aggregate Root
         if (GamePhase != GamePhase.RoundInProgress) throw new InvalidMoveException("Cannot play cards when the round is not in progress.");
         if (CurrentTurnPlayerId != playerId) throw new InvalidMoveException($"It is not player {GetPlayerById(playerId).Name}'s turn.");
         var player = GetPlayerById(playerId);
-        if (!player.Hand.GetCards().Any(c => c.Id == cardToPlayInstance.Id)) throw new InvalidMoveException($"Player {player.Name} does not hold the specified card instance (ID: {cardToPlayInstance.Id}).");
+        if (!player.Hand.GetCards().Any(c => c.AppearanceId == cardToPlayInstance.AppearanceId)) throw new InvalidMoveException($"Player {player.Name} does not hold the specified card instance (ID: {cardToPlayInstance.AppearanceId}).");
         if ((cardType == CardType.King || cardType == CardType.Prince) && player.Hand.Contains(CardType.Countess)) throw new GameRuleException($"Player {player.Name} must play the Countess.");
 
         if (targetPlayerId.HasValue)
@@ -400,7 +400,7 @@ public class Game // Aggregate Root
         });
 
         // Domain event to notify the specific player (handler will use this)
-        AddDomainEvent(new PriestEffectUsed(Id, actingPlayer.Id, targetPlayer.Id, revealedCard.Id, revealedCard.Type));
+        AddDomainEvent(new PriestEffectUsed(Id, actingPlayer.Id, targetPlayer.Id, revealedCard.AppearanceId, revealedCard.Type));
     }
 
     private void ExecuteBaronEffect(Player actingPlayer, Player? targetPlayer) // Signature changed to Player?
@@ -611,7 +611,7 @@ public class Game // Aggregate Root
             DiscardedByPrinceCardType = discardedCard.Type
         });
 
-        AddDomainEvent(new PrinceEffectUsed(Id, actingPlayer.Id, targetPlayer.Id, discardedCard.Type, discardedCard.Id));
+        AddDomainEvent(new PrinceEffectUsed(Id, actingPlayer.Id, targetPlayer.Id, discardedCard.Type, discardedCard.AppearanceId));
 
         if (discardedCard.Type == CardType.Princess)
         {
