@@ -1,12 +1,22 @@
-@import '../visualizer.scss'; // Import common styles
+@use '../visualizer' as viz;
 
 :host {
-  @extend %visualizer-host; // Extend the common host styles
+  @include viz.apply-visualizer-host-styles;
 }
 
-// Optional: Adjust app-card sizing if needed for the log
+.target-info {
+  margin-left: 5px;
+  font-style: italic;
+  color: #777;
+}
+
+.guessed-card {
+  margin-left: 5px;
+  font-weight: normal; // Assuming it's part of another element that might be bold
+  color: #4a4a4a;
+}
+
+// Ensure app-card is displayed correctly if it's directly a child of :host or .log-visualizer-entry
 app-card {
-  // Example: make cards a bit smaller in the log
-  // transform: scale(0.8);
-  // margin-top: -10px; // Adjust if scaling affects layout too much
+  // If specific sizing or spacing is needed for the card in this context
 }

@@ -1,7 +1,7 @@
-@import '../visualizer.scss';
+@use '../visualizer' as viz;
 
 :host {
-  @extend %visualizer-host;
+  @include viz.apply-visualizer-host-styles;
 }
 
 // Optional: Adjust app-card sizing if needed for the log

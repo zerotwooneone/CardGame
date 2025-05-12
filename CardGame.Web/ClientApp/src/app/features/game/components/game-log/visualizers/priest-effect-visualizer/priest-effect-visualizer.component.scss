@@ -1,7 +1,7 @@
-@import '../visualizer.scss';
+@use '../visualizer' as viz;
 
 :host {
-  @extend %visualizer-host;
+  @include viz.apply-visualizer-host-styles;
 }
 
 // Specific styles for app-card within this visualizer can remain if needed.

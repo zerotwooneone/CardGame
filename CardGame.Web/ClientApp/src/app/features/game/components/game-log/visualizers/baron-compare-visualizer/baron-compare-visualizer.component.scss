@@ -1,5 +1,5 @@
-@import '../visualizer.scss';
+@use '../visualizer' as viz;
 
 :host {
-  @extend %visualizer-host;
+  @include viz.apply-visualizer-host-styles;
 }

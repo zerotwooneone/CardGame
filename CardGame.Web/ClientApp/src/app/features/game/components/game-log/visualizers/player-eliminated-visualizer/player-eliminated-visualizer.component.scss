@@ -1,5 +1,23 @@
-@import '../visualizer.scss';
+@use '../visualizer' as viz;
 
 :host {
-  @extend %visualizer-host;
+  @include viz.apply-visualizer-host-styles;
+}
+
+.responsible-card-section {
+  display: flex;
+  align-items: center;
+  gap: 5px; // Adjust as needed
+  margin-left: 8px; // Example spacing
+
+  .responsible-card-text {
+    font-style: italic;
+    color: #777; // Example color
+  }
+
+  // Styles for the app-card if it's directly here
+  app-card {
+    // Add specific styles if needed, e.g., scaling it down
+    // transform: scale(0.8);
+  }
 }

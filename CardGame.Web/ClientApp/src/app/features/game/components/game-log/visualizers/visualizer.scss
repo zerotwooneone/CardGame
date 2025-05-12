@@ -11,6 +11,11 @@
   width: 100%;
 }
 
+// Mixin to apply host styles
+@mixin apply-visualizer-host-styles {
+  @extend %visualizer-host; // Or directly: display: block; width: 100%;
+}
+
 // Main container within each visualizer
 // e.g., <div class="log-visualizer-entry">...</div>
 .log-visualizer-entry {
