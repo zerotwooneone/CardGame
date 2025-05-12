@@ -164,7 +164,7 @@ export class GameViewComponent implements OnInit, OnDestroy {
   onCardSelected(card: CardDto): void {
     if (!this.isMyTurn() || this.isSpectating()) return;
 
-    if (this.selectedCard()?.id === card.id) {
+    if (this.selectedCard()?.appearanceId === card.appearanceId) {
       this.selectedCard.set(null);
       this.selectedTargetPlayerId.set(null);
     } else {
@@ -250,7 +250,7 @@ export class GameViewComponent implements OnInit, OnDestroy {
     }
 
     const payload: PlayCardRequestDto = {
-      cardId: cardToPlay.id,
+      cardId: cardToPlay.appearanceId,
       targetPlayerId: targetId,
       guessedCardType: guessedCardValue
     };
@@ -307,6 +307,6 @@ export class GameViewComponent implements OnInit, OnDestroy {
 
   // --- TrackBy Functions ---
   trackByIndex(index: number, item: any): number { return index; }
-  trackCardById(index: number, item: CardDto): string { return item.id; }
+  trackCardById(index: number, item: CardDto): string { return item.appearanceId; }
   trackPlayerById(index: number, item: PlayerHandInfoDto | SpectatorPlayerDto): string { return item.playerId; }
 }

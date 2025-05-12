@@ -1,12 +1,12 @@
 <div class="log-visualizer-entry" *ngIf="logEntry">
   <div class="player-card-combo">
     <span class="player-name-log">{{ logEntry.actingPlayerName }}</span>
-    <app-card [cardData]="{ id: '', type: CardType.Prince }" [isFaceDown]="false" (infoClicked)="onPrinceCardInfoClicked()"></app-card>
+    <app-card [cardData]="{ appearanceId: '', type: CardType.Prince }" [isFaceDown]="false" (infoClicked)="onPrinceCardInfoClicked()"></app-card>
   </div>
   <span>forces</span>
   <div class="player-card-combo">
     <span class="player-name-log">{{ logEntry.targetPlayerName }}</span>
     <!-- The discarded card is shown directly under the target player's name -->
-    <app-card [cardData]="{ id: '', type: logEntry.discardedByPrinceCardValue ?? 0 }" [isFaceDown]="false" (infoClicked)="onDiscardedCardInfoClicked()"></app-card>
+    <app-card [cardData]="{ appearanceId: '', type: logEntry.discardedByPrinceCardValue ?? 0 }" [isFaceDown]="false" (infoClicked)="onDiscardedCardInfoClicked()"></app-card>
   </div>
 </div>

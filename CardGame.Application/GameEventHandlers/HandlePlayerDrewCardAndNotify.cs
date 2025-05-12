@@ -42,7 +42,7 @@ public class HandlePlayerDrewCardAndNotify : INotificationHandler<DomainEventNot
             // Map the player's current hand to DTOs
             var handDto = player.Hand.GetCards().Select(c => new CardDto
             {
-                Id = c.AppearanceId, 
+                AppearanceId = c.AppearanceId, 
                 Type = c.Type.Value,
             }).ToList();
 

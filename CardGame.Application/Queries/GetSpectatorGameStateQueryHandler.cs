@@ -38,7 +38,7 @@ public class GetSpectatorGameStateQueryHandler : IRequestHandler<GetSpectatorGam
             DiscardPile = game.DiscardPile.Select(card => new CardDto
             {
                 Type = card.Type.Value, 
-                Id = card.AppearanceId
+                AppearanceId = card.AppearanceId
             }).ToList(),
             Players = game.Players.Select(player => new SpectatorPlayerDto
             {

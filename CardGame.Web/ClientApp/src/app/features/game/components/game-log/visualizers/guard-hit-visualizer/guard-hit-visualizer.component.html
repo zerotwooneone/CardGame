@@ -1,12 +1,12 @@
 <div class="log-visualizer-entry" *ngIf="logEntry">
   <div class="player-card-combo">
     <span class="player-name-log">{{ logEntry.actingPlayerName }}</span>
-    <app-card [cardData]="{ id: '', type: CardType.Guard }" [isFaceDown]="false" (infoClicked)="onGuardCardInfoClicked()"></app-card>
+    <app-card [cardData]="{ appearanceId: '', type: CardType.Guard }" [isFaceDown]="false" (infoClicked)="onGuardCardInfoClicked()"></app-card>
   </div>
   <span>correctly guessed</span>
   <div class="player-card-combo">
     <span class="player-name-log">{{ logEntry.targetPlayerName }}</span>
     <span>held:</span>
-    <app-card [cardData]="{ id: '', type: logEntry.guessedCardValue ?? 0 }" [isFaceDown]="false" (infoClicked)="onGuessedCardInfoClicked()"></app-card>
+    <app-card [cardData]="{ appearanceId: '', type: logEntry.guessedCardValue ?? 0 }" [isFaceDown]="false" (infoClicked)="onGuessedCardInfoClicked()"></app-card>
   </div>
 </div>

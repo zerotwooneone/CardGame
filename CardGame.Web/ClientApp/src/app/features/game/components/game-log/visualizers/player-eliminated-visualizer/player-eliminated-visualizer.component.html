@@ -1,10 +1,10 @@
 <div class="log-visualizer-entry" *ngIf="logEntry">
   <span class="player-name-log">{{ logEntry.actingPlayerName }}</span>
   <span>was eliminated</span>
-  <span class="log-emoji">💀</span> 
+  <span class="log-emoji">💀</span>
   <ng-container *ngIf="logEntry.cardResponsibleForEliminationValue !== undefined && logEntry.cardResponsibleForEliminationValue !== null">
     <span>. By:</span>
-    <app-card [cardData]="{ id: '', type: logEntry.cardResponsibleForEliminationValue }" 
+    <app-card [cardData]="{ appearanceId: '', type: logEntry.cardResponsibleForEliminationValue }"
               [isFaceDown]="false"
               (infoClicked)="onResponsibleCardInfoClicked()"></app-card>
   </ng-container>

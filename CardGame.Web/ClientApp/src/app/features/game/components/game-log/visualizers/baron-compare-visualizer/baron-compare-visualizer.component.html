@@ -1,8 +1,8 @@
 <div class="log-visualizer-entry" *ngIf="logEntry">
   <span>Baron Compare:</span>
-  <app-card [cardData]="{ id: '', type: logEntry.player1ComparedCardValue ?? 0 }" [isFaceDown]="false" (infoClicked)="onPlayer1ComparedCardInfoClicked()"></app-card>
+  <app-card [cardData]="{ appearanceId: '', type: logEntry.player1ComparedCardValue ?? 0 }" [isFaceDown]="false" (infoClicked)="onPlayer1ComparedCardInfoClicked()"></app-card>
   <span class="log-emoji">⚔️</span>
-  <app-card [cardData]="{ id: '', type: logEntry.player2ComparedCardValue ?? 0 }" [isFaceDown]="false" (infoClicked)="onPlayer2ComparedCardInfoClicked()"></app-card>.
+  <app-card [cardData]="{ appearanceId: '', type: logEntry.player2ComparedCardValue ?? 0 }" [isFaceDown]="false" (infoClicked)="onPlayer2ComparedCardInfoClicked()"></app-card>.
 
   <span>Result:</span>
   <ng-container *ngIf="logEntry.baronLoserPlayerId !== undefined && logEntry.baronLoserPlayerId !== null">

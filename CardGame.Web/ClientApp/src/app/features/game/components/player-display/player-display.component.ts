@@ -83,7 +83,7 @@ export class PlayerDisplayComponent {
   // Uses the numeric type value from playerData.playedCardTypes
   get discardPileCards(): CardDto[] {
     return (this.playerData?.playedCardTypes ?? []).map((typeValue, index) => ({
-      id: `${this.playerData?.playerId}_discard_${index}_${typeValue}`,
+      appearanceId: `${this.playerData?.playerId}_discard_${index}_${typeValue}`,
       type: typeValue // Assign the numeric type value directly
     }));
   }
@@ -108,7 +108,7 @@ export class PlayerDisplayComponent {
   }
 
   trackCardById(index: number, item: CardDto): string {
-    return item.id;
+    return item.appearanceId;
   }
 
   trackPlayerById(index: number, item: PlayerHandInfoDto | SpectatorPlayerDto): string {
