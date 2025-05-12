@@ -7,6 +7,6 @@
   <div class="player-card-combo">
     <span class="player-name-log">{{ logEntry.targetPlayerName }}</span>
     <span>held:</span>
-    <app-card [cardData]="{ appearanceId: '', rank: logEntry.guessedCardValue ?? 1 }" [isFaceDown]="false" (infoClicked)="onGuessedCardInfoClicked()"></app-card>
+    <app-card [cardData]="{ appearanceId: logEntry.guessedCardAppearanceId || '', rank: logEntry.guessedCardValue ?? 1 }" [isFaceDown]="false" (infoClicked)="onGuessedCardInfoClicked()"></app-card>
   </div>
 </div>

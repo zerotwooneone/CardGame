@@ -27,25 +27,16 @@
           <mat-card-content>
             <div class="summary-section">
               <h4>Final Hand:</h4>
-              <div class="final-hand-display">
-                <app-card *ngIf="player.finalHeldCard"
-                          [cardData]="player.finalHeldCard"
+              <div class="final-hand-display" *ngIf="player.cardsHeld && player.cardsHeld.length > 0; else noCardsHeld">
+                <app-card *ngFor="let card of player.cardsHeld; trackBy: trackHeldCard"
+                          [cardData]="card"
                           [isFaceDown]="false">
                 </app-card>
-                <span *ngIf="!player.finalHeldCard" class="no-card-text">
-                  (Eliminated or No Card)
+              </div>
+              <ng-template #noCardsHeld>
+                <span class="no-card-text">
+                  (Eliminated or No Cards Held)
                 </span>
-              </div>
-            </div>
-            <div class="summary-section">
-              <h4>Discard Pile (This Round):</h4>
-              <div class="discard-pile-display" *ngIf="player.discardPileValues.length > 0; else emptyDiscard">
-                <div class="card-slot-summary" *ngFor="let cardValue of player.discardPileValues; trackBy: trackCardValue; let i = index">
-                  <app-card [cardData]="getDiscardCardDto(cardValue, player, i)" [isFaceDown]="false"></app-card>
-                </div>
-              </div>
-              <ng-template #emptyDiscard>
-                <span class="no-card-text">Empty</span>
               </ng-template>
             </div>
           </mat-card-content>

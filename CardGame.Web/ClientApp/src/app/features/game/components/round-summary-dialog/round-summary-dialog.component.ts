@@ -55,15 +55,6 @@ export class RoundSummaryDialogComponent implements OnInit {
     return getCardName(value);
   }
 
-  // Helper to create CardDto for the discard pile display in the template
-  // (since discardPileValues are just numbers)
-  getDiscardCardDto(typeValue: number, playerSummary: RoundEndPlayerSummaryDto, index: number): CardDto {
-    return {
-      appearanceId: `${playerSummary.playerId}_discard_summary_${index}_${typeValue}`, // Unique ID for trackBy
-      rank: typeValue
-    };
-  }
-
   onDismiss(): void {
     this.dialogRef.close();
   }
@@ -71,7 +62,8 @@ export class RoundSummaryDialogComponent implements OnInit {
   trackPlayerSummary(index: number, item: RoundEndPlayerSummaryDto): string {
     return item.playerId;
   }
-  trackCardValue(index: number, item: number): number {
-    return index; // Or item if values are unique in discard
+
+  trackHeldCard(index: number, card: CardDto): string {
+    return card.appearanceId; // Or a combination if appearanceId isn't always unique in this context
   }
 }

@@ -38,14 +38,11 @@ public class HandleRoundEndedAndNotify : INotificationHandler<DomainEventNotific
             {
                 PlayerId = summary.PlayerId, 
                 PlayerName = summary.PlayerName,
-                FinalHeldCard = summary.FinalHeldCard == null
-                    ? null
-                    : new CardDto
-                    {
-                        AppearanceId = summary.FinalHeldCard.AppearanceId, 
-                        Rank = summary.FinalHeldCard.Rank 
-                    },
-                DiscardPileValues = summary.DiscardPileValues, 
+                CardsHeld = summary.CardsHeld.Select(card => new CardDto
+                {
+                    AppearanceId = card.AppearanceId,
+                    Rank = card.Rank
+                }).ToList(),
                 TokensWon = summary.TokensWon
             }).ToList();
 

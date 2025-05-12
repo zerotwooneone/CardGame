@@ -51,27 +51,44 @@ namespace CardGame.Application.Queries;
                     ActingPlayerName = log.ActingPlayerName,
                     TargetPlayerId = log.TargetPlayerId,
                     TargetPlayerName = log.TargetPlayerName,
-                    RevealedCardId = log.RevealedCardId,
+                    RevealedCardAppearanceId = log.RevealedCardAppearanceId,
                     RevealedCardValue = log.RevealedCardType?.Value,
                     IsPrivate = log.IsPrivate,
                     Message = log.Message,
 
+                    PlayedCardAppearanceId = log.PlayedCardAppearanceId,
                     PlayedCardValue = log.PlayedCardType?.Value,
+                    
+                    GuessedCardAppearanceId = log.GuessedCardAppearanceId,
                     GuessedCardValue = log.GuessedCardType?.Value,
                     WasGuessCorrect = log.WasGuessCorrect,
 
+                    Player1ComparedCardAppearanceId = log.Player1ComparedCardAppearanceId,
                     Player1ComparedCardValue = log.Player1ComparedCardType?.Value,
+                    Player2ComparedCardAppearanceId = log.Player2ComparedCardAppearanceId,
                     Player2ComparedCardValue = log.Player2ComparedCardType?.Value,
                     BaronLoserPlayerId = log.BaronLoserPlayerId,
 
+                    DiscardedByPrinceCardAppearanceId = log.DiscardedByPrinceCardAppearanceId,
                     DiscardedByPrinceCardValue = log.DiscardedByPrinceCardType?.Value,
+                    
+                    CardResponsibleForEliminationAppearanceId = log.CardResponsibleForEliminationAppearanceId,
                     CardResponsibleForEliminationValue = log.CardResponsibleForElimination?.Value,
 
                     FizzleReason = log.FizzleReason,
 
                     WinnerPlayerId = log.WinnerPlayerId,
                     RoundEndReason = log.RoundEndReason,
+                    RoundPlayerSummaries = log.RoundPlayerSummaries?.Select(s => new RoundEndPlayerSummaryDto
+                    {
+                        PlayerId = s.PlayerId,
+                        PlayerName = s.PlayerName,
+                        CardsHeld = s.CardsHeld.Select(c => new CardDto { Rank = c.Rank, AppearanceId = c.AppearanceId }).ToList(),
+                        TokensWon = s.Score
+                    }).ToList(),
                     TokensHeld = log.TokensHeld,
+                    
+                    CardDrawnAppearanceId = log.CardDrawnAppearanceId,
                     CardDrawnValue = log.CardDrawnType?.Value
                 })
                 .OrderByDescending(log => log.Timestamp) // Ensure logs are newest first

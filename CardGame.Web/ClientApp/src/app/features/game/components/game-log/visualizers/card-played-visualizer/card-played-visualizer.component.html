@@ -2,7 +2,7 @@
   <span>played</span>
   <div class="player-card-combo">
     <span class="player-name-log">{{ logEntry.actingPlayerName }}</span>
-    <app-card [cardData]="{ appearanceId: '', rank: logEntry.playedCardValue ?? 1 }"
+    <app-card [cardData]="{ appearanceId: logEntry.playedCardAppearanceId || '', rank: logEntry.playedCardValue ?? 1 }"
               [isFaceDown]="false"
               (infoClicked)="onCardInfoClicked($event)"></app-card>
   </div>

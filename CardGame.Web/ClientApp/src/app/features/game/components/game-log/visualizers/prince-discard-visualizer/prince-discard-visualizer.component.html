@@ -7,6 +7,6 @@
   <div class="player-card-combo">
     <span class="player-name-log">{{ logEntry.targetPlayerName }}</span>
     <!-- The discarded card is shown directly under the target player's name -->
-    <app-card [cardData]="{ appearanceId: '', rank: logEntry.discardedByPrinceCardValue ?? 1 }" [isFaceDown]="false" (infoClicked)="onDiscardedCardInfoClicked()"></app-card>
+    <app-card [cardData]="{ appearanceId: logEntry.discardedByPrinceCardAppearanceId || '', rank: logEntry.discardedByPrinceCardValue ?? 1 }" [isFaceDown]="false" (infoClicked)="onDiscardedCardInfoClicked()"></app-card>
   </div>
 </div>

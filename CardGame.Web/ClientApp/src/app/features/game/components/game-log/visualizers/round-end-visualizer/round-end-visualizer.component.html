@@ -3,10 +3,33 @@
   <span>Round ended</span>
   <ng-container *ngIf="logEntry.winnerPlayerId">
     <span>- Winner:</span>
-    <span class="player-name">{{ logEntry.winnerPlayerId }}</span>
+    <span class="player-name">{{ logEntry.actingPlayerName }}</span> <!-- Assuming winnerPlayerId is actually the actingPlayer for this log type -->
   </ng-container>
-  <ng-container *ngIf="!logEntry.winnerPlayerId">
+  <ng-container *ngIf="!logEntry.winnerPlayerId && logEntry.roundPlayerSummaries && logEntry.roundPlayerSummaries.length > 0">
     <span>- It's a draw!</span>
   </ng-container>
   <span *ngIf="logEntry.roundEndReason">({{ logEntry.roundEndReason }})</span>
+
+  <div *ngIf="logEntry.roundPlayerSummaries && logEntry.roundPlayerSummaries.length > 0" class="player-summaries-container">
+    <h4>Player Summaries:</h4>
+    <ul class="player-summaries-list">
+      <li *ngFor="let summary of logEntry.roundPlayerSummaries" class="player-summary-item">
+        <span class="player-name">{{ summary.playerName }}</span>:
+        <span class="tokens">{{ summary.tokensWon }} token(s)</span>
+        <span *ngIf="!summary.wasActive" class="status">(Eliminated)</span>
+        <div *ngIf="summary.cardsHeld && summary.cardsHeld.length > 0" class="cards-held-container">
+          <span>Held:</span>
+          <div class="cards-display">
+            <app-card *ngFor="let card of summary.cardsHeld; trackBy: trackCardByAppearanceId"
+                      [cardData]="card" 
+                      [isFaceDown]="false"
+                      class="summary-card"></app-card>
+          </div>
+        </div>
+        <div *ngIf="!summary.cardsHeld || summary.cardsHeld.length === 0">
+          <span>No cards held.</span>
+        </div>
+      </li>
+    </ul>
+  </div>
 </div>

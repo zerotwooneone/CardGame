@@ -4,7 +4,7 @@
   <span class="log-emoji">💀</span>
   <ng-container *ngIf="logEntry.cardResponsibleForEliminationValue !== undefined && logEntry.cardResponsibleForEliminationValue !== null">
     <span>. By:</span>
-    <app-card [cardData]="{ appearanceId: '', rank: logEntry.cardResponsibleForEliminationValue }"
+    <app-card [cardData]="{ appearanceId: logEntry.cardResponsibleForEliminationAppearanceId || '', rank: logEntry.cardResponsibleForEliminationValue }"
               [isFaceDown]="false"
               (infoClicked)="onResponsibleCardInfoClicked()"></app-card>
   </ng-container>

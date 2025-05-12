@@ -1,37 +1,44 @@
 using CardGame.Domain.Types; // For CardType
+using CardGame.Domain.Game; // For Card
 
 namespace CardGame.Domain;
 
 public class GameLogEntry
 {
     public Guid Id { get; private set; } 
-    public DateTimeOffset Timestamp { get; private set; } 
+    public DateTimeOffset Timestamp { get; private set; }
     public GameLogEventType EventType { get; set; } 
     public Guid? ActingPlayerId { get; set; }
     public string ActingPlayerName { get; set; }
     public Guid? TargetPlayerId { get; set; }
     public string? TargetPlayerName { get; set; }
-    public Guid? RevealedCardId { get; set; }
+    public string? RevealedCardAppearanceId { get; set; } 
     public CardType? RevealedCardType { get; set; } 
     public bool IsPrivate { get; set; }
     public string? Message { get; set; }
 
     // --- New Structured Properties for Visual Story --- 
+    public string? PlayedCardAppearanceId { get; set; } 
     public CardType? PlayedCardType { get; set; }
 
     // For Guard Guess
+    public string? GuessedCardAppearanceId { get; set; } 
     public CardType? GuessedCardType { get; set; } 
     public bool? WasGuessCorrect { get; set; }   
 
     // For Baron Comparison
+    public string? Player1ComparedCardAppearanceId { get; set; } 
     public CardType? Player1ComparedCardType { get; set; } 
+    public string? Player2ComparedCardAppearanceId { get; set; } 
     public CardType? Player2ComparedCardType { get; set; } 
     public Guid? BaronLoserPlayerId { get; set; }        
 
     // For Prince Discard
+    public string? DiscardedByPrinceCardAppearanceId { get; set; } 
     public CardType? DiscardedByPrinceCardType { get; set; } 
 
     // For Eliminations
+    public string? CardResponsibleForEliminationAppearanceId { get; set; } 
     public CardType? CardResponsibleForElimination { get; set; } 
 
     // For Fizzled Effects (played card is in PlayedCardType)
@@ -42,6 +49,7 @@ public class GameLogEntry
     public string? RoundEndReason { get; set; } 
     public List<GameLogPlayerRoundSummary>? RoundPlayerSummaries { get; set; }
     public int? TokensHeld { get; set; }
+    public string? CardDrawnAppearanceId { get; set; } 
     public CardType? CardDrawnType { get; set; }
 
     // Base constructor - initializes essential fields. Others can be set via property initializers.
@@ -57,20 +65,28 @@ public class GameLogEntry
         // Initialize other nullable properties to null by default
         TargetPlayerId = null;
         TargetPlayerName = null;
-        RevealedCardId = null;
+        RevealedCardAppearanceId = null;
         RevealedCardType = null;
+        PlayedCardAppearanceId = null;
         PlayedCardType = null;
+        GuessedCardAppearanceId = null;
         GuessedCardType = null;
         WasGuessCorrect = null;
+        Player1ComparedCardAppearanceId = null;
         Player1ComparedCardType = null;
+        Player2ComparedCardAppearanceId = null;
         Player2ComparedCardType = null;
         BaronLoserPlayerId = null;
+        DiscardedByPrinceCardAppearanceId = null;
         DiscardedByPrinceCardType = null;
+        CardResponsibleForEliminationAppearanceId = null;
         CardResponsibleForElimination = null;
         FizzleReason = null;
         WinnerPlayerId = null;
         RoundEndReason = null;
         RoundPlayerSummaries = null;
+        CardDrawnAppearanceId = null;
+        CardDrawnType = null;
     }
 
     // Constructor for events with a target player
@@ -103,7 +119,7 @@ public class GameLogEntry
     {
         public Guid PlayerId { get; set; }
         public string PlayerName { get; set; }
-        public List<CardType> CardsHeld { get; set; } = new List<CardType>();
+        public List<Card> CardsHeld { get; set; } = new List<Card>(); 
         public int Score { get; set; } // e.g., tokens won
         public bool WasActive { get; set; } // Was player active at round end?
 

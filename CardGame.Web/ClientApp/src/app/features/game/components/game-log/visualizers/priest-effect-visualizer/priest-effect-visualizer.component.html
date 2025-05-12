@@ -8,7 +8,7 @@
   <div class="player-card-combo">
     <span class="player-name-log">{{ logEntry.targetPlayerName }}'s hand:</span>
     <ng-container *ngIf="canSeeRevealedCard && logEntry.revealedCardValue !== undefined && logEntry.revealedCardValue !== null">
-      <app-card [cardData]="{ appearanceId: '', rank: logEntry.revealedCardValue }" [isFaceDown]="false" (infoClicked)="onRevealedCardInfoClicked()"></app-card>
+      <app-card [cardData]="{ appearanceId: logEntry.revealedCardAppearanceId || '', rank: logEntry.revealedCardValue }" [isFaceDown]="false" (infoClicked)="onRevealedCardInfoClicked()"></app-card>
     </ng-container>
     <ng-container *ngIf="!canSeeRevealedCard">
       <app-card [cardData]="{ appearanceId: '', rank: 1 }" [isFaceDown]="true"></app-card>

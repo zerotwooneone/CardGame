@@ -1,4 +1,4 @@
-﻿namespace CardGame.Application.DTOs;
+namespace CardGame.Application.DTOs;
 
 /// <summary>
 /// Represents the summary details for a single player at the end of a round.
@@ -17,15 +17,9 @@ public class RoundEndPlayerSummaryDto
     public string PlayerName { get; set; } = string.Empty;
 
     /// <summary>
-    /// The card held by the player at the end of the round (if any).
-    /// Null if the player was eliminated or had no card.
+    /// The cards held by the player at the end of the round.
     /// </summary>
-    public CardDto? FinalHeldCard { get; set; } // Uses the existing CardDto
-
-    /// <summary>
-    /// The list of card values (ranks) in the player's discard pile for this round.
-    /// </summary>
-    public List<int> DiscardPileValues { get; set; } = new List<int>();
+    public List<CardDto> CardsHeld { get; set; } = new List<CardDto>();
 
     /// <summary>
     /// The total number of tokens of affection the player has after this round.
