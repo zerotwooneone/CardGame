@@ -84,7 +84,7 @@ export class PlayerDisplayComponent {
   get discardPileCards(): CardDto[] {
     return (this.playerData?.playedCardTypes ?? []).map((typeValue, index) => ({
       appearanceId: `${this.playerData?.playerId}_discard_${index}_${typeValue}`,
-      type: typeValue // Assign the numeric type value directly
+      rank: typeValue // Assign the numeric type value directly
     }));
   }
 

@@ -1,6 +1,6 @@
 <div class="king-trade">
   <span class="player-name">{{ logEntry.actingPlayerName }}</span>
-  <app-card [cardData]="{ appearanceId: '', type: CardType.King }" [isFaceDown]="false" (infoClicked)="onCardInfoClicked($event)"></app-card>
+  <app-card [cardData]="{ appearanceId: '', rank: CardType.King }" [isFaceDown]="false" (infoClicked)="onCardInfoClicked($event)"></app-card>
   <span class="icon">🔄</span>
   <span class="player-name">{{ logEntry.targetPlayerName }}</span>
   <span>swap hands</span>

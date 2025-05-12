@@ -60,7 +60,7 @@ export class RoundSummaryDialogComponent implements OnInit {
   getDiscardCardDto(typeValue: number, playerSummary: RoundEndPlayerSummaryDto, index: number): CardDto {
     return {
       appearanceId: `${playerSummary.playerId}_discard_summary_${index}_${typeValue}`, // Unique ID for trackBy
-      type: typeValue
+      rank: typeValue
     };
   }
 

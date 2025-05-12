@@ -68,8 +68,8 @@ export class CardComponent {
    */
   onInfoClick(event: MouseEvent): void {
     event.stopPropagation(); // Prevent cardClick from also firing
-    if (this.cardData?.type) {
-      this.infoClicked.emit(this.cardData.type);
+    if (this.cardData?.rank) {
+      this.infoClicked.emit(this.cardData.rank);
     }
   }
 
@@ -77,13 +77,13 @@ export class CardComponent {
    * Gets the display name of the card based on its numeric type value.
    */
   get cardText(): string {
-    return this.cardData?.type ? (CARD_DETAILS_MAP[this.cardData.type]?.name ?? '?') : '?';
+    return this.cardData?.rank ? (CARD_DETAILS_MAP[this.cardData.rank]?.name ?? '?') : '?';
   }
 
   /**
    * Gets the rank of the card, which is now directly the numeric type value.
    */
   get cardRank(): number | string {
-    return this.cardData?.type ?? '?';
+    return this.cardData?.rank ?? '?';
   }
 }

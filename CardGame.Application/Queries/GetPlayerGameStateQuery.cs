@@ -88,7 +88,7 @@ namespace CardGame.Application.Queries;
                 DeckCardsRemaining = game.Deck.CardsRemaining,
                 DiscardPile = game.DiscardPile.Select(card => new CardDto
                 {
-                    Type = card.Type.Value,
+                    Rank = card.Rank,
                     AppearanceId = card.AppearanceId
                 }).ToList(),
 
@@ -109,7 +109,7 @@ namespace CardGame.Application.Queries;
                 PlayerHand = (requestingPlayer.Status == PlayerStatus.Active)
                              ? requestingPlayer.Hand.GetCards().Select(card => new CardDto
                                 {
-                                    Type = card.Type.Value,
+                                    Rank = card.Rank,
                                     AppearanceId = card.AppearanceId
                                 }).ToList()
                              : new List<CardDto>(), // Empty list if eliminated

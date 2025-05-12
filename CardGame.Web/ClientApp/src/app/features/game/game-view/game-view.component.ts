@@ -98,14 +98,14 @@ export class GameViewComponent implements OnInit, OnDestroy {
     const card = this.selectedCard();
     if (!card) return false;
     const targetTypes = [1, 2, 3, 6]; // Guard, Priest, Baron, King values
-    return targetTypes.includes(card.type);
+    return targetTypes.includes(card.rank);
   });
 
   // Computed signal to check if guessing is needed (Guard)
-  isGuessingRequired: Signal<boolean> = computed(() => this.selectedCard()?.type === 1); // Guard value is 1
+  isGuessingRequired: Signal<boolean> = computed(() => this.selectedCard()?.rank === 1); // Guard value is 1
 
   // Computed signal for the selected card's name
-  selectedCardName: Signal<string> = computed(() => getCardNameFromValue(this.selectedCard()?.type)); // Use helper
+  selectedCardName: Signal<string> = computed(() => getCardNameFromValue(this.selectedCard()?.rank)); // Use helper
 
   private injector = inject(Injector);
   ngOnInit(): void {
@@ -201,7 +201,7 @@ export class GameViewComponent implements OnInit, OnDestroy {
 
   openGuessModal(): void {
     const cardBeingPlayed = this.selectedCard();
-    if (!cardBeingPlayed || cardBeingPlayed.type !== 1 || this.isSpectating()) return;
+    if (!cardBeingPlayed || cardBeingPlayed.rank !== 1 || this.isSpectating()) return;
 
     const dialogData: ActionModalData = {
       actionType: 'guess-card',
