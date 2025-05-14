@@ -65,7 +65,28 @@ docker run --rm -it -p 8080:8080 -e ASPNETCORE_URLS=http://+:8080 --name cardgam
 
 Open your web browser and navigate to: `http://localhost:8080`
 
+## AI Assistant Guidelines
+
+This section is intended for AI coding assistants (like Cascade) to ensure smooth and effective collaboration. Please adhere to these guidelines:
+
+1.  **Code Comments:**
+    *   **Do not** leave comments in the code that merely describe the changes you have made (e.g., "Added null check," "Refactored to use service"). This is what commit messages are for.
+    *   **Do** leave comments that a Senior Software Engineer would approve of. This includes comments that explain *why* a certain complex or non-obvious piece of logic exists, document important pre-conditions or post-conditions, or clarify potential edge cases.
+2.  **Updating These Guidelines:**
+    *   If you learn something new about the project structure, key architectural decisions, or common pitfalls that would be beneficial for future AI interactions, please **proactively update this "AI Assistant Guidelines" section** in `README.md`.
+3.  **Project Structure & Key Files:**
+    *   The core domain logic for the game is encapsulated in the `Game` class, located at `CardGame.Domain\Game\Game.cs`. Its fully qualified name is `CardGame.Domain.Game.Game`.
+    *   Dependency Injection for the application layer is configured in `CardGame.Application\DependencyInjection.cs` within the `AddApplicationServices` extension method.
+    *   Interfaces are generally placed in the `Interfaces` subfolder of the project they belong to (e.g., `CardGame.Domain\Interfaces`).
+    *   **Architectural Preference:** Where sensible, aim to organize code by feature (e.g., grouping all files related to 'player authentication' together) rather than strictly by technical type (e.g., all 'controllers' in one folder, all 'services' in another). This is already followed in the Angular frontend (`features/`) and should be a consideration for backend organization where appropriate.
+4.  **General Approach:**
+    *   Prioritize understanding the existing architecture and patterns before introducing new ones.
+    *   When refactoring, ensure all related tests are updated and pass.
+    *   If unsure about an approach, ask for clarification rather than making assumptions.
+5.  **Memory & Context:**
+    *   Pay close attention to provided memories and checkpoint summaries. They contain critical context about previous decisions and current objectives.
+    *   Proactively create new memories for significant learnings, architectural decisions, or user preferences to aid future sessions.
+
 ## A Note on Collaboration
 
 While the initial structure and concepts for this project were outlined manually, the vast majority of the C# backend code (domain logic, application layer, infrastructure implementations, tests), Angular frontend components and services, Dockerfile configuration, and associated documentation were generated and iteratively refined through collaboration with **Gemini 2.5 Pro**. It's been an interesting experiment in AI-assisted development for exploring DDD and related patterns! This really helped knock out some of the tedious parts of clean architecture and assisted with refactoring things quickly.
-
