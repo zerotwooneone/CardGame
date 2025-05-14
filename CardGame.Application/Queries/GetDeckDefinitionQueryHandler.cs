@@ -19,7 +19,9 @@ public class GetDeckDefinitionQueryHandler : IRequestHandler<GetDeckDefinitionQu
 
         if (domainCards == null)
         {
-            return Enumerable.Empty<CardDto>(); // Or throw, or return null if appropriate for downstream
+            // Consider if NotFound or specific error handling is better here.
+            // For now, returning empty list aligns with DeckController's expectation for !result.Any().
+            return Enumerable.Empty<CardDto>(); 
         }
 
         var cardDtos = domainCards.Select(card => new CardDto
