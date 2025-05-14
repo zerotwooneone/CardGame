@@ -1,4 +1,4 @@
-import { Component, OnInit, inject } from '@angular/core';
+import { Component, OnInit, Inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { MatDialogRef, MAT_DIALOG_DATA, MatDialogModule } from '@angular/material/dialog';
 import { MatButtonModule } from '@angular/material/button';
@@ -10,7 +10,7 @@ import { MatTooltipModule } from '@angular/material/tooltip';
 import {RoundEndPlayerSummaryDto} from '../../../../core/models/roundEndPlayerSummaryDto';
 import {CardDto} from '../../../../core/models/cardDto';
 import {RoundEndSummaryDto} from '../../../../core/models/roundEndSummaryDto';
-import {CardComponent} from '../card/card.component';
+import {CardDisplayComponent} from '../../../../shared/components/card-display.component';
 import {CARD_DETAILS_MAP} from '../card/CARD_DETAILS_MAP';
 
 const getCardName = (value: number | undefined): string => {
@@ -30,15 +30,15 @@ const getCardName = (value: number | undefined): string => {
     MatIconModule,
     MatCardModule,
     MatTooltipModule,
-    CardComponent // To display the final held card
+    CardDisplayComponent // To display the final held card
   ],
   templateUrl: './round-summary-dialog.component.html',
   styleUrls: ['./round-summary-dialog.component.scss']
 })
 export class RoundSummaryDialogComponent implements OnInit {
 
-  public data: RoundEndSummaryDto = inject(MAT_DIALOG_DATA);
-  private dialogRef = inject(MatDialogRef<RoundSummaryDialogComponent>);
+  public data: RoundEndSummaryDto = Inject(MAT_DIALOG_DATA);
+  private dialogRef = Inject(MatDialogRef<RoundSummaryDialogComponent>);
 
   winnerName: string | null = null;
 

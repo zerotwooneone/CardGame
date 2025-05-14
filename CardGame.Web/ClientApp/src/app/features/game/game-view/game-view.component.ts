@@ -13,7 +13,7 @@ import { GameStateService } from '../services/game-state.service';
 import { GameActionService } from '../services/game-action.service';
 import { AuthService } from '../../../core/services/auth.service';
 import { PlayerDisplayComponent } from '../components/player-display/player-display.component';
-import { CardComponent } from '../components/card/card.component';
+import { CardDisplayComponent } from '../../../shared/components/card-display.component';
 import { ActionModalComponent } from '../components/action-modal/action-modal.component';
 import {SpectatorGameStateDto} from '../../../core/models/spectatorGameStateDto';
 import { CardDto } from '../../../core/models/cardDto';
@@ -45,7 +45,7 @@ const getCardNameFromValue = (value: number | undefined): string => {
     MatProgressSpinnerModule,
     MatTooltipModule,
     PlayerDisplayComponent,
-    CardComponent
+    CardDisplayComponent
   ],
   templateUrl: './game-view.component.html',
   styleUrls: ['./game-view.component.scss'],
@@ -82,6 +82,13 @@ export class GameViewComponent implements OnInit, OnDestroy {
 
   // Computed signal for current player ID
   currentPlayerId: Signal<string | null> = computed(() => this.authService.getCurrentPlayerId());
+
+  // Computed signal for the last discarded card
+  lastDiscardedCard: Signal<CardDto | undefined> = computed(() => {
+    const state = this.spectatorState();
+    // The discardPile is typically ordered with the most recent discard first.
+    return state?.discardPile?.[0];
+  });
 
   targetablePlayers: Signal<{ id: string; name: string; isProtected: boolean }[]> = computed(() => {
     const state = this.spectatorState();
@@ -307,6 +314,11 @@ export class GameViewComponent implements OnInit, OnDestroy {
 
   // --- TrackBy Functions ---
   trackByIndex(index: number, item: any): number { return index; }
-  trackCardById(index: number, item: CardDto): string { return item.appearanceId; }
-  trackPlayerById(index: number, item: PlayerHandInfoDto | SpectatorPlayerDto): string { return item.playerId; }
+  trackCardById(index: number, card: CardDto): string { return card.appearanceId; }
+  trackCardByAppearanceId(index: number, card: CardDto): string {
+    return card.appearanceId;
+  }
+  trackPlayerById(index: number, item: PlayerHandInfoDto | SpectatorPlayerDto): string {
+    return item.playerId;
+  }
 }

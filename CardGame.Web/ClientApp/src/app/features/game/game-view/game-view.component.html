@@ -22,14 +22,14 @@
     <h3>Your Hand</h3>
     <div class="hand-cards">
       <div class="card-slot" *ngFor="let card of playerHand(); trackBy: trackCardById">
-        <app-card
-          [cardData]="card"
+        <app-card-display
+          [card]="card"
           [isFaceDown]="false"
           [isPlayable]="isMyTurn()"
           [isSelected]="card.appearanceId === selectedCard()?.appearanceId"
           (cardClicked)="onCardSelected($event)"
           (infoClicked)="onCardInfoClicked($event)">
-        </app-card>
+        </app-card-display>
       </div>
       <div *ngIf="playerHand().length === 0 && gameState.gamePhase !== 'GameOver'">
         Waiting for card...
@@ -59,12 +59,27 @@
   <div class="public-cards-area" *ngIf="gameState.publiclySetAsideCards?.length">
     <h4>Public Cards</h4>
     <div class="card-slot" *ngFor="let card of gameState.publiclySetAsideCards; trackBy: trackCardById">
-      <app-card
-        [cardData]="card"
+      <app-card-display
+        [card]="card"
         [isFaceDown]="false"
         (infoClicked)="onCardInfoClicked($event)">
-      </app-card>
+      </app-card-display>
     </div>
+  </div>
+
+  <div class="deck-area" *ngIf="gameState.deckCardsRemaining !== undefined">
+    <span class="area-label">Deck: {{ gameState.deckCardsRemaining }}</span>
+    <!-- Display one face-down card to represent the deck -->
+    <app-card-display [isFaceDown]="true"></app-card-display>
+  </div>
+
+  <div class="last-discarded-card-area" *ngIf="lastDiscardedCard() as ldc">
+    <span class="area-label">Last Discarded:</span>
+    <app-card-display
+      [card]="ldc"
+      [isFaceDown]="false"
+      (infoClicked)="onCardInfoClicked($event)"
+    ></app-card-display>
   </div>
 
 </div>

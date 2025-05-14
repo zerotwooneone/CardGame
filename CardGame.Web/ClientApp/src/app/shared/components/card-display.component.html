@@ -33,9 +33,6 @@
             matTooltipShowDelay="500">
       <mat-icon>info_outline</mat-icon>
     </button>
-    <div class="card-name" *ngIf="imageError() || !card.appearanceId"> <!-- Show name as part of fallback text or if image fails -->
-      {{ CARD_DETAILS_MAP[card.rank]?.name || 'Unknown' }}
-    </div>
     <div class="card-rank bottom-right">{{ card.rank }}</div>
   </div>
 

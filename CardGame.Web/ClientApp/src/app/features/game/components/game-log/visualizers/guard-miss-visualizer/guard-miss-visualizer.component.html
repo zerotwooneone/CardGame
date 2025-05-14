@@ -1,10 +1,10 @@
 <div class="log-visualizer-entry" *ngIf="logEntry">
   <div class="player-card-combo">
     <span class="player-name-log">{{ logEntry.actingPlayerName }}</span>
-    <app-card [cardData]="{ appearanceId: '', rank: CardType.Guard }" [isFaceDown]="false" (infoClicked)="onGuardCardInfoClicked()"></app-card>
+    <app-card-display [card]="{ appearanceId: '', rank: CardType.Guard }" [isFaceDown]="false" [isPlayable]="false" (infoClicked)="onGuardCardInfoClicked()"></app-card-display>
   </div>
   <span>missed</span>
   <span class="player-name-log">{{ logEntry.targetPlayerName }}</span>.
   <span>Guessed:</span>
-  <app-card [cardData]="{ appearanceId: '', rank: logEntry.guessedCardValue ?? 1 }" [isFaceDown]="false" (infoClicked)="onGuessedCardInfoClicked()"></app-card>
+  <app-card-display [card]="{ appearanceId: '', rank: logEntry.guessedCardValue ?? 1 }" [isFaceDown]="false" [isPlayable]="false" (infoClicked)="onGuessedCardInfoClicked()"></app-card-display>
 </div>

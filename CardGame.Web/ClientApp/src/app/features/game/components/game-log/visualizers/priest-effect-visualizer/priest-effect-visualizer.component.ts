@@ -1,6 +1,6 @@
-import {Component, inject, Input, OnInit} from '@angular/core';
-import { CommonModule } from '@angular/common';
-import {CardComponent} from '../../../card/card.component';
+import {Component, Input, inject} from '@angular/core';
+import {CommonModule} from '@angular/common';
+import {CardDisplayComponent} from '../../../../../../shared/components/card-display.component';
 import {GameLogEntryDto} from '../../../../../../core/models/gameLogEntryDto';
 import {CardType} from '../../../../../../core/models/cardType';
 import {UiInteractionService} from '../../../../../../core/services/ui-interaction-service.service';
@@ -12,32 +12,21 @@ import {UiInteractionService} from '../../../../../../core/services/ui-interacti
   standalone: true,
   imports: [
     CommonModule,
-    CardComponent
+    CardDisplayComponent
   ]
 })
-export class PriestEffectVisualizerComponent implements OnInit {
+export class PriestEffectVisualizerComponent {
   @Input() logEntry!: GameLogEntryDto;
 
   public CardType = CardType;
-  public canSeeRevealedCard: boolean = false;
   private uiInteractionService = inject(UiInteractionService);
-
-  constructor() { }
-
-  ngOnInit(): void {
-    if (this.logEntry && this.logEntry.revealedCardValue !== undefined && this.logEntry.revealedCardValue !== null) {
-      this.canSeeRevealedCard = true;
-    } else {
-      this.canSeeRevealedCard = false;
-    }
-  }
 
   onPriestCardInfoClicked(): void {
     this.uiInteractionService.requestScrollToCardReference(CardType.Priest);
   }
 
   onRevealedCardInfoClicked(): void {
-    if (this.logEntry.revealedCardValue) {
+    if (this.logEntry.revealedCardValue !== undefined && this.logEntry.revealedCardValue !== null) {
       this.uiInteractionService.requestScrollToCardReference(this.logEntry.revealedCardValue);
     }
   }

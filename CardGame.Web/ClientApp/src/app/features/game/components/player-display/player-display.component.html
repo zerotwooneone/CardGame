@@ -14,17 +14,19 @@
     <div class="hand-area" [matTooltip]="(playerData?.handCardCount || 0) + ' cards in hand'">
       <span *ngIf="playerData?.handCardCount === 0 && playerData?.status !== 2">Hand Empty</span>
       <div class="card-slot" *ngFor="let i of handPlaceholders; trackBy: trackByIndex">
-        <app-card [isFaceDown]="true"></app-card>
+        <app-card-display [isFaceDown]="true"></app-card-display>
       </div>
     </div>
 
     <div class="discard-area" matTooltip="Discard Pile">
       <span *ngIf="discardPileCards.length === 0">Discard Empty</span>
       <div class="card-slot" *ngFor="let card of discardPileCards; trackBy: trackCardById">
-        <app-card
+        <app-card-display
+          [card]="card"
           [isFaceDown]="false"
-          [cardData]="card"
-          (infoClicked)="onDiscardCardInfoClicked($event)"></app-card>
+          [isPlayable]="false"
+          (infoClicked)="onDiscardCardInfoClicked($event)">
+        </app-card-display>
       </div>
     </div>
   </mat-card-content>

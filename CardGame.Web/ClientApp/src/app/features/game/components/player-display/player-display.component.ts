@@ -12,7 +12,7 @@ import {MatCardModule} from '@angular/material/card';
 import {MatIconModule} from '@angular/material/icon';
 import {MatBadgeModule} from '@angular/material/badge';
 import {MatTooltipModule} from '@angular/material/tooltip';
-import {CardComponent} from '../card/card.component';
+import {CardDisplayComponent} from '../../../../shared/components/card-display.component';
 import {PlayerHandInfoDto} from '../../../../core/models/playerHandInfoDto';
 import {CardDto} from '../../../../core/models/cardDto';
 import {SpectatorPlayerDto} from '../../../../core/models/spectatorPlayerDto';
@@ -28,7 +28,7 @@ import {PlayerStatusMap} from './player-status.map';
     MatIconModule,
     MatBadgeModule,
     MatTooltipModule,
-    CardComponent
+    CardDisplayComponent
   ],
   templateUrl: './player-display.component.html',
   styleUrls: ['./player-display.component.scss'],

@@ -1,17 +1,17 @@
 <div class="log-visualizer-entry" *ngIf="logEntry">
   <div class="player-card-combo">
     <span class="player-name-log">{{ logEntry.actingPlayerName }}</span>
-    <app-card [cardData]="{ appearanceId: '', rank: CardType.Priest }" [isFaceDown]="false" (infoClicked)="onPriestCardInfoClicked()"></app-card>
+    <app-card-display [card]="{ appearanceId: '', rank: CardType.Priest }" [isFaceDown]="false" [isPlayable]="false" (infoClicked)="onPriestCardInfoClicked()"></app-card-display>
   </div>
   <span class="log-emoji">👀</span>
   <span class="log-text"> at </span>
   <div class="player-card-combo">
     <span class="player-name-log">{{ logEntry.targetPlayerName }}'s hand:</span>
-    <ng-container *ngIf="canSeeRevealedCard && logEntry.revealedCardValue !== undefined && logEntry.revealedCardValue !== null">
-      <app-card [cardData]="{ appearanceId: logEntry.revealedCardAppearanceId || '', rank: logEntry.revealedCardValue }" [isFaceDown]="false" (infoClicked)="onRevealedCardInfoClicked()"></app-card>
+    <ng-container *ngIf="logEntry.revealedCardValue !== undefined && logEntry.revealedCardValue !== null">
+      <app-card-display [card]="{ appearanceId: logEntry.revealedCardAppearanceId || '', rank: logEntry.revealedCardValue }" [isFaceDown]="false" [isPlayable]="false" (infoClicked)="onRevealedCardInfoClicked()"></app-card-display>
     </ng-container>
-    <ng-container *ngIf="!canSeeRevealedCard">
-      <app-card [cardData]="{ appearanceId: '', rank: 1 }" [isFaceDown]="true"></app-card>
+    <ng-container *ngIf="!(logEntry.revealedCardValue !== undefined && logEntry.revealedCardValue !== null)">
+      <app-card-display [card]="{ appearanceId: '', rank: 1 }" [isFaceDown]="true" [isPlayable]="false"></app-card-display>
     </ng-container>
   </div>
 </div>

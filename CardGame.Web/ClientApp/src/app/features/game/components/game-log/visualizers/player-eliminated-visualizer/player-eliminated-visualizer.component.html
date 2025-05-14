@@ -1,11 +1,19 @@
-<div class="log-visualizer-entry" *ngIf="logEntry">
-  <span class="player-name-log">{{ logEntry.actingPlayerName }}</span>
-  <span>was eliminated</span>
-  <span class="log-emoji">💀</span>
-  <ng-container *ngIf="logEntry.cardResponsibleForEliminationValue !== undefined && logEntry.cardResponsibleForEliminationValue !== null">
-    <span>. By:</span>
-    <app-card [cardData]="{ appearanceId: logEntry.cardResponsibleForEliminationAppearanceId || '', rank: logEntry.cardResponsibleForEliminationValue }"
-              [isFaceDown]="false"
-              (infoClicked)="onResponsibleCardInfoClicked()"></app-card>
-  </ng-container>
+<div *ngIf="logEntry" class="log-entry player-eliminated">
+  <span class="player-name">{{ logEntry.targetPlayerName }}</span>
+  <span> was eliminated from the round</span>
+  <span *ngIf="logEntry.actingPlayerName && logEntry.actingPlayerName !== logEntry.targetPlayerName">
+    by <span class="player-name">{{ logEntry.actingPlayerName }}</span>
+  </span>
+  <span *ngIf="logEntry.cardResponsibleForEliminationValue !== undefined">
+    . The card responsible was
+    <app-card-display
+      [card]="{ appearanceId: logEntry.cardResponsibleForEliminationAppearanceId || '', rank: logEntry.cardResponsibleForEliminationValue }"
+      [isFaceDown]="false"
+      [isPlayable]="false"
+      (infoClicked)="onSourceCardInfoClicked()">
+    </app-card-display>.
+  </span>
+  <span *ngIf="logEntry.cardResponsibleForEliminationValue === undefined">
+    .
+  </span>
 </div>

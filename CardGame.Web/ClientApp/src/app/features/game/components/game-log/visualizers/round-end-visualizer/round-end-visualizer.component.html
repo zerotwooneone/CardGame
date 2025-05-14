@@ -20,10 +20,11 @@
         <div *ngIf="summary.cardsHeld && summary.cardsHeld.length > 0" class="cards-held-container">
           <span>Held:</span>
           <div class="cards-display">
-            <app-card *ngFor="let card of summary.cardsHeld; trackBy: trackCardByAppearanceId"
-                      [cardData]="card" 
+            <app-card-display *ngFor="let card of summary.cardsHeld; trackBy: trackCardByAppearanceId"
+                      [card]="card" 
                       [isFaceDown]="false"
-                      class="summary-card"></app-card>
+                      [isPlayable]="false"
+                      class="summary-card"></app-card-display>
           </div>
         </div>
         <div *ngIf="!summary.cardsHeld || summary.cardsHeld.length === 0">

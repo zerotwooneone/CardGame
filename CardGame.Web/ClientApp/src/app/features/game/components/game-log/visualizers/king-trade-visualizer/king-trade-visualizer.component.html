@@ -1,6 +1,6 @@
-<div class="king-trade">
+<div class="log-visualizer king-trade" *ngIf="logEntry">
   <span class="player-name">{{ logEntry.actingPlayerName }}</span>
-  <app-card [cardData]="{ appearanceId: '', rank: CardType.King }" [isFaceDown]="false" (infoClicked)="onCardInfoClicked($event)"></app-card>
+  <app-card-display [card]="{ appearanceId: '', rank: CardType.King }" [isFaceDown]="false" [isPlayable]="false" (infoClicked)="onKingCardInfoClicked()"></app-card-display>
   <span class="icon">🔄</span>
   <span class="player-name">{{ logEntry.targetPlayerName }}</span>
   <span>swap hands</span>

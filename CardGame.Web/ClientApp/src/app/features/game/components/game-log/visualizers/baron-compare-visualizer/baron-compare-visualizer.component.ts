@@ -1,14 +1,14 @@
 import { Component, Input, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import {CardComponent} from '../../../card/card.component';
-import {GameLogEntryDto} from '../../../../../../core/models/gameLogEntryDto';
+import { CardDisplayComponent } from '../../../../../../shared/components/card-display.component';
+import { GameLogEntryDto } from '../../../../../../core/models/gameLogEntryDto';
+import { CardType } from '../../../../../../core/models/cardType';
 import { UiInteractionService } from '../../../../../../core/services/ui-interaction-service.service';
-import {CardType} from '../../../../../../core/models/cardType';
 
 @Component({
   selector: 'app-baron-compare-visualizer',
   standalone: true,
-  imports: [CommonModule, CardComponent],
+  imports: [CommonModule, CardDisplayComponent],
   templateUrl: './baron-compare-visualizer.component.html',
   styleUrls: ['./baron-compare-visualizer.component.scss']
 })

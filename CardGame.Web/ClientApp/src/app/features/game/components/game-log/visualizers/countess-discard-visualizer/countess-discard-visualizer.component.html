@@ -1,5 +1,6 @@
-<div class="countess-discard">
+<div class="log-visualizer countess-discard" *ngIf="logEntry">
   <span class="player-name">{{ logEntry.actingPlayerName }}</span>
-  <app-card [cardData]="{ appearanceId: '', rank: CardType.Countess }" [isFaceDown]="false" (infoClicked)="onCardInfoClicked($event)"></app-card>
-  <span>discarded the Countess</span>
+  <span> was forced to discard </span>
+  <app-card-display [card]="{ appearanceId: '', rank: CardType.Countess }" [isFaceDown]="false" [isPlayable]="false" (infoClicked)="onCountessCardDisplayClicked($event)"></app-card-display>
+  <span> because they held a Prince or King.</span>
 </div>
