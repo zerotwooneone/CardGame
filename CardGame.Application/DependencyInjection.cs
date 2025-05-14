@@ -25,7 +25,7 @@ public static class DependencyInjection
         // services.AddScoped<ISomeApplicationService, SomeApplicationService>();
 
         // Register application-specific services
-        services.AddScoped<IDeckProvider, DefaultDeckProvider>(); 
+        services.AddSingleton<IDeckProvider, DefaultDeckProvider>(); 
         services.AddScoped<GameStateUpdateService>();
 
         return services;
