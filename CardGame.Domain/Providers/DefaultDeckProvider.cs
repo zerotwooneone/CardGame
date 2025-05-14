@@ -33,7 +33,7 @@ public class DefaultDeckProvider : IDeckProvider
             {
                 // AppearanceId can be simple for now, e.g., TypeName-Index
                 // This could be enhanced later for actual visual variants if needed.
-                cards.Add(new Card($"{type.Name}-{i + 1}", type));
+                cards.Add(new Card($"assets/decks/default/{type.Name.ToLowerInvariant()}.webp", type));
             }
         }
 

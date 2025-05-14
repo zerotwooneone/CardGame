@@ -63,8 +63,12 @@ COPY --from=build-dotnet /app/publish .
 # Adjust the source path ('dist/card-game.web/browser') based on your angular.json output path
 # The destination './wwwroot' assumes your ASP.NET Core app is configured to serve static files from wwwroot
 COPY --from=build-angular /app/client/dist/card-game-client/browser ./wwwroot
-# If your output path is different (e.g., just 'dist/browser'), adjust accordingly:
-# COPY --from=build-angular /app/client/dist/browser ./wwwroot
+
+# Copy static assets from the ASP.NET Core project's wwwroot (from the publish step)
+# This ensures any assets managed by the backend project are also included.
+# If your assets are solely part of the Angular build, this line might be redundant
+# or could be more specific, e.g., COPY --from=build-dotnet /app/publish/wwwroot/assets ./wwwroot/assets
+COPY --from=build-dotnet /app/publish/wwwroot ./wwwroot
 
 # Expose the port Kestrel will listen on inside the container (usually 80 or 8080 for HTTP)
 # This depends on your ASP.NET Core configuration (ASPNETCORE_URLS environment variable or appsettings)
@@ -77,4 +81,3 @@ ENV PATH="${PATH}:/usr/share/dotnet"
 
 # Define the entry point for the container
 ENTRYPOINT ["dotnet", "CardGame.Web.dll"]
-
