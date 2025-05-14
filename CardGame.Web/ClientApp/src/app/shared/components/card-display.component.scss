@@ -1,19 +1,191 @@
-.card-image {
+.card-container {
   width: 100px; /* Example width */
-  height: auto;  /* Maintain aspect ratio */
-  border: 1px solid #ccc;
-  border-radius: 5px;
-  display: block;
-}
-
-.card-placeholder {
-  width: 100px; /* Match image width */
   height: 140px; /* Example height, adjust to match card aspect ratio */
-  border: 1px dashed #ccc;
-  border-radius: 5px;
-  display: flex;
+  border: 3px solid black;
+  border-radius: 8px;
+  box-sizing: border-box; /* Ensures border and padding are included in width/height */
+  display: flex; /* For centering content in placeholder/fallback */
   align-items: center;
   justify-content: center;
-  color: #aaa;
+  overflow: hidden; /* Ensures image corners are also rounded if image itself isn't */
+  background-color: #e0e0e0; /* Light grey for placeholder or if front image fails before text shows */
+  color: var(--mat-card-text-color, black);
+  position: relative; /* For absolute positioning of card faces */
+  cursor: default;
+  box-shadow: 0 2px 1px -1px rgba(0,0,0,.2), 0 1px 1px 0 rgba(0,0,0,.14), 0 1px 3px 0 rgba(0,0,0,.12);
+  transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out, border-color 0.2s ease-in-out;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+
+  &:not(.face-down) {
+    // Only apply hover effects if not face down (face-down already handled)
+    &.playable { // More specific hover for playable cards
+      cursor: pointer;
+      &:hover {
+        transform: translateY(-3px) scale(1.02);
+        box-shadow: 0 5px 5px -3px rgba(0,0,0,.2), 0 8px 10px 1px rgba(0,0,0,.14), 0 3px 14px 2px rgba(0,0,0,.12);
+      }
+    }
+  }
+  
+  &.playable {
+    border-color: #4CAF50; /* Greenish border for playable cards */
+    &:not(:hover) { // Subtle pulse or glow if not hovering
+      // Example: animation: playable-pulse 2s infinite;
+    }
+  }
+
+  &.selected {
+    border-color: #3f51b5; /* Primary color for selected */
+    border-width: 4px; /* Thicker border when selected */
+    transform: scale(1.05);
+    box-shadow: 0 0 10px 3px rgba(63, 81, 181, 0.5);
+  }
+
+  &.face-down {
+    // background-color: #303f9f; /* Dark blue from card.component, or use image */
+    border-color: #283593;
+    color: white;
+    cursor: default !important; 
+    &:hover {
+      transform: none;
+      box-shadow: 0 2px 1px -1px rgba(0,0,0,.2), 0 1px 1px 0 rgba(0,0,0,.14), 0 1px 3px 0 rgba(0,0,0,.12);
+    }
+  }
+}
+
+.card-image {
+  width: 100%; 
+  height: 100%; 
+  object-fit: cover; /* Cover ensures image fills the space, crop if necessary */
+  display: block; /* Remove extra space below image */
+  // border-radius: inherit; // Not always needed if overflow:hidden is on parent
+}
+
+.card-face {
+  width: 100%;
+  height: 100%;
+  position: absolute;
+  top: 0;
+  left: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  backface-visibility: hidden; /* For potential future flip animations */
+  padding: 5px;
+  box-sizing: border-box;
+}
+
+.card-back {
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  // Fallback design if image doesn't load or for very simple back
+  .card-back-design {
+    font-size: 2.5em;
+    font-weight: bold;
+    color: rgba(255, 255, 255, 0.7);
+  }
+}
+
+.card-front {
+  justify-content: space-between;
+  align-items: stretch; /* To make rank elements go to corners */
+  position: relative; /* For info button positioning */
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  color: black; /* Default text color for front, assuming light images or fallback */
+
+  .card-rank {
+    font-size: 1.4em;
+    font-weight: bold;
+    color: white; /* Default for rank text, assuming dark card images or use mix-blend-mode */
+    text-shadow: 1px 1px 2px black, 0 0 5px black; /* Make rank visible on various backgrounds */
+    z-index: 1; /* Ensure rank is above background image */
+  }
+  .top-left { align-self: flex-start; margin: 2px; }
+  .bottom-right { align-self: flex-end; margin: 2px; }
+  
+  .card-name {
+    font-size: 0.8em; 
+    text-align: center;
+    font-weight: 600;
+    white-space: pre-line; /* Allow \n for line breaks in fallback */
+    word-wrap: break-word;
+    flex-grow: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0 5px; /* Padding for name area */
+    z-index: 1;
+    color: white; /* Default for name text */
+    text-shadow: 1px 1px 1px black;
+  }
+
+  .card-fallback-content {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    white-space: pre-line; /* For newlines in fallback text */
+    font-size: 0.9em;
+    font-weight: bold;
+    color: #111; /* Dark text for fallback on light grey background */
+    padding: 10px;
+    height: 100%;
+    width: 100%;
+    background-color: rgba(255, 255, 255, 0.8); /* Semi-transparent white overlay if image partly loads */
+  }
+}
+
+.card-info-button {
+  position: absolute;
+  top: 2px;
+  right: 2px;
+  width: 30px; 
+  height: 30px;
+  line-height: 30px;
+  padding: 0;
+  color: white; 
+  background-color: rgba(0,0,0,0.3); /* Slight dark background for visibility */
+  border-radius: 50%;
+  z-index: 2; /* Above other card elements */
+
+  mat-icon {
+    font-size: 20px;
+    width: 20px;
+    height: 20px;
+  }
+
+  &:hover {
+    background-color: rgba(0,0,0,0.5);
+  }
+}
+
+.card-placeholder { 
+  font-size: 3.5em;
+  font-weight: bold;
+  color: rgba(0,0,0,0.2);
+}
+
+.card-placeholder { // For when !isFaceDown && !cardData
+  color: #666;
+  font-size: 0.9em;
+  text-align: center;
+}
+
+.card-fallback-info {
+  // Styles from .card-container are largely inherited or applied directly
+  padding: 5px;
+  color: #333;
   font-size: 0.8em;
+  text-align: center;
+  display: flex; // Already on card-container, but ensures flex properties if .card-container changes
+  flex-direction: column; // Stack rank and name if desired
+  align-items: center;
+  justify-content: center;
+  height: 100%; // Ensure it fills the container
+  width: 100%;  // Ensure it fills the container
 }

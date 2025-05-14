@@ -1,5 +1,46 @@
-<img *ngIf="card" [src]="getCardImageUrl()" [alt]="card?.appearanceId || 'Card'" class="card-image" />
-<div *ngIf="!card" class="card-placeholder">
-  <!-- You can style this placeholder or show a card back image by default -->
-  Card Back
+<div 
+  class="card-container"
+  [class.face-down]="isFaceDown"
+  [class.selected]="isSelected"
+  [class.playable]="isPlayable"
+  [class.hovered]="isHovered" 
+  (click)="onCardClick()"
+  (mouseenter)="onMouseEnter()"
+  (mouseleave)="onMouseLeave()"
+  [attr.alt]="altText()" 
+  [attr.aria-label]="altText()">
+
+  <div *ngIf="isFaceDown" class="card-face card-back" [style.background-image]="'url(' + getGenericCardBackImageUrl() + ')'">
+    <!-- Or use a more complex design like in card.component.html, e.g., <div class="card-back-design">LL</div> -->
+  </div>
+
+  <div *ngIf="!isFaceDown && card" 
+       class="card-face card-front"
+       [style.background-image]="cardFrontBackgroundImage()"
+       (error)="handleImageError()"> <!-- Error on div might not work, error handled by imageError signal -->
+    
+    <!-- Content to show if image background loads OR if it fails and we show text -->
+    <ng-container *ngIf="imageError() || !card.appearanceId">
+      <div class="card-fallback-content">{{ cardFrontFallbackText() }}</div>
+    </ng-container>
+
+    <!-- Always show rank and info button if it's the card front -->
+    <div class="card-rank top-left">{{ card.rank }}</div>
+    <button mat-icon-button class="card-info-button"
+            (click)="onInfoClick($event)"
+            aria-label="View card details"
+            matTooltip="View card details in reference"
+            matTooltipShowDelay="500">
+      <mat-icon>info_outline</mat-icon>
+    </button>
+    <div class="card-name" *ngIf="imageError() || !card.appearanceId"> <!-- Show name as part of fallback text or if image fails -->
+      {{ CARD_DETAILS_MAP[card.rank]?.name || 'Unknown' }}
+    </div>
+    <div class="card-rank bottom-right">{{ card.rank }}</div>
+  </div>
+
+  <div *ngIf="!isFaceDown && !card" class="card-face card-front card-placeholder">
+    ?
+  </div>
+
 </div>
