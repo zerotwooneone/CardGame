@@ -28,7 +28,7 @@ public class HandlePriestEffectUsedAndNotify : INotificationHandler<DomainEventN
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
     }
 
-    public async Task Handle(DomainEventNotification<PriestEffectUsed> notification,
+    public Task Handle(DomainEventNotification<PriestEffectUsed> notification,
         CancellationToken cancellationToken)
     {
         var domainEvent = notification.DomainEvent;
@@ -39,7 +39,6 @@ public class HandlePriestEffectUsedAndNotify : INotificationHandler<DomainEventN
 
         _logger.LogInformation("Priest reveal notification sent to player {PriestPlayerId} for game {GameId}.", domainEvent.PriestPlayerId, domainEvent.GameId);
 
-        // No SaveAsync needed, as all state changes (including log entries) are part of the Game aggregate
-        // and saved by the command handler (PlayCardCommandHandler) BEFORE this event is published.
+        return Task.CompletedTask;
     }
 }

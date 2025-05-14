@@ -2,7 +2,7 @@
 using CardGame.Application.Common.Interfaces;
 using CardGame.Application.Common.Models;
 
-namespace CardGame.Infrastructure.Persistance;
+namespace CardGame.Infrastructure.Persistence;
 
 /// <summary>
 /// In-memory implementation of IUserRepository for testing/development.

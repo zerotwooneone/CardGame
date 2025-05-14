@@ -1,4 +1,4 @@
-﻿namespace CardGame.Application.DTOs;
+namespace CardGame.Application.DTOs;
 
 /// <summary>
 /// Represents basic public information about a card (e.g., for the discard pile).
@@ -6,5 +6,5 @@
 public class CardDto
 {
     public int Rank { get; set; } 
-    public string AppearanceId { get; set; }
+    public string AppearanceId { get; set; } = string.Empty;
 }

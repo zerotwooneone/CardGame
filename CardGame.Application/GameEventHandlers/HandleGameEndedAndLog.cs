@@ -46,7 +46,7 @@ public class HandleGameEndedAndLog : INotificationHandler<DomainEventNotificatio
             var logEntryGeneric = new GameLogEntry(
                 eventType: GameLogEventType.GameEnd,
                 actingPlayerId: domainEvent.WinnerPlayerId,
-                actingPlayerName: null, // Or a placeholder like "Unknown Winner"
+                actingPlayerName: "None",
                 message: logMessageGeneric,
                 isPrivate: false
             );

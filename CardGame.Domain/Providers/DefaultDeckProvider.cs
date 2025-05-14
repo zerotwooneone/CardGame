@@ -1,9 +1,6 @@
 using CardGame.Domain.Game;
 using CardGame.Domain.Interfaces;
 using CardGame.Domain.Types;
-using System;
-using System.Collections.Generic;
-using System.Linq;
 
 namespace CardGame.Domain.Providers;
 
@@ -49,6 +46,6 @@ public class DefaultDeckProvider : IDeckProvider
         AddCards(CardType.Countess, 1);
         AddCards(CardType.Princess, 1);
 
-        return cards.OrderBy(c => Guid.NewGuid()).ToList(); // Shuffle the deck
+        return cards; 
     }
 }

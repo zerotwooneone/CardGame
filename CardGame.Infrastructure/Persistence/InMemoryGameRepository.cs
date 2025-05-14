@@ -2,7 +2,7 @@
 using CardGame.Domain.Game;
 using CardGame.Domain.Interfaces;
 
-namespace CardGame.Infrastructure.Persistance;
+namespace CardGame.Infrastructure.Persistence;
 
 /// <summary>
 /// In-memory implementation of the IGameRepository for testing and development.

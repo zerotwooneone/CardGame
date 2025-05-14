@@ -1,0 +1,19 @@
+.card-image {
+  width: 100px; /* Example width */
+  height: auto;  /* Maintain aspect ratio */
+  border: 1px solid #ccc;
+  border-radius: 5px;
+  display: block;
+}
+
+.card-placeholder {
+  width: 100px; /* Match image width */
+  height: 140px; /* Example height, adjust to match card aspect ratio */
+  border: 1px dashed #ccc;
+  border-radius: 5px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #aaa;
+  font-size: 0.8em;
+}

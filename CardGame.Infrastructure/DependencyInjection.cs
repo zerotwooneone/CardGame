@@ -1,7 +1,7 @@
 using CardGame.Application.Common.Interfaces;
 using CardGame.Domain.Common;
 using CardGame.Domain.Interfaces;
-using CardGame.Infrastructure.Persistance;
+using CardGame.Infrastructure.Persistence;
 using CardGame.Infrastructure.Services;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;

@@ -1,4 +1,4 @@
-﻿using CardGame.Application.Commands;
+using CardGame.Application.Commands;
 using CardGame.Application.DTOs;
 using CardGame.Application.Queries;
 using CardGame.Domain.Interfaces;
@@ -60,8 +60,9 @@ public class GameController : ControllerBase
     [ProducesResponseType(404)] // Not Found (if game or player in game not found)
     public async Task<ActionResult<PlayerGameStateDto>> GetPlayerState(Guid gameId, Guid playerId)
     {
-        // 1. Get the ID of the user making the request (using fake service here)
-        Guid currentUserId = User.Claims.FirstOrDefault(c => c.Type == "PlayerId")?.Value == null ? Guid.Empty : Guid.Parse(User.Claims.FirstOrDefault(c => c.Type == "PlayerId")?.Value);
+        // 1. Get the ID of the user making the request
+        string? playerIdClaimValue = User.Claims.FirstOrDefault(c => c.Type == "PlayerId")?.Value;
+        Guid currentUserId = string.IsNullOrEmpty(playerIdClaimValue) ? Guid.Empty : Guid.Parse(playerIdClaimValue);
 
         // --- Authorization Check ---
         // Ensure the authenticated user is requesting their own state.
@@ -232,7 +233,7 @@ public class GameController : ControllerBase
         {
             return NotFound(new ProblemDetails {Title = "Not Found", Detail = ex.Message});
         }
-        catch (Exception ex) // Catch unexpected errors
+        catch (Exception) 
         {
             // Log ex
             return StatusCode(500, new ProblemDetails {Title = "An unexpected error occurred while playing the card."});

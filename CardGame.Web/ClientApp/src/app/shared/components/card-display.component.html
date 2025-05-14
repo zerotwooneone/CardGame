@@ -1,0 +1,5 @@
+<img *ngIf="card" [src]="getCardImageUrl()" [alt]="card?.appearanceId || 'Card'" class="card-image" />
+<div *ngIf="!card" class="card-placeholder">
+  <!-- You can style this placeholder or show a card back image by default -->
+  Card Back
+</div>

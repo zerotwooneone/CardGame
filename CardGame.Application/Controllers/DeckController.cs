@@ -1,9 +1,6 @@
 using CardGame.Application.DTOs;
-using MediatR;
 using Microsoft.AspNetCore.Mvc;
-using System;
-using System.Collections.Generic;
-using System.Threading.Tasks;
+using MediatR;
 using CardGame.Application.Queries;
 
 namespace CardGame.Application.Controllers;
@@ -20,11 +17,18 @@ public class DeckController : ControllerBase
     }
 
     [HttpGet("{deckId}")]
-    public async Task<ActionResult<IEnumerable<CardAsset>>> GetDeckDefinition(Guid deckId)
+    public async Task<ActionResult<IEnumerable<CardDto>>> GetDeckDefinition(Guid deckId)
     {
-        if(deckId == Guid.Empty) return BadRequest();
+        if(deckId == Guid.Empty) return BadRequest("Deck ID cannot be empty.");
+        
         var query = new GetDeckDefinitionQuery(deckId);
         var result = await _mediator.Send(query).ConfigureAwait(false);
+
+        if (result == null || !result.Any())
+        {
+             return NotFound("Deck not found or is empty.");
+        }
+        
         return Ok(result);
     }
 }
