@@ -1,8 +1,9 @@
-﻿using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations;
 using CardGame.Application.Common.Interfaces;
 using CardGame.Domain.Common;
 using CardGame.Domain.Game;
 using CardGame.Domain.Interfaces;
+using CardGame.Domain.Providers;
 using MediatR;
 using Microsoft.Extensions.Logging;
 
@@ -52,7 +53,9 @@ public class CreateGameCommandHandler : IRequestHandler<CreateGameCommand, Guid>
 
         // --- Create Game ---
         _logger.LogDebug("Creating new game aggregate...");
-        var game = Game.CreateNewGame(playerInfosForGame, request.CreatorPlayerId, request.TokensToWin ?? 4);
+        var defaultDeckProvider = new DefaultDeckProvider();
+        var initialDeck = defaultDeckProvider.GetDeck();
+        var game = Game.CreateNewGame(playerInfosForGame, request.CreatorPlayerId, initialDeck, request.TokensToWin ?? 4);
         // GameCreated event is now in game.DomainEvents
 
         // --- Start First Round ---

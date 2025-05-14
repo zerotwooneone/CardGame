@@ -158,7 +158,7 @@ public class GameAggregateTests
             Card p1DealtCard = specificDeck[11]; // G3
             Card p2DealtCard = specificDeck[10]; // P2 (Priest)
             Card p1DrawnCard = specificDeck[9];  // P1 (Priest)
-            var game = Game.Game.CreateNewGame(playerInfos, creatorId, tokensNeededToWin, specificDeck);
+            var game = Game.Game.CreateNewGame(playerInfos, creatorId, specificDeck, tokensNeededToWin);
             var player1 = game.Players.First(p => p.Id == aliceInfo.Id);
             var player2 = game.Players.First(p => p.Id == bobInfo.Id);
             var deterministicRandomizer = new NonShufflingRandomizer();

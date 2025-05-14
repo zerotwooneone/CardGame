@@ -39,17 +39,16 @@ public class Game // Aggregate Root
     {
         Id = id;
         _initialDeckCardSet = initialDeckCardSet ?? throw new ArgumentNullException(nameof(initialDeckCardSet));
+        if (!_initialDeckCardSet.Any()) throw new ArgumentException("Initial deck card set cannot be empty.", nameof(initialDeckCardSet));
         Deck = Deck.Load(Enumerable.Empty<Card>());
     }
 
     // --- Factory Methods ---
-    public static Game CreateNewGame( IEnumerable<PlayerInfo> playerInfos, Guid creatorPlayerId, int tokensToWin = 4, IEnumerable<Card>? initialDeckCards = null)
+    public static Game CreateNewGame( IEnumerable<PlayerInfo> playerInfos, Guid creatorPlayerId, IEnumerable<Card> initialDeckCards, int tokensToWin = 4)
     {
         var gameId = Guid.NewGuid();
-        List<Card> cardSetToUse;
-        var providedList = initialDeckCards?.ToList();
-        if (providedList != null && providedList.Count == 16) { cardSetToUse = providedList; }
-        else { cardSetToUse = CreateStandardCardList(); }
+        var cardSetToUse = initialDeckCards?.ToList() ?? throw new ArgumentNullException(nameof(initialDeckCards));
+        if (!cardSetToUse.Any()) throw new ArgumentException("Initial deck cards cannot be empty.", nameof(initialDeckCards));
 
         var game = new Game(gameId, new ReadOnlyCollection<Card>(cardSetToUse))
         {
@@ -78,7 +77,10 @@ public class Game // Aggregate Root
 
     public static Game Load( Guid id, int roundNumber, GamePhase gamePhase, Guid currentTurnPlayerId, List<Player> players, Deck deck, Card? setAsideCard, List<Card> publiclySetAsideCards, List<Card> discardPile, int tokensToWin, Guid? lastRoundWinnerId, List<Card> initialDeckCardSet)
     {
-        var game = new Game(id, new ReadOnlyCollection<Card>(initialDeckCardSet ?? CreateStandardCardList()))
+        if (initialDeckCardSet == null) throw new ArgumentNullException(nameof(initialDeckCardSet));
+        if (!initialDeckCardSet.Any()) throw new ArgumentException("Initial deck card set cannot be empty for loading.", nameof(initialDeckCardSet));
+
+        var game = new Game(id, new ReadOnlyCollection<Card>(initialDeckCardSet))
         {
             RoundNumber = roundNumber,
             GamePhase = gamePhase,
@@ -222,20 +224,6 @@ public class Game // Aggregate Root
     }
 
     // --- Private Helper Methods ---
-
-    private static List<Card> CreateStandardCardList()
-    {
-        return new List<Card> {
-            new Card(Guid.NewGuid().ToString(), CardType.Princess), new Card(Guid.NewGuid().ToString(), CardType.Countess),
-            new Card(Guid.NewGuid().ToString(), CardType.King), new Card(Guid.NewGuid().ToString(), CardType.Prince),
-            new Card(Guid.NewGuid().ToString(), CardType.Prince), new Card(Guid.NewGuid().ToString(), CardType.Handmaid),
-            new Card(Guid.NewGuid().ToString(), CardType.Handmaid), new Card(Guid.NewGuid().ToString(), CardType.Baron),
-            new Card(Guid.NewGuid().ToString(), CardType.Baron), new Card(Guid.NewGuid().ToString(), CardType.Priest),
-            new Card(Guid.NewGuid().ToString(), CardType.Priest), new Card(Guid.NewGuid().ToString(), CardType.Guard),
-            new Card(Guid.NewGuid().ToString(), CardType.Guard), new Card(Guid.NewGuid().ToString(), CardType.Guard),
-            new Card(Guid.NewGuid().ToString(), CardType.Guard), new Card(Guid.NewGuid().ToString(), CardType.Guard),
-        };
-    }
 
     private void ValidatePlayCardAction(Guid playerId, Card cardToPlayInstance, Guid? targetPlayerId, CardType? guessedCardType)
     {
