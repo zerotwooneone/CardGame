@@ -1,7 +1,10 @@
-﻿using System.Reflection;
+using System.Reflection;
 using CardGame.Application.Common.Services;
 using FluentValidation;
+using MediatR;
 using Microsoft.Extensions.DependencyInjection;
+using CardGame.Domain.Interfaces;
+using CardGame.Domain.Providers;
 
 namespace CardGame.Application;
 
@@ -21,6 +24,8 @@ public static class DependencyInjection
         // Register any other application-specific services here (e.g., interfaces/implementations)
         // services.AddScoped<ISomeApplicationService, SomeApplicationService>();
 
+        // Register application-specific services
+        services.AddScoped<IDeckProvider, DefaultDeckProvider>(); 
         services.AddScoped<GameStateUpdateService>();
 
         return services;

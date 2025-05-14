@@ -20,19 +20,22 @@ public class CreateGameCommandHandler : IRequestHandler<CreateGameCommand, Guid>
     private readonly IRandomizer _randomizer;
     private readonly IDomainEventPublisher _domainEventPublisher; // Inject publisher
     private readonly ILogger<CreateGameCommandHandler> _logger; // Inject logger
+    private readonly IDeckProvider _deckProvider; // Added IDeckProvider field
 
     public CreateGameCommandHandler(
         IGameRepository gameRepository,
         IUserRepository userRepository,
         IRandomizer randomizer,
         IDomainEventPublisher domainEventPublisher, // Add publisher dependency
-        ILogger<CreateGameCommandHandler> logger)
+        ILogger<CreateGameCommandHandler> logger,
+        IDeckProvider deckProvider) // Added IDeckProvider to constructor
     {
         _gameRepository = gameRepository ?? throw new ArgumentNullException(nameof(gameRepository));
         _userRepository = userRepository ?? throw new ArgumentNullException(nameof(userRepository));
         _randomizer = randomizer ?? throw new ArgumentNullException(nameof(randomizer));
         _domainEventPublisher = domainEventPublisher ?? throw new ArgumentNullException(nameof(domainEventPublisher)); // Assign publisher
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+        _deckProvider = deckProvider ?? throw new ArgumentNullException(nameof(deckProvider)); // Assign IDeckProvider
     }
 
     public async Task<Guid> Handle(CreateGameCommand request, CancellationToken cancellationToken)
@@ -53,8 +56,7 @@ public class CreateGameCommandHandler : IRequestHandler<CreateGameCommand, Guid>
 
         // --- Create Game ---
         _logger.LogDebug("Creating new game aggregate...");
-        var defaultDeckProvider = new DefaultDeckProvider();
-        var initialDeck = defaultDeckProvider.GetDeck();
+        var initialDeck = _deckProvider.GetDeck(); // Use injected provider
         var game = Game.CreateNewGame(playerInfosForGame, request.CreatorPlayerId, initialDeck, request.TokensToWin ?? 4);
         // GameCreated event is now in game.DomainEvents
 
