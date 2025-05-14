@@ -83,6 +83,7 @@ This section is intended for AI coding assistants (like Cascade) to ensure smoot
     *   Prioritize understanding the existing architecture and patterns before introducing new ones.
     *   When refactoring, ensure all related tests are updated and pass.
     *   If unsure about an approach, ask for clarification rather than making assumptions.
+    * After making code changes, ask to recompile and run tests.
 5.  **Memory & Context:**
     *   Pay close attention to provided memories and checkpoint summaries. They contain critical context about previous decisions and current objectives.
     *   Proactively create new memories for significant learnings, architectural decisions, or user preferences to aid future sessions.
