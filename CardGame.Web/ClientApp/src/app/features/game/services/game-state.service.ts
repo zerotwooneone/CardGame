@@ -8,6 +8,7 @@ import {GameActionService} from './game-action.service';
 import {PlayerGameStateDto} from '../../../core/models/playerGameStateDto';
 import {RoundEndSummaryDto} from '../../../core/models/roundEndSummaryDto';
 import { GameLogEntryDto } from '../../../core/models/gameLogEntryDto'; // Import GameLogEntryDto
+import { DeckService } from './deck.service'; // Import DeckService
 
 
 @Injectable({
@@ -67,6 +68,7 @@ export class GameStateService implements OnDestroy {
   private signalrService = inject(SignalrService);
   private authService = inject(AuthService);
   private gameActionService = inject(GameActionService); // Inject GameActionService
+  private deckService = inject(DeckService); // Inject DeckService
   private injector = inject(Injector);
 
   constructor() {
@@ -177,6 +179,14 @@ export class GameStateService implements OnDestroy {
     this.isSpectating.set(false); // Default to not spectating
 
     try {
+      // 0. Ensure default deck is loaded (can happen concurrently or before API call)
+      // We subscribe here primarily to log success/failure, not necessarily to block.
+      // The DeckService itself handles caching, so subsequent calls are cheap.
+      this.deckService.ensureDeckLoaded().subscribe({
+        next: () => console.log('GameStateService: Default deck load initiated/verified.'),
+        error: (err) => console.error('GameStateService: Error ensuring default deck was loaded:', err)
+      });
+
       // 1. Fetch initial Player Game State via API
       console.log(`GameStateService: Fetching initial state for Game ${gameId}, Player ${myPlayerId}`);
       const initialState = await this.fetchInitialPlayerState(gameId, myPlayerId); // initialState is PlayerGameStateDto
