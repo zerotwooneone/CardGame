@@ -84,7 +84,9 @@ This section is intended for AI coding assistants (like Cascade) to ensure smoot
     *   When refactoring, ensure all related tests are updated and pass.
     *   If unsure about an approach, ask for clarification rather than making assumptions.
     * After making code changes, ask to recompile and run tests.
-5.  **Memory & Context:**
+5.  **Angular State Management:**
+    *   When managing reactive state in Angular services or components, **prefer to use Angular Signals over BehaviorSubjects/RxJS Subjects** where appropriate. Signals offer a more fine-grained reactivity model and are becoming the recommended approach for many state management scenarios in modern Angular.
+6.  **Memory & Context:**
     *   Pay close attention to provided memories and checkpoint summaries. They contain critical context about previous decisions and current objectives.
     *   Proactively create new memories for significant learnings, architectural decisions, or user preferences to aid future sessions.
 
