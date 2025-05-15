@@ -56,8 +56,9 @@ public class CreateGameCommandHandler : IRequestHandler<CreateGameCommand, Guid>
 
         // --- Create Game ---
         _logger.LogDebug("Creating new game aggregate...");
-        var initialDeck = _deckProvider.GetDeck(); // Use injected provider
-        var game = Game.CreateNewGame(playerInfosForGame, request.CreatorPlayerId, initialDeck, request.TokensToWin ?? 4);
+        var deckDefinition = _deckProvider.GetDeck(); // Use injected provider
+        var initialCards = deckDefinition.Cards; // Extract the cards
+        var game = Game.CreateNewGame(playerInfosForGame, request.CreatorPlayerId, initialCards, request.TokensToWin ?? 4);
         // GameCreated event is now in game.DomainEvents
 
         // --- Start First Round ---

@@ -1,9 +1,14 @@
 import { Injectable, inject, signal, Signal, WritableSignal } from '@angular/core';
 import { HttpClient, HttpErrorResponse } from '@angular/common/http';
 import { Observable, throwError, of } from 'rxjs';
-import { catchError, tap, switchMap, filter, take } from 'rxjs/operators';
+import { catchError, tap, switchMap, filter, take, map } from 'rxjs/operators';
 import { toObservable } from '@angular/core/rxjs-interop';
 import { CardDto } from '../../../core/models/cardDto';
+
+export interface DeckDefinitionDto {
+  cards: CardDto[];
+  backAppearanceId: string;
+}
 
 @Injectable({
   providedIn: 'any'
@@ -16,45 +21,51 @@ export class DeckService {
   private defaultDeckCache: CardDto[] | null = null;
   private appearanceIdToRankMap: Map<string, number> = new Map<string, number>();
   private deckLoadStatusWritableSignal: WritableSignal<boolean> = signal<boolean>(false);
+  private cardBackAppearanceIdWritableSignal: WritableSignal<string | null> = signal<string | null>(null);
   private isLoadingDeck: boolean = false;
 
   constructor() { }
 
   /**
    * Ensures the default deck is loaded, fetching it via HTTP if necessary.
-   * Returns an observable that emits the deck once loaded.
+   * Returns an observable that emits the array of CardDto once loaded.
    */
   ensureDeckLoaded(): Observable<CardDto[]> {
     if (this.defaultDeckCache !== null) {
+      this.deckLoadStatusWritableSignal.set(true);
+      this.cardBackAppearanceIdWritableSignal.set(this.cardBackAppearanceIdWritableSignal() || null);
       return of(this.defaultDeckCache);
     }
 
     if (this.isLoadingDeck) {
       return toObservable(this.deckLoadStatusWritableSignal).pipe(
         filter(loaded => loaded),
-        take(1), 
-        switchMap(() => of(this.defaultDeckCache!)) 
+        take(1),
+        switchMap(() => of(this.defaultDeckCache!))
       );
     }
 
     this.isLoadingDeck = true;
-    this.appearanceIdToRankMap.clear(); 
+    this.appearanceIdToRankMap.clear();
 
-    return this.http.get<CardDto[]>(`${this.apiUrl}/${this.hardcodedDeckId}`).pipe(
-      tap(deck => {
-        this.defaultDeckCache = deck;
-        deck.forEach(card => {
+    return this.http.get<DeckDefinitionDto>(`${this.apiUrl}/${this.hardcodedDeckId}`).pipe(
+      tap(deckDefinition => {
+        this.defaultDeckCache = deckDefinition.cards;
+        this.cardBackAppearanceIdWritableSignal.set(deckDefinition.backAppearanceId);
+        deckDefinition.cards.forEach(card => {
           this.appearanceIdToRankMap.set(card.appearanceId, card.rank);
         });
         this.isLoadingDeck = false;
-        this.deckLoadStatusWritableSignal.set(true); 
+        this.deckLoadStatusWritableSignal.set(true);
       }),
       catchError(err => {
         this.isLoadingDeck = false;
-        this.deckLoadStatusWritableSignal.set(false); 
-        this.handleError(err); 
-        return throwError(() => new Error('Failed to load default deck.')); 
-      })
+        this.deckLoadStatusWritableSignal.set(false);
+        this.cardBackAppearanceIdWritableSignal.set(null);
+        this.handleError(err);
+        return throwError(() => new Error('Failed to load default deck.'));
+      }),
+      map(deckDefinition => deckDefinition.cards)
     );
   }
 
@@ -96,6 +107,14 @@ export class DeckService {
    */
   public getDeckLoadStatusSignal(): Signal<boolean> { 
     return this.deckLoadStatusWritableSignal.asReadonly(); 
+  }
+
+  /**
+   * Returns a read-only Signal for the card back appearance ID.
+   * Emits null if not loaded or if there's an error.
+   */
+  public getCardBackAppearanceIdSignal(): Signal<string | null> {
+    return this.cardBackAppearanceIdWritableSignal.asReadonly();
   }
 
   private handleError(error: HttpErrorResponse) {

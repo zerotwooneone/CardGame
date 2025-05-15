@@ -1,5 +1,5 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-
+import { HttpClientTestingModule } from '@angular/common/http/testing';
 import { CardReferenceSheetComponent } from './card-reference-sheet.component';
 
 describe('CardReferenceSheetComponent', () => {
@@ -8,7 +8,7 @@ describe('CardReferenceSheetComponent', () => {
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      imports: [CardReferenceSheetComponent]
+      imports: [CardReferenceSheetComponent, HttpClientTestingModule]
     })
     .compileComponents();
 

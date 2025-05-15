@@ -1,11 +1,12 @@
-import { Component, Input, Output, EventEmitter, ChangeDetectionStrategy, computed, signal, WritableSignal, SimpleChanges, OnChanges } from '@angular/core';
+import { Component, Input, Output, EventEmitter, ChangeDetectionStrategy, computed, signal, WritableSignal, SimpleChanges, OnChanges, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { MatIconModule } from '@angular/material/icon';
 import { MatButtonModule } from '@angular/material/button';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { MatCardModule } from '@angular/material/card';
-import {CardDto} from '../../core/models/cardDto';
-import {CARD_DETAILS_MAP} from '../../features/game/components/card/CARD_DETAILS_MAP';
+import { CardDto } from '../../core/models/cardDto';
+import { CARD_DETAILS_MAP } from '../../features/game/components/card/CARD_DETAILS_MAP';
+import { DeckService } from '../../features/game/services/deck.service';
 
 @Component({
   selector: 'app-card-display',
@@ -36,11 +37,11 @@ export class CardDisplayComponent implements OnChanges {
   public imageError: WritableSignal<boolean> = signal(false);
   public CARD_DETAILS_MAP = CARD_DETAILS_MAP; // Expose to template
 
-  constructor() { }
+  private deckService = inject(DeckService);
+  public cardBackImageSignal = this.deckService.getCardBackAppearanceIdSignal();
 
-  // Returns the path to the generic card back image for styling the .card-back div
-  getGenericCardBackImageUrl(): string {
-    return 'assets/images/cards/card_back.png'; // Or a more abstract path if using CSS for actual design
+  constructor() {
+    this.deckService.ensureDeckLoaded().subscribe();
   }
 
   handleImageError(): void {
@@ -54,7 +55,7 @@ export class CardDisplayComponent implements OnChanges {
   }
 
   onInfoClick(event: MouseEvent): void {
-    event.stopPropagation(); // Prevent cardClick from also firing
+    event.stopPropagation();
     if (this.card && typeof this.card.rank !== 'undefined') {
       this.infoClicked.emit(this.card.rank);
     }
@@ -90,7 +91,6 @@ export class CardDisplayComponent implements OnChanges {
     return `url('${this.card.appearanceId}')`;
   });
 
-  // Text to display if card image fails to load for the front face
   readonly cardFrontFallbackText = computed(() => {
     if (!this.card || typeof this.card.rank === 'undefined') {
       return '?';
@@ -106,12 +106,11 @@ export class CardDisplayComponent implements OnChanges {
     const details = CARD_DETAILS_MAP[this.card.rank];
     return details
       ? `${details.name} (Rank: ${this.card.rank})`
-      : `Rank: ${this.card.rank}`; // Simplified for fallback
+      : `Rank: ${this.card.rank}`;
   });
 
   ngOnChanges(changes: SimpleChanges): void {
     if (changes['card'] && !changes['card'].firstChange) {
-      // Reset imageError when card input changes, to allow retrying image load for the new card
       this.imageError.set(false);
     }
   }

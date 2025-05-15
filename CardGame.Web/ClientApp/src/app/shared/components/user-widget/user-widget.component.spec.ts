@@ -1,5 +1,5 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-
+import { HttpClientTestingModule } from '@angular/common/http/testing';
 import { UserWidgetComponent } from './user-widget.component';
 
 describe('UserWidgetComponent', () => {
@@ -8,7 +8,7 @@ describe('UserWidgetComponent', () => {
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      imports: [UserWidgetComponent]
+      imports: [UserWidgetComponent, HttpClientTestingModule]
     })
     .compileComponents();
 

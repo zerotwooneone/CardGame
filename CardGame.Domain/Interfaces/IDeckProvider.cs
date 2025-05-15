@@ -11,6 +11,6 @@ public interface IDeckProvider
     /// <summary>
     /// Gets the collection of cards that make up a deck.
     /// </summary>
-    /// <returns>An enumerable collection of <see cref="Card"/>.</returns>
-    IEnumerable<Card> GetDeck();
+    /// <returns>A <see cref="DeckDefinition"/>.</returns>
+    DeckDefinition GetDeck();
 }

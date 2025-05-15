@@ -1,10 +1,11 @@
 using CardGame.Application.Common.Interfaces;
 using CardGame.Application.DTOs;
 using MediatR;
+using System.Linq; // Keep for potential future use, though not strictly needed now
 
 namespace CardGame.Application.Queries; 
 
-public class GetDeckDefinitionQueryHandler : IRequestHandler<GetDeckDefinitionQuery, IEnumerable<CardDto>> 
+public class GetDeckDefinitionQueryHandler : IRequestHandler<GetDeckDefinitionQuery, DeckDefinitionDto> 
 {
     private readonly IDeckRepository _deckRepository;
 
@@ -13,23 +14,14 @@ public class GetDeckDefinitionQueryHandler : IRequestHandler<GetDeckDefinitionQu
         _deckRepository = deckRepository ?? throw new ArgumentNullException(nameof(deckRepository));
     }
 
-    public async Task<IEnumerable<CardDto>> Handle(GetDeckDefinitionQuery request, CancellationToken cancellationToken)
+    public async Task<DeckDefinitionDto> Handle(GetDeckDefinitionQuery request, CancellationToken cancellationToken)
     {
-        var domainCards = await _deckRepository.GetDeckByIdAsync(request.DeckId).ConfigureAwait(false);
+        var deckDefinitionDto = await _deckRepository.GetDeckByIdAsync(request.DeckId).ConfigureAwait(false);
 
-        if (domainCards == null)
-        {
-            // Consider if NotFound or specific error handling is better here.
-            // For now, returning empty list aligns with DeckController's expectation for !result.Any().
-            return Enumerable.Empty<CardDto>(); 
-        }
+        // The DeckRepository now returns DeckDefinitionDto directly.
+        // If deckDefinitionDto can be null, a null check might be desired here.
+        // For example: if (deckDefinitionDto == null) { return null; /* or throw */ }
 
-        var cardDtos = domainCards.Select(card => new CardDto
-        {
-            Rank = card.Rank,
-            AppearanceId = card.AppearanceId
-        }).ToList();
-
-        return cardDtos;
+        return deckDefinitionDto;
     }
 }

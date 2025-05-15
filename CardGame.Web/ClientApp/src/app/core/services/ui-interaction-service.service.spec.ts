@@ -1,13 +1,13 @@
 import { TestBed } from '@angular/core/testing';
 
-import { UiInteractionServiceService } from './ui-interaction-service.service';
+import { UiInteractionService } from './ui-interaction-service.service';
 
-describe('UiInteractionServiceService', () => {
-  let service: UiInteractionServiceService;
+describe('UiInteractionService', () => {
+  let service: UiInteractionService;
 
   beforeEach(() => {
     TestBed.configureTestingModule({});
-    service = TestBed.inject(UiInteractionServiceService);
+    service = TestBed.inject(UiInteractionService);
   });
 
   it('should be created', () => {

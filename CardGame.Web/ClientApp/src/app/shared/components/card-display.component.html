@@ -1,24 +1,24 @@
-<div 
+<div
   class="card-container"
   [class.face-down]="isFaceDown"
   [class.selected]="isSelected"
   [class.playable]="isPlayable"
-  [class.hovered]="isHovered" 
+  [class.hovered]="isHovered"
   (click)="onCardClick()"
   (mouseenter)="onMouseEnter()"
   (mouseleave)="onMouseLeave()"
-  [attr.alt]="altText()" 
+  [attr.alt]="altText()"
   [attr.aria-label]="altText()">
 
-  <div *ngIf="isFaceDown" class="card-face card-back" [style.background-image]="'url(' + getGenericCardBackImageUrl() + ')'">
+  <div *ngIf="isFaceDown" class="card-face card-back" [style.background-image]="'url(' + cardBackImageSignal() + ')' ">
     <!-- Or use a more complex design like in card.component.html, e.g., <div class="card-back-design">LL</div> -->
   </div>
 
-  <div *ngIf="!isFaceDown && card" 
+  <div *ngIf="!isFaceDown && card"
        class="card-face card-front"
        [style.background-image]="cardFrontBackgroundImage()"
        (error)="handleImageError()"> <!-- Error on div might not work, error handled by imageError signal -->
-    
+
     <!-- Content to show if image background loads OR if it fails and we show text -->
     <ng-container *ngIf="imageError() || !card.appearanceId">
       <div class="card-fallback-content">{{ cardFrontFallbackText() }}</div>

@@ -3,7 +3,7 @@ using MediatR;
 
 namespace CardGame.Application.Queries; 
 
-public class GetDeckDefinitionQuery : IRequest<IEnumerable<CardDto>>
+public class GetDeckDefinitionQuery : IRequest<DeckDefinitionDto>
 {
     public Guid DeckId { get; }
 

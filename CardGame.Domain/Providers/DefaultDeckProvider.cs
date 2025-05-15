@@ -9,6 +9,8 @@ namespace CardGame.Domain.Providers;
 /// </summary>
 public class DefaultDeckProvider : IDeckProvider
 {
+    private const string DefaultBackAppearanceId = "assets/decks/default/back.webp";
+
     /// <summary>
     /// Gets the default Love Letter deck.
     /// The deck composition is:
@@ -21,8 +23,8 @@ public class DefaultDeckProvider : IDeckProvider
     /// - 1 Countess (Rank 7)
     /// - 1 Princess (Rank 8)
     /// </summary>
-    /// <returns>An enumerable collection of <see cref="Card"/> representing the default deck.</returns>
-    public IEnumerable<Card> GetDeck()
+    /// <returns>A <see cref="DeckDefinition"/> representing the default deck.</returns>
+    public DeckDefinition GetDeck()
     {
         var cards = new List<Card>();
 
@@ -46,6 +48,6 @@ public class DefaultDeckProvider : IDeckProvider
         AddCards(CardType.Countess, 1);
         AddCards(CardType.Princess, 1);
 
-        return cards; 
+        return new DeckDefinition(cards, DefaultBackAppearanceId); 
     }
 }
