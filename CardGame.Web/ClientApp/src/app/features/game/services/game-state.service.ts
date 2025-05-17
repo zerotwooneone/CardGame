@@ -87,7 +87,7 @@ export class GameStateService implements OnDestroy {
     const currentId = this.gameId();
     if (currentId) {
       // Ensure disconnect is also safe for spectator vs player if different logic needed
-      this.signalrService.leaveGameGroup(currentId); 
+      this.signalrService.leaveGameGroup(currentId);
       // No need to stop game connection here, as it might be shared or handled by SignalR service itself on app close/logout
     }
   }
@@ -173,20 +173,10 @@ export class GameStateService implements OnDestroy {
       return;
     }
 
-    this.isLoadingState.set(true);
-    this.errorState.set(null);
-    this.clearState(); // Clear previous game state
+    this.errorState.set(null); // Still clear specific errors for this operation
     this.isSpectating.set(false); // Default to not spectating
 
     try {
-      // 0. Ensure default deck is loaded (can happen concurrently or before API call)
-      // We subscribe here primarily to log success/failure, not necessarily to block.
-      // The DeckService itself handles caching, so subsequent calls are cheap.
-      this.deckService.ensureDeckLoaded().subscribe({
-        next: () => console.log('GameStateService: Default deck load initiated/verified.'),
-        error: (err) => console.error('GameStateService: Error ensuring default deck was loaded:', err)
-      });
-
       // 1. Fetch initial Player Game State via API
       console.log(`GameStateService: Fetching initial state for Game ${gameId}, Player ${myPlayerId}`);
       const initialState = await this.fetchInitialPlayerState(gameId, myPlayerId); // initialState is PlayerGameStateDto
@@ -216,8 +206,6 @@ export class GameStateService implements OnDestroy {
       console.error("GameStateService: Error connecting to game or fetching initial state:", error);
       this.errorState.set(error?.message ?? "Failed to load game state.");
       this.clearState(); // Clear partial state on error
-    } finally {
-      this.isLoadingState.set(false);
     }
   }
 
@@ -258,8 +246,8 @@ export class GameStateService implements OnDestroy {
         this.playerHandSignal.set([]); // Ensure hand is empty for spectators
         console.log("GameStateService: Spectator state loaded.");
       }
-      
-      this.isSpectating.set(isSpectator); 
+
+      this.isSpectating.set(isSpectator);
 
       // Common SignalR setup for both players and spectators
       if (this.signalrService.gameConnectionState() !== ConnectionState.Connected &&
@@ -282,6 +270,46 @@ export class GameStateService implements OnDestroy {
       this.isLoadingState.set(false);
       this.isSpectating.set(true); // Ensure spectator mode on error
       throw error; // Re-throw for the component to handle if needed
+    }
+  }
+
+  /**
+   * Joins a game as a spectator.
+   * @param gameId The ID of the game to join as a spectator.
+   */
+  public async joinAsSpectator(gameId: string): Promise<void> {
+    if (!this.signalrService.isBrowser) return;
+
+    // isLoadingState is managed by the calling method (e.g., initializeGameConnection)
+    this.errorState.set(null); // Still clear specific errors for this operation
+    // this.clearState(); // Clear previous game state - Handled by initializeGameConnection
+    this.isSpectating.set(true);
+
+    try {
+      console.log(`GameStateService: Fetching spectator state for Game ${gameId}`);
+      const spectatorState = await this.fetchInitialSpectatorState(gameId);
+      this.combinedStateSignal.set(spectatorState);
+      this.playerHandSignal.set([]); // Ensure hand is empty for spectators
+      console.log("GameStateService: Spectator state loaded.");
+
+      // Common SignalR setup for both players and spectators
+      if (this.signalrService.gameConnectionState() !== ConnectionState.Connected &&
+          this.signalrService.gameConnectionState() !== ConnectionState.Connecting) {
+        await this.signalrService.startGameConnection();
+      }
+
+      if (this.signalrService.gameConnectionState() === ConnectionState.Connected) {
+        await this.signalrService.joinGameGroup(gameId);
+      } else {
+        throw new Error("Failed to establish SignalR connection for game updates.");
+      }
+      this.setupSignalRSubscriptions(); // Ensure subscriptions are (re)established
+      console.log(`GameStateService: Successfully joined game ${gameId} as spectator.`);
+    } catch (e) {
+      console.error(`GameStateService: Error joining game ${gameId} as spectator:`, e);
+      this.errorState.set(`Failed to join game as spectator. ${e instanceof Error ? e.message : String(e)}`);
+    } finally {
+      // isLoadingState is managed by the calling method (e.g., initializeGameConnection)
     }
   }
 

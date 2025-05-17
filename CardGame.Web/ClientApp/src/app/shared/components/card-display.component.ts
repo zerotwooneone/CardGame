@@ -38,11 +38,8 @@ export class CardDisplayComponent implements OnChanges {
   public CARD_DETAILS_MAP = CARD_DETAILS_MAP; // Expose to template
 
   private deckService = inject(DeckService);
-  public cardBackImageSignal = this.deckService.getCardBackAppearanceIdSignal();
+  public cardBackImageSignal = this.deckService.backAppearanceId;
 
-  constructor() {
-    this.deckService.ensureDeckLoaded().subscribe();
-  }
 
   handleImageError(): void {
     this.imageError.set(true);

@@ -2,7 +2,7 @@ using CardGame.Application.DTOs;
 using Microsoft.AspNetCore.Mvc;
 using MediatR;
 using CardGame.Application.Queries;
-using System.Linq;
+using Microsoft.AspNetCore.Authorization;
 
 namespace CardGame.Application.Controllers;
 
@@ -18,6 +18,7 @@ public class DeckController : ControllerBase
     }
 
     [HttpGet("{deckId}")]
+    [AllowAnonymous]
     public async Task<ActionResult<DeckDefinitionDto>> GetDeckDefinition(Guid deckId)
     {
         if(deckId == Guid.Empty) return BadRequest("Deck ID cannot be empty.");
