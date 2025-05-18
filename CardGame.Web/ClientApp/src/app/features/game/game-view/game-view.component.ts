@@ -158,8 +158,6 @@ export class GameViewComponent implements OnInit, OnDestroy {
     this.gameStateService.roundWinnerAnnounced$
       .pipe(takeUntil(this.destroy$))
       .subscribe((summaryData: RoundEndSummaryDto) => {
-        const winnerName = summaryData.winnerPlayerId ? this.getPlayerName(summaryData.winnerPlayerId) : null;
-        this.showSnackBar(`Round Over! ${winnerName ? `${winnerName} wins.` : 'Draw.'} Reason: ${summaryData.reason}`);
         this.openRoundSummaryDialog(summaryData);
       });
 

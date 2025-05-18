@@ -1,4 +1,4 @@
-<div class="dialog-container">
+<div class="dialog-container" *ngIf="data"> 
   <h2 mat-dialog-title class="dialog-title">
     <mat-icon class="title-icon" *ngIf="data.winnerPlayerId">emoji_events</mat-icon>
     <mat-icon class="title-icon" *ngIf="!data.winnerPlayerId">info</mat-icon>
@@ -6,49 +6,66 @@
   </h2>
 
   <mat-dialog-content class="dialog-content">
-    <p class="round-reason"><strong>Reason:</strong> {{ data.reason }}</p>
-    <p class="round-winner" *ngIf="data.winnerPlayerId && winnerName">
-      <strong>Winner:</strong> {{ winnerName }}
+    <p class="round-reason" *ngIf="data.reason">
+      <strong>Reason:</strong> {{ data.reason }}
+    </p>
+    
+    <p class="round-winner" *ngIf="data.winnerPlayerId && winnerNameDisplay">
+      <strong>Winner:</strong> {{ winnerNameDisplay }}
     </p>
     <p class="round-winner" *ngIf="!data.winnerPlayerId">
-      <strong>Result:</strong> Draw
+      <strong>Result:</strong> It's a Draw!
     </p>
 
-    <mat-divider class="section-divider"></mat-divider>
+    <mat-divider class="section-divider" *ngIf="data.playerSummaries && data.playerSummaries.length > 0"></mat-divider>
 
-    <h3>Player Summaries:</h3>
-    <div class="player-summaries-container">
-      <div *ngFor="let player of data.playerSummaries; trackBy: trackPlayerSummary" class="player-summary-card">
+    <h3 *ngIf="data.playerSummaries && data.playerSummaries.length > 0">Player Summaries:</h3>
+    <div class="player-summaries-container" *ngIf="data.playerSummaries && data.playerSummaries.length > 0">
+      <div *ngFor="let player of data.playerSummaries; trackBy: trackPlayerSummaryById" class="player-summary-card">
         <mat-card [class.round-winner-card]="player.playerId === data.winnerPlayerId">
           <mat-card-header>
-            <mat-card-title>{{ player.playerName }}</mat-card-title>
-            <mat-card-subtitle>Tokens: {{ player.tokensWon }}</mat-card-subtitle>
+            <mat-card-title>{{ player.playerName || 'Unnamed Player' }}</mat-card-title>
+            <mat-card-subtitle>Tokens Won: {{ player.tokensWon }}</mat-card-subtitle>
           </mat-card-header>
           <mat-card-content>
             <div class="summary-section">
-              <h4>Final Hand:</h4>
-              <div class="final-hand-display" *ngIf="player.cardsHeld && player.cardsHeld.length > 0; else noCardsHeld">
-                <app-card-display *ngFor="let card of player.cardsHeld; trackBy: trackHeldCard"
-                                  [card]="card"
-                                  [isFaceDown]="false"
-                                  [isPlayable]="false">
+              <h4>Final Held Card(s):</h4>
+              <div class="final-hand-display" *ngIf="player.cardsHeld && player.cardsHeld.length > 0; else noCardsHeldInfo">
+                <app-card-display 
+                  *ngFor="let card of player.cardsHeld; trackBy: trackCardByAppearanceId"
+                  [card]="card"
+                  [isFaceDown]="false"
+                  [isPlayable]="false">
                 </app-card-display>
               </div>
-              <ng-template #noCardsHeld>
-                <span class="no-card-text">
-                  (Eliminated or No Cards Held)
-                </span>
+              <ng-template #noCardsHeldInfo>
+                <span class="no-card-text">(No cards held or eliminated)</span>
               </ng-template>
             </div>
           </mat-card-content>
         </mat-card>
       </div>
     </div>
+    <p *ngIf="!data.playerSummaries || data.playerSummaries.length === 0">
+      No player summaries available for this round.
+    </p>
   </mat-dialog-content>
 
   <mat-dialog-actions align="end">
     <button mat-raised-button color="primary" (click)="onDismiss()">
       Continue
+    </button>
+  </mat-dialog-actions>
+</div>
+
+<div *ngIf="!data" class="dialog-container">
+  <h2 mat-dialog-title>Error</h2>
+  <mat-dialog-content>
+    <p>There was an issue loading the round summary data.</p>
+  </mat-dialog-content>
+  <mat-dialog-actions align="end">
+    <button mat-raised-button color="warn" (click)="onDismiss()">
+      Close
     </button>
   </mat-dialog-actions>
 </div>
