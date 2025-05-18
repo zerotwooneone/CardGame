@@ -16,17 +16,15 @@
       <mat-hint *ngIf="filteredPlayers.length === 0">No valid targets available.</mat-hint>
     </mat-form-field>
 
-    <mat-form-field appearance="outline" *ngIf="data.actionType === 'guess-card'" class="full-width radio-form-field">
-      <mat-label>Guess Card</mat-label>
-      <mat-radio-group formControlName="selectedCardTypeValue" required color="primary" aria-label="Select card to guess">
+    <div *ngIf="data.actionType === 'guess-card'" class="radio-group-container">
+      <mat-radio-group formControlName="selectedCardTypeValue" required color="primary">
         <mat-radio-button *ngFor="let cardType of filteredCardTypes" [value]="cardType.value" class="radio-button">
-          {{ cardType.name }}
-        </mat-radio-button>
+          {{ cardType.name }} </mat-radio-button>
       </mat-radio-group>
       <mat-error *ngIf="actionForm.get('selectedCardTypeValue')?.hasError('required') && actionForm.get('selectedCardTypeValue')?.touched">
         Card guess is required.
       </mat-error>
-    </mat-form-field>
+    </div>
 
   </form>
 </mat-dialog-content>
