@@ -7,6 +7,7 @@ using FluentValidation;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using System.Security.Claims; // Added this line
 
 namespace CardGame.Application.Controllers;
 
@@ -103,7 +104,7 @@ public class GameController : ControllerBase
     public async Task<ActionResult<Guid>> CreateGame([FromBody] CreateGameRequestDto request) // Uses updated DTO
     {
         // Get the Player ID of the user making the request from their claims
-        Guid creatorPlayerId = GetCurrentPlayerIdFromClaims();
+        Guid creatorPlayerId = Guid.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
         if (creatorPlayerId == Guid.Empty)
         {
             return Unauthorized("Could not identify creating user.");
@@ -126,10 +127,11 @@ public class GameController : ControllerBase
             var command = new CreateGameCommand(
                 request.PlayerIds, // Pass the list of Guids
                 creatorPlayerId,
-                request.TokensToWin
+                request.DeckId,
+                request.TokensToWin // Added TokensToWin
             );
 
-            var gameId = await _mediator.Send(command).ConfigureAwait(false);
+            var gameId = await _mediator.Send(command);
 
             return CreatedAtRoute("GetSpectatorGameState", new {gameId = gameId}, gameId);
         }

@@ -1,4 +1,4 @@
-﻿using CardGame.Domain.Interfaces;
+using CardGame.Domain.Interfaces;
 using CardGame.Domain.Types;
 
 namespace CardGame.Domain.Game.Event;
@@ -16,9 +16,10 @@ public record RoundStarted : IDomainEvent
     public int DeckCount { get; }
     public CardType? SetAsideCardType { get; }
     public List<PublicCardInfo> PubliclySetAsideCards { get; }
+    public Guid DeckId { get; }
 
     public RoundStarted(Guid gameId, int roundNumber, List<Guid> playerIds, int deckCount, CardType? setAsideCardType,
-        List<PublicCardInfo> publiclySetAsideCards, Guid? correlationId = null)
+        List<PublicCardInfo> publiclySetAsideCards, Guid deckId, Guid? correlationId = null)
     {
         EventId = Guid.NewGuid();
         OccurredOn = DateTimeOffset.UtcNow;
@@ -29,5 +30,6 @@ public record RoundStarted : IDomainEvent
         DeckCount = deckCount;
         SetAsideCardType = setAsideCardType;
         PubliclySetAsideCards = publiclySetAsideCards;
+        DeckId = deckId;
     }
 }

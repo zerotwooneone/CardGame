@@ -24,6 +24,7 @@ public class Game // Aggregate Root
     private readonly List<GameLogEntry> _logEntries = new(); // New log entry list
 
     private readonly IReadOnlyList<Card> _initialDeckCardSet;
+    private readonly Guid _deckDefinitionId; // Added field
 
     // --- Domain Event Handling ---
     private readonly List<IDomainEvent> _domainEvents = new List<IDomainEvent>();
@@ -35,22 +36,23 @@ public class Game // Aggregate Root
 
     public IReadOnlyList<GameLogEntry> LogEntries => _logEntries.AsReadOnly(); // Public accessor for log entries
 
-    private Game(Guid id, IReadOnlyList<Card> initialDeckCardSet)
+    private Game(Guid id, Guid deckDefinitionId, IReadOnlyList<Card> initialDeckCardSet) // Added deckDefinitionId parameter
     {
         Id = id;
+        _deckDefinitionId = deckDefinitionId; // Assign deckDefinitionId
         _initialDeckCardSet = initialDeckCardSet ?? throw new ArgumentNullException(nameof(initialDeckCardSet));
         if (!_initialDeckCardSet.Any()) throw new ArgumentException("Initial deck card set cannot be empty.", nameof(initialDeckCardSet));
         Deck = Deck.Load(Enumerable.Empty<Card>());
     }
 
     // --- Factory Methods ---
-    public static Game CreateNewGame( IEnumerable<PlayerInfo> playerInfos, Guid creatorPlayerId, IEnumerable<Card> initialDeckCards, int tokensToWin = 4)
+    public static Game CreateNewGame(Guid deckDefinitionId, IEnumerable<PlayerInfo> playerInfos, Guid creatorPlayerId, IEnumerable<Card> initialDeckCards, int tokensToWin = 4) // Added deckDefinitionId parameter
     {
         var gameId = Guid.NewGuid();
         var cardSetToUse = initialDeckCards?.ToList() ?? throw new ArgumentNullException(nameof(initialDeckCards));
         if (!cardSetToUse.Any()) throw new ArgumentException("Initial deck cards cannot be empty.", nameof(initialDeckCards));
 
-        var game = new Game(gameId, new ReadOnlyCollection<Card>(cardSetToUse))
+        var game = new Game(gameId, deckDefinitionId, new ReadOnlyCollection<Card>(cardSetToUse)) // Pass deckDefinitionId
         {
             TokensNeededToWin = tokensToWin,
             GamePhase = GamePhase.NotStarted,
@@ -75,12 +77,12 @@ public class Game // Aggregate Root
         return game;
     }
 
-    public static Game Load( Guid id, int roundNumber, GamePhase gamePhase, Guid currentTurnPlayerId, List<Player> players, Deck deck, Card? setAsideCard, List<Card> publiclySetAsideCards, List<Card> discardPile, int tokensToWin, Guid? lastRoundWinnerId, List<Card> initialDeckCardSet)
+    public static Game Load(Guid id, Guid deckDefinitionId, int roundNumber, GamePhase gamePhase, Guid currentTurnPlayerId, List<Player> players, Deck deck, Card? setAsideCard, List<Card> publiclySetAsideCards, List<Card> discardPile, int tokensToWin, Guid? lastRoundWinnerId, List<Card> initialDeckCardSet) // Added deckDefinitionId parameter
     {
         if (initialDeckCardSet == null) throw new ArgumentNullException(nameof(initialDeckCardSet));
         if (!initialDeckCardSet.Any()) throw new ArgumentException("Initial deck card set cannot be empty for loading.", nameof(initialDeckCardSet));
 
-        var game = new Game(id, new ReadOnlyCollection<Card>(initialDeckCardSet))
+        var game = new Game(id, deckDefinitionId, new ReadOnlyCollection<Card>(initialDeckCardSet)) // Pass deckDefinitionId
         {
             RoundNumber = roundNumber,
             GamePhase = gamePhase,
@@ -162,7 +164,8 @@ public class Game // Aggregate Root
 
         AddDomainEvent(new RoundStarted(
             Id, RoundNumber, playerIds, Deck.CardsRemaining, SetAsideCard?.Type,
-            PubliclySetAsideCards.Select(c => new PublicCardInfo(c.AppearanceId, c.Type)).ToList()
+            PubliclySetAsideCards.Select(c => new PublicCardInfo(c.AppearanceId, c.Type)).ToList(),
+            _deckDefinitionId // Use stored _deckDefinitionId
         ));
         HandleTurnStartDrawing();
     }

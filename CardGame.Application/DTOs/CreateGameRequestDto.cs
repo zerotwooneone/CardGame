@@ -1,4 +1,4 @@
-﻿using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations;
 
 namespace CardGame.Application.DTOs;
 
@@ -12,6 +12,12 @@ public class CreateGameRequestDto
     [MinLength(2, ErrorMessage = "At least 2 players are required.")]
     [MaxLength(4, ErrorMessage = "No more than 4 players are allowed.")]
     public List<Guid> PlayerIds { get; set; } = new List<Guid>(); // Changed from PlayerUsernames
+
+    /// <summary>
+    /// The ID of the deck to be used for this game.
+    /// </summary>
+    [Required(ErrorMessage = "Deck ID must be provided.")]
+    public Guid DeckId { get; set; }
 
     /// <summary>
     /// Optional: Number of tokens needed to win the game. Defaults to standard rules.

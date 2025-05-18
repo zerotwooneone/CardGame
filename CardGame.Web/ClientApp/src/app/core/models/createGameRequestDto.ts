@@ -1,4 +1,5 @@
-﻿export interface CreateGameRequestDto{
+export interface CreateGameRequestDto{
   PlayerIds: string[];
+  DeckId: string;
   TokensToWin?: number;
 }

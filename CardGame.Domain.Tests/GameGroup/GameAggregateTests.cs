@@ -78,7 +78,7 @@ public class GameAggregateTests
         Card p1DealtCard = specificDeck[11]; // P1
         Card p2DealtCard = specificDeck[10]; // G3
         Card p1DrawnCard = specificDeck[9]; // B2
-        var game = Game.Game.CreateNewGame(playerInfos, creatorId, tokensToWin: 4, initialDeckCards: specificDeck);
+        var game = Game.Game.CreateNewGame(Guid.NewGuid(), playerInfos, creatorId, specificDeck, tokensToWin: 4);
         var player1 = game.Players.First(p => p.Id == aliceInfo.Id);
         var player2 = game.Players.First(p => p.Id == bobInfo.Id);
         var deterministicRandomizer = new NonShufflingRandomizer();
@@ -158,7 +158,7 @@ public class GameAggregateTests
             Card p1DealtCard = specificDeck[11]; // G3
             Card p2DealtCard = specificDeck[10]; // P2 (Priest)
             Card p1DrawnCard = specificDeck[9];  // P1 (Priest)
-            var game = Game.Game.CreateNewGame(playerInfos, creatorId, specificDeck, tokensNeededToWin);
+            var game = Game.Game.CreateNewGame(Guid.NewGuid(), playerInfos, creatorId, specificDeck, tokensNeededToWin);
             var player1 = game.Players.First(p => p.Id == aliceInfo.Id);
             var player2 = game.Players.First(p => p.Id == bobInfo.Id);
             var deterministicRandomizer = new NonShufflingRandomizer();
@@ -233,7 +233,7 @@ public class GameAggregateTests
             var publiclySetAsideCards = new List<Card>();
             var initialDeckCardSet = TestDeckHelper.CreateStandardTestCardList();
 
-            var game = Game.Game.Load(gameId, 1, GamePhase.RoundInProgress, p1Id, players, emptyDeck, null, publiclySetAsideCards, discardPile, tokensToWin, null, initialDeckCardSet);
+            var game = Game.Game.Load(gameId, Guid.NewGuid(), 1, GamePhase.RoundInProgress, p1Id, players, emptyDeck, null, publiclySetAsideCards, discardPile, tokensToWin, null, initialDeckCardSet);
             var cardToPlayInstance = p1Card_Handmaid;
             game.ClearDomainEvents();
 

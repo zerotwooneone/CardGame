@@ -151,11 +151,10 @@ export class LobbyComponent implements OnInit, OnDestroy {
     dialogRef.afterClosed()
       .pipe(takeUntil(this.destroy$))
       .subscribe(result => {
-        if (result?.selectedOpponentIds && result.selectedOpponentIds.length > 0) {
+        if (result?.selectedOpponentIds && result.selectedOpponentIds.length > 0 && result.deckId) { 
           const myId = this.authService.getCurrentPlayerId();
           if (!myId) {
             this.showSnackBar('Error: Could not identify current user.', 5000);
-            return;
           }
 
           const allPlayerIds = [myId, ...result.selectedOpponentIds];
@@ -180,28 +179,29 @@ export class LobbyComponent implements OnInit, OnDestroy {
           }
 
           // Call backend to create game
-          this.createGame(allPlayerIds); // Pass the combined list of IDs
+          this.createGame(allPlayerIds.filter(id => id !== null) as string[], result.deckId); 
 
         } else {
-          console.log('Create game cancelled');
+          console.log('Create game cancelled or deckId missing');
         }
       });
   }
 
   // --- Updated: Method to call the backend API ---
-  createGame(playerIds: string[]): void {
+  createGame(playerIds: string[], deckId: string): void { 
     this.isLoading.set(true);
     this.errorMessage.set(null);
 
     const payload: CreateGameRequestDto = {
-      PlayerIds: playerIds // Pass the string array of Player IDs
+      PlayerIds: playerIds, 
+      DeckId: deckId 
       // TokensToWin: null // Optional: Get from UI if needed
     };
 
-    this.gameActionService.createGame(payload) // Use the injected service
+    this.gameActionService.createGame(payload) 
       .pipe(
         takeUntil(this.destroy$),
-        finalize(() => this.isLoading.set(false)) // Ensure loading stops
+        finalize(() => this.isLoading.set(false)) 
       )
       .subscribe({
         next: (newGameId) => {
@@ -214,7 +214,7 @@ export class LobbyComponent implements OnInit, OnDestroy {
         error: (err) => {
           this.errorMessage.set(err.message || 'Failed to create game.');
           this.showSnackBar(`Error: ${this.errorMessage()}`, 5000);
-          this.cdr.markForCheck(); // Trigger change detection for error
+          this.cdr.markForCheck(); 
         }
       });
   }
@@ -230,7 +230,7 @@ export class LobbyComponent implements OnInit, OnDestroy {
     this.authService.logout()
       .pipe(takeUntil(this.destroy$))
       .subscribe({
-        next: () => this.router.navigate(['/auth/login']), // Redirect to login after logout
+        next: () => this.router.navigate(['/auth/login']), 
         error: (err) => this.showSnackBar(`Logout failed: ${err.message}`, 3000)
       });
   }

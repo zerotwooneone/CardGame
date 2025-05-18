@@ -1,6 +1,6 @@
 import { CommonModule } from '@angular/common';
 import {Component, computed, inject, OnInit, signal, WritableSignal} from '@angular/core';
-import {FormBuilder, FormGroup, ReactiveFormsModule} from '@angular/forms';
+import {FormBuilder, FormGroup, ReactiveFormsModule, Validators} from '@angular/forms';
 import {MatButtonModule} from '@angular/material/button';
 import {MAT_DIALOG_DATA, MatDialogModule, MatDialogRef} from '@angular/material/dialog';
 import {MatInputModule} from '@angular/material/input';
@@ -9,6 +9,7 @@ import {MatCheckboxModule} from '@angular/material/checkbox';
 import {MatListModule} from '@angular/material/list';
 import {MatIconModule} from '@angular/material/icon';
 import {MatSnackBar, MatSnackBarModule} from '@angular/material/snack-bar';
+import {MatSelectModule} from '@angular/material/select';
 import {CreateGameDialogData} from '../models/createGameDialogData';
 import {CreateGameDialogResult} from '../models/createGameDialogResult';
 import {FriendSelection} from '../models/friendSelection';
@@ -27,7 +28,8 @@ import {UserInfo} from '../../../core/models/userInfo';
     MatCheckboxModule,
     MatListModule,
     MatIconModule,
-    MatSnackBarModule
+    MatSnackBarModule,
+    MatSelectModule
   ],
   templateUrl: './create-game-dialog.component.html',
   styleUrls: ['./create-game-dialog.component.scss']
@@ -57,9 +59,16 @@ export class CreateGameDialogComponent implements OnInit {
     return count >= 1 && count <= 3;
   });
 
+  // Define deck options
+  deckOptions = [
+    { name: 'Default Love Letter', id: '00000000-0000-0000-0000-000000000001' },
+    { name: 'Cthulhu (Love Letter Reskin)', id: '00000000-0000-0000-0000-000000000002' }
+  ];
+
   constructor() {
     this.createGameForm = this.fb.group({
       friendCodeInput: [''], // Text area for pasting/entering new codes
+      deckId: [this.deckOptions[0].id, Validators.required] // Add deckId form control
       // Known friends selection will be managed by the signal/template interaction
     });
   }
@@ -175,7 +184,8 @@ export class CreateGameDialogComponent implements OnInit {
     const result: CreateGameDialogResult = {
       selectedOpponentIds: allSelectedOpponents.map(f => f.playerId),
       // Send back the JSON strings for newly added friends so parent can store them
-      newlyValidatedFriendCodes: this.newlyValidatedFriends().map(f => JSON.stringify(f))
+      newlyValidatedFriendCodes: this.newlyValidatedFriends().map(f => JSON.stringify(f)),
+      deckId: this.createGameForm.get('deckId')?.value // Add selected deckId
     };
     this.dialogRef.close(result);
   }

@@ -1,9 +1,21 @@
 <h2 mat-dialog-title>Create New Game</h2>
 
 <mat-dialog-content class="dialog-content">
-  <p>Select 1 to 3 opponents from your known friends list or add new friends using their Friend Code.</p>
+  <p>Select 1 to 3 opponents from your known friends list or add new friends using their Friend Code. Choose a deck theme for your game.</p>
 
   <form [formGroup]="createGameForm">
+    <mat-form-field appearance="outline" class="full-width">
+      <mat-label>Select Deck Theme</mat-label>
+      <mat-select formControlName="deckId">
+        <mat-option *ngFor="let deck of deckOptions" [value]="deck.id">
+          {{ deck.name }}
+        </mat-option>
+      </mat-select>
+      <mat-error *ngIf="createGameForm.get('deckId')?.hasError('required')">
+        Deck theme is required.
+      </mat-error>
+    </mat-form-field>
+
     <mat-form-field appearance="outline" class="full-width">
       <mat-label>Add New Friend(s) by Code</mat-label>
       <textarea matInput
