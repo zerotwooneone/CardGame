@@ -1,5 +1,6 @@
 using CardGame.Application.DTOs;
 using CardGame.Domain.Interfaces;
+using CardGame.Domain.Game;
 using MediatR;
 
 namespace CardGame.Application.Queries;
@@ -10,11 +11,13 @@ namespace CardGame.Application.Queries;
 public class GetSpectatorGameStateQueryHandler : IRequestHandler<GetSpectatorGameStateQuery, SpectatorGameStateDto?>
 {
     private readonly IGameRepository _gameRepository;
+    private readonly IDeckRegistry _deckRegistry; 
 
     // Constructor injection for dependencies
-    public GetSpectatorGameStateQueryHandler(IGameRepository gameRepository)
+    public GetSpectatorGameStateQueryHandler(IGameRepository gameRepository, IDeckRegistry deckRegistry) 
     {
         _gameRepository = gameRepository ?? throw new ArgumentNullException(nameof(gameRepository));
+        _deckRegistry = deckRegistry ?? throw new ArgumentNullException(nameof(deckRegistry)); 
     }
 
     public async Task<SpectatorGameStateDto?> Handle(GetSpectatorGameStateQuery request, CancellationToken cancellationToken)
@@ -25,6 +28,21 @@ public class GetSpectatorGameStateQueryHandler : IRequestHandler<GetSpectatorGam
         if (game == null)
         {
             return null; // Game not found
+        }
+
+        // 1.5 Load DeckDefinition
+        DeckDefinition? deckDefinition = null; // Initialize as nullable
+        var deckProvider = _deckRegistry.GetProvider(game.DeckDefinitionId); // Get the provider
+        if (deckProvider != null)
+        {
+            deckDefinition = deckProvider.GetDeck(); // Get the DeckDefinition from the provider
+        }
+        
+        if (deckDefinition == null)
+        {
+            // Handle case where deck definition is not found - perhaps log and return error or partial DTO
+            // For now, we'll proceed, but played card appearances might be missing or default
+            // Consider throwing an exception or returning a more specific error DTO if this is critical
         }
 
         var spectatorDto = new SpectatorGameStateDto
@@ -46,7 +64,15 @@ public class GetSpectatorGameStateQueryHandler : IRequestHandler<GetSpectatorGam
                 Name = player.Name,
                 Status = player.Status.Value, 
                 HandCardCount = player.Hand.Count, // Only the count
-                PlayedCardTypes = player.PlayedCards.Select(cardType => cardType.Value).ToList(), // Only the types played
+                PlayedCards = player.PlayedCards.Select(cardType => 
+                {
+                    var cardDef = deckDefinition?.Cards.FirstOrDefault(cd => cd.Type == cardType);
+                    return new CardDto
+                    {
+                        Rank = cardType.Value,
+                        AppearanceId = cardDef?.AppearanceId ?? string.Empty // Use string.Empty if not found
+                    };
+                }).ToList(),
                 TokensWon = player.TokensWon,
                 IsProtected = player.IsProtected
             }).ToList(),

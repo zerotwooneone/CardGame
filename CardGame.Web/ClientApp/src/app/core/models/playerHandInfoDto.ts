@@ -1,4 +1,4 @@
-﻿/**
+/**
  * Represents information about a player within the PlayerGameStateDto.
  */
 export interface PlayerHandInfoDto {
@@ -6,7 +6,7 @@ export interface PlayerHandInfoDto {
   name: string;
   status: number;
   handCardCount: number; // Show count for all players
-  playedCardTypes: number[]; // Consider sending type values (int[])?
+  playedCardTypes?: number[]; // Consider sending type values (int[])?
   tokensWon: number;
   isProtected: boolean;
 }

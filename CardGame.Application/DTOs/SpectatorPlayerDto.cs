@@ -1,4 +1,4 @@
-﻿namespace CardGame.Application.DTOs;
+namespace CardGame.Application.DTOs;
 
 /// <summary>
 /// Represents the publicly visible state of a player for spectators.
@@ -9,7 +9,7 @@ public class SpectatorPlayerDto
     public string Name { get; set; } = string.Empty;
     public int Status { get; set; } 
     public int HandCardCount { get; set; } // Count only, not the actual cards
-    public List<int> PlayedCardTypes { get; set; } = new List<int>(); // Show types of cards played this round
+    public List<CardDto> PlayedCards { get; set; } = new List<CardDto>(); // Show cards played this round
     public int TokensWon { get; set; }
     public bool IsProtected { get; set; } // Handmaid status is public
 }

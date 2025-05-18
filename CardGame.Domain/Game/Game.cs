@@ -25,6 +25,7 @@ public class Game // Aggregate Root
 
     private readonly IReadOnlyList<Card> _initialDeckCardSet;
     private readonly Guid _deckDefinitionId; // Added field
+    public Guid DeckDefinitionId => _deckDefinitionId; // ADDED Public getter
 
     // --- Domain Event Handling ---
     private readonly List<IDomainEvent> _domainEvents = new List<IDomainEvent>();

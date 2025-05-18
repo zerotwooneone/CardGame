@@ -82,7 +82,14 @@ export class PlayerDisplayComponent {
   // Helper to create CardDto objects for the discard pile display
   // Uses the numeric type value from playerData.playedCardTypes
   get discardPileCards(): CardDto[] {
-    return (this.playerData?.playedCardTypes ?? []).map((typeValue, index) => ({
+    // Check if playerData has playedCards (i.e., it's SpectatorPlayerDto with the new structure)
+    if (this.playerData && 'playedCards' in this.playerData && Array.isArray((this.playerData as SpectatorPlayerDto).playedCards)) {
+      return (this.playerData as SpectatorPlayerDto).playedCards;
+    }
+    // Fallback to old logic if it's PlayerHandInfoDto or old SpectatorPlayerDto structure
+    // Assuming PlayerHandInfoDto still uses playedCardTypes
+    const playedCardTypes = (this.playerData as PlayerHandInfoDto)?.playedCardTypes ?? [];
+    return playedCardTypes.map((typeValue, index) => ({
       appearanceId: `${this.playerData?.playerId}_discard_${index}_${typeValue}`,
       rank: typeValue // Assign the numeric type value directly
     }));
