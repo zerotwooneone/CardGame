@@ -1,29 +1,41 @@
-using CardGame.Application.Common.Interfaces;
+using CardGame.Application.Common.Interfaces; // For IDeckRepository
 using CardGame.Application.DTOs;
 using CardGame.Domain.Game;
-using CardGame.Domain.Interfaces;
+using CardGame.Domain.Interfaces; // For IDeckRegistry
+using System;
+using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
 
 namespace CardGame.Infrastructure.Persistence;
 
 public class DeckRepository : IDeckRepository
 {
-    private readonly IDeckProvider _deckProvider;
+    private readonly IDeckRegistry _deckRegistry;
 
-    public DeckRepository(IDeckProvider deckProvider)
+    public DeckRepository(IDeckRegistry deckRegistry)
     {
-        _deckProvider = deckProvider ?? throw new ArgumentNullException(nameof(deckProvider));
+        _deckRegistry = deckRegistry ?? throw new ArgumentNullException(nameof(deckRegistry));
     }
 
     public Task<DeckDefinitionDto> GetDeckByIdAsync(Guid deckId)
     {
-        // deckId is currently unused as we only have one default deck provider.
-        // In a future system with multiple decks, deckId would be used by IDeckProvider.
-        var domainDeckDefinition = _deckProvider.GetDeck();
+        if (deckId == Guid.Empty)
+        {
+            throw new ArgumentException("DeckId cannot be an empty GUID.", nameof(deckId));
+        }
+
+        var provider = _deckRegistry.GetProvider(deckId);
+        if (provider == null)
+        {
+            throw new KeyNotFoundException($"No deck provider found for DeckId: {deckId}");
+        }
+
+        var domainDeckDefinition = provider.GetDeck();
 
         var cardDtos = domainDeckDefinition.Cards.Select(card => new CardDto
         {
-            Rank = card.Rank, 
+            Rank = card.Rank,
             AppearanceId = card.AppearanceId
         }).ToList();
 

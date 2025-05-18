@@ -11,6 +11,9 @@ public class DefaultDeckProvider : IDeckProvider
 {
     private const string DefaultBackAppearanceId = "assets/decks/default/back.webp";
 
+    /// <inheritdoc />
+    public Guid DeckId => new Guid("00000000-0000-0000-0000-000000000001");
+
     /// <summary>
     /// Gets the default Love Letter deck.
     /// The deck composition is:
