@@ -6,8 +6,8 @@ using CardGame.Domain.Game.Event;
 using MediatR;
 using Microsoft.Extensions.Logging;
 using System.Linq;
-using CardGame.Domain.Interfaces;
-using CardGame.Domain.Types;
+using CardGame.Domain.Interfaces; 
+using CardGame.Domain.Types; 
 
 namespace CardGame.Application.GameEventHandlers;
 
@@ -19,26 +19,65 @@ public class HandlePriestEffectUsedAndNotify : INotificationHandler<DomainEventN
 {
     private readonly IPlayerNotifier _playerNotifier;
     private readonly ILogger<HandlePriestEffectUsedAndNotify> _logger;
+    private readonly IGameRepository _gameRepository; 
 
     public HandlePriestEffectUsedAndNotify(
         IPlayerNotifier playerNotifier,
-        ILogger<HandlePriestEffectUsedAndNotify> logger)
+        ILogger<HandlePriestEffectUsedAndNotify> logger,
+        IGameRepository gameRepository) 
     {
         _playerNotifier = playerNotifier ?? throw new ArgumentNullException(nameof(playerNotifier));
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+        _gameRepository = gameRepository ?? throw new ArgumentNullException(nameof(gameRepository)); 
     }
 
-    public Task Handle(DomainEventNotification<PriestEffectUsed> notification,
+    public async Task Handle(DomainEventNotification<PriestEffectUsed> notification,
         CancellationToken cancellationToken)
     {
         var domainEvent = notification.DomainEvent;
         _logger.LogDebug(
-            "Handling PriestEffectUsed event for Game {GameId}. Player {PriestPlayerId} targeted {TargetPlayerId}. Revealed Card Type: {RevealedCardType}. Private log created in Game.cs.",
+            "Handling PriestEffectUsed event for Game {GameId}. Player {PriestPlayerId} targeted {TargetPlayerId}. Revealed Card Type: {RevealedCardType}. Preparing to notify.",
             domainEvent.GameId, domainEvent.PriestPlayerId, domainEvent.TargetPlayerId, domainEvent.RevealedCardType.ToString());
 
+        var game = await _gameRepository.GetByIdAsync(domainEvent.GameId, cancellationToken).ConfigureAwait(false);
+        if (game == null)
+        {
+            _logger.LogWarning("Game {GameId} not found when handling PriestEffectUsed event. Cannot send notification.", domainEvent.GameId);
+            return;
+        }
 
-        _logger.LogInformation("Priest reveal notification sent to player {PriestPlayerId} for game {GameId}.", domainEvent.PriestPlayerId, domainEvent.GameId);
+        var targetPlayer = game.Players.FirstOrDefault(p => p.Id == domainEvent.TargetPlayerId);
+        if (targetPlayer == null)
+        {
+            _logger.LogWarning("Target Player {TargetPlayerId} not found in Game {GameId} for PriestEffectUsed event. Cannot send notification.", 
+                domainEvent.TargetPlayerId, domainEvent.GameId);
+            return;
+        }
+        string targetPlayerName = targetPlayer.Name;
 
-        return Task.CompletedTask;
+        var revealedCardDto = new CardDto
+        {
+            AppearanceId = domainEvent.RevealedCardId, 
+            Rank = domainEvent.RevealedCardType.Value   
+        };
+
+        try
+        {
+            await _playerNotifier.SendPriestRevealAsync(
+                domainEvent.PriestPlayerId,
+                domainEvent.TargetPlayerId,
+                targetPlayerName,
+                revealedCardDto,
+                cancellationToken);
+
+            _logger.LogInformation("Priest reveal notification successfully sent to player {PriestPlayerId} for game {GameId} regarding target {TargetPlayerId}.", 
+                domainEvent.PriestPlayerId, domainEvent.GameId, domainEvent.TargetPlayerId);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error sending Priest reveal notification to player {PriestPlayerId} for game {GameId}.", 
+                domainEvent.PriestPlayerId, domainEvent.GameId);
+            // Optionally rethrow or handle further depending on policy
+        }
     }
 }

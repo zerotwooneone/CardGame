@@ -12,8 +12,9 @@ using CardGame.Domain.Types;
 namespace CardGame.Application.GameEventHandlers;
 
 /// <summary>
-/// Handles PrinceEffectUsed events to log the discard outcome.
-/// (Note: PlayerDrewCard handler handles sending the new hand state privately).
+/// Handles the PrinceEffectUsed domain event. The primary GameLogEntry for the Prince effect (discard and subsequent draw)
+/// is created in Game.ExecutePrinceEffect. This handler is for debug logging and potential future notifications related to the Prince effect.
+/// (Note: PlayerDrewCard handler handles sending the new hand state privately if a card is drawn).
 /// </summary>
 public class HandlePrinceEffectUsedAndNotify : INotificationHandler<DomainEventNotification<PrinceEffectUsed>>
 {

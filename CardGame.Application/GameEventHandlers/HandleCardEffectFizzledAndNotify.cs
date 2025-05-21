@@ -30,58 +30,35 @@ public class HandleCardEffectFizzledAndNotify : INotificationHandler<DomainEvent
     public async Task Handle(DomainEventNotification<CardEffectFizzled> notification, CancellationToken cancellationToken)
     {
         var domainEvent = notification.DomainEvent;
-        _logger.LogDebug("Handling CardEffectFizzled for Game {GameId}, Actor {ActorId}, Card {CardType}, Target {TargetId}, Reason: {Reason}.",
+        _logger.LogDebug("Handling CardEffectFizzled domain event for Game {GameId}, Actor {ActorId}, Card {CardType}, Target {TargetId}, Reason: {Reason}. Primary log entry created in Game.cs.",
             domainEvent.GameId, domainEvent.ActorId, domainEvent.CardType.Name, domainEvent.TargetId, domainEvent.Reason);
+
+        // The primary GameLogEntry for EffectFizzled (e.g., due to Handmaid) 
+        // is created directly in the Game.cs methods (e.g., ExecuteKingEffect, ExecutePrinceEffect, etc.)
+        // before the CardEffectFizzled domain event is raised.
+        // This handler should not add a duplicate GameLogEntry.
 
         var game = await _gameRepository.GetByIdAsync(domainEvent.GameId, cancellationToken).ConfigureAwait(false);
         if (game == null)
         {
-            _logger.LogWarning("Game {GameId} not found for CardEffectFizzled event.", domainEvent.GameId);
+            _logger.LogWarning("Game {GameId} not found when handling CardEffectFizzled event for notification purposes.", domainEvent.GameId);
             return;
         }
 
-        var actorPlayer = game.Players.FirstOrDefault(p => p.Id == domainEvent.ActorId);
-        var targetPlayer = game.Players.FirstOrDefault(p => p.Id == domainEvent.TargetId);
-
-        if (actorPlayer == null)
-        {
-            _logger.LogWarning("Actor Player not found for CardEffectFizzled event in Game {GameId}. ActorId: {ActorId}", 
-                domainEvent.GameId, domainEvent.ActorId);
-            return;
-        }
-        // TargetPlayer can be null if the effect didn't target a specific player or the target was invalid.
-
-        // Format the message for the log entry
-        // Assuming domainEvent.CardType is CardGame.Domain.Types.CardType
-        string cardName = domainEvent.CardType.ToString(); // Or a more friendly name
-        string message;
-        if (targetPlayer != null)
-        {
-            message = $"{actorPlayer.Name}'s {cardName} effect against {targetPlayer.Name} fizzled. Reason: {domainEvent.Reason}.";
-        }
-        else 
-        {
-            message = $"{actorPlayer.Name}'s {cardName} effect against Player ID {domainEvent.TargetId} fizzled. Reason: {domainEvent.Reason} (Target player not found).";
-        }
-
-        var logEntry = new GameLogEntry(
-            eventType: GameLogEventType.EffectFizzled, // Corrected enum value
-            actingPlayerId: domainEvent.ActorId,
-            actingPlayerName: actorPlayer.Name,
-            message: message, // Use the formatted message
-            isPrivate: false // Fizzle events are public
-        );
-        game.AddLogEntry(logEntry);
-
-        // await _gameRepository.SaveAsync(game, cancellationToken).ConfigureAwait(false);
-
-        // // Call the broadcast method on the notifier service
+        // Logic for notifications can remain if _playerNotifier is used.
+        // For example:
         // await _playerNotifier.BroadcastCardEffectFizzledAsync(
         //     domainEvent.GameId,
         //     domainEvent.ActorId,
-        //     domainEvent.CardType.Value,
+        //     domainEvent.CardType.Value, // Ensure this aligns if CardType is a class/struct
         //     domainEvent.TargetId,
         //     domainEvent.Reason,
         //     cancellationToken).ConfigureAwait(false);
+
+        _logger.LogInformation("CardEffectFizzled event processed for Game {GameId}. Actor: {ActorId}, Card: {CardType}, Target: {TargetId}, Reason: {Reason}. Log entry was created in domain.",
+            domainEvent.GameId, domainEvent.ActorId, domainEvent.CardType.Name, domainEvent.TargetId, domainEvent.Reason);
+
+        // No game.AddLogEntry() call here anymore.
+        // No _gameRepository.SaveAsync(game, ...) is needed here if the handler isn't modifying the game state related to the log.
     }
 }

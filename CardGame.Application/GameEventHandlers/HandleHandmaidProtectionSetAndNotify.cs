@@ -11,7 +11,8 @@ using CardGame.Domain.Types;
 namespace CardGame.Application.GameEventHandlers;
 
 /// <summary>
-/// Handles the HandmaidProtectionSet event to create a log entry announcing the protection.
+/// Handles the HandmaidProtectionSet domain event. The primary GameLogEntry is created in Game.ExecuteHandmaidEffect.
+/// This handler is for debug logging and potential future notifications.
 /// </summary>
 public class HandleHandmaidProtectionSetAndNotify : INotificationHandler<DomainEventNotification<HandmaidProtectionSet>>
 {

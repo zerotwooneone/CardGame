@@ -11,7 +11,8 @@ using CardGame.Domain.Types;
 namespace CardGame.Application.GameEventHandlers;
 
 /// <summary>
-/// Handles the PlayerEliminated event to create a log entry detailing the elimination.
+/// Handles the PlayerEliminated domain event. The primary GameLogEntry is created in Game.EliminatePlayer.
+/// This handler is for debug logging and potential future notifications.
 /// </summary>
 public class HandlePlayerEliminatedAndNotify : INotificationHandler<DomainEventNotification<PlayerEliminated>>
 {

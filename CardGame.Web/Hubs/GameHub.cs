@@ -119,4 +119,12 @@ public interface IGameClient
     Task GameWinnerAnnounced(Guid winnerId);
     
     Task ShowRoundSummary(RoundEndSummaryDto summaryData);
+
+    /// <summary>
+    /// Sends information about a card revealed by a Priest effect to the client of the player who played the Priest.
+    /// </summary>
+    /// <param name="targetPlayerId">The ID of the player whose card was revealed.</param>
+    /// <param name="targetPlayerName">The name of the player whose card was revealed.</param>
+    /// <param name="revealedCard">The card that was revealed from the target player's hand.</param>
+    Task ReceivePriestReveal(Guid targetPlayerId, string targetPlayerName, CardDto revealedCard);
 }

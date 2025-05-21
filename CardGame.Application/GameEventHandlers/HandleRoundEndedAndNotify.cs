@@ -11,7 +11,8 @@ using System.Linq;
 namespace CardGame.Application.GameEventHandlers;
 
 /// <summary>
-/// Handles RoundEnded events to log the outcome and broadcast the summary.
+/// Handles RoundEnded domain events. The primary GameLogEntry for the round's outcome is created in Game.EndRound.
+/// This handler uses ILogger for application-level information and broadcasts the round summary to players.
 /// </summary>
 public class HandleRoundEndedAndNotify : INotificationHandler<DomainEventNotification<RoundEnded>>
 {

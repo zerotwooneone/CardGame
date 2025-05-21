@@ -28,4 +28,14 @@ public interface IPlayerNotifier
     /// <param name="summaryData">The round summary DTO.</param>
     /// <param name="cancellationToken">Cancellation token.</param>
     Task BroadcastRoundSummaryAsync(Guid gameId, RoundEndSummaryDto summaryData, CancellationToken cancellationToken);
+
+    /// <summary>
+    /// Sends information about a card revealed by a Priest effect to the player who played the Priest.
+    /// </summary>
+    /// <param name="priestPlayerId">The ID of the player who played the Priest.</param>
+    /// <param name="targetPlayerId">The ID of the player whose card was revealed.</param>
+    /// <param name="targetPlayerName">The name of the player whose card was revealed.</param>
+    /// <param name="revealedCard">The card that was revealed from the target player's hand.</param>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    Task SendPriestRevealAsync(Guid priestPlayerId, Guid targetPlayerId, string targetPlayerName, CardDto revealedCard, CancellationToken cancellationToken);
 }

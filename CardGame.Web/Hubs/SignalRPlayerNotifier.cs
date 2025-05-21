@@ -1,4 +1,4 @@
-﻿using CardGame.Application.Common.Interfaces;
+using CardGame.Application.Common.Interfaces;
 using CardGame.Application.DTOs;
 using Microsoft.AspNetCore.SignalR;
 
@@ -68,6 +68,30 @@ public class SignalRPlayerNotifier : IPlayerNotifier
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error broadcasting Round Summary to group {GroupName} for Game {GameId}.", groupName, gameId);
+        }
+    }
+
+    public async Task SendPriestRevealAsync(Guid priestPlayerId, Guid targetPlayerId, string targetPlayerName, CardDto revealedCard, CancellationToken cancellationToken)
+    {
+        if (priestPlayerId == Guid.Empty || revealedCard == null)
+        {
+            _logger.LogWarning("SendPriestRevealAsync called with invalid arguments. PriestPlayerId: {PriestPlayerId}, RevealedCard: {RevealedCard}", priestPlayerId, revealedCard);
+            return;
+        }
+
+        string userId = priestPlayerId.ToString(); // SignalR targets users by string ID
+        try
+        {
+            await _hubContext.Clients
+                .User(userId)
+                .ReceivePriestReveal(targetPlayerId, targetPlayerName, revealedCard);
+
+            _logger.LogInformation("Sent Priest reveal to Player {PriestPlayerId} about Target {TargetPlayerId}'s card (Rank: {RevealedCardRank}).", 
+                priestPlayerId, targetPlayerId, revealedCard.Rank);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error sending Priest reveal to Player {PriestPlayerId}.", priestPlayerId);
         }
     }
 }
