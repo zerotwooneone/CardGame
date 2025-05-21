@@ -4,6 +4,7 @@ import { CardDisplayComponent } from '../../../../../../shared/components/card-d
 import { GameLogEntryDto } from '../../../../../../core/models/gameLogEntryDto';
 import { UiInteractionService } from '../../../../../../core/services/ui-interaction-service.service';
 import { CardType } from '../../../../../../core/models/cardType';
+import { CardDto } from '../../../../../../core/models/cardDto';
 
 @Component({
   selector: 'app-handmaid-protection-visualizer',
@@ -15,10 +16,16 @@ import { CardType } from '../../../../../../core/models/cardType';
 export class HandmaidProtectionVisualizerComponent {
   @Input() logEntry!: GameLogEntryDto;
   private uiInteractionService = inject(UiInteractionService);
-  protected readonly CardType = CardType;
 
-  // This method is for when the Handmaid card display itself is clicked
+  get playedHandmaidCardDisplay(): CardDto | undefined {
+    return this.logEntry.playedCard;
+  }
+
   onHandmaidCardDisplayClicked(): void {
-    this.uiInteractionService.requestScrollToCardReference(CardType.Handmaid);
+    if (this.playedHandmaidCardDisplay?.rank !== undefined) {
+      this.uiInteractionService.requestScrollToCardReference(this.playedHandmaidCardDisplay.rank);
+    } else {
+      this.uiInteractionService.requestScrollToCardReference(CardType.Handmaid);
+    }
   }
 }

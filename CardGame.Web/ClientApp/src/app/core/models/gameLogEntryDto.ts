@@ -1,6 +1,7 @@
 import { GameLogEventType } from './gameLogEventType';
-import { CardType } from './cardType';
-import { GameLogPlayerRoundSummaryDto } from './gameLogPlayerRoundSummaryDto';
+import { RoundEndPlayerSummaryDto } from './roundEndPlayerSummaryDto';
+import { CardDto } from './cardDto';
+import {CardType} from './cardType';
 
 export interface GameLogEntryDto {
   id: string;
@@ -11,39 +12,44 @@ export interface GameLogEntryDto {
   actingPlayerName: string;
   targetPlayerId?: string;
   targetPlayerName?: string;
-  revealedCardAppearanceId?: string;
-  revealedCardValue?: CardType;
   isPrivate: boolean;
   message?: string;
 
-  // Structured properties
-  playedCardAppearanceId?: string;
-  playedCardValue?: CardType;
+  // --- Properties aligned with C# GameLogEntryDto ---
+  playedCard?: CardDto;
+  drawnCard?: CardDto;
+  discardedCard?: CardDto;
 
-  guessedCardAppearanceId?: string;
-  guessedCardValue?: CardType;
+  // Priest Effect
+  revealedPlayerCard?: CardDto;
+
+  // Guard Effect
+  guessedPlayerActualCard?: CardDto;
+  guessedRank?: CardType;
   wasGuessCorrect?: boolean;
 
-  player1ComparedCardAppearanceId?: string;
-  player1ComparedCardValue?: CardType;
-  player2ComparedCardAppearanceId?: string;
-  player2ComparedCardValue?: CardType;
+  // Baron Effect
+  actingPlayerBaronCard?: CardDto;
+  targetPlayerBaronCard?: CardDto;
   baronLoserPlayerId?: string;
 
-  discardedByPrinceCardAppearanceId?: string;
-  discardedByPrinceCardValue?: CardType;
+  // Prince Effect
+  targetDiscardedCard?: CardDto;
+  targetNewCardAfterPrince?: CardDto;
 
-  cardResponsibleForEliminationAppearanceId?: string;
-  cardResponsibleForEliminationValue?: CardType;
+  // King Effect
+  revealedTradedCard?: CardDto;
 
-  cardDrawnAppearanceId?: string;
-  cardDrawnValue?: CardType;
+  // Elimination
+  revealedCardOnElimination?: CardDto;
 
+  // Fizzled Effects
   fizzleReason?: string;
 
+  // Round/Game End
   winnerPlayerId?: string;
+  winnerPlayerName?: string;
   roundEndReason?: string;
+  roundPlayerSummaries?: RoundEndPlayerSummaryDto[];
   tokensHeld?: number;
-  
-  roundPlayerSummaries?: GameLogPlayerRoundSummaryDto[];
 }

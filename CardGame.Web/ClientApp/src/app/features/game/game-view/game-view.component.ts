@@ -13,6 +13,7 @@ import { GameStateService } from '../services/game-state.service';
 import { GameActionService } from '../services/game-action.service';
 import { AuthService } from '../../../core/services/auth.service';
 import { PlayerDisplayComponent } from '../components/player-display/player-display.component';
+import { PlayerStatus } from '../components/player-display/player.status';
 import { CardDisplayComponent } from '../../../shared/components/card-display.component';
 import { ActionModalComponent } from '../components/action-modal/action-modal.component';
 import {SpectatorGameStateDto} from '../../../core/models/spectatorGameStateDto';
@@ -96,7 +97,7 @@ export class GameViewComponent implements OnInit, OnDestroy {
     if (!state || !myId) return [];
     // Filter out self and eliminated players ONLY
     return state.players
-      .filter(p => p.playerId !== myId && p.status === 1) // Check status === 1 (Active)
+      .filter(p => p.playerId !== myId && p.status === PlayerStatus.Active)
       .map(p => ({ id: p.playerId, name: p.name, isProtected: p.isProtected }));
   });
 
@@ -107,6 +108,25 @@ export class GameViewComponent implements OnInit, OnDestroy {
     const targetTypes = [1, 2, 3, 6]; // Guard, Priest, Baron, King values
     return targetTypes.includes(card.rank);
   });
+
+  // Method to check if a specific player is targetable
+  public isPlayerTargetableCheck(player: PlayerHandInfoDto | SpectatorPlayerDto): boolean {
+    const card = this.selectedCard(); // Access signal for selected card
+    if (!card || !this.isMyTurn() || this.isSpectating()) return false;
+    if (player.playerId === this.currentPlayerId()) return false; // Cannot target self
+    if (player.status !== PlayerStatus.Active) return false; // PlayerStatus.Active (1)
+
+    // Only targetable if the selected card requires a target.
+    if (!this.isTargetingRequired()) return false;
+
+    // Check for Handmaid protection if the card is one that is blocked by Handmaid
+    const handmaidBlocks = [1, 2, 3, 5, 6]; // Guard, Priest, Baron, Prince, King ranks
+    if (player.isProtected && handmaidBlocks.includes(card.rank)) {
+      return false; // Cannot target protected player with these cards
+    }
+
+    return true; // Otherwise, targetable
+  }
 
   // Computed signal to check if guessing is needed (Guard)
   isGuessingRequired: Signal<boolean> = computed(() => this.selectedCard()?.rank === 1); // Guard value is 1
@@ -187,7 +207,7 @@ export class GameViewComponent implements OnInit, OnDestroy {
   onPlayerSelected(playerId: string): void {
     if (!this.isTargetingRequired() || !this.selectedCard() || this.isSpectating()) return;
 
-    const allOpponents = this.spectatorState()?.players.filter(p => p.playerId !== this.currentPlayerId() && p.status === 1) ?? [];
+    const allOpponents = this.spectatorState()?.players.filter(p => p.playerId !== this.currentPlayerId() && p.status === PlayerStatus.Active) ?? [];
     const selectedOpponent = allOpponents.find(p => p.playerId === playerId);
 
     if (!selectedOpponent) {

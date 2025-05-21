@@ -38,6 +38,9 @@ export class PlayerDisplayComponent {
   /** Player data to display. DTO now has status: number */
   @Input() playerData?: PlayerHandInfoDto | SpectatorPlayerDto | null; // Allow either DTO type
 
+  // Expose PlayerStatus enum to the template
+  public PlayerStatus = PlayerStatus;
+
   /** Is it currently this player's turn? */
   @Input() isCurrentTurn: boolean = false;
 
@@ -80,19 +83,8 @@ export class PlayerDisplayComponent {
   }
 
   // Helper to create CardDto objects for the discard pile display
-  // Uses the numeric type value from playerData.playedCardTypes
   get discardPileCards(): CardDto[] {
-    // Check if playerData has playedCards (i.e., it's SpectatorPlayerDto with the new structure)
-    if (this.playerData && 'playedCards' in this.playerData && Array.isArray((this.playerData as SpectatorPlayerDto).playedCards)) {
-      return (this.playerData as SpectatorPlayerDto).playedCards;
-    }
-    // Fallback to old logic if it's PlayerHandInfoDto or old SpectatorPlayerDto structure
-    // Assuming PlayerHandInfoDto still uses playedCardTypes
-    const playedCardTypes = (this.playerData as PlayerHandInfoDto)?.playedCardTypes ?? [];
-    return playedCardTypes.map((typeValue, index) => ({
-      appearanceId: `${this.playerData?.playerId}_discard_${index}_${typeValue}`,
-      rank: typeValue // Assign the numeric type value directly
-    }));
+    return this.playerData?.playedCards ?? [];
   }
 
   /** Gets the display name for the player's status */

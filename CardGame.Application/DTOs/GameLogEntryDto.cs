@@ -14,43 +14,45 @@ public class GameLogEntryDto
     public string ActingPlayerName { get; set; } = string.Empty;
     public Guid? TargetPlayerId { get; set; }
     public string? TargetPlayerName { get; set; }
-    public string? RevealedCardAppearanceId { get; set; } 
-    public int? RevealedCardValue { get; set; }
     public bool IsPrivate { get; set; }
     public string? Message { get; set; }
 
-    // --- Structured Properties ---
-    public string? PlayedCardAppearanceId { get; set; } 
-    public int? PlayedCardValue { get; set; }
+    // --- New/Updated Structured Properties based on Domain GameLogEntry ---
+    public CardDto? PlayedCard { get; set; }                // Card played by the acting player
+    public CardDto? DrawnCard { get; set; }                 // Card drawn by a player
+    public CardDto? DiscardedCard { get; set; }             // Card discarded (e.g., Countess, or a general discard not tied to Prince's effect on a target)
+    
+    // Priest Effect
+    public CardDto? RevealedPlayerCard { get; set; }        // Card revealed by Priest's effect
 
-    // For Guard Guess
-    public string? GuessedCardAppearanceId { get; set; } 
-    public int? GuessedCardValue { get; set; }
-    public bool? WasGuessCorrect { get; set; }
+    // Guard Effect
+    public CardDto? GuessedPlayerActualCard { get; set; }   // Actual card of the player targeted by Guard (if guess was correct or card revealed)
+    public int? GuessedRank { get; set; }                   // The rank guessed by Guard (e.g., 5 for King)
+    public bool? WasGuessCorrect { get; set; }             // Was the Guard's guess correct
 
-    // For Baron Comparison
-    public string? Player1ComparedCardAppearanceId { get; set; } 
-    public int? Player1ComparedCardValue { get; set; }
-    public string? Player2ComparedCardAppearanceId { get; set; } 
-    public int? Player2ComparedCardValue { get; set; }
-    public Guid? BaronLoserPlayerId { get; set; }
+    // Baron Effect
+    public CardDto? ActingPlayerBaronCard { get; set; }     // Acting player's card in Baron comparison
+    public CardDto? TargetPlayerBaronCard { get; set; }      // Target player's card in Baron comparison
+    public Guid? BaronLoserPlayerId { get; set; }           // ID of the player who lost the Baron comparison
 
-    // For Prince Discard
-    public string? DiscardedByPrinceCardAppearanceId { get; set; } 
-    public int? DiscardedByPrinceCardValue { get; set; }
+    // Prince Effect
+    public CardDto? TargetDiscardedCard { get; set; }       // Card discarded by the target of Prince
+    public CardDto? TargetNewCardAfterPrince { get; set; }  // New card drawn by the target of Prince (if they didn't draw Princess)
 
-    // For Eliminations
-    public string? CardResponsibleForEliminationAppearanceId { get; set; } 
-    public int? CardResponsibleForEliminationValue { get; set; }
+    // King Effect
+    public CardDto? RevealedTradedCard { get; set; }        // Card revealed/received by the acting player after King's effect (target's original card)
+                                                            // Note: The other card involved in the trade (acting player's original card) is `PlayedCard`
 
-    // For Fizzled Effects
+    // Elimination
+    public CardDto? RevealedCardOnElimination { get; set; } // Card revealed by a player when they are eliminated (e.g. Princess)
+    
+    // Fizzled Effects (already existed, seems okay)
     public string? FizzleReason { get; set; }
 
-    // For Round/Game End
+    // Round/Game End (already existed, seem okay, but WinnerPlayerName might be an issue if it was removed from domain)
     public Guid? WinnerPlayerId { get; set; }
+    public string? WinnerPlayerName {get; set;} // Added this back temporarily as it was in build errors, may need removal if not in domain
     public string? RoundEndReason { get; set; }
-    public List<RoundEndPlayerSummaryDto>? RoundPlayerSummaries { get; set; }
-    public int? TokensHeld { get; set; }
-    public string? CardDrawnAppearanceId { get; set; } 
-    public int? CardDrawnValue { get; set; }
+    public List<RoundEndPlayerSummaryDto>? RoundPlayerSummaries { get; set; } // Renamed from RoundEndPlayerSummaries
+    public int? TokensHeld { get; set; } 
 }

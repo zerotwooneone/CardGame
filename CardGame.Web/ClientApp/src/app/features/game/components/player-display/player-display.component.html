@@ -12,7 +12,7 @@
 
   <mat-card-content class="player-area">
     <div class="hand-area" [matTooltip]="(playerData?.handCardCount || 0) + ' cards in hand'">
-      <span *ngIf="playerData?.handCardCount === 0 && playerData?.status !== 2">Hand Empty</span>
+      <span *ngIf="playerData?.handCardCount === 0 && playerData?.status !== PlayerStatus.Eliminated">Hand Empty</span>
       <div class="card-slot" *ngFor="let i of handPlaceholders; trackBy: trackByIndex">
         <app-card-display [isFaceDown]="true"></app-card-display>
       </div>

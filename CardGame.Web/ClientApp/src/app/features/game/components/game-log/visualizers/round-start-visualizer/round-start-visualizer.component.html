@@ -1,5 +1,15 @@
-<div class="round-start">
+<div class="log-visualizer round-start" *ngIf="logEntry">
   <span class="icon">🔔</span>
-  <span>Round started</span>
-  <span *ngIf="logEntry.message">({{ logEntry.message }})</span>
+  <span>{{ logEntry.message }}</span>
+  <span *ngIf="initialCardDisplay">
+    An initial card was set aside:
+    <app-card-display 
+      [card]="initialCardDisplay" 
+      [isFaceDown]="false" 
+      [isPlayable]="false" 
+      (infoClicked)="onInitialCardInfoClicked()">
+    </app-card-display>.
+  </span>
+  <span *ngIf="logEntry.message && !initialCardDisplay">({{ logEntry.message }})</span>
+  <span *ngIf="logEntry.message && initialCardDisplay"> Further details: {{ logEntry.message }}</span>
 </div>

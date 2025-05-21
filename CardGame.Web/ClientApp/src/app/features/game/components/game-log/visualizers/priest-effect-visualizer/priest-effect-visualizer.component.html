@@ -1,17 +1,28 @@
-<div class="log-visualizer-entry" *ngIf="logEntry">
-  <div class="player-card-combo">
-    <span class="player-name-log">{{ logEntry.actingPlayerName }}</span>
-    <app-card-display [card]="{ appearanceId: '', rank: CardType.Priest }" [isFaceDown]="false" [isPlayable]="false" (infoClicked)="onPriestCardInfoClicked()"></app-card-display>
-  </div>
-  <span class="log-emoji">👀</span>
-  <span class="log-text"> at </span>
-  <div class="player-card-combo">
-    <span class="player-name-log">{{ logEntry.targetPlayerName }}'s hand:</span>
-    <ng-container *ngIf="logEntry.revealedCardValue !== undefined && logEntry.revealedCardValue !== null">
-      <app-card-display [card]="{ appearanceId: logEntry.revealedCardAppearanceId || '', rank: logEntry.revealedCardValue }" [isFaceDown]="false" [isPlayable]="false" (infoClicked)="onRevealedCardInfoClicked()"></app-card-display>
-    </ng-container>
-    <ng-container *ngIf="!(logEntry.revealedCardValue !== undefined && logEntry.revealedCardValue !== null)">
-      <app-card-display [card]="{ appearanceId: '', rank: 1 }" [isFaceDown]="true" [isPlayable]="false"></app-card-display>
-    </ng-container>
-  </div>
+<div class="log-visualizer priest-effect" *ngIf="logEntry">
+  <ng-container *ngIf="logEntry.actingPlayerId && logEntry.targetPlayerId">
+    <!-- Acting player's perspective -->
+    <span *ngIf="logEntry.actingPlayerId === currentPlayerIdDisplay">
+      You played Priest and targeted <span class="player-name">{{ logEntry.targetPlayerName }}</span>.
+      You saw their card: <app-card-display [card]="revealedCardDisplay"></app-card-display>
+    </span>
+
+    <!-- Target player's perspective -->
+    <span *ngIf="logEntry.targetPlayerId === currentPlayerIdDisplay && logEntry.actingPlayerId !== currentPlayerIdDisplay">
+      <span class="player-name">{{ logEntry.actingPlayerName }}</span> played Priest and saw your card:
+      <app-card-display [card]="revealedCardDisplay"></app-card-display>
+    </span>
+
+    <!-- Spectator / Other player's perspective -->
+    <span *ngIf="logEntry.actingPlayerId !== currentPlayerIdDisplay && logEntry.targetPlayerId !== currentPlayerIdDisplay">
+      <span class="player-name">{{ logEntry.actingPlayerName }}</span> played Priest and targeted <span class="player-name">{{ logEntry.targetPlayerName }}</span>.
+      They saw their card.
+      <!-- Optionally show a facedown card if desired for spectators -->
+      <!-- <app-card-display [card]="{ appearanceId: 'unknown_facedown', rank: 0 }" [isFaceDown]="true"></app-card-display> -->
+    </span>
+  </ng-container>
+
+  <!-- Fallback for incomplete data, though ideally logEntry should always have these for this event type -->
+  <span *ngIf="!(logEntry.actingPlayerId && logEntry.targetPlayerId)">
+    Priest effect occurred.
+  </span>
 </div>

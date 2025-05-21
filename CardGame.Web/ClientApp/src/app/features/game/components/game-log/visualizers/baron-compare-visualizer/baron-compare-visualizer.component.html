@@ -1,18 +1,9 @@
-<div class="log-visualizer-entry" *ngIf="logEntry">
-  <span>Baron Compare:</span>
-  <app-card-display [card]="{ appearanceId: logEntry.player1ComparedCardAppearanceId || '', rank: logEntry.player1ComparedCardValue ?? 1 }" [isFaceDown]="false" [isPlayable]="false" (infoClicked)="onPlayer1ComparedCardInfoClicked()"></app-card-display>
-  <span class="log-emoji">⚔️</span>
-  <app-card-display [card]="{ appearanceId: logEntry.player2ComparedCardAppearanceId || '', rank: logEntry.player2ComparedCardValue ?? 1 }" [isFaceDown]="false" [isPlayable]="false" (infoClicked)="onPlayer2ComparedCardInfoClicked()"></app-card-display>.
-
-  <span>Result:</span>
-  <ng-container *ngIf="logEntry.baronLoserPlayerId !== undefined && logEntry.baronLoserPlayerId !== null">
-    <span class="player-name-log">
-      {{ logEntry.baronLoserPlayerId === logEntry.actingPlayerId ? logEntry.targetPlayerName : logEntry.actingPlayerName }}
-    </span>
-    <span class="log-emoji">🏆</span>
-  </ng-container>
-  <ng-container *ngIf="logEntry.baronLoserPlayerId === undefined || logEntry.baronLoserPlayerId === null">
-    <span>Tie</span>
-    <span class="log-emoji">🤝</span>
-  </ng-container>
+<div class="log-visualizer baron-compare" *ngIf="logEntry">
+  <span class="player-name">{{ logEntry.actingPlayerName }}</span> played Baron, comparing their card:
+  <app-card-display *ngIf="player1CardDisplay" [card]="player1CardDisplay" [isFaceDown]="false" [isPlayable]="false" (infoClicked)="onPlayer1ComparedCardInfoClicked()"></app-card-display>
+  against <span class="player-name">{{ logEntry.targetPlayerName }}</span>'s card:
+  <app-card-display *ngIf="player2CardDisplay" [card]="player2CardDisplay" [isFaceDown]="false" [isPlayable]="false" (infoClicked)="onPlayer2ComparedCardInfoClicked()"></app-card-display>.
+  <span *ngIf="logEntry.baronLoserPlayerId === logEntry.actingPlayerId"> <span class="player-name">{{ logEntry.actingPlayerName }}</span> lost and was eliminated.</span>
+  <span *ngIf="logEntry.baronLoserPlayerId === logEntry.targetPlayerId"> <span class="player-name">{{ logEntry.targetPlayerName }}</span> lost and was eliminated.</span>
+  <span *ngIf="logEntry.baronLoserPlayerId === undefined "> It was a tie, no one was eliminated.</span>
 </div>

@@ -3,7 +3,7 @@
   <span>Round ended</span>
   <ng-container *ngIf="logEntry.winnerPlayerId">
     <span>- Winner:</span>
-    <span class="player-name">{{ logEntry.actingPlayerName }}</span> <!-- Assuming winnerPlayerId is actually the actingPlayer for this log type -->
+    <span class="player-name">{{ logEntry.winnerPlayerName }}</span>
   </ng-container>
   <ng-container *ngIf="!logEntry.winnerPlayerId && logEntry.roundPlayerSummaries && logEntry.roundPlayerSummaries.length > 0">
     <span>- It's a draw!</span>
@@ -14,9 +14,9 @@
     <h4>Player Summaries:</h4>
     <ul class="player-summaries-list">
       <li *ngFor="let summary of logEntry.roundPlayerSummaries" class="player-summary-item">
-        <span class="player-name">{{ summary.playerName }}</span>:
-        <span class="tokens">{{ summary.tokensWon }} token(s)</span>
-        <span *ngIf="!summary.wasActive" class="status">(Eliminated)</span>
+        <div class="player-summary-header">
+          <strong>{{ summary.playerName }}</strong> - Tokens Won: {{ summary.tokensWon }}
+        </div>
         <div *ngIf="summary.cardsHeld && summary.cardsHeld.length > 0" class="cards-held-container">
           <span>Held:</span>
           <div class="cards-display">

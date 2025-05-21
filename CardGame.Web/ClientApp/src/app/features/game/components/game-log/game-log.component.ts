@@ -93,7 +93,7 @@ export class GameLogComponent {
     let message = `[${this.datePipe.transform(log.timestamp, 'HH:mm:ss')}] `;
     const actingPlayerName = log.actingPlayerName === 'Game' ? 'Game' : `Player ${log.actingPlayerName}`;
     const targetPlayerName = log.targetPlayerName ? `Player ${log.targetPlayerName}` : '';
-    const revealedCardName = log.revealedCardValue ? CARD_DETAILS_MAP[log.revealedCardValue]?.name : '';
+    const revealedCardName = log.revealedPlayerCard?.rank !== undefined ? CARD_DETAILS_MAP[log.revealedPlayerCard.rank]?.name : '';
 
     if (log.message) {
       // For generic messages, try to replace placeholders if any

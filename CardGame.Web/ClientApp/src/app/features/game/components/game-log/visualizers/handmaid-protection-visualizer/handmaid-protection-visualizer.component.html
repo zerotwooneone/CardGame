@@ -1,4 +1,5 @@
 <div class="log-visualizer handmaid-protection" *ngIf="logEntry">
-  <span class="player-name">{{ logEntry.actingPlayerName }}</span>
-  <span> played Handmaid <app-card-display [card]="{ appearanceId: '', rank: CardType.Handmaid }" [isFaceDown]="false" [isPlayable]="false" (infoClicked)="onHandmaidCardDisplayClicked()"></app-card-display> and is protected for one round.</span>
+  <span class="player-name">{{ logEntry.actingPlayerName }}</span> played
+  <app-card-display *ngIf="playedHandmaidCardDisplay" [card]="playedHandmaidCardDisplay" [isFaceDown]="false" [isPlayable]="false" (infoClicked)="onHandmaidCardDisplayClicked()"></app-card-display>
+  and is protected for one round.
 </div>

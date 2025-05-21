@@ -1,6 +1,15 @@
 <div class="log-visualizer countess-discard" *ngIf="logEntry">
   <span class="player-name">{{ logEntry.actingPlayerName }}</span>
-  <span> was forced to discard </span>
-  <app-card-display [card]="{ appearanceId: '', rank: CardType.Countess }" [isFaceDown]="false" [isPlayable]="false" (infoClicked)="onCountessCardDisplayClicked($event)"></app-card-display>
-  <span> because they held a Prince or King.</span>
+  <span *ngIf="playedPrinceOrKingCardDisplay">
+    played
+    <app-card-display [card]="playedPrinceOrKingCardDisplay" [isFaceDown]="false" [isPlayable]="false" (infoClicked)="onPlayedPrinceOrKingCardInfoClicked()"></app-card-display>
+    and was forced to discard
+  </span>
+  <span *ngIf="!playedPrinceOrKingCardDisplay">
+    was forced to discard <!-- Fallback if played card isn't specified for some reason -->
+  </span>
+  <app-card-display *ngIf="discardedCountessCardDisplay" [card]="discardedCountessCardDisplay" [isFaceDown]="false" [isPlayable]="false" (infoClicked)="onDiscardedCountessCardInfoClicked()"></app-card-display>
+  <span *ngIf="!playedPrinceOrKingCardDisplay">
+    because they held a Prince or King.
+  </span>
 </div>

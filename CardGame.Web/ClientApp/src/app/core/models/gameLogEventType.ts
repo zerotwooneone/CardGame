@@ -15,8 +15,8 @@ export enum GameLogEventType {
   TokenAwarded = 13,
   GuardHit = 14,
   GuardMiss = 15,
-  // PlayerDrewCard = 16, // User said not to visualize for now
+  PlayerDrewCard = 19,
   RoundStart = 17,
-  TurnStart = 18
-  // Ensure PlayerDrewCard = 19 is present if you decide to use it later
+  TurnStart = 18,
+  PrincePlayerDrawsNewCard = 20
 }

@@ -4,6 +4,7 @@ import { CardDisplayComponent } from '../../../../../../shared/components/card-d
 import { GameLogEntryDto } from '../../../../../../core/models/gameLogEntryDto';
 import { CardType } from '../../../../../../core/models/cardType';
 import { UiInteractionService } from '../../../../../../core/services/ui-interaction-service.service';
+import { CardDto } from '../../../../../../core/models/cardDto';
 
 @Component({
   selector: 'app-prince-discard-visualizer',
@@ -18,13 +19,35 @@ export class PrinceDiscardVisualizerComponent {
 
   public CardType = CardType; // Expose CardType to the template
 
-  onPrinceCardInfoClicked(): void {
-    this.uiInteractionService.requestScrollToCardReference(CardType.Prince);
+  get playedPrinceCardDisplay(): CardDto | undefined {
+    return this.logEntry.playedCard;
   }
 
-  onDiscardedCardInfoClicked(): void {
-    if (this.logEntry.discardedByPrinceCardValue !== undefined && this.logEntry.discardedByPrinceCardValue !== null) {
-      this.uiInteractionService.requestScrollToCardReference(this.logEntry.discardedByPrinceCardValue);
+  get targetDiscardedCardDisplay(): CardDto | undefined {
+    return this.logEntry.targetDiscardedCard;
+  }
+
+  get targetNewCardDisplay(): CardDto | undefined {
+    return this.logEntry.targetNewCardAfterPrince;
+  }
+
+  onPrinceCardInfoClicked(): void {
+    if (this.playedPrinceCardDisplay?.rank !== undefined) {
+      this.uiInteractionService.requestScrollToCardReference(this.playedPrinceCardDisplay.rank);
+    } else {
+      this.uiInteractionService.requestScrollToCardReference(CardType.Prince); // Fallback
+    }
+  }
+
+  onTargetDiscardedCardInfoClicked(): void {
+    if (this.targetDiscardedCardDisplay?.rank !== undefined) {
+      this.uiInteractionService.requestScrollToCardReference(this.targetDiscardedCardDisplay.rank);
+    }
+  }
+
+  onTargetNewCardInfoClicked(): void {
+    if (this.targetNewCardDisplay?.rank !== undefined) {
+      this.uiInteractionService.requestScrollToCardReference(this.targetNewCardDisplay.rank);
     }
   }
 }

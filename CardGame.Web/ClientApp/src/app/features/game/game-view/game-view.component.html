@@ -11,7 +11,7 @@
       [playerData]="player"
       [isCurrentTurn]="player.playerId === gameState.currentTurnPlayerId"
       [isCurrentUser]="player.playerId === currentPlayerId()"
-      [isTargetable]="isTargetingRequired() && player.playerId !== currentPlayerId() && player.status === 1"
+      [isTargetable]="isPlayerTargetableCheck(player)"
       [isSelectedTarget]="player.playerId === selectedTargetPlayerId()"
       (playerClicked)="onPlayerSelected($event)"
       (discardCardInfoClicked)="onCardInfoClicked($event)">
@@ -53,17 +53,6 @@
     </div>
     <div *ngIf="errorState()" class="component-error-message">
       {{ errorState() }}
-    </div>
-  </div>
-
-  <div class="public-cards-area" *ngIf="gameState.publiclySetAsideCards?.length">
-    <h4>Public Cards</h4>
-    <div class="card-slot" *ngFor="let card of gameState.publiclySetAsideCards; trackBy: trackCardById">
-      <app-card-display
-        [card]="card"
-        [isFaceDown]="false"
-        (infoClicked)="onCardInfoClicked($event)">
-      </app-card-display>
     </div>
   </div>
 

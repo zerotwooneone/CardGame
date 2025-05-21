@@ -1,5 +1,12 @@
-<div class="turn-start">
+<div class="log-visualizer turn-start" *ngIf="logEntry">
   <span class="icon">⏩</span>
-  <span>Turn started for</span>
   <span class="player-name">{{ logEntry.actingPlayerName }}</span>
+  <span>'s turn. They drew </span>
+  <app-card-display *ngIf="drawnCardDisplay"
+                    [card]="drawnCardDisplay"
+                    [isFaceDown]="false" 
+                    [isPlayable]="false" 
+                    (infoClicked)="onDrawnCardInfoClicked()">
+  </app-card-display>
+  <span *ngIf="!drawnCardDisplay">a card (not shown).</span>
 </div>

@@ -14,7 +14,5 @@ export interface SpectatorGameStateDto {
   players: SpectatorPlayerDto[];
   deckCardsRemaining: number;
   discardPile: CardDto[];
-  publiclySetAsideCards: CardDto[];
   gameLog: GameLogEntryDto[];
-  // Note: SetAsideCard (face-down) is omitted as its identity is secret.
 }

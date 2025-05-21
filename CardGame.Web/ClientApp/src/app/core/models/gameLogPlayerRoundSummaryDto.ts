@@ -8,5 +8,4 @@ export interface GameLogPlayerRoundSummaryDto {
   playerName: string;
   cardsHeld: CardDto[];
   tokensWon: number;
-  wasActive: boolean;
 }

@@ -4,6 +4,7 @@ import { CardDisplayComponent } from '../../../../../../shared/components/card-d
 import { GameLogEntryDto } from '../../../../../../core/models/gameLogEntryDto';
 import { CardType } from '../../../../../../core/models/cardType';
 import { UiInteractionService } from '../../../../../../core/services/ui-interaction-service.service';
+import { CardDto } from '../../../../../../core/models/cardDto';
 
 @Component({
   selector: 'app-king-trade-visualizer',
@@ -16,16 +17,26 @@ export class KingTradeVisualizerComponent {
   @Input() logEntry!: GameLogEntryDto;
   private uiInteractionService = inject(UiInteractionService);
 
-  public CardType = CardType;
-
-  onKingCardInfoClicked(): void {
-    this.uiInteractionService.requestScrollToCardReference(CardType.King);
+  get playedKingCardDisplay(): CardDto | undefined {
+    return this.logEntry.playedCard;
   }
 
-  // This method is called by (infoClicked) from app-card-display for the traded card
-  onTradedCardInfoClicked(cardValue: CardType | undefined): void {
-    if (cardValue !== undefined) {
-      this.uiInteractionService.requestScrollToCardReference(cardValue);
+  get revealedTradedCardDisplay(): CardDto | undefined {
+    return this.logEntry.revealedTradedCard;
+  }
+
+  onKingCardInfoClicked(): void {
+    if (this.playedKingCardDisplay?.rank !== undefined) {
+      this.uiInteractionService.requestScrollToCardReference(this.playedKingCardDisplay.rank);
+    } else {
+      // Fallback in case playedCard is unexpectedly undefined for this log type
+      this.uiInteractionService.requestScrollToCardReference(CardType.King);
+    }
+  }
+
+  onTradedCardInfoClicked(): void {
+    if (this.revealedTradedCardDisplay?.rank !== undefined) {
+      this.uiInteractionService.requestScrollToCardReference(this.revealedTradedCardDisplay.rank);
     }
   }
 }

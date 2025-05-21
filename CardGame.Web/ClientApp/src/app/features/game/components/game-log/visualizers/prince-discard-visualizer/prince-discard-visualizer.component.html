@@ -1,19 +1,30 @@
 <div class="log-visualizer prince-discard" *ngIf="logEntry">
-  <span class="player-name">{{ logEntry.actingPlayerName }}</span>
-  <span> played </span>
-  <app-card-display [card]="{ appearanceId: '', rank: CardType.Prince }" [isFaceDown]="false" [isPlayable]="false" (infoClicked)="onPrinceCardInfoClicked()"></app-card-display>
-  <span> on </span>
-  <span class="player-name">{{ logEntry.targetPlayerName }}</span>
-  <span>, forcing them to discard </span>
-  <app-card-display 
-    *ngIf="logEntry.discardedByPrinceCardValue !== undefined"
-    [card]="{ appearanceId: logEntry.discardedByPrinceCardAppearanceId || '', rank: logEntry.discardedByPrinceCardValue }" 
-    [isFaceDown]="false" 
-    [isPlayable]="false" 
-    (infoClicked)="onDiscardedCardInfoClicked()">
-  </app-card-display>
-  <span *ngIf="logEntry.discardedByPrinceCardValue === undefined">
-    an unknown card.
+  <span class="player-name">{{ logEntry.actingPlayerName }}</span> played Prince
+  <span *ngIf="logEntry.targetPlayerId && logEntry.targetPlayerName !== logEntry.actingPlayerName">
+    and targeted <span class="player-name">{{ logEntry.targetPlayerName }}</span>.
   </span>
-  <span *ngIf="logEntry.targetPlayerName">. {{ logEntry.targetPlayerName }} was eliminated from the round.</span>
+  <span *ngIf="logEntry.targetPlayerId && logEntry.targetPlayerName === logEntry.actingPlayerName">
+    and targeted themselves.
+  </span>
+
+  <!-- Display discarded card -->
+  <span *ngIf="targetDiscardedCardDisplay">
+    {{ logEntry.targetPlayerName === logEntry.actingPlayerName ? 'They' : logEntry.targetPlayerName }} discarded
+    <app-card-display [card]="targetDiscardedCardDisplay" (infoClicked)="onPrinceCardInfoClicked()"></app-card-display>.
+  </span>
+
+  <!-- Display drawn card or if deck was empty -->
+  <span *ngIf="targetDiscardedCardDisplay">
+    <ng-container *ngIf="targetNewCardDisplay">
+      Then {{ logEntry.targetPlayerName === logEntry.actingPlayerName ? 'they' : 'they' }} drew <app-card-display [card]="targetNewCardDisplay" (infoClicked)="onPrinceCardInfoClicked()"></app-card-display>.
+    </ng-container>
+    <ng-container *ngIf="!targetNewCardDisplay">
+      The deck was empty, so they drew nothing.
+    </ng-container>
+  </span>
+
+  <!-- Message if target player was already protected -->
+  <span *ngIf="logEntry.fizzleReason">
+    However, {{ logEntry.targetPlayerName }} was protected by Handmaid. ({{ logEntry.fizzleReason }})
+  </span>
 </div>

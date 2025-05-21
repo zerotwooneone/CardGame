@@ -1,7 +1,6 @@
 <div class="log-visualizer king-trade" *ngIf="logEntry">
-  <span class="player-name">{{ logEntry.actingPlayerName }}</span>
-  <app-card-display [card]="{ appearanceId: '', rank: CardType.King }" [isFaceDown]="false" [isPlayable]="false" (infoClicked)="onKingCardInfoClicked()"></app-card-display>
-  <span class="icon">🔄</span>
-  <span class="player-name">{{ logEntry.targetPlayerName }}</span>
-  <span>swap hands</span>
+  <span class="player-name">{{ logEntry.actingPlayerName }}</span> played
+  <app-card-display *ngIf="playedKingCardDisplay" [card]="playedKingCardDisplay" [isFaceDown]="false" [isPlayable]="false" (infoClicked)="onKingCardInfoClicked()"></app-card-display>
+  and traded hands with <span class="player-name">{{ logEntry.targetPlayerName }}</span>.
+  <span *ngIf="revealedTradedCardDisplay">They received a card of rank {{ revealedTradedCardDisplay.rank }} from {{ logEntry.targetPlayerName }}.</span>
 </div>

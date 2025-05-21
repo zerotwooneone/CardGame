@@ -1,4 +1,4 @@
-﻿using GeneratorAttributes;
+using GeneratorAttributes;
 
 namespace CardGame.Domain.Types;
 
@@ -9,9 +9,19 @@ namespace CardGame.Domain.Types;
 [EnumLike] // Attribute to trigger the source generator
 public sealed partial class PlayerStatus
 {
+#pragma warning disable CS0414 // Used by source generator
     [GeneratedEnumValue]
-    private static readonly int _active = 1; // Player is currently participating in the round.
+    private static readonly int _unknown = 0;
+#pragma warning restore CS0414
+    // Player is actively playing in the current round
+#pragma warning disable CS0414 // Used by source generator
+    [GeneratedEnumValue]
+    private static readonly int _active = 2;
+#pragma warning restore CS0414
 
+    // Player has been eliminated from the game
+#pragma warning disable CS0414 // Used by source generator
     [GeneratedEnumValue]
-    private static readonly int _eliminated = 2; // Player is out for the current round.
+    private static readonly int _eliminated = 3;
+#pragma warning restore CS0414
 }

@@ -1,12 +1,9 @@
-<div class="log-visualizer-entry" *ngIf="logEntry">
-  <div class="player-card-combo">
-    <span class="player-name-log">{{ logEntry.actingPlayerName }}</span>
-    <app-card-display [card]="{ appearanceId: '', rank: CardType.Guard }" [isFaceDown]="false" [isPlayable]="false" (infoClicked)="onGuardCardInfoClicked()"></app-card-display>
-  </div>
-  <span>correctly guessed</span>
-  <div class="player-card-combo">
-    <span class="player-name-log">{{ logEntry.targetPlayerName }}</span>
-    <span>held:</span>
-    <app-card-display [card]="{ appearanceId: logEntry.guessedCardAppearanceId || '', rank: logEntry.guessedCardValue ?? 1 }" [isFaceDown]="false" [isPlayable]="false" (infoClicked)="onGuessedCardInfoClicked()"></app-card-display>
-  </div>
+<div class="log-visualizer guard-hit" *ngIf="logEntry">
+  <span class="player-name">{{ logEntry.actingPlayerName }}</span> played
+  <app-card-display *ngIf="playedGuardCardDisplay" [card]="playedGuardCardDisplay" [isFaceDown]="false" [isPlayable]="false" (infoClicked)="onGuardCardInfoClicked()"></app-card-display>
+  on <span class="player-name">{{ logEntry.targetPlayerName }}</span>,
+  guessing they had a card of rank {{ guessedRankDisplay }}.
+  It was a HIT! <span class="player-name">{{ logEntry.targetPlayerName }}</span>'s card was
+  <app-card-display *ngIf="revealedPlayerCardDisplay" [card]="revealedPlayerCardDisplay" [isFaceDown]="false" [isPlayable]="false" (infoClicked)="onRevealedCardInfoClicked()"></app-card-display>.
+  {{ logEntry.targetPlayerName }} was eliminated.
 </div>

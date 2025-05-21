@@ -18,5 +18,6 @@ public enum GameLogEventType
     GuardMiss = 15,       
     RoundStart = 17,
     TurnStart = 18,
-    PlayerDrewCard = 19
+    PlayerDrewCard = 19,
+    PrincePlayerDrawsNewCard = 20 // New event type for when Prince target draws a card
 }

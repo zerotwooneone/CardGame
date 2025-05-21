@@ -1,12 +1,13 @@
 <div class="log-visualizer card-played" *ngIf="logEntry">
   <span class="player-name">{{ logEntry.actingPlayerName }}</span>
   <span> played </span>
-  <div class="card-display-container">
-    <app-card-display [card]="{ appearanceId: logEntry.playedCardAppearanceId || '', rank: logEntry.playedCardValue ?? 1 }"
+  <div class="card-container" *ngIf="playedCardDisplay">
+    <app-card-display [card]="playedCardDisplay"
               [isFaceDown]="false"
               [isPlayable]="false"
-              (infoClicked)="onCardInfoClicked($event)">
+              (infoClicked)="onCardInfoClicked()">
     </app-card-display>
   </div>
-  <span *ngIf="logEntry.targetPlayerName"> on <span class="player-name">{{ logEntry.targetPlayerName }}</span>.</span>
+  <span *ngIf="logEntry.targetPlayerName"> targeting <span class="player-name">{{ logEntry.targetPlayerName }}</span>.</span>
+  <span *ngIf="logEntry.fizzleReason"> but it fizzled ({{ logEntry.fizzleReason }}).</span>
 </div>

@@ -1,5 +1,6 @@
-﻿using CardGame.Application.DTOs;
+using CardGame.Application.DTOs;
 using CardGame.Domain.Interfaces;
+using CardGame.Domain.Game;
 using CardGame.Domain.Types;
 using MediatR;
 
@@ -11,10 +12,12 @@ namespace CardGame.Application.Queries;
 public class GetPlayerGameStateQueryHandler : IRequestHandler<GetPlayerGameStateQuery, PlayerGameStateDto?>
 {
     private readonly IGameRepository _gameRepository;
+    private readonly IDeckRegistry _deckRegistry;
 
-    public GetPlayerGameStateQueryHandler(IGameRepository gameRepository)
+    public GetPlayerGameStateQueryHandler(IGameRepository gameRepository, IDeckRegistry deckRegistry)
     {
         _gameRepository = gameRepository ?? throw new ArgumentNullException(nameof(gameRepository));
+        _deckRegistry = deckRegistry ?? throw new ArgumentNullException(nameof(deckRegistry));
     }
 
     public async Task<PlayerGameStateDto?> Handle(GetPlayerGameStateQuery request, CancellationToken cancellationToken)
@@ -26,15 +29,20 @@ public class GetPlayerGameStateQueryHandler : IRequestHandler<GetPlayerGameState
         var requestingPlayer = game.Players.FirstOrDefault(p => p.Id == request.RequestingPlayerId);
         if (requestingPlayer == null)
         {
-            // This player isn't part of this game, return null or throw?
-            // Returning null might be confused with game not found. Maybe throw an exception?
-            // For now, return null, controller should handle authorization primarily.
             return null;
+        }
+
+        // Load DeckDefinition (similar to GetSpectatorGameStateQueryHandler)
+        DeckDefinition? deckDefinition = null;
+        var deckProvider = _deckRegistry.GetProvider(game.DeckDefinitionId);
+        if (deckProvider != null)
+        {
+            deckDefinition = deckProvider.GetDeck();
         }
 
         // Filter and map log entries
         var gameLogDtos = game.LogEntries
-            .Where(log => !log.IsPrivate || (log.IsPrivate && (log.ActingPlayerId == request.RequestingPlayerId || log.TargetPlayerId == request.RequestingPlayerId)))
+            .Where(log => !log.IsPrivate || log.ActingPlayerId == requestingPlayer.Id || log.TargetPlayerId == requestingPlayer.Id)
             .Select(log => new GameLogEntryDto
             {
                 Id = log.Id,
@@ -44,45 +52,44 @@ public class GetPlayerGameStateQueryHandler : IRequestHandler<GetPlayerGameState
                 ActingPlayerName = log.ActingPlayerName,
                 TargetPlayerId = log.TargetPlayerId,
                 TargetPlayerName = log.TargetPlayerName,
-                RevealedCardAppearanceId = log.RevealedCardAppearanceId,
-                RevealedCardValue = log.RevealedCardType?.Value,
-                IsPrivate = log.IsPrivate,
+                IsPrivate = log.IsPrivate && !(log.ActingPlayerId == requestingPlayer.Id || log.TargetPlayerId == requestingPlayer.Id), // Adjust IsPrivate based on player involvement
                 Message = log.Message,
 
-                PlayedCardAppearanceId = log.PlayedCardAppearanceId,
-                PlayedCardValue = log.PlayedCardType?.Value,
-                    
-                GuessedCardAppearanceId = log.GuessedCardAppearanceId,
-                GuessedCardValue = log.GuessedCardType?.Value,
+                // --- Map from Domain.GameLogEntry.Card to Application.DTOs.CardDto ---
+                PlayedCard = log.PlayedCard != null ? new CardDto { Rank = log.PlayedCard.Type.Value, AppearanceId = log.PlayedCard.AppearanceId } : null,
+                DrawnCard = log.DrawnCard != null ? new CardDto { Rank = log.DrawnCard.Type.Value, AppearanceId = log.DrawnCard.AppearanceId } : null,
+                DiscardedCard = log.DiscardedCard != null ? new CardDto { Rank = log.DiscardedCard.Type.Value, AppearanceId = log.DiscardedCard.AppearanceId } : null,
+                RevealedPlayerCard = log.RevealedPlayerCard != null ? new CardDto { Rank = log.RevealedPlayerCard.Type.Value, AppearanceId = log.RevealedPlayerCard.AppearanceId } : null,
+                ActingPlayerBaronCard = log.ActingPlayerBaronCard != null ? new CardDto { Rank = log.ActingPlayerBaronCard.Type.Value, AppearanceId = log.ActingPlayerBaronCard.AppearanceId } : null,
+                TargetPlayerBaronCard = log.TargetPlayerBaronCard != null ? new CardDto { Rank = log.TargetPlayerBaronCard.Type.Value, AppearanceId = log.TargetPlayerBaronCard.AppearanceId } : null,
+                TargetDiscardedCard = log.TargetDiscardedCard != null ? new CardDto { Rank = log.TargetDiscardedCard.Type.Value, AppearanceId = log.TargetDiscardedCard.AppearanceId } : null,
+                TargetNewCardAfterPrince = log.TargetNewCardAfterPrince != null ? new CardDto { Rank = log.TargetNewCardAfterPrince.Type.Value, AppearanceId = log.TargetNewCardAfterPrince.AppearanceId } : null,
+                RevealedTradedCard = log.RevealedTradedCard != null ? new CardDto { Rank = log.RevealedTradedCard.Type.Value, AppearanceId = log.RevealedTradedCard.AppearanceId } : null,
+                RevealedCardOnElimination = log.RevealedCardOnElimination != null ? new CardDto { Rank = log.RevealedCardOnElimination.Type.Value, AppearanceId = log.RevealedCardOnElimination.AppearanceId } : null,
+                GuessedPlayerActualCard = log.GuessedPlayerActualCard != null ? new CardDto { Rank = log.GuessedPlayerActualCard.Type.Value, AppearanceId = log.GuessedPlayerActualCard.AppearanceId } : null,
+
+                // Guard specific
+                GuessedRank = log.GuessedRank?.Value,
                 WasGuessCorrect = log.WasGuessCorrect,
 
-                Player1ComparedCardAppearanceId = log.Player1ComparedCardAppearanceId,
-                Player1ComparedCardValue = log.Player1ComparedCardType?.Value,
-                Player2ComparedCardAppearanceId = log.Player2ComparedCardAppearanceId,
-                Player2ComparedCardValue = log.Player2ComparedCardType?.Value,
+                // Baron specific
                 BaronLoserPlayerId = log.BaronLoserPlayerId,
 
-                DiscardedByPrinceCardAppearanceId = log.DiscardedByPrinceCardAppearanceId,
-                DiscardedByPrinceCardValue = log.DiscardedByPrinceCardType?.Value,
-                    
-                CardResponsibleForEliminationAppearanceId = log.CardResponsibleForEliminationAppearanceId,
-                CardResponsibleForEliminationValue = log.CardResponsibleForElimination?.Value,
-
+                // Fizzle reason
                 FizzleReason = log.FizzleReason,
 
+                // Round/Game End
                 WinnerPlayerId = log.WinnerPlayerId,
+                WinnerPlayerName = log.WinnerPlayerName, // Ensure this is mapped from domain log if it exists
                 RoundEndReason = log.RoundEndReason,
                 RoundPlayerSummaries = log.RoundPlayerSummaries?.Select(s => new RoundEndPlayerSummaryDto
                 {
                     PlayerId = s.PlayerId,
                     PlayerName = s.PlayerName,
-                    CardsHeld = s.CardsHeld.Select(c => new CardDto { Rank = c.Rank, AppearanceId = c.AppearanceId }).ToList(),
+                    CardsHeld = s.CardsHeld.Select(c => new CardDto { Rank = c.Type.Value, AppearanceId = c.AppearanceId }).ToList(), // Corrected: c.Type.Value
                     TokensWon = s.Score
                 }).ToList(),
-                TokensHeld = log.TokensHeld,
-                    
-                CardDrawnAppearanceId = log.CardDrawnAppearanceId,
-                CardDrawnValue = log.CardDrawnType?.Value
+                TokensHeld = log.TokensHeld
             })
             .OrderByDescending(log => log.Timestamp) // Ensure logs are newest first
             .ToList();
@@ -107,10 +114,19 @@ public class GetPlayerGameStateQueryHandler : IRequestHandler<GetPlayerGameState
             {
                 PlayerId = player.Id,
                 Name = player.Name,
-                Status = player.Status.Value,
-                HandCardCount = player.Hand.Count, // Show count for all
-                PlayedCardTypes = player.PlayedCards.Select(cardType => cardType.Value).ToList(),
-                TokensWon = player.TokensWon,
+                Status = player.Status.Value, // Corrected: player.Status.Value
+                HandCardCount = player.Hand.GetCards().Count(), // Corrected: Added () to Count
+                PlayedCards = player.PlayedCards.Select(cardType => // 'cardType' is from player.PlayedCards
+                {
+                    // Find the CardDefinition from the loaded DeckDefinition to get AppearanceId
+                    var cardDef = deckDefinition?.Cards.FirstOrDefault(cd => cd.Type == cardType);
+                    return new CardDto
+                    {
+                        Rank = cardType.Value, // Rank from CardType's Value
+                        AppearanceId = cardDef?.AppearanceId ?? string.Empty // AppearanceId from CardDefinition
+                    };
+                }).ToList(),
+                TokensWon = player.TokensWon, // Corrected: player.TokensWon
                 IsProtected = player.IsProtected
             }).ToList(),
 

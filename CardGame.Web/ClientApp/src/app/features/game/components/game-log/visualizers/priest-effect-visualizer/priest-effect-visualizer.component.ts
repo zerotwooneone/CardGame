@@ -1,9 +1,10 @@
-import {Component, Input, inject} from '@angular/core';
-import {CommonModule} from '@angular/common';
-import {CardDisplayComponent} from '../../../../../../shared/components/card-display.component';
-import {GameLogEntryDto} from '../../../../../../core/models/gameLogEntryDto';
-import {CardType} from '../../../../../../core/models/cardType';
-import {UiInteractionService} from '../../../../../../core/services/ui-interaction-service.service';
+import { Component, Input, OnInit, inject } from '@angular/core';
+import { CommonModule } from '@angular/common';
+import { GameLogEntryDto } from '../../../../../../core/models/gameLogEntryDto';
+import { CardDisplayComponent } from '../../../../../../shared/components/card-display.component';
+import { UiInteractionService } from '../../../../../../core/services/ui-interaction-service.service';
+import { CardDto } from '../../../../../../core/models/cardDto';
+import { AuthService } from '../../../../../../core/services/auth.service';
 
 @Component({
   selector: 'app-priest-effect-visualizer',
@@ -15,19 +16,38 @@ import {UiInteractionService} from '../../../../../../core/services/ui-interacti
     CardDisplayComponent
   ]
 })
-export class PriestEffectVisualizerComponent {
+export class PriestEffectVisualizerComponent implements OnInit {
   @Input() logEntry!: GameLogEntryDto;
 
-  public CardType = CardType;
   private uiInteractionService = inject(UiInteractionService);
+  private authService = inject(AuthService);
+
+  currentPlayerIdDisplay: string | null = null;
+
+  ngOnInit(): void {
+    this.currentPlayerIdDisplay = this.authService.getCurrentPlayerId();
+  }
+
+  get playedPriestCardDisplay(): CardDto | undefined {
+    return this.logEntry.playedCard;
+  }
+
+  get revealedCardDisplay(): CardDto | undefined {
+    return this.logEntry.revealedPlayerCard;
+  }
 
   onPriestCardInfoClicked(): void {
-    this.uiInteractionService.requestScrollToCardReference(CardType.Priest);
+    if (this.playedPriestCardDisplay?.rank !== undefined) {
+      this.uiInteractionService.requestScrollToCardReference(this.playedPriestCardDisplay.rank);
+    } else {
+      // Fallback in case playedCard is unexpectedly undefined for this log type
+      this.uiInteractionService.requestScrollToCardReference(2);
+    }
   }
 
   onRevealedCardInfoClicked(): void {
-    if (this.logEntry.revealedCardValue !== undefined && this.logEntry.revealedCardValue !== null) {
-      this.uiInteractionService.requestScrollToCardReference(this.logEntry.revealedCardValue);
+    if (this.revealedCardDisplay?.rank !== undefined) {
+      this.uiInteractionService.requestScrollToCardReference(this.revealedCardDisplay.rank);
     }
   }
 }

@@ -1,5 +1,12 @@
-<div class="effect-fizzled">
+<div class="log-visualizer effect-fizzled" *ngIf="logEntry">
   <span class="player-name">{{ logEntry.actingPlayerName }}</span>
-  <span class="icon">💨</span>
-  <span>effect fizzled</span>
+  <span> played a </span>
+  <app-card-display *ngIf="fizzledCardDisplay" 
+                    [card]="fizzledCardDisplay" 
+                    [isFaceDown]="false" 
+                    [isPlayable]="false" 
+                    (infoClicked)="onFizzledCardInfoClicked()">
+  </app-card-display>
+  <span *ngIf="!fizzledCardDisplay"> a card (not specified)</span>
+  <span>, but its effect fizzled <span class="icon">💨</span> as there were no valid targets.</span>
 </div>

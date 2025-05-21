@@ -3,7 +3,7 @@ import { CommonModule } from '@angular/common';
 import { CardDisplayComponent } from '../../../../../../shared/components/card-display.component';
 import { GameLogEntryDto } from '../../../../../../core/models/gameLogEntryDto';
 import { UiInteractionService } from '../../../../../../core/services/ui-interaction-service.service';
-import { CardType } from '../../../../../../core/models/cardType';
+import { CardDto } from '../../../../../../core/models/cardDto';
 
 @Component({
   selector: 'app-player-eliminated-visualizer',
@@ -16,17 +16,25 @@ export class PlayerEliminatedVisualizerComponent {
   @Input() logEntry!: GameLogEntryDto;
   private uiInteractionService = inject(UiInteractionService);
 
-  public CardType = CardType; // Expose CardType to the template
+  // Card played by actingPlayer that led to elimination (e.g., Baron, Guard)
+  get eliminatingCardDisplay(): CardDto | undefined {
+    return this.logEntry.playedCard;
+  }
 
-  onCardInfoClicked(cardValue: CardType | undefined): void {
-    if (cardValue !== undefined) {
-      this.uiInteractionService.requestScrollToCardReference(cardValue);
+  // Card revealed by targetPlayer that confirmed elimination (e.g., lower Baron card, correct Guard guess)
+  get revealedPlayerCardDisplay(): CardDto | undefined {
+    return this.logEntry.revealedCardOnElimination;
+  }
+
+  onEliminatingCardInfoClicked(): void {
+    if (this.eliminatingCardDisplay?.rank !== undefined) {
+      this.uiInteractionService.requestScrollToCardReference(this.eliminatingCardDisplay.rank);
     }
   }
 
-  onSourceCardInfoClicked(): void {
-    if (this.logEntry.cardResponsibleForEliminationValue !== undefined && this.logEntry.cardResponsibleForEliminationValue !== null) {
-      this.uiInteractionService.requestScrollToCardReference(this.logEntry.cardResponsibleForEliminationValue);
+  onRevealedPlayerCardInfoClicked(): void {
+    if (this.revealedPlayerCardDisplay?.rank !== undefined) {
+      this.uiInteractionService.requestScrollToCardReference(this.revealedPlayerCardDisplay.rank);
     }
   }
 }

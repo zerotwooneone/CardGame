@@ -4,6 +4,7 @@ import { CardDisplayComponent } from '../../../../../../shared/components/card-d
 import { GameLogEntryDto } from '../../../../../../core/models/gameLogEntryDto';
 import { CardType } from '../../../../../../core/models/cardType';
 import { UiInteractionService } from '../../../../../../core/services/ui-interaction-service.service';
+import { CardDto } from '../../../../../../core/models/cardDto';
 
 @Component({
   selector: 'app-baron-compare-visualizer',
@@ -16,15 +17,23 @@ export class BaronCompareVisualizerComponent {
   @Input() logEntry!: GameLogEntryDto;
   private uiInteractionService = inject(UiInteractionService);
 
-  onPlayer1ComparedCardInfoClicked() {
-    if (this.logEntry.player1ComparedCardValue !== undefined && this.logEntry.player1ComparedCardValue !== null) {
-      this.uiInteractionService.requestScrollToCardReference(this.logEntry.player1ComparedCardValue);
+  get player1CardDisplay(): CardDto | undefined { // Acting player
+    return this.logEntry.actingPlayerBaronCard;
+  }
+
+  get player2CardDisplay(): CardDto | undefined { // Target player
+    return this.logEntry.targetPlayerBaronCard;
+  }
+
+  onPlayer1ComparedCardInfoClicked(): void {
+    if (this.player1CardDisplay?.rank !== undefined) {
+      this.uiInteractionService.requestScrollToCardReference(this.player1CardDisplay.rank);
     }
   }
 
-  onPlayer2ComparedCardInfoClicked() {
-    if (this.logEntry.player2ComparedCardValue !== undefined && this.logEntry.player2ComparedCardValue !== null) {
-      this.uiInteractionService.requestScrollToCardReference(this.logEntry.player2ComparedCardValue);
+  onPlayer2ComparedCardInfoClicked(): void {
+    if (this.player2CardDisplay?.rank !== undefined) {
+      this.uiInteractionService.requestScrollToCardReference(this.player2CardDisplay.rank);
     }
   }
 

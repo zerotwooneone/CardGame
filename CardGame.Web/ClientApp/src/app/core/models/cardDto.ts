@@ -1,4 +1,4 @@
-﻿import {CardType} from './cardType';
+import {CardType} from './cardType';
 
 /**
  * Represents basic public information about a card (e.g., for the discard pile or hand).

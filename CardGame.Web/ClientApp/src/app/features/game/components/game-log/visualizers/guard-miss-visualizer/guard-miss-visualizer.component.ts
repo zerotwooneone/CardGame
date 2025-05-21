@@ -4,6 +4,7 @@ import { CardDisplayComponent } from '../../../../../../shared/components/card-d
 import { GameLogEntryDto } from '../../../../../../core/models/gameLogEntryDto';
 import { CardType } from '../../../../../../core/models/cardType';
 import { UiInteractionService } from '../../../../../../core/services/ui-interaction-service.service';
+import { CardDto } from '../../../../../../core/models/cardDto';
 
 @Component({
   selector: 'app-guard-miss-visualizer',
@@ -15,15 +16,31 @@ import { UiInteractionService } from '../../../../../../core/services/ui-interac
 export class GuardMissVisualizerComponent {
   @Input() logEntry!: GameLogEntryDto;
   private uiInteractionService = inject(UiInteractionService);
-  public CardType = CardType;
+
+  get playedGuardCardDisplay(): CardDto | undefined {
+    return this.logEntry.playedCard;
+  }
+
+  get guessedCardToDisplay(): CardDto | undefined {
+    if (this.logEntry.guessedRank !== undefined) {
+      // Construct a partial CardDto for display purposes if only rank is known
+      return { appearanceId: 'unknown_facedown', rank: this.logEntry.guessedRank };
+    }
+    return undefined;
+  }
 
   onGuardCardInfoClicked(): void {
-    this.uiInteractionService.requestScrollToCardReference(CardType.Guard);
+    if (this.playedGuardCardDisplay?.rank !== undefined) {
+      this.uiInteractionService.requestScrollToCardReference(this.playedGuardCardDisplay.rank);
+    } else {
+      this.uiInteractionService.requestScrollToCardReference(CardType.Guard); 
+    }
   }
 
   onGuessedCardInfoClicked(): void {
-    if (this.logEntry.guessedCardValue) {
-      this.uiInteractionService.requestScrollToCardReference(this.logEntry.guessedCardValue);
+    // Use the guessedRank from logEntry for interaction
+    if (this.logEntry.guessedRank !== undefined) {
+      this.uiInteractionService.requestScrollToCardReference(this.logEntry.guessedRank);
     }
   }
 }

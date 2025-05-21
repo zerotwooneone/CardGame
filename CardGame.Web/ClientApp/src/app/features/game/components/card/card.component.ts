@@ -26,7 +26,7 @@ export class CardComponent {
    * The data for the card to display (ID, numeric Type/Rank).
    * Undefined if the card is face down or represents an unknown card.
    */
-  @Input() cardData?: CardDto; // CardDto.type is now number
+  @Input() cardData?: CardDto;
 
   /**
    * Whether the card should be displayed face down.

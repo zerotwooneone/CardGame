@@ -10,12 +10,11 @@ export interface PlayerGameStateDto {
   gameId: string; // Changed from Guid
   roundNumber: number;
   gamePhase: string;
-  currentTurnPlayerId: string; // Changed from Guid
+  currentTurnPlayerId: string;
   tokensNeededToWin: number;
   players: PlayerHandInfoDto[];
   deckCardsRemaining: number;
   discardPile: CardDto[];
-  publiclySetAsideCards: CardDto[]; // Added here as well
-  playerHand: CardDto[]; // Actual hand cards for the requesting player
+  playerHand: CardDto[];
   gameLog: GameLogEntryDto[];
 }
