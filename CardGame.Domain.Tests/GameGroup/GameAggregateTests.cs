@@ -7,6 +7,7 @@ using CardGame.Domain.Types;
 using FluentAssertions;
 using FluentAssertions.Execution;
 using FluentAssertions.Equivalency;
+using Microsoft.Extensions.Logging;
 
 namespace CardGame.Domain.Tests.GameGroup;
 
@@ -78,7 +79,8 @@ public class GameAggregateTests
         Card p1DealtCard = specificDeck[11]; // P1
         Card p2DealtCard = specificDeck[10]; // G3
         Card p1DrawnCard = specificDeck[9]; // B2
-        var game = Game.Game.CreateNewGame(Guid.NewGuid(), playerInfos, creatorId, specificDeck, tokensToWin: 4, randomizer: new NonShufflingRandomizer());
+        var loggerFactory = LoggerFactory.Create(builder => builder.AddConsole());
+        var game = Game.Game.CreateNewGame(Guid.NewGuid(), playerInfos, creatorId, specificDeck, tokensToWin: 4, randomizer: new NonShufflingRandomizer(), loggerFactory);
         var player1 = game.Players.First(p => p.Id == aliceInfo.Id);
         var player2 = game.Players.First(p => p.Id == bobInfo.Id);
         game.StartNewRound();
@@ -157,7 +159,8 @@ public class GameAggregateTests
             Card p1DealtCard = specificDeck[11]; // G3
             Card p2DealtCard = specificDeck[10]; // P2 (Priest)
             Card p1DrawnCard = specificDeck[9];  // P1 (Priest)
-            var game = Game.Game.CreateNewGame(Guid.NewGuid(), playerInfos, creatorId, specificDeck, tokensNeededToWin, randomizer: new NonShufflingRandomizer());
+            var loggerFactory = LoggerFactory.Create(builder => builder.AddConsole());
+            var game = Game.Game.CreateNewGame(Guid.NewGuid(), playerInfos, creatorId, specificDeck, tokensNeededToWin, randomizer: new NonShufflingRandomizer(), loggerFactory);
             var player1 = game.Players.First(p => p.Id == aliceInfo.Id);
             var player2 = game.Players.First(p => p.Id == bobInfo.Id);
             game.StartNewRound();
@@ -214,6 +217,7 @@ public class GameAggregateTests
         public void PlayCard_WhenPlayerPlaysAndNextPlayerCannotDraw_ShouldStartNextRound()
         {
             // ARRANGE
+            var loggerFactory = LoggerFactory.Create(builder => builder.AddConsole());
             Guid gameId = Guid.NewGuid();
             int tokensToWin = 4;
             var p1Id = Guid.NewGuid();
@@ -222,16 +226,18 @@ public class GameAggregateTests
             var p1Card_Handmaid = new Card(CardType.Handmaid.Name, CardType.Handmaid);
             var p2Card_Princess = new Card(CardType.Princess.Name, CardType.Princess);
             var aliceHand = Hand.Load(new List<Card> { p1Card_King, p1Card_Handmaid });
-            var alice = Player.Load(p1Id, "Alice", PlayerStatus.Active, aliceHand, new List<CardType>(), 0, false);
+            var aliceLogger = loggerFactory.CreateLogger<Player>();
+            var alice = Player.Load(p1Id, "Alice", PlayerStatus.Active, aliceHand, new List<CardType>(), 0, false, aliceLogger);
             var bobHand = Hand.Load(new List<Card> { p2Card_Princess });
-            var bob = Player.Load(p2Id, "Bob", PlayerStatus.Active, bobHand, new List<CardType>(), 0, false);
+            var bobLogger = loggerFactory.CreateLogger<Player>();
+            var bob = Player.Load(p2Id, "Bob", PlayerStatus.Active, bobHand, new List<CardType>(), 0, false, bobLogger);
             var players = new List<Player> { alice, bob };
             var emptyDeck = Deck.Load(Enumerable.Empty<Card>());
             var discardPile = new List<Card>();
             var publiclySetAsideCards = new List<Card>();
             var initialDeckCardSet = TestDeckHelper.CreateStandardTestCardList();
 
-            var game = Game.Game.Load(gameId, Guid.NewGuid(), 1, GamePhase.RoundInProgress, p1Id, players, emptyDeck, null, publiclySetAsideCards, discardPile, tokensToWin, null, initialDeckCardSet);
+            var game = Game.Game.Load(gameId, Guid.NewGuid(), 1, GamePhase.RoundInProgress, p1Id, players, emptyDeck, null, publiclySetAsideCards, discardPile, tokensToWin, null, initialDeckCardSet, loggerFactory);
             var cardToPlayInstance = p1Card_Handmaid;
             game.ClearDomainEvents();
 

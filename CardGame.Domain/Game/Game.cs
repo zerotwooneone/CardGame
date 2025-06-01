@@ -5,6 +5,7 @@ using CardGame.Domain.Game.Event;
 using CardGame.Domain.Game.GameException;
 using CardGame.Domain.Interfaces;
 using CardGame.Domain.Types;
+using Microsoft.Extensions.Logging; // ADDED
 
 namespace CardGame.Domain.Game;
 
@@ -27,6 +28,8 @@ public class Game // Aggregate Root
     private readonly Guid _deckDefinitionId; // Added field
     public Guid DeckDefinitionId => _deckDefinitionId; // ADDED Public getter
     private readonly IRandomizer _gameRandomizer;
+    private readonly ILogger<Game> _logger; // ADDED
+    private readonly ILoggerFactory _loggerFactory; // ADDED
 
     // --- Domain Event Handling ---
     private readonly List<IDomainEvent> _domainEvents = new List<IDomainEvent>();
@@ -38,7 +41,7 @@ public class Game // Aggregate Root
 
     public IReadOnlyList<GameLogEntry> LogEntries => _logEntries.AsReadOnly(); // Public accessor for log entries
 
-    private Game(Guid id, Guid deckDefinitionId, IReadOnlyList<Card> initialDeckCardSet, IRandomizer? randomizer = null) // Added deckDefinitionId parameter
+    private Game(Guid id, Guid deckDefinitionId, IReadOnlyList<Card> initialDeckCardSet, IRandomizer? randomizer, ILogger<Game> logger, ILoggerFactory loggerFactory) // MODIFIED
     {
         Id = id;
         _deckDefinitionId = deckDefinitionId; // Assign deckDefinitionId
@@ -46,6 +49,8 @@ public class Game // Aggregate Root
         if (!_initialDeckCardSet.Any()) throw new ArgumentException("Initial deck card set cannot be empty.", nameof(initialDeckCardSet));
         Deck = Deck.Load(Enumerable.Empty<Card>());
         _gameRandomizer = randomizer ?? new DefaultRandomizer();
+        _logger = logger; // ADDED
+        _loggerFactory = loggerFactory; // ADDED
     }
 
     // --- Factory Methods ---
@@ -55,17 +60,21 @@ public class Game // Aggregate Root
         Guid creatorPlayerId, 
         IEnumerable<Card> initialDeckCards, 
         int tokensToWin = 4, 
-        IRandomizer? randomizer = null) 
+        IRandomizer? randomizer = null, 
+        ILoggerFactory loggerFactory = null) // ADDED loggerFactory
     {
         var gameId = Guid.NewGuid();
         var cardSetToUse = initialDeckCards?.ToList() ?? throw new ArgumentNullException(nameof(initialDeckCards));
         if (!cardSetToUse.Any()) throw new ArgumentException("Initial deck cards cannot be empty.", nameof(initialDeckCards));
 
+        var gameLogger = loggerFactory.CreateLogger<Game>(); // ADDED
         var game = new Game(
                 gameId, 
                 deckDefinitionId, 
                 new ReadOnlyCollection<Card>(cardSetToUse),
-                randomizer) // Pass deckDefinitionId
+                randomizer, 
+                gameLogger, 
+                loggerFactory) // MODIFIED
         {
             TokensNeededToWin = tokensToWin,
             GamePhase = GamePhase.NotStarted,
@@ -78,7 +87,7 @@ public class Game // Aggregate Root
         bool creatorFound = false;
         foreach (var pInfo in playerInfoList)
         {
-            var player = Player.Load(pInfo.Id, pInfo.Name, PlayerStatus.Active, Hand.Empty, new List<CardType>(), 0, false);
+            var player = Player.Load(pInfo.Id, pInfo.Name, PlayerStatus.Active, Hand.Empty, new List<CardType>(), 0, false, loggerFactory.CreateLogger<Player>()); // MODIFIED: Pass logger
             game.Players.Add(player);
             if (pInfo.Id == creatorPlayerId) creatorFound = true;
         }
@@ -90,12 +99,13 @@ public class Game // Aggregate Root
         return game;
     }
 
-    public static Game Load(Guid id, Guid deckDefinitionId, int roundNumber, GamePhase gamePhase, Guid currentTurnPlayerId, List<Player> players, Deck deck, Card? setAsideCard, List<Card> publiclySetAsideCards, List<Card> discardPile, int tokensToWin, Guid? lastRoundWinnerId, List<Card> initialDeckCardSet) // Added deckDefinitionId parameter
+    public static Game Load(Guid id, Guid deckDefinitionId, int roundNumber, GamePhase gamePhase, Guid currentTurnPlayerId, List<Player> players, Deck deck, Card? setAsideCard, List<Card> publiclySetAsideCards, List<Card> discardPile, int tokensToWin, Guid? lastRoundWinnerId, List<Card> initialDeckCardSet, ILoggerFactory loggerFactory) // MODIFIED
     {
         if (initialDeckCardSet == null) throw new ArgumentNullException(nameof(initialDeckCardSet));
         if (!initialDeckCardSet.Any()) throw new ArgumentException("Initial deck card set cannot be empty for loading.", nameof(initialDeckCardSet));
 
-        var game = new Game(id, deckDefinitionId, new ReadOnlyCollection<Card>(initialDeckCardSet)) // Pass deckDefinitionId
+        var gameLogger = loggerFactory.CreateLogger<Game>(); // ADDED
+        var game = new Game(id, deckDefinitionId, new ReadOnlyCollection<Card>(initialDeckCardSet), null, gameLogger, loggerFactory) // MODIFIED
         {
             RoundNumber = roundNumber,
             GamePhase = gamePhase,

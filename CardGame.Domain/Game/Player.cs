@@ -1,4 +1,5 @@
-﻿using CardGame.Domain.Types;
+using CardGame.Domain.Types;
+using Microsoft.Extensions.Logging;
 
 namespace CardGame.Domain.Game;
 
@@ -15,11 +16,14 @@ public class Player // Entity
     public int TokensWon { get; private set; } = 0;
     public bool IsProtected { get; private set; } = false;
 
+    private readonly ILogger<Player> _logger;
+
     // Private constructor enforce creation via factory or aggregate root
-    private Player(Guid id, string name)
+    private Player(Guid id, string name, ILogger<Player> logger)
     {
         Id = id;
         Name = name ?? throw new ArgumentNullException(nameof(name));
+        _logger = logger;
     }
 
     // --- Factory Methods ---
@@ -27,11 +31,11 @@ public class Player // Entity
     /// <summary>
     /// Factory method to create a new player instance.
     /// </summary>
-    internal static Player Create(string name) // Consider if this should take ID too
+    internal static Player Create(string name, ILogger<Player> logger) // Consider if this should take ID too
     {
         if (string.IsNullOrWhiteSpace(name))
             throw new ArgumentException("Player name cannot be empty.", nameof(name));
-        return new Player(Guid.NewGuid(), name); // Use private constructor
+        return new Player(Guid.NewGuid(), name, logger); // Use private constructor
     }
 
     /// <summary>
@@ -44,9 +48,10 @@ public class Player // Entity
         Hand hand, // Assume Hand VO is already loaded
         List<CardType> playedCards, // Assume List<CardType> is loaded
         int tokensWon,
-        bool isProtected)
+        bool isProtected,
+        ILogger<Player> logger)
     {
-        var player = new Player(id, name); // Use private constructor
+        var player = new Player(id, name, logger); // Use private constructor
         player.Status = status ?? PlayerStatus.Active;
         player.Hand = hand ?? Hand.Empty;
         player.PlayedCards = playedCards ?? new List<CardType>();
@@ -73,8 +78,16 @@ public class Player // Entity
 
     internal void PlayCard(Card cardInstance)
     {
-        Hand = Hand.Remove(cardInstance);
+        _logger.LogDebug("Player {PlayerName} ({PlayerId}) hand BEFORE playing {CardType} ({CardInstanceId}): {HandCards}", 
+            Name, Id, cardInstance.Type.Name, cardInstance.AppearanceId.Substring(0,4), 
+            string.Join(", ", Hand.Cards.Select(c => $"{c.Type.Name}({c.AppearanceId.Substring(0,4)})")));
+
+        Hand = Hand.Remove(cardInstance); // This is PlayerHand.Remove which calls ImmutableList<Card>.Remove
         PlayedCards.Add(cardInstance.Type);
+
+        _logger.LogDebug("Player {PlayerName} ({PlayerId}) hand AFTER playing {CardType} ({CardInstanceId}): {HandCards}", 
+            Name, Id, cardInstance.Type.Name, cardInstance.AppearanceId.Substring(0,4), 
+            string.Join(", ", Hand.Cards.Select(c => $"{c.Type.Name}({c.AppearanceId.Substring(0,4)})")));
     }
 
     internal Card? DiscardHand(bool deckEmpty)

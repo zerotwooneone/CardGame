@@ -4,6 +4,7 @@ using CardGame.Domain.Interfaces; // For IDeckProvider
 using CardGame.Domain.Providers;  // For DefaultDeckProvider
 using CardGame.Domain.Types;      // For CardType, PlayerStatus
 using CardGame.Domain.Game.GameException; // For GameRuleException and InvalidMoveException
+using Microsoft.Extensions.Logging;
 using GameUnderTest = CardGame.Domain.Game.Game;
 
 namespace CardGame.Domain.EndToEnd
@@ -23,6 +24,7 @@ namespace CardGame.Domain.EndToEnd
         private void SimulateSingleGamePlay(int? seed = null)
         {
             var localRandomizer = new TestRandomizer(seed); // Initialize with seed here, local instance
+            var loggerFactory = LoggerFactory.Create(builder => builder.AddConsole());
             Console.WriteLine($"--- Starting game with Seed: {localRandomizer.Seed} ---");
 
             // 1. Setup Game (copied from original test method)
@@ -38,7 +40,7 @@ namespace CardGame.Domain.EndToEnd
 
             int tokensToWin = localRandomizer.Next(3, 6); // NEW SEEDED WAY
 
-            var game = GameUnderTest.CreateNewGame(deckDefinitionId, playerInfos, creatorId, initialDeckCardSet, tokensToWin, localRandomizer);
+            var game = GameUnderTest.CreateNewGame(deckDefinitionId, playerInfos, creatorId, initialDeckCardSet, tokensToWin, localRandomizer, loggerFactory);
 
             Console.WriteLine($"Starting game ID: {game.Id} with Seed: {localRandomizer.Seed}. Target tokens: {tokensToWin}.");
 
@@ -53,7 +55,7 @@ namespace CardGame.Domain.EndToEnd
                     game.StartNewRound(); // Pass localRandomizer
                 }
                 Console.WriteLine($"Seed: {localRandomizer.Seed} - Round {game.RoundNumber} started ---");
-                
+            
                 int maxTurnsInRound = 50; 
                 int turnsInCurrentRound = 0;
 
@@ -74,7 +76,7 @@ namespace CardGame.Domain.EndToEnd
                         turnsTakenOverall++;
                         continue;
                     }
-                    
+                
                     if (!currentPlayer.Hand.Cards.Any() && currentPlayer.Status == PlayerStatus.Active)
                     {
                         Console.WriteLine($"Seed: {localRandomizer.Seed} - Warning: Player {currentPlayer.Name} is Active but has no cards. This is unusual. Skipping turn.");
@@ -124,6 +126,12 @@ namespace CardGame.Domain.EndToEnd
                         bool requirementsMet = true;
                         bool cardRequiresTarget = cardInHandChoice.Type == CardType.Guard || cardInHandChoice.Type == CardType.Priest || cardInHandChoice.Type == CardType.Baron || cardInHandChoice.Type == CardType.King || cardInHandChoice.Type == CardType.Prince;
                         bool cardRequiresGuess = cardInHandChoice.Type == CardType.Guard;
+
+                        if (cardInHandChoice.Type == CardType.Baron && currentPlayer.Hand.Cards.Count <= 1)
+                        {
+                            Console.WriteLine($"Seed: {localRandomizer.Seed} - Player {currentPlayer.Name} cannot play Baron as it's their only card or they have no other card to compare.");
+                            requirementsMet = false;
+                        }
 
                         if (cardRequiresTarget && !currentTargetId.HasValue)
                         {
@@ -177,15 +185,22 @@ namespace CardGame.Domain.EndToEnd
                                     continue; // Skip Princess if other options exist in fallback
                                 }
 
+                                // Additional check for Baron in fallback
+                                if (candidateFallbackCard.Type == CardType.Baron && currentPlayer.Hand.Cards.Count <= 1)
+                                {
+                                    Console.WriteLine($"Seed: {localRandomizer.Seed} - Fallback: Skipping Baron for {currentPlayer.Name} as it's their only card or they have no other card to compare.");
+                                    continue;
+                                }
+
                                 targetPlayerId = SelectTargetPlayer(currentPlayer, candidateFallbackCard, game.Players.ToList(), localRandomizer);
                                 guessedCardType = SelectGuessedCardType(candidateFallbackCard, localRandomizer);
 
                                 // Check if card requires a target and if a target was found
                                 bool requiresTarget = candidateFallbackCard.Type == CardType.Guard ||
-                                                    candidateFallbackCard.Type == CardType.Priest ||
-                                                    candidateFallbackCard.Type == CardType.Baron ||
-                                                    candidateFallbackCard.Type == CardType.King ||
-                                                    candidateFallbackCard.Type == CardType.Prince;
+                                                candidateFallbackCard.Type == CardType.Priest ||
+                                                candidateFallbackCard.Type == CardType.Baron ||
+                                                candidateFallbackCard.Type == CardType.King ||
+                                                candidateFallbackCard.Type == CardType.Prince;
 
                                 if (requiresTarget && targetPlayerId == null)
                                 {
@@ -193,7 +208,7 @@ namespace CardGame.Domain.EndToEnd
                                     Console.WriteLine($"Seed: {localRandomizer.Seed} - Fallback: Skipping {candidateFallbackCard.Type.Name} for {currentPlayer.Name} as it requires a target but none found.");
                                     continue;
                                 }
-                                
+                            
                                 // Check if Guard requires a guess and if a guess was found
                                 if (candidateFallbackCard.Type == CardType.Guard && guessedCardType == null)
                                 {
@@ -228,11 +243,11 @@ namespace CardGame.Domain.EndToEnd
                             continue;
                         }
                     }
-                    
+                
                     Console.WriteLine($"Seed: {localRandomizer.Seed} - Player {currentPlayer.Name} plays {cardToPlay.Type.Name}" +
-                                      $"{(targetPlayerId.HasValue ? $" targeting Player {game.Players.First(p => p.Id == targetPlayerId.Value).Name}" : "")}" +
-                                      $"{(guessedCardType != null ? $" guessing {guessedCardType?.Name}" : "")}");
-                    
+                                  $"{(targetPlayerId.HasValue ? $" targeting Player {game.Players.First(p => p.Id == targetPlayerId.Value).Name}" : "")}" +
+                                  $"{(guessedCardType != null ? $" guessing {guessedCardType?.Name}" : "")}");
+                
                     try
                     {
                         game.PlayCard(currentPlayer.Id, cardToPlay, targetPlayerId, guessedCardType);
@@ -267,7 +282,7 @@ namespace CardGame.Domain.EndToEnd
                     turnsInCurrentRound++;
                     turnsTakenOverall++;
                 }
-                
+            
                 (game.GamePhase == GamePhase.RoundOver || game.GamePhase == GamePhase.GameOver || turnsInCurrentRound >= maxTurnsInRound).Should().BeTrue($"Seed: {localRandomizer.Seed} - Round {game.RoundNumber} did not complete as expected within {maxTurnsInRound} turns. GamePhase={game.GamePhase}, turnsInCurrentRound={turnsInCurrentRound}.");
 
                 if (turnsInCurrentRound >= maxTurnsInRound && game.GamePhase == GamePhase.RoundInProgress)
@@ -282,7 +297,7 @@ namespace CardGame.Domain.EndToEnd
 
             // 3. Assert Game Completion (copied and modified for seed logging)
             (game.GamePhase == GamePhase.GameOver || turnsTakenOverall >= maxTurnsOverall).Should().BeTrue($"Seed: {localRandomizer.Seed} - Game did not complete as expected within {maxTurnsOverall} turns. GamePhase={game.GamePhase}, turnsTakenOverall={turnsTakenOverall}.");
-            
+        
             if (turnsTakenOverall >= maxTurnsOverall && game.GamePhase != GamePhase.GameOver)
             {
                  Console.WriteLine($"Seed: {localRandomizer.Seed} - Warning: Game hit max turn limit ({maxTurnsOverall}) and was not over (GamePhase: {game.GamePhase}).");
@@ -298,8 +313,8 @@ namespace CardGame.Domain.EndToEnd
                 }
             }
             Console.WriteLine($"Seed: {localRandomizer.Seed} - Game completed. Total rounds: {game.RoundNumber}. Total turns: {turnsTakenOverall}.");
-        }
-        
+        } 
+
         [Test]
         public void Should_Successfully_Complete_Specific_Game_With_Random_Plays()
         {
@@ -364,7 +379,7 @@ namespace CardGame.Domain.EndToEnd
 
             var princeTargets = new List<Player>();
             // Add self if active and has cards
-            if (currentPlayer.Status == PlayerStatus.Active && currentPlayer.Hand.Cards.Any())
+            if (currentPlayer.Status == PlayerStatus.Active && currentPlayer.Hand.Cards.Count > 1)
             {
                 princeTargets.Add(currentPlayer);
             }
@@ -395,8 +410,12 @@ namespace CardGame.Domain.EndToEnd
 
                 case nameof(CardType.Prince):
                     var validPrinceTargets = allPlayersInGame
-                        .Where(p => p.Status == PlayerStatus.Active && p.Hand.Cards.Any() && // Target must be active and have cards
-                                     (p.Id == currentPlayer.Id || !p.IsProtected))       // Target can be self, or an opponent if they are not protected
+                        .Where(p => p.Status == PlayerStatus.Active &&
+                                     (
+                                         (p.Id != currentPlayer.Id && p.Hand.Cards.Any() && !p.IsProtected) || // Opponent: active, has cards, not protected
+                                         (p.Id == currentPlayer.Id && currentPlayer.Hand.Cards.Count > 1)      // Self: active, has Prince + at least one other card to discard
+                                     )
+                      )
                         .ToList();
 
                     if (validPrinceTargets.Any())
@@ -416,16 +435,14 @@ namespace CardGame.Domain.EndToEnd
 
         private CardType? SelectGuessedCardType(Card cardToPlay, TestRandomizer randomizer) // Added randomizer param
         {
-            if (cardToPlay.Type == CardType.Guard) 
+            if (cardToPlay.Type != CardType.Guard) return null;
+
+            var guessableCardTypes = new List<CardType>
             {
-                // CS0117: Manually list guessable card types as CardType.GetAll() does not exist.
-                var guessableTypes = new List<CardType>
-                {
-                    CardType.Priest, CardType.Baron, CardType.Handmaid, CardType.Prince, CardType.King, /*CardType.Countess,*/ CardType.Princess // Countess is rarely a good guess
-                };
-                return guessableTypes[randomizer.Next(0, guessableTypes.Count)]; // Use passed randomizer
-            }
-            return null;
+                CardType.Priest, CardType.Baron, CardType.Handmaid, CardType.Prince, CardType.King, /*CardType.Countess,*/ CardType.Princess // Countess is rarely a good guess
+            };
+            randomizer.Shuffle(guessableCardTypes);
+            return guessableCardTypes.First();
         }
     }
 }
