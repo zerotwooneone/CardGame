@@ -73,13 +73,13 @@ public class CreateGameCommandHandler : IRequestHandler<CreateGameCommand, Guid>
         _logger.LogDebug("Creating new game aggregate...");
         // Pass playerInfos, creatorPlayerId, the actual cards from deckDefinition, and tokensToWin
         // Also pass request.DeckId as the deckDefinitionId
-        var game = Game.CreateNewGame(request.DeckId, playerInfosForGame, request.CreatorPlayerId, deckDefinition.Cards, request.TokensToWin ?? 4);
+        var game = Game.CreateNewGame(request.DeckId, playerInfosForGame, request.CreatorPlayerId, deckDefinition.Cards, request.TokensToWin ?? 4, _randomizer);
         // GameCreated event is now in game.DomainEvents
 
         // --- Start First Round ---
         _logger.LogDebug("Starting first round for game {GameId}...", game.Id);
         // StartNewRound uses the initialDeckCardSet provided during CreateNewGame and the randomizer
-        game.StartNewRound(_randomizer); 
+        game.StartNewRound(); 
         // RoundStarted, TurnStarted etc. events are now also in game.DomainEvents
 
         // --- Save Final State ---

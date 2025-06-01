@@ -30,20 +30,21 @@ namespace CardGame.Domain.EndToEnd
             Console.WriteLine($"--- Starting game with Seed: {localRandomizer.Seed} ---");
 
             // 1. Setup Game (copied from original test method)
-            var playerInfos = new List<PlayerInfo>
-            {
-                new PlayerInfo(Guid.NewGuid(), "Player 1"),
-                new PlayerInfo(Guid.NewGuid(), "Player 2")
-            };
+            int playerCount = localRandomizer.Next(2, 5); // Use seeded randomizer
+            var playerInfos = Enumerable.Range(1, playerCount)
+                .Select(i => new PlayerInfo(Guid.NewGuid(), $"Player {i}"))
+                .ToList();
             Guid creatorId = playerInfos[0].Id; 
             
             DeckDefinition deckDefinition = _deckProvider.GetDeck(); 
             IReadOnlyList<Card> initialDeckCardSet = deckDefinition.Cards.ToList(); 
             Guid deckDefinitionId = _deckProvider.DeckId; 
 
-            var game = GameUnderTest.CreateNewGame(deckDefinitionId, playerInfos, creatorId, initialDeckCardSet, 4);
+            int tokensToWin = localRandomizer.Next(3, 6); // NEW SEEDED WAY
 
-            Console.WriteLine($"Starting game ID: {game.Id} with Seed: {localRandomizer.Seed}. Target tokens: {game.TokensNeededToWin}.");
+            var game = GameUnderTest.CreateNewGame(deckDefinitionId, playerInfos, creatorId, initialDeckCardSet, tokensToWin, localRandomizer);
+
+            Console.WriteLine($"Starting game ID: {game.Id} with Seed: {localRandomizer.Seed}. Target tokens: {tokensToWin}.");
 
             // 2. Game Loop (copied and modified for seed logging)
             int maxTurnsOverall = 200; 
@@ -53,7 +54,7 @@ namespace CardGame.Domain.EndToEnd
             {
                 if (game.GamePhase == GamePhase.NotStarted || game.GamePhase == GamePhase.RoundOver)
                 {
-                    game.StartNewRound(localRandomizer); // Pass localRandomizer
+                    game.StartNewRound(); // Pass localRandomizer
                 }
                 Console.WriteLine($"Seed: {localRandomizer.Seed} - Round {game.RoundNumber} started ---");
                 
@@ -245,8 +246,8 @@ namespace CardGame.Domain.EndToEnd
                         var actingPlayerTestView = game.Players.FirstOrDefault(p => p.Id == currentPlayer.Id);
                         var targetPlayerTestView = targetPlayerId.HasValue ? game.Players.FirstOrDefault(p => p.Id == targetPlayerId.Value) : null;
 
-                        string actingPlayerHand = actingPlayerTestView != null ? string.Join(", ", actingPlayerTestView.Hand.Cards.Select(c => $"{c.Type.Name}({c.AppearanceId.Substring(0, 4)})")) : "N/A";
-                        string targetPlayerHand = targetPlayerTestView != null ? string.Join(", ", targetPlayerTestView.Hand.Cards.Select(c => $"{c.Type.Name}({c.AppearanceId.Substring(0, 4)})")) : "N/A";
+                        string actingPlayerHand = actingPlayerTestView != null ? string.Join(", ", actingPlayerTestView.Hand.Cards.Select(c => c.Type.Name)) : "N/A";
+                        string targetPlayerHand = targetPlayerTestView != null ? string.Join(", ", targetPlayerTestView.Hand.Cards.Select(c => c.Type.Name)) : "N/A";
                         string targetPlayerStatus = targetPlayerTestView?.Status.Name ?? "N/A";
 
                         string detailedMessage = $"Seed: {localRandomizer.Seed} - GameRuleException on Turn {(turnsInCurrentRound + 1)}, Round {game.RoundNumber}. Player {currentPlayer.Name} ({currentPlayer.Id}) playing {cardToPlay.Type.Name} ({cardToPlay.AppearanceId.Substring(0,4)}) targeting {(targetPlayerTestView?.Name ?? "None")} ({(targetPlayerTestView?.Id.ToString() ?? "N/A")}).\nTestView Acting Player: Hand: [{actingPlayerHand}], Status: {actingPlayerTestView?.Status.Name ?? "N/A"}.\nTestView Target Player: Hand: [{targetPlayerHand}], Status: {targetPlayerStatus}.\nOriginal Exception: {ex.Message}";
@@ -258,8 +259,8 @@ namespace CardGame.Domain.EndToEnd
                         var actingPlayerTestView = game.Players.FirstOrDefault(p => p.Id == currentPlayer.Id);
                         var targetPlayerTestView = targetPlayerId.HasValue ? game.Players.FirstOrDefault(p => p.Id == targetPlayerId.Value) : null;
 
-                        string actingPlayerHand = actingPlayerTestView != null ? string.Join(", ", actingPlayerTestView.Hand.Cards.Select(c => $"{c.Type.Name}({c.AppearanceId.Substring(0, 4)})")) : "N/A";
-                        string targetPlayerHand = targetPlayerTestView != null ? string.Join(", ", targetPlayerTestView.Hand.Cards.Select(c => $"{c.Type.Name}({c.AppearanceId.Substring(0, 4)})")) : "N/A";
+                        string actingPlayerHand = actingPlayerTestView != null ? string.Join(", ", actingPlayerTestView.Hand.Cards.Select(c => c.Type.Name)) : "N/A";
+                        string targetPlayerHand = targetPlayerTestView != null ? string.Join(", ", targetPlayerTestView.Hand.Cards.Select(c => c.Type.Name)) : "N/A";
                         string targetPlayerStatus = targetPlayerTestView?.Status.Name ?? "N/A";
 
                         string detailedMessage = $"Seed: {localRandomizer.Seed} - InvalidMoveException on Turn {(turnsInCurrentRound + 1)}, Round {game.RoundNumber}. Player {currentPlayer.Name} ({currentPlayer.Id}) attempting to play {cardToPlay?.Type.Name ?? "UnknownCard"} ({cardToPlay?.AppearanceId.Substring(0,4) ?? "N/A"}) targeting {(targetPlayerTestView?.Name ?? "None")} ({(targetPlayerTestView?.Id.ToString() ?? "N/A")}).\nTestView Acting Player: Hand: [{actingPlayerHand}], Status: {actingPlayerTestView?.Status.Name ?? "N/A"}.\nTestView Target Player: Hand: [{targetPlayerHand}], Status: {targetPlayerStatus}.\nOriginal Exception: {ex.Message}";

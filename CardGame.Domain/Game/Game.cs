@@ -26,6 +26,7 @@ public class Game // Aggregate Root
     private readonly IReadOnlyList<Card> _initialDeckCardSet;
     private readonly Guid _deckDefinitionId; // Added field
     public Guid DeckDefinitionId => _deckDefinitionId; // ADDED Public getter
+    private readonly IRandomizer _gameRandomizer;
 
     // --- Domain Event Handling ---
     private readonly List<IDomainEvent> _domainEvents = new List<IDomainEvent>();
@@ -37,23 +38,34 @@ public class Game // Aggregate Root
 
     public IReadOnlyList<GameLogEntry> LogEntries => _logEntries.AsReadOnly(); // Public accessor for log entries
 
-    private Game(Guid id, Guid deckDefinitionId, IReadOnlyList<Card> initialDeckCardSet) // Added deckDefinitionId parameter
+    private Game(Guid id, Guid deckDefinitionId, IReadOnlyList<Card> initialDeckCardSet, IRandomizer? randomizer = null) // Added deckDefinitionId parameter
     {
         Id = id;
         _deckDefinitionId = deckDefinitionId; // Assign deckDefinitionId
         _initialDeckCardSet = initialDeckCardSet ?? throw new ArgumentNullException(nameof(initialDeckCardSet));
         if (!_initialDeckCardSet.Any()) throw new ArgumentException("Initial deck card set cannot be empty.", nameof(initialDeckCardSet));
         Deck = Deck.Load(Enumerable.Empty<Card>());
+        _gameRandomizer = randomizer ?? new DefaultRandomizer();
     }
 
     // --- Factory Methods ---
-    public static Game CreateNewGame(Guid deckDefinitionId, IEnumerable<PlayerInfo> playerInfos, Guid creatorPlayerId, IEnumerable<Card> initialDeckCards, int tokensToWin = 4) // Added deckDefinitionId parameter
+    public static Game CreateNewGame(
+        Guid deckDefinitionId, 
+        IEnumerable<PlayerInfo> playerInfos, 
+        Guid creatorPlayerId, 
+        IEnumerable<Card> initialDeckCards, 
+        int tokensToWin = 4, 
+        IRandomizer? randomizer = null) 
     {
         var gameId = Guid.NewGuid();
         var cardSetToUse = initialDeckCards?.ToList() ?? throw new ArgumentNullException(nameof(initialDeckCards));
         if (!cardSetToUse.Any()) throw new ArgumentException("Initial deck cards cannot be empty.", nameof(initialDeckCards));
 
-        var game = new Game(gameId, deckDefinitionId, new ReadOnlyCollection<Card>(cardSetToUse)) // Pass deckDefinitionId
+        var game = new Game(
+                gameId, 
+                deckDefinitionId, 
+                new ReadOnlyCollection<Card>(cardSetToUse),
+                randomizer) // Pass deckDefinitionId
         {
             TokensNeededToWin = tokensToWin,
             GamePhase = GamePhase.NotStarted,
@@ -100,13 +112,13 @@ public class Game // Aggregate Root
     }
 
     // --- Public Methods (Game Actions) ---
-    public void StartNewRound(IRandomizer? randomizer = null)
+    public void StartNewRound()
     {
         if (GamePhase == GamePhase.GameOver) throw new GameRuleException("Cannot start a new round, the game is over.");
         if (GamePhase == GamePhase.RoundInProgress) throw new GameRuleException("Cannot start a new round while one is in progress.");
 
         RoundNumber++;
-        Deck = Deck.CreateShuffled(_initialDeckCardSet, randomizer);
+        Deck = Deck.CreateShuffled(_initialDeckCardSet, _gameRandomizer);
         DiscardPile.Clear();
         SetAsideCard = null;
         PubliclySetAsideCards.Clear();

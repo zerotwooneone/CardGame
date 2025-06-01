@@ -8,12 +8,17 @@ public class TestRandomizer : CardGame.Domain.Common.IRandomizer
     public TestRandomizer(int? seed = null)
     {
         Seed = seed ?? new Random().Next(); // Environment.TickCount could also be used but might not be unique enough for rapid parallel runs
-        _random = new Random(Seed);
+        _random = seed.HasValue ? new Random(seed.Value) : new Random();
     }
 
     public int Next(int minValue, int maxValue)
     {
         return _random.Next(minValue, maxValue);
+    }
+
+    public int Next(int maxValue)
+    {
+        return Next(0, maxValue);
     }
 
     public void Shuffle<T>(System.Collections.Generic.IList<T> list)

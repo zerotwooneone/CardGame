@@ -78,11 +78,10 @@ public class GameAggregateTests
         Card p1DealtCard = specificDeck[11]; // P1
         Card p2DealtCard = specificDeck[10]; // G3
         Card p1DrawnCard = specificDeck[9]; // B2
-        var game = Game.Game.CreateNewGame(Guid.NewGuid(), playerInfos, creatorId, specificDeck, tokensToWin: 4);
+        var game = Game.Game.CreateNewGame(Guid.NewGuid(), playerInfos, creatorId, specificDeck, tokensToWin: 4, randomizer: new NonShufflingRandomizer());
         var player1 = game.Players.First(p => p.Id == aliceInfo.Id);
         var player2 = game.Players.First(p => p.Id == bobInfo.Id);
-        var deterministicRandomizer = new NonShufflingRandomizer();
-        game.StartNewRound(randomizer: deterministicRandomizer);
+        game.StartNewRound();
         var cardToPlayInstance = p1DealtCard; // P1 plays P1
         var cardToKeepInstance = p1DrawnCard; // P1 keeps B2
         var targetPlayerId = player2.Id;
@@ -158,11 +157,10 @@ public class GameAggregateTests
             Card p1DealtCard = specificDeck[11]; // G3
             Card p2DealtCard = specificDeck[10]; // P2 (Priest)
             Card p1DrawnCard = specificDeck[9];  // P1 (Priest)
-            var game = Game.Game.CreateNewGame(Guid.NewGuid(), playerInfos, creatorId, specificDeck, tokensNeededToWin);
+            var game = Game.Game.CreateNewGame(Guid.NewGuid(), playerInfos, creatorId, specificDeck, tokensNeededToWin, randomizer: new NonShufflingRandomizer());
             var player1 = game.Players.First(p => p.Id == aliceInfo.Id);
             var player2 = game.Players.First(p => p.Id == bobInfo.Id);
-            var deterministicRandomizer = new NonShufflingRandomizer();
-            game.StartNewRound(randomizer: deterministicRandomizer);
+            game.StartNewRound();
             var cardToPlayInstance = p1DealtCard; // Alice plays G3
             var cardToKeepInstance = p1DrawnCard; // Alice keeps P1
             var targetPlayerId = bobInfo.Id;

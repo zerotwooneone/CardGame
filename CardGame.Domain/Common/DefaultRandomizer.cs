@@ -1,4 +1,4 @@
-﻿namespace CardGame.Domain.Common;
+namespace CardGame.Domain.Common;
 
 /// <summary>
 /// Default implementation using System.Random.
@@ -7,7 +7,7 @@
 /// </summary>
 public class DefaultRandomizer : IRandomizer
 {
-    private static readonly Random _random = new Random();
+    private readonly Random _random = new Random();
 
     public void Shuffle<T>(IList<T> list)
     {
