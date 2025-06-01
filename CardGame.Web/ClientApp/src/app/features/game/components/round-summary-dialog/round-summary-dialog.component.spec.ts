@@ -2,8 +2,8 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { MAT_DIALOG_DATA, MatDialogRef } from '@angular/material/dialog';
 import { HttpClientTestingModule } from '@angular/common/http/testing';
 import { RoundSummaryDialogComponent } from './round-summary-dialog.component';
-import { RoundEndSummaryDto } from '../../../../core/models/roundEndSummaryDto';
-import { CardType } from '../../../../core/models/cardType';
+import { RoundEndSummaryDto } from '../../models/roundEndSummaryDto';
+import { CardType } from '../../models/cardType';
 
 describe('RoundSummaryDialogComponent', () => {
   let component: RoundSummaryDialogComponent;

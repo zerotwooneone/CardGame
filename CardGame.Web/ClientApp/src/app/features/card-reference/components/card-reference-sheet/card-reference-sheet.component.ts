@@ -5,10 +5,10 @@ import {MatIconModule} from '@angular/material/icon';
 import {MatDividerModule} from '@angular/material/divider';
 import {MatButtonModule} from '@angular/material/button';
 import {MatTabsModule, MatTabGroup} from '@angular/material/tabs';
-import {CardReferenceService} from '../../../core/services/card-reference.service';
-import {CardReferenceItem} from '../../../core/models/cardReferenceItem';
-import {GameLogComponent} from '../../../features/game/components/game-log/game-log.component';
-import { UiInteractionService, ScrollToCardReferenceRequest } from '../../../core/services/ui-interaction-service.service';
+import { CardReferenceService } from '../../services/card-reference.service';
+import { CardReferenceItem } from '../../models/cardReferenceItem';
+import { GameLogComponent } from '../../../game/components/game-log/game-log.component';
+import { UiInteractionService, ScrollToCardReferenceRequest } from '../../services/ui-interaction-service.service';
 import { Subscription } from 'rxjs';
 import { ElementRef } from '@angular/core';
 

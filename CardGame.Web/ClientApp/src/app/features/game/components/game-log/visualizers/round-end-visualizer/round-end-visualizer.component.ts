@@ -1,9 +1,9 @@
 import { Component, Input, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { GameLogEntryDto } from '@core/models/gameLogEntryDto';
+import { GameLogEntryDto } from '@features/game/models/gameLogEntryDto';
+import { CardDto } from '@features/game/models/cardDto';
+import { UiInteractionService } from '@features/card-reference/services/ui-interaction-service.service';
 import { CardDisplayComponent } from '@gameComponents/card-display/card-display.component';
-import { CardDto } from '@core/models/cardDto';
-import { UiInteractionService } from '@core/services/ui-interaction-service.service';
 
 @Component({
   selector: 'app-round-end-visualizer',
@@ -14,6 +14,7 @@ import { UiInteractionService } from '@core/services/ui-interaction-service.serv
 })
 export class RoundEndVisualizerComponent {
   @Input() logEntry!: GameLogEntryDto;
+  private uiInteractionService = inject(UiInteractionService);
 
   trackCardByAppearanceId(index: number, card: CardDto): string {
     return card.appearanceId;

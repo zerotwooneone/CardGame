@@ -1,10 +1,10 @@
 import {inject, Injectable} from '@angular/core';
 import {HttpClient, HttpErrorResponse} from '@angular/common/http';
 import {catchError, Observable, throwError} from 'rxjs';
-import {PlayCardRequestDto} from '../../../core/models/playCardRequestDto';
-import { PlayerGameStateDto } from '../../../core/models/playerGameStateDto';
-import {CreateGameRequestDto} from '../../../core/models/createGameRequestDto';
-import { SpectatorGameStateDto } from '../../../core/models/spectatorGameStateDto';
+import {PlayCardRequestDto} from '../models/playCardRequestDto';
+import { PlayerGameStateDto } from '../models/playerGameStateDto';
+import {CreateGameRequestDto} from '../models/createGameRequestDto';
+import { SpectatorGameStateDto } from '../models/spectatorGameStateDto';
 
 @Injectable({
   // Provided locally within the game feature routing or component if lazy loaded,

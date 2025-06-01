@@ -5,10 +5,11 @@ import {MatButtonModule} from '@angular/material/button';
 import {MatMenuModule} from '@angular/material/menu';
 import {MatDividerModule} from '@angular/material/divider';
 import {MatSnackBar, MatSnackBarModule} from '@angular/material/snack-bar';
-import {AuthService} from '../../../core/services/auth.service';
+import {AuthService} from '@features/auth/services/auth.service';
 import { Router, RouterModule } from '@angular/router';
-import { UserInfo } from '../../../core/models/userInfo';
+import { UserInfo } from '@features/auth/models/userInfo';
 import {ClipboardModule, Clipboard} from '@angular/cdk/clipboard';
+import { Subscription } from 'rxjs';
 
 @Component({
   selector: 'app-user-widget',

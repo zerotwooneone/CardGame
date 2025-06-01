@@ -1,4 +1,4 @@
-﻿/**
+/**
  * Represents the information encoded in a Friend Code.
  */
 export interface UserInfo {

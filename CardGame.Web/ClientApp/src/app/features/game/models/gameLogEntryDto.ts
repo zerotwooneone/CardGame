@@ -49,7 +49,9 @@ export interface GameLogEntryDto {
   // Round/Game End
   winnerPlayerId?: string;
   winnerPlayerName?: string;
-  roundEndReason?: string;
   roundPlayerSummaries?: RoundEndPlayerSummaryDto[];
-  tokensHeld?: number;
+  roundEndReason?: string;
+  tokensHeld?: number; // For TokenAwarded event
+  roundEndSummary?: RoundEndPlayerSummaryDto[]; // For round end event
+  // For game end event, could add final scores or similar if needed
 }

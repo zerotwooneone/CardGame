@@ -1,4 +1,4 @@
-﻿/**
+/**
  * Represents summary information about a game displayed in the lobby.
  */
 export interface GameSummaryDto {

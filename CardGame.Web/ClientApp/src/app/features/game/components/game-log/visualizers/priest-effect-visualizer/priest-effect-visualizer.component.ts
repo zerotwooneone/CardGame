@@ -1,10 +1,10 @@
 import { Component, Input, inject, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { GameLogEntryDto } from '@core/models/gameLogEntryDto';
+import { GameLogEntryDto } from '@features/game/models/gameLogEntryDto';
+import { CardDto } from '@features/game/models/cardDto';
+import { UiInteractionService } from '@features/card-reference/services/ui-interaction-service.service';
+import { AuthService } from '@features/auth/services/auth.service';
 import { CardDisplayComponent } from '@gameComponents/card-display/card-display.component';
-import { UiInteractionService } from '@core/services/ui-interaction-service.service';
-import { CardDto } from '@core/models/cardDto';
-import { AuthService } from '@core/services/auth.service';
 
 @Component({
   selector: 'app-priest-effect-visualizer',

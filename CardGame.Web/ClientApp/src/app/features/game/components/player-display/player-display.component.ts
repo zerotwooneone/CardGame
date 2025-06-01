@@ -13,9 +13,9 @@ import {MatIconModule} from '@angular/material/icon';
 import {MatBadgeModule} from '@angular/material/badge';
 import {MatTooltipModule} from '@angular/material/tooltip';
 import {CardDisplayComponent} from '../card-display/card-display.component';
-import {PlayerHandInfoDto} from '../../../../core/models/playerHandInfoDto';
-import {CardDto} from '../../../../core/models/cardDto';
-import {SpectatorPlayerDto} from '../../../../core/models/spectatorPlayerDto';
+import {PlayerHandInfoDto} from '../../models/playerHandInfoDto';
+import {CardDto} from '../../models/cardDto';
+import {SpectatorPlayerDto} from '../../models/spectatorPlayerDto';
 import {PlayerStatus} from './player.status';
 import {PlayerStatusMap} from './player-status.map';
 

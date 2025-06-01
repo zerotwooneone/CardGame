@@ -1,15 +1,15 @@
 import {Injectable, signal, WritableSignal, Signal, OnDestroy, effect, Injector, computed, inject} from '@angular/core';
 import {Observable, Subject, Subscription, firstValueFrom } from 'rxjs';
-import { SignalrService, ConnectionState } from '../../../core/services/signalr.service';
-import { AuthService } from '../../../core/services/auth.service';
-import {SpectatorGameStateDto} from '../../../core/models/spectatorGameStateDto';
-import {CardDto} from '../../../core/models/cardDto';
+import { SignalrService, ConnectionState } from '@core/services/signalr.service';
+import { AuthService } from '@features/auth/services/auth.service';
+import {SpectatorGameStateDto} from '../models/spectatorGameStateDto';
+import {CardDto} from '../models/cardDto';
 import {GameActionService} from './game-action.service';
-import {PlayerGameStateDto} from '../../../core/models/playerGameStateDto';
-import {RoundEndSummaryDto} from '../../../core/models/roundEndSummaryDto';
-import { GameLogEntryDto } from '../../../core/models/gameLogEntryDto'; // Import GameLogEntryDto
-import { DeckService } from './deck.service'; // Import DeckService
-import { GamePhase } from '../../../core/models/gamePhase'; // Import GamePhase enum
+import {PlayerGameStateDto} from '../models/playerGameStateDto';
+import {RoundEndSummaryDto} from '../models/roundEndSummaryDto';
+import { GameLogEntryDto } from '../models/gameLogEntryDto'; 
+import { DeckService } from './deck.service'; 
+import { GamePhase } from '../models/gamePhase'; 
 
 
 @Injectable({

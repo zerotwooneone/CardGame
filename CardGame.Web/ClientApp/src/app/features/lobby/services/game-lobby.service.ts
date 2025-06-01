@@ -6,7 +6,7 @@ import { catchError, delay, map, tap } from 'rxjs/operators';
 import { SignalrService } from '../../../core/services/signalr.service'; // Import SignalrService
 import { MatSnackBar } from '@angular/material/snack-bar'; // Import MatSnackBar for notifications
 import { Router } from '@angular/router';
-import {GameSummaryDto} from '../../../core/models/gameSummaryDto'; // Import Router for navigation
+import {GameSummaryDto} from '../../game/models/gameSummaryDto'; // Import Router for navigation
 
 @Injectable({
   // Provided locally within the lobby feature routing or component if lazy loaded,

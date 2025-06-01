@@ -5,9 +5,9 @@ import { MatToolbarModule } from '@angular/material/toolbar';
 import { MatIconModule } from '@angular/material/icon';
 import { MatButtonModule } from '@angular/material/button';
 import { MatSidenav, MatSidenavModule } from '@angular/material/sidenav';
-import {UserWidgetComponent} from './shared/components/user-widget/user-widget.component';
-import {CardReferenceSheetComponent} from './shared/components/card-reference-sheet/card-reference-sheet.component';
-import {UiInteractionService} from './core/services/ui-interaction-service.service';
+import {UserWidgetComponent} from './features/auth/components/user-widget/user-widget.component';
+import {CardReferenceSheetComponent} from './features/card-reference/components/card-reference-sheet/card-reference-sheet.component';
+import {UiInteractionService} from './features/card-reference/services/ui-interaction-service.service';
 import {Subject} from 'rxjs';
 import {takeUntil} from 'rxjs/operators';
 

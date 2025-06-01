@@ -1,4 +1,4 @@
-﻿export interface CardReferenceItem {
+export interface CardReferenceItem {
   rank: number;
   name: string;
   countInDeck: number;

@@ -3,8 +3,8 @@ import {Inject, Injectable, PLATFORM_ID, signal, Signal, WritableSignal} from '@
 import { HttpClient, HttpErrorResponse } from '@angular/common/http';
 import { Observable, of, throwError } from 'rxjs';
 import { catchError, tap } from 'rxjs/operators';
-import { LoginRequest } from '@features/auth/models/loginRequest';
-import { LoginResponse } from '@features/auth/models/loginResponse';
+import { LoginRequest } from '../models/loginRequest';
+import { LoginResponse } from '../models/loginResponse';
 import {isPlatformBrowser} from '@angular/common';
 
 @Injectable({

@@ -10,8 +10,8 @@ import { MatCheckboxModule } from '@angular/material/checkbox';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 
-import { AuthService } from '../../../core/services/auth.service';
-import { LoginRequest } from '../../../core/models/loginRequest';
+import { AuthService } from '../services/auth.service';
+import { LoginRequest } from '../models/loginRequest';
 
 @Component({
   selector: 'app-login',

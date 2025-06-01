@@ -1,4 +1,4 @@
-﻿import {RoundEndPlayerSummaryDto} from './roundEndPlayerSummaryDto';
+import {RoundEndPlayerSummaryDto} from './roundEndPlayerSummaryDto';
 
 /**
  * Represents the overall summary sent to clients when a round ends,

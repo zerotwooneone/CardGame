@@ -6,9 +6,9 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { MatBadgeModule } from '@angular/material/badge';
 
-import { CardDto } from '../../../../core/models/cardDto';
-import { PlayerHandInfoDto } from '../../../../core/models/playerHandInfoDto';
-import { SpectatorPlayerDto } from '../../../../core/models/spectatorPlayerDto';
+import { CardDto } from '../../models/cardDto';
+import { PlayerHandInfoDto } from '../../models/playerHandInfoDto';
+import { SpectatorPlayerDto } from '../../models/spectatorPlayerDto';
 import { CARD_DETAILS_MAP } from '../card-display/CARD_DETAILS_MAP'; // Updated path
 import { CardDisplayComponent } from '../card-display/card-display.component';
 import { PlayerStatus } from '../player-display/player.status'; // Re-use enum

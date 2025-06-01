@@ -1,4 +1,4 @@
-﻿import {UserInfo} from "../../../core/models/userInfo";
+import {UserInfo} from "../../auth/models/userInfo";
 
 /**
  * Data passed *to* the CreateGameDialogComponent.

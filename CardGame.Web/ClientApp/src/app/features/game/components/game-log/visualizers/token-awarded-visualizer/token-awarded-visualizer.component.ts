@@ -1,6 +1,6 @@
 import { Component, Input } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import {GameLogEntryDto} from '../../../../../../core/models/gameLogEntryDto';
+import { GameLogEntryDto } from '@features/game/models/gameLogEntryDto';
 
 @Component({
   selector: 'app-token-awarded-visualizer',

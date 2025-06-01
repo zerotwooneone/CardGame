@@ -9,9 +9,9 @@ import { MatTooltipModule } from '@angular/material/tooltip';
 import { MatListModule } from '@angular/material/list';
 
 import { CardDisplayComponent } from '../card-display/card-display.component';
-import { RoundEndSummaryDto } from '../../../../core/models/roundEndSummaryDto';
-import { RoundEndPlayerSummaryDto } from '../../../../core/models/roundEndPlayerSummaryDto';
-import { CardDto } from '../../../../core/models/cardDto';
+import { RoundEndSummaryDto } from '../../models/roundEndSummaryDto';
+import { RoundEndPlayerSummaryDto } from '../../models/roundEndPlayerSummaryDto';
+import { CardDto } from '../../models/cardDto';
 
 @Component({
   selector: 'app-round-summary-dialog',

@@ -4,10 +4,10 @@ import * as signalR from '@microsoft/signalr'; // Import SignalR client library
 import { Subject } from 'rxjs'; // Removed BehaviorSubject import
 
 import { AuthService } from './auth.service';
-import {SpectatorGameStateDto} from '../models/spectatorGameStateDto';
-import {CardDto} from '../models/cardDto';
-import {RoundEndSummaryDto} from '../models/roundEndSummaryDto';
-import { PriestRevealData } from '../models/priestRevealData'; // Import PriestRevealData
+import { SpectatorGameStateDto } from '@features/game/models/spectatorGameStateDto';
+import { CardDto } from '@features/game/models/cardDto';
+import { RoundEndSummaryDto } from '@features/game/models/roundEndSummaryDto';
+import { PriestRevealData } from '@features/game/models/priestRevealData'; // Import PriestRevealData
 
 // Define connection states
 export enum ConnectionState {

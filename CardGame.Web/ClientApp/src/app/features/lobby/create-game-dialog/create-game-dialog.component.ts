@@ -13,7 +13,7 @@ import {MatSelectModule} from '@angular/material/select';
 import {CreateGameDialogData} from '../models/createGameDialogData';
 import {CreateGameDialogResult} from '../models/createGameDialogResult';
 import {FriendSelection} from '../models/friendSelection';
-import {UserInfo} from '../../../core/models/userInfo';
+import {UserInfo} from '../../auth/models/userInfo';
 
 @Component({
   selector: 'app-create-game-dialog',

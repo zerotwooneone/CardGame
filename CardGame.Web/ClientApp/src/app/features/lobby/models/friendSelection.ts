@@ -1,4 +1,4 @@
-﻿import {UserInfo} from "../../../core/models/userInfo";
+import {UserInfo} from "../../auth/models/userInfo";
 
 /**
  * Internal model used within the dialog component for managing friend selections.

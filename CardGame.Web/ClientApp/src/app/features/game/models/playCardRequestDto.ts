@@ -1,4 +1,4 @@
-﻿/**
+/**
  * Represents the data sent to the backend when a player plays a card.
  * Matches the backend PlayCardRequestDto.
  */

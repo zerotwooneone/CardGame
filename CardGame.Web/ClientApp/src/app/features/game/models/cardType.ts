@@ -1,4 +1,4 @@
-﻿
+
 
 // Corresponds to C# CardType enum
 export enum CardType {

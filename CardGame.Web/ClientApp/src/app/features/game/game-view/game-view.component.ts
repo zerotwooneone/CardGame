@@ -11,23 +11,23 @@ import { Subscription, filter, take, firstValueFrom } from 'rxjs';
 
 import { GameStateService } from '../services/game-state.service';
 import { GameActionService } from '../services/game-action.service';
-import { AuthService } from '../../../core/services/auth.service';
-import { SignalrService } from '../../../core/services/signalr.service';
-import { UiInteractionService } from '../../../core/services/ui-interaction-service.service';
+import { AuthService } from '@features/auth/services/auth.service';
+import { SignalrService } from '@core/services/signalr.service';
+import { UiInteractionService } from '@features/card-reference/services/ui-interaction-service.service';
 import { CARD_DETAILS_MAP } from '../components/card-display/CARD_DETAILS_MAP';
 
-import { CardDisplayComponent } from '../components/card-display/card-display.component'; // Updated path
+import { CardDisplayComponent } from '../components/card-display/card-display.component'; 
 import { PlayerDisplayComponent } from '../components/player-display/player-display.component';
 import { CurrentPlayerControlComponent } from '../components/current-player-control/current-player-control.component';
 
-import { PlayerGameStateDto } from '../../../core/models/playerGameStateDto';
-import { SpectatorGameStateDto } from '../../../core/models/spectatorGameStateDto';
-import { CardDto } from '../../../core/models/cardDto';
-import { PlayerHandInfoDto } from '../../../core/models/playerHandInfoDto';
-import { SpectatorPlayerDto } from '../../../core/models/spectatorPlayerDto';
-import { RoundEndSummaryDto } from '../../../core/models/roundEndSummaryDto';
-import { PriestRevealData } from '../../../core/models/priestRevealData';
-import { PlayCardRequestDto } from '../../../core/models/playCardRequestDto';
+import { PlayerGameStateDto } from '../models/playerGameStateDto';
+import { SpectatorGameStateDto } from '../models/spectatorGameStateDto';
+import { CardDto } from '../models/cardDto';
+import { PlayerHandInfoDto } from '../models/playerHandInfoDto';
+import { SpectatorPlayerDto } from '../models/spectatorPlayerDto';
+import { RoundEndSummaryDto } from '../models/roundEndSummaryDto';
+import { PriestRevealData } from '../models/priestRevealData';
+import { PlayCardRequestDto } from '../models/playCardRequestDto';
 
 import { ActionModalComponent } from '../components/action-modal/action-modal.component';
 import { ActionModalData } from '../actionModalData';
@@ -35,7 +35,7 @@ import { ActionModalResult } from '../actionModalResult';
 
 import { RoundSummaryDialogComponent } from '../components/round-summary-dialog/round-summary-dialog.component';
 import { GameOverDialogComponent, GameOverDialogData } from '../components/game-over-dialog.component';
-import {PlayerStatus} from '@gameComponents/player-display/player.status';
+import {PlayerStatus}from '@gameComponents/player-display/player.status';
 
 interface NormalizedPlayer {
   id: string;

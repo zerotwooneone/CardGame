@@ -18,21 +18,21 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatDividerModule } from '@angular/material/divider';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
-import {finalize, Subject} from 'rxjs'; // Added Observable, Subject, Subscription
+import { finalize, Subject} from 'rxjs'; // Added Observable, Subject, Subscription
 import { takeUntil } from 'rxjs/operators'; // Added takeUntil
 
 // Import services needed
-import { AuthService } from '../../core/services/auth.service'; // Adjust path if needed
 import { GameLobbyService } from './services/game-lobby.service'; // Import the lobby service
-import { SignalrService } from '../../core/services/signalr.service';
-import {GameSummaryDto} from '../../core/models/gameSummaryDto';
+import { SignalrService } from '@core/services/signalr.service';
+import { AuthService } from '@features/auth/services/auth.service';
+import {GameSummaryDto} from '../game/models/gameSummaryDto';
 import {MatDialog, MatDialogModule} from '@angular/material/dialog';
-import {UserInfo} from '../../core/models/userInfo';
+import {UserInfo} from '../auth/models/userInfo';
 import {GameActionService} from '../game/services/game-action.service';
 import {CreateGameDialogResult} from './models/createGameDialogResult';
 import {CreateGameDialogComponent} from './create-game-dialog/create-game-dialog.component';
 import {CreateGameDialogData} from './models/createGameDialogData';
-import {CreateGameRequestDto} from '../../core/models/createGameRequestDto'; // Still needed to start connection
+import {CreateGameRequestDto} from '../game/models/createGameRequestDto'; // Still needed to start connection
 
 
 @Component({

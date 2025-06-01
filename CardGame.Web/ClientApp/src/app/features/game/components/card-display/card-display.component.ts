@@ -4,10 +4,10 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatButtonModule } from '@angular/material/button';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { MatCardModule } from '@angular/material/card';
-import { CardDto } from '@core/models/cardDto';
+import { CardDto } from '../../models/cardDto';
 import { CARD_DETAILS_MAP } from './CARD_DETAILS_MAP';
 import { DeckService } from '@gameServices/deck.service';
-import { UiInteractionService } from '@core/services/ui-interaction-service.service';
+import { UiInteractionService } from '../../../card-reference/services/ui-interaction-service.service';
 
 @Component({
   selector: 'app-card-display',

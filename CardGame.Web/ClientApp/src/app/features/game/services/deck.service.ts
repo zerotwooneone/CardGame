@@ -2,7 +2,7 @@ import { Injectable, inject, signal, computed, effect, WritableSignal, Signal } 
 import { HttpClient, HttpErrorResponse } from '@angular/common/http';
 import { EMPTY, of } from 'rxjs';
 import { catchError, tap } from 'rxjs/operators';
-import { CardDto } from '../../../core/models/cardDto';
+import { CardDto } from '../models/cardDto';
 
 export interface DeckDefinitionDto {
   cards: CardDto[];

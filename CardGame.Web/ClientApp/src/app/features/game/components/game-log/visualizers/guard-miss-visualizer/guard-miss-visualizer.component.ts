@@ -1,10 +1,10 @@
 import { Component, Input, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { CardDisplayComponent } from '@gameComponents/card-display/card-display.component';
-import { GameLogEntryDto } from '@core/models/gameLogEntryDto';
-import { CardType } from '@core/models/cardType';
-import { UiInteractionService } from '@core/services/ui-interaction-service.service';
-import { CardDto } from '@core/models/cardDto';
+import { GameLogEntryDto } from '@features/game/models/gameLogEntryDto';
+import { CardDto } from '@features/game/models/cardDto';
+import { UiInteractionService } from '@features/card-reference/services/ui-interaction-service.service';
+import { CardType } from '@features/game/models/cardType';
 
 @Component({
   selector: 'app-guard-miss-visualizer',
