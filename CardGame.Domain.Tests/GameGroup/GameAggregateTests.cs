@@ -80,7 +80,7 @@ public class GameAggregateTests
         Card p2DealtCard = specificDeck[10]; // G3
         Card p1DrawnCard = specificDeck[9]; // B2
         var loggerFactory = LoggerFactory.Create(builder => builder.AddConsole());
-        var game = Game.Game.CreateNewGame(Guid.NewGuid(), playerInfos, creatorId, specificDeck, tokensToWin: 4, randomizer: new NonShufflingRandomizer(), loggerFactory);
+        var game = Game.Game.CreateNewGame(Guid.NewGuid(), playerInfos, creatorId, specificDeck, loggerFactory, tokensToWin: 4, randomizer: new NonShufflingRandomizer());
         var player1 = game.Players.First(p => p.Id == aliceInfo.Id);
         var player2 = game.Players.First(p => p.Id == bobInfo.Id);
         game.StartNewRound();
@@ -160,7 +160,7 @@ public class GameAggregateTests
             Card p2DealtCard = specificDeck[10]; // P2 (Priest)
             Card p1DrawnCard = specificDeck[9];  // P1 (Priest)
             var loggerFactory = LoggerFactory.Create(builder => builder.AddConsole());
-            var game = Game.Game.CreateNewGame(Guid.NewGuid(), playerInfos, creatorId, specificDeck, tokensNeededToWin, randomizer: new NonShufflingRandomizer(), loggerFactory);
+            var game = Game.Game.CreateNewGame(Guid.NewGuid(), playerInfos, creatorId, specificDeck, loggerFactory, tokensNeededToWin, randomizer: new NonShufflingRandomizer());
             var player1 = game.Players.First(p => p.Id == aliceInfo.Id);
             var player2 = game.Players.First(p => p.Id == bobInfo.Id);
             game.StartNewRound();

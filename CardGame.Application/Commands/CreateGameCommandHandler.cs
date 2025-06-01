@@ -21,6 +21,7 @@ public class CreateGameCommandHandler : IRequestHandler<CreateGameCommand, Guid>
     private readonly IDomainEventPublisher _domainEventPublisher; // Inject publisher
     private readonly ILogger<CreateGameCommandHandler> _logger; // Inject logger
     private readonly IDeckRegistry _deckRegistry; // Changed from IDeckProvider to IDeckRegistry
+    private readonly ILoggerFactory _loggerFactory;
 
     public CreateGameCommandHandler(
         IGameRepository gameRepository,
@@ -28,7 +29,8 @@ public class CreateGameCommandHandler : IRequestHandler<CreateGameCommand, Guid>
         IRandomizer randomizer,
         IDomainEventPublisher domainEventPublisher, // Add publisher dependency
         ILogger<CreateGameCommandHandler> logger,
-        IDeckRegistry deckRegistry) // Changed from IDeckProvider to IDeckRegistry
+        IDeckRegistry deckRegistry,
+        ILoggerFactory loggerFactory) // Changed from IDeckProvider to IDeckRegistry
     {
         _gameRepository = gameRepository ?? throw new ArgumentNullException(nameof(gameRepository));
         _userRepository = userRepository ?? throw new ArgumentNullException(nameof(userRepository));
@@ -36,6 +38,7 @@ public class CreateGameCommandHandler : IRequestHandler<CreateGameCommand, Guid>
         _domainEventPublisher = domainEventPublisher ?? throw new ArgumentNullException(nameof(domainEventPublisher)); // Assign publisher
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         _deckRegistry = deckRegistry ?? throw new ArgumentNullException(nameof(deckRegistry)); // Assign IDeckRegistry
+        _loggerFactory = loggerFactory;
     }
 
     public async Task<Guid> Handle(CreateGameCommand request, CancellationToken cancellationToken)
@@ -73,7 +76,7 @@ public class CreateGameCommandHandler : IRequestHandler<CreateGameCommand, Guid>
         _logger.LogDebug("Creating new game aggregate...");
         // Pass playerInfos, creatorPlayerId, the actual cards from deckDefinition, and tokensToWin
         // Also pass request.DeckId as the deckDefinitionId
-        var game = Game.CreateNewGame(request.DeckId, playerInfosForGame, request.CreatorPlayerId, deckDefinition.Cards, request.TokensToWin ?? 4, _randomizer);
+        var game = Game.CreateNewGame(request.DeckId, playerInfosForGame, request.CreatorPlayerId, deckDefinition.Cards, _loggerFactory, request.TokensToWin ?? 4, _randomizer);
         // GameCreated event is now in game.DomainEvents
 
         // --- Start First Round ---

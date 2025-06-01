@@ -59,9 +59,9 @@ public class Game // Aggregate Root
         IEnumerable<PlayerInfo> playerInfos, 
         Guid creatorPlayerId, 
         IEnumerable<Card> initialDeckCards, 
+        ILoggerFactory loggerFactory, 
         int tokensToWin = 4, 
-        IRandomizer? randomizer = null, 
-        ILoggerFactory loggerFactory = null) // ADDED loggerFactory
+        IRandomizer? randomizer = null) // ADDED loggerFactory
     {
         var gameId = Guid.NewGuid();
         var cardSetToUse = initialDeckCards?.ToList() ?? throw new ArgumentNullException(nameof(initialDeckCards));

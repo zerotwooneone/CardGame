@@ -40,7 +40,7 @@ namespace CardGame.Domain.EndToEnd
 
             int tokensToWin = localRandomizer.Next(3, 6); // NEW SEEDED WAY
 
-            var game = GameUnderTest.CreateNewGame(deckDefinitionId, playerInfos, creatorId, initialDeckCardSet, tokensToWin, localRandomizer, loggerFactory);
+            var game = GameUnderTest.CreateNewGame(deckDefinitionId, playerInfos, creatorId, initialDeckCardSet, loggerFactory, tokensToWin, localRandomizer);
 
             Console.WriteLine($"Starting game ID: {game.Id} with Seed: {localRandomizer.Seed}. Target tokens: {tokensToWin}.");
 
