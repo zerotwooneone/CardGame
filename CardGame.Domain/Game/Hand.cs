@@ -44,38 +44,35 @@ public sealed record Hand
     }
 
     /// <summary>
-    /// Returns a *new* Hand instance with the specific card instance removed.
-    /// Uses reference equality to ensure only the exact instance is removed.
+    /// Returns a *new* Hand instance with the first occurrence of a card matching
+    /// the specified cardInstance (by AppearanceId and Type) removed.
     /// </summary>
-    /// <exception cref="CardNotFoundInHandException">Thrown if the specific card instance is not found by reference.</exception>
-    /// <param name="cardInstanceToRemove">The specific card instance to remove.</param>
-    public Hand Remove(Card cardInstanceToRemove) // Parameter is Card instance
+    /// <exception cref="CardNotFoundInHandException">Thrown if no card matching the criteria is found.</exception>
+    /// <param name="cardToRemoveByValue">The card instance whose value (AppearanceId and Type) should be matched and removed.</param>
+    public Hand Remove(Card cardToRemoveByValue) 
     {
-        if (cardInstanceToRemove == null) throw new ArgumentNullException(nameof(cardInstanceToRemove));
+        if (cardToRemoveByValue == null) throw new ArgumentNullException(nameof(cardToRemoveByValue));
 
-        var newCards = new List<Card>(Cards.Count - 1); // Pre-allocate assuming one removal
-        bool removed = false;
-        foreach (var cardInHand in Cards)
+        int indexToRemove = -1;
+        for (int i = 0; i < Cards.Count; i++)
         {
-            if (!removed && ReferenceEquals(cardInHand, cardInstanceToRemove))
+            // Use default record equality for Card (compares AppearanceId and Type)
+            if (Cards[i] == cardToRemoveByValue) 
             {
-                removed = true; // Skip this instance, only the first one found by reference
-            }
-            else
-            {
-                newCards.Add(cardInHand);
+                indexToRemove = i;
+                break; // Found the first match
             }
         }
 
-        if (!removed)
+        if (indexToRemove == -1)
         {
-            // This means the exact object reference passed in was not found in the hand.
-            // This can happen if cardInstanceToRemove is a copy (equal by value) but not the actual reference from the hand.
-            // Or if the card was already removed or never there.
-            throw new CardNotFoundInHandException($"Specific instance of card '{cardInstanceToRemove.Type.Name}' (AppearanceId: '{cardInstanceToRemove.AppearanceId}') not found in hand by reference.");
+            throw new CardNotFoundInHandException($"Card '{cardToRemoveByValue.Type.Name}' (AppearanceId: '{cardToRemoveByValue.AppearanceId}') not found in hand by value.");
         }
 
-        return new Hand(newCards);
+        var newCardsList = Cards.ToList(); // Create a mutable copy
+        newCardsList.RemoveAt(indexToRemove); // Remove the item at the found index
+
+        return new Hand(newCardsList);
     }
 
 
