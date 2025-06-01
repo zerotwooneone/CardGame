@@ -99,7 +99,7 @@ public class GetPlayerGameStateQueryHandler : IRequestHandler<GetPlayerGameState
         {
             GameId = game.Id,
             RoundNumber = game.RoundNumber,
-            GamePhase = game.GamePhase.Name,
+            GamePhase = game.GamePhase.Value,
             CurrentTurnPlayerId = game.CurrentTurnPlayerId,
             TokensNeededToWin = game.TokensNeededToWin,
             DeckCardsRemaining = game.Deck.CardsRemaining,

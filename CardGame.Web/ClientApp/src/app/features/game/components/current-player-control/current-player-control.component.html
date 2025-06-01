@@ -1,0 +1,70 @@
+<mat-card class="current-player-card"
+            [matBadge]="playerData?.tokensWon || 0"
+            matBadgePosition="above after"
+            matBadgeColor="accent"
+            [matBadgeHidden]="!playerData?.tokensWon"
+            [matTooltip]="(playerData?.tokensWon || 0) + ' Tokens Won'">
+  <mat-card-header class="player-header shared-player-header">
+    <mat-card-title class="player-name shared-player-name">
+      {{ playerData?.name || 'Current Player' }} (You)
+      <mat-icon *ngIf="playerData?.isProtected" class="protection-indicator shared-protection-indicator" matTooltip="Protected by Handmaid">shield</mat-icon>
+    </mat-card-title>
+    <mat-card-subtitle class="player-status shared-player-status">
+      Status: {{ playerStatusName }}
+    </mat-card-subtitle>
+  </mat-card-header>
+
+  <mat-card-content class="player-content-area">
+    <!-- Hand Cards Area -->
+    <div class="hand-cards-section">
+      <h4 class="section-title">Your Hand:</h4>
+      <div class="cards-list hand-cards-list shared-cards-area-container" *ngIf="handCards && handCards.length > 0; else emptyHand">
+        <app-card-display *ngFor="let card of handCards; trackBy: trackCardById"
+          [card]="card"
+          [isPlayable]="isMyTurn && isActivePlayer"
+          [isSelected]="selectedCard?.appearanceId === card.appearanceId"
+          (cardClicked)="onHandCardClicked(card)">
+        </app-card-display>
+      </div>
+      <ng-template #emptyHand>
+        <p class="empty-state-text empty-text">No cards in hand.</p>
+      </ng-template>
+    </div>
+
+    <!-- Action Controls Area -->
+    <div class="action-controls-section" *ngIf="isMyTurn && isActivePlayer">
+      <ng-container *ngIf="selectedCard; else selectCardPrompt">
+        <div class="play-card-action">
+
+          <button mat-raised-button
+                  color="primary"
+                  [disabled]="!canPlaySelectedCard"
+                  (click)="onPlayCardClicked()"
+                  matTooltip="Play your selected card">
+            Play {{ selectedCardName || 'Card' }}
+          </button>
+        </div>
+      </ng-container>
+      <ng-template #selectCardPrompt>
+        <p class="action-prompt">Select a card to play.</p>
+      </ng-template>
+    </div>
+    <div class="action-controls-section" *ngIf="isMyTurn && !isActivePlayer && playerData?.status !== PlayerStatus.Eliminated">
+        <p class="action-prompt">Waiting for action resolution...</p>
+    </div>
+
+    <!-- Discard Pile Area -->
+    <div class="discard-pile-section">
+      <h4 class="section-title">Your Played Cards:</h4>
+      <div class="cards-list discard-cards-list shared-cards-area-container" *ngIf="discardPileCards.length > 0; else emptyDiscard">
+        <app-card-display *ngFor="let card of discardPileCards; trackBy: trackCardById"
+          [card]="card"
+          [isPlayable]="false">
+        </app-card-display>
+      </div>
+      <ng-template #emptyDiscard>
+        <p class="empty-state-text empty-text">No cards played yet.</p>
+      </ng-template>
+    </div>
+  </mat-card-content>
+</mat-card>

@@ -12,7 +12,7 @@ import {MatCardModule} from '@angular/material/card';
 import {MatIconModule} from '@angular/material/icon';
 import {MatBadgeModule} from '@angular/material/badge';
 import {MatTooltipModule} from '@angular/material/tooltip';
-import {CardDisplayComponent} from '../../../../shared/components/card-display.component';
+import {CardDisplayComponent} from '../card-display/card-display.component';
 import {PlayerHandInfoDto} from '../../../../core/models/playerHandInfoDto';
 import {CardDto} from '../../../../core/models/cardDto';
 import {SpectatorPlayerDto} from '../../../../core/models/spectatorPlayerDto';
@@ -56,10 +56,6 @@ export class PlayerDisplayComponent {
   /** Emits the player's ID when this component is clicked and is targetable. */
   @Output() playerClicked = new EventEmitter<string>();
 
-  /** Emits the card rank (type value) when an info icon on a discard pile card is clicked. */
-  @Output() discardCardInfoClicked = new EventEmitter<number>(); // New Output
-
-
   // --- Host Bindings for dynamic styling ---
   @HostBinding('class.current-turn') get turnClass() { return this.isCurrentTurn; }
   @HostBinding('class.eliminated') get eliminatedClass() { return this.playerData?.status === PlayerStatus.Eliminated; }
@@ -95,10 +91,6 @@ export class PlayerDisplayComponent {
       return PlayerStatusMap[PlayerStatus.Unknown]; // Default to 'Unknown'
     }
     return PlayerStatusMap[statusValue]; // Use the exported map
-  }
-
-  onDiscardCardInfoClicked(cardRank: number): void {
-    this.discardCardInfoClicked.emit(cardRank);
   }
 
   // --- TrackBy Functions ---

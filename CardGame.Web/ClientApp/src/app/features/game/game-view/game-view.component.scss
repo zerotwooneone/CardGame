@@ -3,125 +3,230 @@
 :host {
   display: block;
   padding: 15px;
-  // Use theme background
   background-color: var(--mat-app-background-color);
   color: var(--mat-app-text-color);
-  min-height: calc(100vh - 64px); // Example: Adjust based on toolbar height
+  min-height: calc(100vh - 64px); // Adjust based on actual top toolbar height
+  box-sizing: border-box;
 }
 
 .game-view-container {
-  max-width: 1200px;
+  max-width: 1400px; // Allow a bit more width for larger layouts
   margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
 }
 
 .game-info-bar {
   display: flex;
   justify-content: space-around;
   align-items: center;
-  padding: 8px 16px;
-  background-color: rgba(128, 128, 128, 0.1); // Subtle background
+  padding: 10px 16px;
+  background-color: rgba(128, 128, 128, 0.1);
   border-radius: 4px;
   margin-bottom: 20px;
   font-size: 0.9em;
-  flex-wrap: wrap;
-  gap: 15px;
+  flex-wrap: wrap; // Allow items to wrap
+  gap: 15px; // Spacing between items when they wrap
+  min-height: 40px; // Ensure it doesn't collapse
 }
 
-.players-area {
+.main-game-area {
+  display: flex;
+  flex-direction: column; // Mobile-first: stack vertically
+  gap: 20px;
+  flex-grow: 1; // Allow main area to take available vertical space
+  margin-bottom: 20px;
+
+  @media (min-width: 992px) { // Desktop layout
+    flex-direction: row;
+    align-items: flex-start; // Align items to the top
+  }
+}
+
+.opponents-area {
   display: flex;
   flex-wrap: wrap;
-  justify-content: center; // Adjust as needed (space-around, space-between)
-  gap: 10px; // Spacing between player displays
-  margin-bottom: 30px;
+  justify-content: center;
+  gap: 15px;
+  padding: 10px;
+  border: 1px solid rgba(128, 128, 128, 0.15);
+  border-radius: 4px;
+  background-color: rgba(0, 0, 0, 0.02);
+  align-content: flex-start; // Align wrapped items to the start
+
+  @media (min-width: 992px) {
+    flex: 3; // Take more space compared to current player area
+    order: 1; // Opponents first visually on desktop row
+    max-height: calc(100vh - 150px); // Example max height, adjust as needed
+    overflow-y: auto; // Scroll if too many opponents
+  }
+  @media (max-width: 991px) {
+    order: 1; // Opponents appear first when stacked
+  }
 
   app-player-display {
-    flex-basis: calc(50% - 20px); // Two per row on larger screens
-    max-width: 350px; // Max width for a player card
+    flex: 1 1 100%; // Mobile: one per row
+    min-width: 270px; // Min width for a player display
+    max-width: 400px; // Max width on mobile
 
-    @media (max-width: 800px) {
-      flex-basis: calc(100% - 20px); // One per row on smaller screens
+    @media (min-width: 600px) and (max-width: 991px) { // Medium screens
+      flex: 1 1 calc(50% - 15px); // Two per row
+      max-width: calc(50% - 15px);
+    }
+
+    @media (min-width: 992px) { // Desktop in row layout
+      flex: 0 1 300px; // Fixed basis, allow shrinking, prevent growing beyond 300px
+      max-width: 300px;
+    }
+     @media (min-width: 1200px) { // Larger Desktop
+      flex: 0 1 320px;
+      max-width: 320px;
     }
   }
 }
 
-.current-player-hand-area {
-  margin-top: 20px;
+.current-player-area {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
   padding: 15px;
   border: 1px solid rgba(128, 128, 128, 0.2);
   border-radius: 4px;
-  min-height: 180px; // Match player display height roughly
+  background-color: rgba(0, 0, 0, 0.03);
 
-  h3 {
-    margin-top: 0;
-    margin-bottom: 15px;
+  @media (min-width: 992px) {
+    flex: 2; // Take less space than opponents
+    order: 2; // Current player second visually on desktop row
+    position: sticky; // Make current player area sticky on desktop
+    top: 20px; // Adjust sticky position as needed
+  }
+  @media (max-width: 991px) {
+    order: 2; // Current player appears after opponents when stacked
+  }
+
+  app-player-display { // The current player's own display component
+    // Will take full width of its parent by default due to parent's flex-direction: column
+  }
+}
+
+.hand-and-actions-area {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+
+  h4 { // "Your Hand"
     text-align: center;
-  }
-
-  .hand-cards {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    flex-wrap: wrap;
-    gap: 10px;
-    min-height: 130px; // Space for cards
-  }
-}
-
-.action-prompts {
-  text-align: center;
-  margin-top: 15px;
-  font-style: italic;
-  min-height: 24px; // Reserve space
-  color: grey; // Use theme hint color if possible
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  gap: 8px;
-}
-
-// Style for component-level error messages (not form validation errors)
-.component-error-message {
-  text-align: center;
-  padding: 10px;
-  margin-top: 10px;
-  color: var(--mat-warn-color, #f44336); // Use theme warn color variable
-  font-weight: 500;
-}
-
-
-.public-cards-area {
-  margin-top: 20px;
-  padding: 10px;
-  border: 1px dashed rgba(128, 128, 128, 0.3);
-  border-radius: 4px;
-  display: flex;
-  gap: 10px;
-  flex-wrap: wrap;
-  align-items: center;
-
-  h4 {
-    margin: 0 10px 0 0;
-    font-size: 0.9em;
+    margin-top: 0;
+    margin-bottom: 5px;
+    font-size: 1.1em;
     font-weight: 500;
   }
 }
 
+.cards-in-hand {
+  display: flex;
+  gap: 10px;
+  padding: 10px 5px; // Add some padding for scrollbar visibility
+  justify-content: flex-start; // Align cards to the start for scrolling
+  flex-wrap: nowrap; // Prevent wrapping, enable scrolling
+  overflow-x: auto; // Allow horizontal scrolling for cards
+  min-height: 130px; // Ensure some space for cards (adjust based on card component height)
+  background-color: rgba(0,0,0,0.05);
+  border-radius: 4px;
 
-.loading-container, .error-container {
+  app-card-display {
+    flex-shrink: 0; // Prevent cards from shrinking
+  }
+}
+
+.action-controls {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  min-height: 50px; // Space for button or prompt
+
+  .action-prompt {
+    font-style: italic;
+    color: var(--mat-app-secondary-text-color, grey);
+  }
+
+  button {
+    min-width: 150px;
+  }
+}
+
+// --- Overlays --- 
+.priest-reveal-overlay,
+.loading-spinner-overlay.in-game-loading,
+.error-message.in-game-error {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.65);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000; // Ensure on top
+  padding: 20px;
+  box-sizing: border-box;
+}
+
+.priest-reveal-content { // Specific to priest overlay
+  background-color: var(--mat-app-background-color);
+  padding: 25px 30px;
+  border-radius: 8px;
+  text-align: center;
+  box-shadow: 0 5px 20px rgba(0,0,0,0.25);
+  max-width: 90%;
+  width: 400px;
+
+  h4 {
+    margin-top: 0;
+    margin-bottom: 15px;
+    font-size: 1.3em;
+  }
+  .revealed-card-display {
+    margin: 20px 0;
+    display: inline-block;
+  }
+  button {
+    margin-top: 10px;
+  }
+}
+
+// --- Initial Loading/Error (before game state is loaded) ---
+.initial-status-container {
   display: flex;
   flex-direction: column;
   justify-content: center;
   align-items: center;
-  min-height: 300px;
+  flex-grow: 1; // Take remaining space in game-view-container
   text-align: center;
+  padding: 20px;
+}
 
+.initial-loading,
+.initial-error-container {
   p {
     margin-top: 15px;
+    font-size: 1.1em;
   }
 }
 
-.error-container {
-  color: var(--mat-warn-color, #f44336); // Use theme warn color variable
-  h2 { margin-bottom: 10px; }
-  p { margin-bottom: 20px; }
+.initial-error-container {
+  color: var(--mat-warn-color, #f44336);
+  h2 {
+    margin-bottom: 10px;
+    font-size: 1.5em;
+  }
+  p {
+    margin-bottom: 20px;
+  }
+  button {
+    padding: 8px 20px;
+  }
 }

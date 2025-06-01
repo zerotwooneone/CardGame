@@ -1,6 +1,7 @@
 import {PlayerHandInfoDto} from "./playerHandInfoDto";
 import {CardDto} from "./cardDto";
 import { GameLogEntryDto } from './gameLogEntryDto';
+import {GamePhase} from './gamePhase';
 
 /**
  * Represents the game state from the perspective of a specific player,
@@ -9,7 +10,7 @@ import { GameLogEntryDto } from './gameLogEntryDto';
 export interface PlayerGameStateDto {
   gameId: string; // Changed from Guid
   roundNumber: number;
-  gamePhase: string;
+  gamePhase: GamePhase;
   currentTurnPlayerId: string;
   tokensNeededToWin: number;
   players: PlayerHandInfoDto[];

@@ -1,16 +1,17 @@
 import { Component, OnInit, Inject, ChangeDetectionStrategy, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { MatDialogRef, MAT_DIALOG_DATA, MatDialogModule } from '@angular/material/dialog';
+import { MatDialogModule, MAT_DIALOG_DATA, MatDialogRef } from '@angular/material/dialog';
 import { MatButtonModule } from '@angular/material/button';
 import { MatDividerModule } from '@angular/material/divider';
 import { MatIconModule } from '@angular/material/icon';
 import { MatCardModule } from '@angular/material/card';
 import { MatTooltipModule } from '@angular/material/tooltip';
+import { MatListModule } from '@angular/material/list';
 
+import { CardDisplayComponent } from '../card-display/card-display.component';
+import { RoundEndSummaryDto } from '../../../../core/models/roundEndSummaryDto';
 import { RoundEndPlayerSummaryDto } from '../../../../core/models/roundEndPlayerSummaryDto';
 import { CardDto } from '../../../../core/models/cardDto';
-import { RoundEndSummaryDto } from '../../../../core/models/roundEndSummaryDto';
-import { CardDisplayComponent } from '../../../../shared/components/card-display.component';
 
 @Component({
   selector: 'app-round-summary-dialog',
@@ -23,6 +24,7 @@ import { CardDisplayComponent } from '../../../../shared/components/card-display
     MatIconModule,
     MatCardModule,
     MatTooltipModule,
+    MatListModule,
     CardDisplayComponent
   ],
   templateUrl: './round-summary-dialog.component.html',

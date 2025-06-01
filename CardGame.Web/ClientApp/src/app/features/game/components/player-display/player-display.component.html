@@ -1,31 +1,30 @@
 <mat-card class="player-card" [matBadge]="playerData?.tokensWon || 0" matBadgePosition="above after" matBadgeColor="accent" [matBadgeHidden]="!playerData?.tokensWon" [matTooltip]="(playerData?.tokensWon || 0) + ' Tokens'">
-  <mat-card-header class="player-header">
-    <mat-card-title class="player-name">
+  <mat-card-header class="player-header shared-player-header">
+    <mat-card-title class="player-name shared-player-name">
       {{ playerData?.name || 'Unknown Player' }}
       <mat-icon *ngIf="isCurrentUser" class="current-user-indicator" matTooltip="This is you">person</mat-icon>
     </mat-card-title>
-    <mat-card-subtitle class="player-status">
+    <mat-card-subtitle class="player-status shared-player-status">
       {{ playerStatusName }}
-      <mat-icon *ngIf="playerData?.isProtected" class="protection-indicator" matTooltip="Protected by Handmaid">shield</mat-icon>
+      <mat-icon *ngIf="playerData?.isProtected" class="protection-indicator shared-protection-indicator" matTooltip="Protected by Handmaid">shield</mat-icon>
     </mat-card-subtitle>
   </mat-card-header>
 
   <mat-card-content class="player-area">
-    <div class="hand-area" [matTooltip]="(playerData?.handCardCount || 0) + ' cards in hand'">
-      <span *ngIf="playerData?.handCardCount === 0 && playerData?.status !== PlayerStatus.Eliminated">Hand Empty</span>
+    <div class="hand-area shared-cards-area-container" [matTooltip]="(playerData?.handCardCount || 0) + ' cards in hand'">
+      <span *ngIf="playerData?.handCardCount === 0 && playerData?.status !== PlayerStatus.Eliminated" class="empty-text">Hand Empty</span>
       <div class="card-slot" *ngFor="let i of handPlaceholders; trackBy: trackByIndex">
         <app-card-display [isFaceDown]="true"></app-card-display>
       </div>
     </div>
 
-    <div class="discard-area" matTooltip="Discard Pile">
-      <span *ngIf="discardPileCards.length === 0">Discard Empty</span>
+    <div class="discard-area shared-cards-area-container" matTooltip="Discard Pile">
+      <span *ngIf="discardPileCards.length === 0" class="empty-text">Discard Empty</span>
       <div class="card-slot" *ngFor="let card of discardPileCards; trackBy: trackCardById">
         <app-card-display
           [card]="card"
           [isFaceDown]="false"
-          [isPlayable]="false"
-          (infoClicked)="onDiscardCardInfoClicked($event)">
+          [isPlayable]="false">
         </app-card-display>
       </div>
     </div>

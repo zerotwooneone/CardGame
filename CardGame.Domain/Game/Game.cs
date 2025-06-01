@@ -375,24 +375,7 @@ public class Game // Aggregate Root
             publicLogMessage
         )
         {
-            PlayedCard = priestCardInstance, // The Priest card that was played
-            RevealedPlayerCard = revealedCard // The card revealed by the Priest
-        });
-
-        // Private log for the acting player
-        string privateLogMessage = $"You used Priest on {targetPlayerName} and saw their {revealedCardStringName}.";
-        AddGameLogEntry(new GameLogEntry(
-            GameLogEventType.PriestEffect,
-            actingPlayer.Id,
-            actingPlayerName, 
-            targetPlayer.Id,
-            targetPlayerName, 
-            privateLogMessage,
-            true // isPrivate set to true
-        ) 
-        {
-            PlayedCard = priestCardInstance, // The Priest card that was played
-            RevealedPlayerCard = revealedCard // The card revealed by the Priest
+            PlayedCard = priestCardInstance // Keep the card that was played
         });
 
         // Domain event to notify the specific player (handler will use this)

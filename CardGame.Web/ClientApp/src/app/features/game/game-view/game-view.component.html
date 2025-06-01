@@ -1,89 +1,105 @@
-<div class="game-view-container" *ngIf="spectatorState() as gameState; else loadingOrErrorTemplate">
-  <div class="game-info-bar">
-    <span>Round: {{ gameState.roundNumber }}</span>
-    <span>Deck: {{ gameState.deckCardsRemaining }} cards left</span>
-    <span>Tokens to Win: {{ gameState.tokensNeededToWin }}</span>
-  </div>
+<div class="game-view-container">
+  <ng-container *ngIf="gameState() as state; else loadingOrErrorTemplate">
 
-  <div class="players-area">
-    <app-player-display
-      *ngFor="let player of gameState.players; trackBy: trackPlayerById"
-      [playerData]="player"
-      [isCurrentTurn]="player.playerId === gameState.currentTurnPlayerId"
-      [isCurrentUser]="player.playerId === currentPlayerId()"
-      [isTargetable]="isPlayerTargetableCheck(player)"
-      [isSelectedTarget]="player.playerId === selectedTargetPlayerId()"
-      (playerClicked)="onPlayerSelected($event)"
-      (discardCardInfoClicked)="onCardInfoClicked($event)">
-    </app-player-display>
-  </div>
+    <!-- Game Info Bar -->
+    <header class="game-info-bar">
+      <span>Round: {{ state.roundNumber }}</span>
+      <span>Deck: {{ state.deckCardsRemaining }} cards left</span>
+      <span class="spacer"></span>
+      <span *ngIf="isSpectating()" class="spectating-indicator">Spectating</span>
+      <span *ngIf="!isSpectating() && isMyTurn()" class="turn-indicator my-turn">Your Turn!</span>
+      <span *ngIf="!isSpectating() && !isMyTurn() && currentTurnPlayer() as ctp" class="turn-indicator opponent-turn">
+        {{ ctp.name }}'s Turn
+      </span>
+      <span *ngIf="gamePhase() as phase" class="game-phase-indicator">Phase: {{ phase }}</span>
+    </header>
 
-  <div class="current-player-hand-area" *ngIf="!isSpectating() && currentPlayerId()">
-    <h3>Your Hand</h3>
-    <div class="hand-cards">
-      <div class="card-slot" *ngFor="let card of playerHand(); trackBy: trackCardById">
-        <app-card-display
-          [card]="card"
-          [isFaceDown]="false"
-          [isPlayable]="isMyTurn()"
-          [isSelected]="card.appearanceId === selectedCard()?.appearanceId"
-          (cardClicked)="onCardSelected($event)"
-          (infoClicked)="onCardInfoClicked($event)">
-        </app-card-display>
-      </div>
-      <div *ngIf="playerHand().length === 0 && gameState.gamePhase !== 'GameOver'">
-        Waiting for card...
+    <!-- Main Game Area -->
+    <main class="main-game-area">
+
+      <!-- Opponents Area -->
+      <section class="opponents-area">
+        <app-player-display
+            *ngFor="let player of otherPlayersRaw(); trackBy: trackRawPlayerById"
+            [playerData]="player"
+            [isCurrentTurn]="isPlayerCurrentTurn(player)"
+            [isCurrentUser]="false"
+            [isTargetable]="canTargetRawPlayer(player)"
+            [isSelectedTarget]="selectedTargetPlayerId() === player.playerId"
+            (playerClicked)="selectTargetPlayer($event)">
+        </app-player-display>
+      </section>
+
+      <!-- Current Player Area (Info, Hand, Actions) -->
+      <section class="current-player-area" *ngIf="!isSpectating()">
+        <div class="current-player-and-actions-area">
+          <h3 class="area-title">Your Turn / Actions</h3>
+
+          <!-- New Current Player Control Component -->
+          <app-current-player-control
+            [playerData]="currentPlayerRaw()"
+            [handCards]="myHandCards()"
+            [isMyTurn]="isMyTurn()"
+            [isActivePlayer]="isCurrentPlayerActive()"
+            [selectedCard]="selectedCard()"
+            [canPlaySelectedCard]="true"
+            [targetPlayerId]="selectedTargetPlayerId()"
+            [guessedCardRank]="guessedCardRankSignal()"
+            (handCardClicked)="handleHandCardClicked($event)"
+            (playCardClicked)="handlePlayCardClicked()"
+            (targetPlayerSelected)="onPlayerSelected($event)"
+            (cardGuessConfirmed)="onCardGuessConfirmed($event)">
+          </app-current-player-control>
+
+        </div>
+      </section>
+
+    </main> <!-- End Main Game Area -->
+
+    <!-- Priest Card Reveal Overlay -->
+    <div *ngIf="revealedCardSignal() as revealedCardData" class="priest-reveal-overlay">
+      <div class="priest-reveal-content">
+        <h4>Priest Reveal!</h4>
+        <p>You looked at {{ revealedCardTargetPlayerNameSignal() }}'s hand and saw:</p>
+        <div class="revealed-card-display">
+          <app-card-display
+              [card]="revealedCardData"
+              [isFaceDown]="false">
+          </app-card-display>
+        </div>
+        <button mat-raised-button color="primary" (click)="clearPriestReveal()">OK</button>
       </div>
     </div>
-    <div class="action-prompts" *ngIf="isMyTurn()">
-      <div *ngIf="selectedCard() as card">
-           <span *ngIf="isTargetingRequired() && !selectedTargetPlayerId()">
-             Please select a target player for {{ selectedCardName() }}.
-           </span>
-        <span *ngIf="isGuessingRequired() && !selectedTargetPlayerId()">
-             Please select a target player for Guard.
-           </span>
-        <span *ngIf="isGuessingRequired() && selectedTargetPlayerId()">
-             Please guess Player {{ getPlayerName(selectedTargetPlayerId()) }}'s card.
-           </span>
-      </div>
-      <div *ngIf="!selectedCard()">
-        Select a card to play.
+
+    <!-- In-Game Loading Spinner Overlay (when gameState is already loaded but an action is pending) -->
+    <div *ngIf="isLoading() && gameState()" class="loading-spinner-overlay in-game-loading">
+      <mat-spinner diameter="50"></mat-spinner>
+    </div>
+
+    <!-- In-Game Error Message (when gameState is loaded but an error occurs) -->
+    <div *ngIf="error() && gameState()" class="error-message in-game-error">
+      <p>{{ error() }}</p>
+      <!-- Consider a dismiss button or auto-clear for in-game errors -->
+    </div>
+
+  </ng-container> <!-- End ng-container for gameState -->
+
+  <!-- Template for Initial Loading or Error State (when gameState is null initially) -->
+  <ng-template #loadingOrErrorTemplate>
+    <div class="initial-status-container">
+      <div *ngIf="isLoading(); else initialErrorStateTemplate" class="initial-loading">
+        <mat-spinner></mat-spinner>
+        <p>Loading game...</p>
       </div>
     </div>
-    <div *ngIf="errorState()" class="component-error-message">
-      {{ errorState() }}
+  </ng-template>
+
+  <ng-template #initialErrorStateTemplate>
+    <div class="initial-error-container">
+      <h2>Error Loading Game</h2>
+      <p>{{ error() }}</p>
+      <button mat-stroked-button color="warn" routerLink="/lobby">Return to Lobby</button>
     </div>
-  </div>
+  </ng-template>
 
-  <div class="deck-area" *ngIf="gameState.deckCardsRemaining !== undefined">
-    <span class="area-label">Deck: {{ gameState.deckCardsRemaining }}</span>
-    <!-- Display one face-down card to represent the deck -->
-    <app-card-display [isFaceDown]="true"></app-card-display>
-  </div>
-
-  <div class="last-discarded-card-area" *ngIf="lastDiscardedCard() as ldc">
-    <span class="area-label">Last Discarded:</span>
-    <app-card-display
-      [card]="ldc"
-      [isFaceDown]="false"
-      (infoClicked)="onCardInfoClicked($event)"
-    ></app-card-display>
-  </div>
-
-</div>
-
-<ng-template #loadingOrErrorTemplate>
-  <div class="loading-container" *ngIf="isLoadingFromService(); else errorTemplate">
-    <mat-spinner diameter="60"></mat-spinner>
-    <p>Loading Game...</p>
-  </div>
-</ng-template>
-
-<ng-template #errorTemplate>
-  <div class="error-container">
-    <h2>Error Loading Game</h2>
-    <p>{{ errorFromService() }}</p> <!-- Use errorFromService -->
-    <button mat-stroked-button color="warn" routerLink="/lobby">Return to Lobby</button>
-  </div>
-</ng-template>
+</div> <!-- End game-view-container -->

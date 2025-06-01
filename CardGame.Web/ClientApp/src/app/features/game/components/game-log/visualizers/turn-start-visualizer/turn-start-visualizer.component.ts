@@ -1,9 +1,9 @@
 import { Component, Input, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { GameLogEntryDto } from '../../../../../../core/models/gameLogEntryDto';
-import { CardDisplayComponent } from '../../../../../../shared/components/card-display.component';
-import { UiInteractionService } from '../../../../../../core/services/ui-interaction-service.service';
-import { CardDto } from '../../../../../../core/models/cardDto';
+import { GameLogEntryDto } from '@core/models/gameLogEntryDto';
+import { CardDisplayComponent } from '@gameComponents/card-display/card-display.component';
+import { UiInteractionService } from '@core/services/ui-interaction-service.service';
+import { CardDto } from '@core/models/cardDto';
 
 @Component({
   selector: 'app-turn-start-visualizer',

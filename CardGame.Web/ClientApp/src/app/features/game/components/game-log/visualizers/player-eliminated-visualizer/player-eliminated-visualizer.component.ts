@@ -1,9 +1,9 @@
 import { Component, inject, Input } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { CardDisplayComponent } from '../../../../../../shared/components/card-display.component';
-import { GameLogEntryDto } from '../../../../../../core/models/gameLogEntryDto';
-import { UiInteractionService } from '../../../../../../core/services/ui-interaction-service.service';
-import { CardDto } from '../../../../../../core/models/cardDto';
+import { CardDisplayComponent } from '@gameComponents/card-display/card-display.component';
+import { GameLogEntryDto } from '@core/models/gameLogEntryDto';
+import { UiInteractionService } from '@core/services/ui-interaction-service.service';
+import { CardDto } from '@core/models/cardDto';
 
 @Component({
   selector: 'app-player-eliminated-visualizer',

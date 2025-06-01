@@ -1,3 +1,5 @@
+@use '../_player-shared.scss' as shared; // Import shared styles with alias
+
 :host {
   display: block;
   transition: transform 0.2s ease-out, box-shadow 0.2s ease-out, border-color 0.2s ease-out;
@@ -14,18 +16,6 @@
   // Use theme variables for background/color (handled by mat-card)
 }
 
-.player-header {
-  padding-bottom: 8px; // Add some space below header
-}
-
-.player-name {
-  font-size: 1.1em;
-  font-weight: 500;
-  display: flex;
-  align-items: center;
-  gap: 4px; // Space between name and icon
-}
-
 .current-user-indicator {
   font-size: 1em; // Match text size
   height: 1em;
@@ -33,21 +23,6 @@
   vertical-align: middle;
   // Use theme's secondary text color or a subtle accent
   color: var(--mat-secondary-text-color, rgba(0,0,0,0.54));
-}
-
-.player-status {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  font-size: 0.9em;
-}
-
-.protection-indicator {
-  font-size: 1.1em; // Slightly larger icon
-  height: 1.1em;
-  width: 1.1em;
-  // Use theme's primary or accent color (adjust as needed)
-  color: var(--mat-primary-color-400, #5c6bc0); // Lighter primary shade
 }
 
 .player-area {
@@ -58,25 +33,6 @@
   padding-top: 8px;
 }
 
-.hand-area, .discard-area {
-  display: flex;
-  flex-wrap: wrap; // Allow cards to wrap
-  gap: 5px; // Space between cards
-  min-height: 50px; // Ensure area has some height even when empty
-  align-items: center; // Align items vertically
-  border-radius: 4px;
-  padding: 4px;
-  // Use a subtle background color from the theme
-  background-color: var(--mat-card-subtitle-color, rgba(0,0,0,0.06)); // Example using subtitle color
-
-  span { // Styling for "Hand Empty" / "Discard Empty" text
-    font-size: 0.8em;
-    font-style: italic;
-    color: var(--mat-disabled-text-color, rgba(0,0,0,0.38)); // Use theme hint/disabled color
-    padding-left: 5px;
-  }
-}
-
 .card-slot {
   // Container for each card, can add specific layout if needed
 }
@@ -84,14 +40,12 @@
 // --- State Styling using HostBinding classes ---
 
 :host(.current-turn) {
-  // Use theme's accent color for glow
-  box-shadow: 0 0 15px 2px var(--mat-accent-color-300, rgba(255, 64, 129, 0.5));
-  transform: scale(1.02);
+  @include shared.shared-current-turn-glow; // Apply shared mixin using alias
+  // Original transform: scale(1.02); is in the mixin (commented out by default)
 }
 
 :host(.eliminated) {
-  opacity: 0.6;
-  filter: grayscale(80%); // Make eliminated players less prominent
+  @include shared.shared-eliminated-state; // Apply shared mixin using alias
 }
 
 :host(.targetable) {

@@ -11,7 +11,7 @@ import {
 import { CommonModule, DatePipe } from '@angular/common';
 import { GameStateService } from '../../services/game-state.service';
 import { GameLogEntryDto } from '../../../../core/models/gameLogEntryDto';
-import { CARD_DETAILS_MAP } from '../card/CARD_DETAILS_MAP'; // For card names
+import { CARD_DETAILS_MAP } from '../card-display/CARD_DETAILS_MAP'; // For card names
 import { PriestEffectVisualizerComponent } from './visualizers/priest-effect-visualizer/priest-effect-visualizer.component';
 import { HandmaidProtectionVisualizerComponent } from './visualizers/handmaid-protection-visualizer/handmaid-protection-visualizer.component';
 import { EffectFizzledVisualizerComponent } from './visualizers/effect-fizzled-visualizer/effect-fizzled-visualizer.component';

@@ -6,7 +6,8 @@ import { Subject } from 'rxjs'; // Removed BehaviorSubject import
 import { AuthService } from './auth.service';
 import {SpectatorGameStateDto} from '../models/spectatorGameStateDto';
 import {CardDto} from '../models/cardDto';
-import {RoundEndSummaryDto} from '../models/roundEndSummaryDto'; // Optional: Inject to check login status
+import {RoundEndSummaryDto} from '../models/roundEndSummaryDto';
+import { PriestRevealData } from '../models/priestRevealData'; // Import PriestRevealData
 
 // Define connection states
 export enum ConnectionState {
@@ -47,6 +48,8 @@ export class SignalrService implements OnDestroy {
   public roundSummaryReceived$ = this.roundSummarySubject.asObservable();
   private gameWinnerSubject = new Subject<{ winnerId: string }>();
   public gameWinnerReceived$ = this.gameWinnerSubject.asObservable();
+  private priestRevealSubject = new Subject<PriestRevealData>();
+  public priestRevealReceived$ = this.priestRevealSubject.asObservable();
 
   constructor(
     @Inject(PLATFORM_ID) private platformId: object,
@@ -177,6 +180,13 @@ export class SignalrService implements OnDestroy {
       this.roundSummarySubject.next(summaryData); // Emit the full DTO
     });
     this.gameHubConnection.on('GameWinnerAnnounced', (winnerId: string) => this.gameWinnerSubject.next({ winnerId }));
+
+    // Handler for Priest card reveal
+    this.gameHubConnection.on('ReceivePriestReveal',
+      (targetPlayerId: string, targetPlayerName: string, revealedCard: CardDto) => {
+        console.log('Priest Reveal Received:', { targetPlayerId, targetPlayerName, revealedCard });
+        this.priestRevealSubject.next({ targetPlayerId, targetPlayerName, revealedCard });
+    });
 
     // Handle connection lifecycle events using .set()
     this.gameHubConnection.onreconnecting((error?: Error) => {

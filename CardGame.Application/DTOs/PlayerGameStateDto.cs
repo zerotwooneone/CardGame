@@ -8,7 +8,7 @@ public class PlayerGameStateDto
 {
     public Guid GameId { get; set; }
     public int RoundNumber { get; set; }
-    public string GamePhase { get; set; } = string.Empty;
+    public int GamePhase { get; set; }
     public Guid CurrentTurnPlayerId { get; set; }
     public int TokensNeededToWin { get; set; }
     public List<PlayerHandInfoDto> Players { get; set; } = new List<PlayerHandInfoDto>();

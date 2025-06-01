@@ -23,12 +23,18 @@ export class GameActionService {
   /**
    * Sends a request to the backend API to play a card.
    * @param gameId The ID of the game where the card is being played.
-   * @param payload The details of the card play action (CardId, TargetPlayerId, GuessedCardType).
+   * @param cardId The appearance ID of the card being played.
+   * @param targetPlayerId The ID of the player being targeted (optional).
+   * @param guessedCardValue The guessed card value (optional).
    * @returns An observable that completes on success or errors out.
    */
-  playCard(gameId: string, payload: PlayCardRequestDto): Observable<void> {
+  playCard(gameId: string, cardId: string, targetPlayerId?: string | null, guessedCardValue?: number | null): Observable<void> {
+    const payload: PlayCardRequestDto = {
+      cardId: cardId,
+      targetPlayerId: targetPlayerId ?? undefined,
+      guessedCardType: guessedCardValue ?? undefined
+    };
     const url = `${this.apiUrl}/${gameId}/play`;
-    // Use post<void> since the backend likely returns 200 OK with no body on success
     return this.http.post<void>(url, payload)
       .pipe(
         catchError(this.handleError)

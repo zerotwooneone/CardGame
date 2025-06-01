@@ -1,0 +1,90 @@
+
+@use '../_player-shared.scss' as shared;
+
+:host {
+  display: block;
+  width: 100%; // Take full width of its container in game-view
+
+  // Apply shared states if CurrentPlayerControlComponent's host gets these classes
+  &.current-turn {
+    // This could be applied to .current-player-card instead if host doesn't get the class
+    @include shared.shared-current-turn-glow;
+  }
+
+  &.eliminated {
+    // This could be applied to .current-player-card instead if host doesn't get the class
+    @include shared.shared-eliminated-state;
+  }
+}
+
+.current-player-card {
+  display: flex;
+  flex-direction: column;
+  // .shared-player-card-base styles could be mixed in here if defined as a mixin
+  // Or rely on Angular Material's mat-card styling as a base.
+}
+
+.player-content-area {
+  display: flex;
+  flex-direction: column;
+  gap: 15px; // Space between hand, actions, and discard sections
+  padding-top: 10px;
+}
+
+.section-title {
+  font-size: 1em;
+  font-weight: 500;
+  margin-top: 0;
+  margin-bottom: 8px;
+  color: var(--mat-app-text-color, rgba(0,0,0,0.87));
+}
+
+// Styles for the wrapper divs of hand and discard sections
+.hand-cards-section, .discard-pile-section {
+  padding: 8px;
+  border: 1px solid rgba(0,0,0,0.08);
+  border-radius: 4px;
+  background-color: rgba(0,0,0,0.02);
+}
+
+// .cards-list styling: 
+// Base is now covered by .shared-cards-area-container applied in HTML.
+// Specifics for .hand-cards-list or .discard-cards-list can remain or be added here.
+.cards-list {
+  // Shared styles like display:flex, flex-wrap, gap, border-radius, padding, background-color
+  // are now in .shared-cards-area-container.
+  // Keep any specific overrides or additional styles here.
+  // For example, if .hand-cards-list needs horizontal scrolling:
+  &.hand-cards-list {
+    // flex-wrap: nowrap; // Uncomment for horizontal scrolling
+    // overflow-x: auto;  // Uncomment for horizontal scrolling
+    // padding-bottom: 8px; // For scrollbar visibility with horizontal scrolling
+    // min-height from shared is 50px, original was 70px. Override if needed:
+    // min-height: 70px;
+    // align-items from shared is center, original was flex-start. Override if needed:
+    // align-items: flex-start;
+  }
+
+  app-card-display {
+    // flex-shrink: 0; // Useful for horizontal scrolling layouts
+  }
+}
+
+.action-controls-section {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 10px 0;
+  min-height: 40px; // Reserve space for button or prompt
+
+  button {
+    min-width: 160px;
+    font-size: 1em;
+  }
+
+  .action-prompt {
+    font-size: 0.95em;
+    font-style: italic;
+    color: var(--mat-secondary-text-color, grey);
+  }
+}

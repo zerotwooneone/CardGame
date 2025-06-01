@@ -1,8 +1,9 @@
-import { Component, Input } from '@angular/core';
+import { Component, Input, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { GameLogEntryDto } from '../../../../../../core/models/gameLogEntryDto';
-import { CardDisplayComponent } from '../../../../../../shared/components/card-display.component';
-import { CardDto } from '../../../../../../core/models/cardDto';
+import { GameLogEntryDto } from '@core/models/gameLogEntryDto';
+import { CardDisplayComponent } from '@gameComponents/card-display/card-display.component';
+import { CardDto } from '@core/models/cardDto';
+import { UiInteractionService } from '@core/services/ui-interaction-service.service';
 
 @Component({
   selector: 'app-round-end-visualizer',

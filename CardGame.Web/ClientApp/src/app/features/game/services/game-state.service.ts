@@ -9,6 +9,7 @@ import {PlayerGameStateDto} from '../../../core/models/playerGameStateDto';
 import {RoundEndSummaryDto} from '../../../core/models/roundEndSummaryDto';
 import { GameLogEntryDto } from '../../../core/models/gameLogEntryDto'; // Import GameLogEntryDto
 import { DeckService } from './deck.service'; // Import DeckService
+import { GamePhase } from '../../../core/models/gamePhase'; // Import GamePhase enum
 
 
 @Injectable({
@@ -50,9 +51,15 @@ export class GameStateService implements OnDestroy {
   });
   public gamePhase: Signal<string | null> = computed(() => {
     const state = this.combinedStateSignal();
-    // GamePhase is a string in PlayerGameStateDto, number in SpectatorGameStateDto in backend, but string on frontend models.
-    // Assuming frontend models are consistent (string for gamePhase)
-    return state?.gamePhase ?? null;
+    if (!state || state.gamePhase === null || state.gamePhase === undefined) return null;
+
+    switch (state.gamePhase as GamePhase) {
+      case GamePhase.NotStarted: return 'NotStarted';
+      case GamePhase.RoundInProgress: return 'RoundInProgress';
+      case GamePhase.RoundOver: return 'RoundOver';
+      case GamePhase.GameOver: return 'GameOver';
+      default: return null; // Or handle unknown number
+    }
   });
 
   // --- Observables for transient events ---
@@ -143,6 +150,15 @@ export class GameStateService implements OnDestroy {
         this.playerHandSignal.set(hand);
       }
     );
+  }
+
+  // --- Public Methods to Modify State ---
+  public setLoading(value: boolean): void {
+    this.isLoadingState.set(value);
+  }
+
+  public setError(message: string | null): void {
+    this.errorState.set(message);
   }
 
   /** Clears all current game state */
@@ -313,6 +329,64 @@ export class GameStateService implements OnDestroy {
     }
   }
 
+  private async fetchInitialSpectatorState(gameId: string): Promise<SpectatorGameStateDto> {
+    this.isLoadingState.set(true);
+    try {
+      // Using existing getGameState and casting, assuming it can return SpectatorGameStateDto if no playerId
+      const spectatorStateData = await firstValueFrom(this.gameActionService.getSpectatorGameState(gameId)); // Correctly await
+      if (!spectatorStateData || typeof (spectatorStateData as SpectatorGameStateDto).gamePhase === 'undefined') { // Basic validation on resolved data
+          throw new Error('Invalid spectator state received from server.');
+      }
+      this.isLoadingState.set(false);
+      return spectatorStateData as SpectatorGameStateDto; // Cast if necessary, ensure type safety
+    } catch (error) {
+      console.error(`GameStateService: Error fetching initial spectator state for game ${gameId}:`, error);
+      this.errorState.set(`Failed to load game (spectator). Please try again. Error: ${(error as Error).message}`);
+      this.isLoadingState.set(false);
+      throw error; // Rethrow to be caught by calling function
+    }
+  }
+
+  public async connectToSpectateGame(gameId: string): Promise<void> {
+    if (!this.signalrService.isBrowser) return;
+
+    this.errorState.set(null);
+    this.isSpectating.set(true); // Set spectator mode to true
+    this.isLoadingState.set(true);
+
+    try {
+      console.log(`GameStateService: Fetching initial spectator state for Game ${gameId}`);
+      const initialState = await this.fetchInitialSpectatorState(gameId);
+
+      this.combinedStateSignal.set(initialState);
+      // Spectators don't have a hand, but clear it to be safe
+      this.playerHandSignal.set([]);
+      console.log("GameStateService: Initial spectator state loaded.");
+
+      if (this.signalrService.gameConnectionState() !== ConnectionState.Connected &&
+          this.signalrService.gameConnectionState() !== ConnectionState.Connecting) {
+        await this.signalrService.startGameConnection();
+      }
+
+      if (this.signalrService.gameConnectionState() === ConnectionState.Connected) {
+        await this.signalrService.joinGameGroup(gameId);
+      } else {
+        throw new Error("Failed to establish SignalR connection for spectating.");
+      }
+
+      this.setupSignalRSubscriptions();
+      this.isLoadingState.set(false);
+      console.log(`GameStateService: Successfully connected spectator to game ${gameId}.`);
+
+    } catch (error) {
+      console.error(`GameStateService: Error connecting to spectate game ${gameId}:`, error);
+      // Error already set by fetchInitialSpectatorState or other specific errors
+      // this.errorState.set(`Failed to connect to game as spectator. Error: ${(error as Error).message}`);
+      this.isLoadingState.set(false);
+      // No need to clear state here as it might be useful for debugging or partial loads
+    }
+  }
+
   /** Helper to fetch initial state with error handling */
   private fetchInitialPlayerState(gameId: string, playerId: string): Promise<PlayerGameStateDto> {
     return new Promise((resolve, reject) => {
@@ -332,13 +406,6 @@ export class GameStateService implements OnDestroy {
           }
         });
     });
-  }
-
-  /** Fetches initial spectator game state from the API. */
-  private async fetchInitialSpectatorState(gameId: string): Promise<SpectatorGameStateDto> {
-    console.log(`GameStateService: Fetching initial spectator state for Game ${gameId}`);
-    // This will require a new method in GameActionService
-    return firstValueFrom(this.gameActionService.getSpectatorGameState(gameId));
   }
 
   /**

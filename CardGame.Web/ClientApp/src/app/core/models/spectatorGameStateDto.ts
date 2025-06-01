@@ -1,6 +1,7 @@
 import {SpectatorPlayerDto} from "./spectatorPlayerDto";
 import {CardDto} from "./cardDto";
 import { GameLogEntryDto } from './gameLogEntryDto';
+import { GamePhase } from './gamePhase';
 
 /**
  * Represents the publicly visible state of a game for spectators.
@@ -8,7 +9,7 @@ import { GameLogEntryDto } from './gameLogEntryDto';
 export interface SpectatorGameStateDto {
   gameId: string;
   roundNumber: number;
-  gamePhase: string;
+  gamePhase: GamePhase;
   currentTurnPlayerId: string;
   tokensNeededToWin: number;
   players: SpectatorPlayerDto[];

@@ -1,0 +1,72 @@
+
+// _player-shared.scss
+
+// General card container (can be applied to mat-card or a wrapper div)
+// It's often better to style mat-card directly or use a more specific wrapper if needed.
+// For now, these are utility classes that can be added.
+
+.shared-player-header {
+  padding-bottom: 8px;
+}
+
+.shared-player-name {
+  font-size: 1.1em; // Consider making this a variable
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.shared-player-status {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.9em; // Consider making this a variable
+}
+
+.shared-protection-indicator {
+  font-size: 1.1em;
+  height: 1.1em;
+  width: 1.1em;
+  color: var(--mat-primary-color-400, #5c6bc0); // Theme variable
+}
+
+// For areas containing cards like hand (placeholders in player-display) or discard pile
+.shared-cards-area-container {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  min-height: 50px; // Or make this a variable
+  align-items: center; // Changed from flex-start to center for better vertical alignment of few cards
+  border-radius: 4px;
+  padding: 6px;
+  background-color: var(--mat-card-subtitle-color, rgba(0,0,0,0.06)); // Theme variable
+
+  .empty-text {
+    font-size: 0.8em;
+    font-style: italic;
+    color: var(--mat-disabled-text-color, rgba(0,0,0,0.38)); // Theme variable
+    padding-left: 5px;
+    width: 100%; // Ensure it takes full width to show message clearly
+    text-align: center;
+  }
+}
+
+// Mixin for current turn glow (could be used by both if needed)
+@mixin shared-current-turn-glow {
+  // Apply to the host element or a main wrapper inside the component
+  box-shadow: 0 0 12px 3px var(--mat-accent-color-300, rgba(255, 64, 129, 0.6));
+  // transform: scale(1.02); // Use with caution, can affect layout or look jittery
+}
+
+// Mixin for eliminated state
+@mixin shared-eliminated-state {
+  // Apply to the host element or a main wrapper inside the component
+  opacity: 0.65;
+  filter: grayscale(70%);
+}
+
+// Placeholder for common card styling if needed beyond app-card-display itself
+// .shared-card-slot {
+//   // ...
+// }

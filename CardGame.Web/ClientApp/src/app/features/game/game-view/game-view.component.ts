@@ -1,342 +1,589 @@
-import { Component, OnInit, OnDestroy, inject, signal, WritableSignal, computed, Signal, ChangeDetectionStrategy, ChangeDetectorRef, effect, Injector } from '@angular/core';
-import { ActivatedRoute, Router } from '@angular/router';
+import { Component, inject, computed, WritableSignal, signal, OnInit, OnDestroy, ChangeDetectionStrategy, Injector, Signal, effect } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { Subject } from 'rxjs';
-import { takeUntil } from 'rxjs/operators';
-import { MatDialog, MatDialogModule } from '@angular/material/dialog';
-import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
+import { RouterModule, ActivatedRoute } from '@angular/router';
+import { MatDialog } from '@angular/material/dialog';
+import { MatSnackBar } from '@angular/material/snack-bar';
 import { MatButtonModule } from '@angular/material/button';
-import { MatIconModule } from '@angular/material/icon';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
+import { MatIconModule } from '@angular/material/icon';
 import { MatTooltipModule } from '@angular/material/tooltip';
+import { Subscription, filter, take, firstValueFrom } from 'rxjs';
+
 import { GameStateService } from '../services/game-state.service';
 import { GameActionService } from '../services/game-action.service';
 import { AuthService } from '../../../core/services/auth.service';
-import { PlayerDisplayComponent } from '../components/player-display/player-display.component';
-import { PlayerStatus } from '../components/player-display/player.status';
-import { CardDisplayComponent } from '../../../shared/components/card-display.component';
-import { ActionModalComponent } from '../components/action-modal/action-modal.component';
-import {SpectatorGameStateDto} from '../../../core/models/spectatorGameStateDto';
-import { CardDto } from '../../../core/models/cardDto';
-import {ActionModalData} from '../actionModalData';
-import {ActionModalResult} from '../actionModalResult';
-import {PlayCardRequestDto} from '../../../core/models/playCardRequestDto';
-import {SpectatorPlayerDto} from '../../../core/models/spectatorPlayerDto';
-import {CARD_DETAILS_MAP} from '../components/card/CARD_DETAILS_MAP';
-import {UiInteractionService} from '../../../core/services/ui-interaction-service.service';
-import {RoundEndSummaryDto} from '../../../core/models/roundEndSummaryDto';
-import {PlayerHandInfoDto} from '../../../core/models/playerHandInfoDto';
-import {RoundSummaryDialogComponent} from '../components/round-summary-dialog/round-summary-dialog.component';
-import {PlayerGameStateDto} from '../../../core/models/playerGameStateDto';
+import { SignalrService } from '../../../core/services/signalr.service';
+import { UiInteractionService } from '../../../core/services/ui-interaction-service.service';
+import { CARD_DETAILS_MAP } from '../components/card-display/CARD_DETAILS_MAP';
 
-const getCardNameFromValue = (value: number | undefined): string => {
-  if (value === undefined) return '?';
-  return CARD_DETAILS_MAP[value]?.name ?? '?';
-};
+import { CardDisplayComponent } from '../components/card-display/card-display.component'; // Updated path
+import { PlayerDisplayComponent } from '../components/player-display/player-display.component';
+import { CurrentPlayerControlComponent } from '../components/current-player-control/current-player-control.component';
+
+import { PlayerGameStateDto } from '../../../core/models/playerGameStateDto';
+import { SpectatorGameStateDto } from '../../../core/models/spectatorGameStateDto';
+import { CardDto } from '../../../core/models/cardDto';
+import { PlayerHandInfoDto } from '../../../core/models/playerHandInfoDto';
+import { SpectatorPlayerDto } from '../../../core/models/spectatorPlayerDto';
+import { RoundEndSummaryDto } from '../../../core/models/roundEndSummaryDto';
+import { PriestRevealData } from '../../../core/models/priestRevealData';
+import { PlayCardRequestDto } from '../../../core/models/playCardRequestDto';
+
+import { ActionModalComponent } from '../components/action-modal/action-modal.component';
+import { ActionModalData } from '../actionModalData';
+import { ActionModalResult } from '../actionModalResult';
+
+import { RoundSummaryDialogComponent } from '../components/round-summary-dialog/round-summary-dialog.component';
+import { GameOverDialogComponent, GameOverDialogData } from '../components/game-over-dialog.component';
+import {PlayerStatus} from '@gameComponents/player-display/player.status';
+
+interface NormalizedPlayer {
+  id: string;
+  name: string;
+  cardCount: number;
+  isProtected: boolean;
+  isMe: boolean;
+  status: number;
+  tokensWon: number;
+  playedCards: CardDto[];
+  isCurrentTurn: boolean;
+}
 
 @Component({
   selector: 'app-game-view',
+  templateUrl: './game-view.component.html',
+  styleUrls: ['./game-view.component.scss'],
   standalone: true,
   imports: [
     CommonModule,
-    MatDialogModule,
-    MatSnackBarModule,
-    MatButtonModule,
-    MatIconModule,
-    MatProgressSpinnerModule,
-    MatTooltipModule,
+    RouterModule,
+    CardDisplayComponent,
     PlayerDisplayComponent,
-    CardDisplayComponent
+    CurrentPlayerControlComponent,
+    MatButtonModule,
+    MatProgressSpinnerModule,
+    MatIconModule,
+    MatTooltipModule
   ],
-  templateUrl: './game-view.component.html',
-  styleUrls: ['./game-view.component.scss'],
-  changeDetection: ChangeDetectionStrategy.OnPush
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class GameViewComponent implements OnInit, OnDestroy {
-  // Inject services
-  private route = inject(ActivatedRoute);
-  private router = inject(Router);
-  private gameStateService = inject(GameStateService);
+  public readonly CARD_DETAILS_MAP = CARD_DETAILS_MAP; // Expose to template
+
+  public gameStateService = inject(GameStateService);
   private gameActionService = inject(GameActionService);
   private authService = inject(AuthService);
+  private route = inject(ActivatedRoute);
   private dialog = inject(MatDialog);
   private snackBar = inject(MatSnackBar);
-  private cdr = inject(ChangeDetectorRef);
-  private uiInteractionService = inject(UiInteractionService);
+  private signalrService = inject(SignalrService);
+  public uiInteractionService = inject(UiInteractionService);
+  private injector = inject(Injector);
 
-  private destroy$ = new Subject<void>();
+  // --- Expose GameStateService signals for template use ---
+  public readonly isSpectating = this.gameStateService.isSpectating;
+  public readonly gameState = this.gameStateService.gameState;
+  // --------------------------------------------------------
 
-  // Game State Signals from Service (public readonly)
-  spectatorState: Signal<PlayerGameStateDto | SpectatorGameStateDto | null> = this.gameStateService.gameState;
-  playerHand: Signal<CardDto[]> = this.gameStateService.playerHand;
-  isMyTurn: Signal<boolean> = this.gameStateService.isMyTurn;
-  gamePhase: Signal<string | null> = this.gameStateService.gamePhase;
-  gameId: Signal<string | null> = this.gameStateService.gameId;
-  isSpectating: Signal<boolean> = this.gameStateService.isSpectating;
-  isLoadingFromService: Signal<boolean> = this.gameStateService.isLoading;
-  errorFromService: Signal<string | null> = this.gameStateService.error;
+  private gameIdSignal: WritableSignal<string | null> = signal(null);
+  private currentPlayerId: string | null = null;
 
-  // Local UI State Signals (writable)
-  selectedCard: WritableSignal<CardDto | null> = signal(null);
+  public selectedCard: WritableSignal<CardDto | null> = signal(null);
   selectedTargetPlayerId: WritableSignal<string | null> = signal(null);
-  errorState: WritableSignal<string | null> = signal(null);
+  guessedCardRankSignal: WritableSignal<number | null> = signal(null);
 
-  // Computed signal for current player ID
-  currentPlayerId: Signal<string | null> = computed(() => this.authService.getCurrentPlayerId());
+  public revealedCardSignal: WritableSignal<CardDto | null> = signal(null);
+  public revealedCardTargetPlayerNameSignal: WritableSignal<string | null> = signal(null); // For Priest reveal message
 
-  // Computed signal for the last discarded card
-  lastDiscardedCard: Signal<CardDto | undefined> = computed(() => {
-    const state = this.spectatorState();
-    // The discardPile is typically ordered with the most recent discard first.
-    return state?.discardPile?.[0];
+  // Use the playerHand signal directly from GameStateService
+  public myHandCards: Signal<CardDto[]> = this.gameStateService.playerHand;
+
+  private priestRevealTimer: any = null;
+
+  private subscriptions = new Subscription();
+
+  gameId = this.gameStateService.gameId;
+  isLoading = this.gameStateService.isLoading;
+  error = this.gameStateService.error;
+  isMyTurn = this.gameStateService.isMyTurn;
+  gamePhase = this.gameStateService.gamePhase;
+  currentTurnPlayerId = this.gameStateService.currentTurnPlayerId;
+
+  // --- Raw Player DTOs for PlayerDisplayComponent ---
+  allPlayersRaw = computed<(PlayerHandInfoDto | SpectatorPlayerDto)[]>(() => {
+    const state = this.gameStateService.gameState();
+    if (!state || !state.players) return [];
+    // Assuming state.players are already correctly typed as (PlayerHandInfoDto | SpectatorPlayerDto)[]
+    return state.players;
   });
 
-  targetablePlayers: Signal<{ id: string; name: string; isProtected: boolean }[]> = computed(() => {
-    const state = this.spectatorState();
-    const myId = this.currentPlayerId();
-    if (!state || !myId) return [];
-    // Filter out self and eliminated players ONLY
-    return state.players
-      .filter(p => p.playerId !== myId && p.status === PlayerStatus.Active)
-      .map(p => ({ id: p.playerId, name: p.name, isProtected: p.isProtected }));
+  currentPlayerRaw = computed<(PlayerHandInfoDto | SpectatorPlayerDto) | undefined>(() => {
+    const myId = this.currentPlayerId;
+    if (!myId) return undefined;
+    return this.allPlayersRaw().find(p => p.playerId === myId);
   });
 
-  // Computed signal to check if targeting is needed for the selected card
-  isTargetingRequired: Signal<boolean> = computed(() => {
-    const card = this.selectedCard();
-    if (!card) return false;
-    const targetTypes = [1, 2, 3, 6]; // Guard, Priest, Baron, King values
-    return targetTypes.includes(card.rank);
+  otherPlayersRaw = computed<(PlayerHandInfoDto | SpectatorPlayerDto)[]>(() => {
+    const myId = this.currentPlayerId;
+    if (!myId) return this.allPlayersRaw(); // If no current player ID, show all as others (e.g. spectator initial view)
+    return this.allPlayersRaw().filter(p => p.playerId !== myId);
   });
+  // -----------------------------------------------------
 
-  // Method to check if a specific player is targetable
-  public isPlayerTargetableCheck(player: PlayerHandInfoDto | SpectatorPlayerDto): boolean {
-    const card = this.selectedCard(); // Access signal for selected card
-    if (!card || !this.isMyTurn() || this.isSpectating()) return false;
-    if (player.playerId === this.currentPlayerId()) return false; // Cannot target self
-    if (player.status !== PlayerStatus.Active) return false; // PlayerStatus.Active (1)
+  // --- Re-derive normalized players from GameStateService.gameState --- // This section might be refactored or removed if PlayerDisplayComponent handles all display
+  normalizedPlayersList = computed<NormalizedPlayer[]>(() => {
+    const state = this.gameStateService.gameState();
+    if (!state || !state.players) return [];
 
-    // Only targetable if the selected card requires a target.
-    if (!this.isTargetingRequired()) return false;
+    const myId = this.currentPlayerId;
+    const currentTurnPId = this.currentTurnPlayerId(); // Get current turn player ID
+    return state.players.map((p: PlayerHandInfoDto | SpectatorPlayerDto) => {
+      return {
+        id: p.playerId,
+        name: p.name,
+        cardCount: p.handCardCount ?? 0,
+        isProtected: p.isProtected || false,
+        isMe: p.playerId === myId,
+        status: p.status,
+        tokensWon: p.tokensWon || 0,
+        playedCards: p.playedCards || [],
+        isCurrentTurn: p.playerId === currentTurnPId
+      };
+    });
+  });
+  // ----------------------------------------------------------------------
 
-    // Check for Handmaid protection if the card is one that is blocked by Handmaid
-    const handmaidBlocks = [1, 2, 3, 5, 6]; // Guard, Priest, Baron, Prince, King ranks
-    if (player.isProtected && handmaidBlocks.includes(card.rank)) {
-      return false; // Cannot target protected player with these cards
-    }
-
-    return true; // Otherwise, targetable
+  // Public trackBy function for ngFor loops
+  public trackPlayerById(index: number, player: NormalizedPlayer): string {
+    return player.id;
   }
 
-  // Computed signal to check if guessing is needed (Guard)
-  isGuessingRequired: Signal<boolean> = computed(() => this.selectedCard()?.rank === 1); // Guard value is 1
+  public trackRawPlayerById(index: number, player: PlayerHandInfoDto | SpectatorPlayerDto): string {
+    return player.playerId;
+  }
 
-  // Computed signal for the selected card's name
-  selectedCardName: Signal<string> = computed(() => getCardNameFromValue(this.selectedCard()?.rank)); // Use helper
+  public currentPlayer = computed<NormalizedPlayer | undefined>(() => {
+    return this.normalizedPlayersList().find(p => p.isMe);
+  });
 
-  private injector = inject(Injector);
-  ngOnInit(): void {
-    this.errorState.set(null);
-    this.route.paramMap
-      .pipe(takeUntil(this.destroy$))
-      .subscribe(params => {
-        const id = params.get('id');
-        if (id) {
-          this.gameStateService.clearState();
-          const currentUserId = this.authService.getCurrentPlayerId();
-          this.gameStateService.initializeGameConnection(id, currentUserId)
-            .catch(err => {
-              console.error("GameViewComponent: Error connecting to game:", err);
-              this.cdr.markForCheck();
-            });
-        } else {
-          console.error("No game ID found in route.");
-          this.errorState.set("No Game ID specified.");
-          this.cdr.markForCheck();
-        }
-      });
-    this.subscribeToGameEvents();
+  public otherPlayers = computed<NormalizedPlayer[]>(() => {
+    return this.normalizedPlayersList().filter(p => !p.isMe);
+  });
 
+  public onPlayerSelected(playerId: string): void {
+    console.log('Player selected:', playerId);
+    this.selectedTargetPlayerId.set(playerId);
+    // Potentially trigger other actions or close a modal
+  }
+
+  public onCardGuessConfirmed(rank: number): void {
+    console.log('Card guess confirmed:', rank);
+    this.guessedCardRankSignal.set(rank);
+    // Potentially trigger game action or close a modal
+  }
+
+  // --- Helper methods for PlayerDisplayComponent bindings ---
+  isPlayerMe(player: PlayerHandInfoDto | SpectatorPlayerDto): boolean {
+    if (!this.currentPlayerId) return false;
+    return player.playerId === this.currentPlayerId;
+  }
+
+  isPlayerCurrentTurn(player: PlayerHandInfoDto | SpectatorPlayerDto): boolean {
+    const turnPlayerId = this.currentTurnPlayerId();
+    if (!turnPlayerId) return false;
+    return player.playerId === turnPlayerId;
+  }
+
+  selectedCardRequiresTarget = computed<boolean>(() => {
+    const card = this.selectedCard();
+    if (!card) return false;
+    return CARD_DETAILS_MAP[card.rank].requiresTarget ?? false;
+  });
+
+  canTargetRawPlayer = (player: PlayerHandInfoDto | SpectatorPlayerDto): boolean => {
+    if (this.isSpectating() || !this.isMyTurn() || !this.selectedCardRequiresTarget()) return false;
+    if (player.playerId === this.currentPlayerId) return false; // Cannot target self
+    return player.status === PlayerStatus.Active && !player.isProtected;
+  };
+  // ---------------------------------------------------------
+
+  targetablePlayers = computed<NormalizedPlayer[]>(() => {
+    const myId = this.currentPlayerId;
+    return this.normalizedPlayersList().filter(p => p.id !== myId && p.status === PlayerStatus.Active && !p.isProtected);
+  });
+
+  currentTurnPlayer = computed<NormalizedPlayer | undefined>(() => {
+    const turnPlayerId = this.currentTurnPlayerId();
+    if (!turnPlayerId) return undefined;
+    return this.normalizedPlayersList().find(p => p.id === turnPlayerId);
+  });
+
+  // Computed signal to determine if the current player is active
+  public isCurrentPlayerActive = computed<boolean>(() => {
+    const player = this.currentPlayerRaw(); // Using currentPlayerRaw which is PlayerHandInfoDto | SpectatorPlayerDto
+    return !!player && player.status === PlayerStatus.Active;
+  });
+
+  constructor() {
     effect(() => {
-      const serviceError = this.errorFromService();
-      if (serviceError) {
-        this.snackBar.open(serviceError, 'Close', { duration: 5000 });
+      const card = this.revealedCardSignal();
+      if (!card && this.priestRevealTimer) {
+        clearTimeout(this.priestRevealTimer);
+        this.priestRevealTimer = null;
       }
     }, { injector: this.injector });
   }
 
+  ngOnInit(): void {
+    this.currentPlayerId = this.authService.getCurrentPlayerId();
+    const gameIdFromRoute = this.route.snapshot.paramMap.get('id');
+
+    if (gameIdFromRoute) {
+      this.gameIdSignal.set(gameIdFromRoute);
+      this.gameStateService.initializeGameConnection(gameIdFromRoute, this.currentPlayerId)
+        .then(isSpectator => {
+          console.log(`GameViewComponent: Initialized connection. Spectator mode: ${isSpectator}`);
+          // Additional setup after connection can go here if needed
+        })
+        .catch(err => {
+          console.error('GameViewComponent: Error initializing game connection:', err);
+          // Error is already set in gameStateService, GameViewComponent template will display it.
+        });
+    } else {
+      console.error('GameViewComponent: Game ID not found in route.');
+      this.gameStateService.setError('Game ID not found. Please return to the lobby.');
+    }
+
+    this.subscriptions.add(
+      this.gameStateService.roundWinnerAnnounced$.subscribe(summary => {
+        if (summary) {
+          this.openRoundSummaryDialog(summary);
+        }
+      })
+    );
+
+    this.subscriptions.add(
+      this.gameStateService.gameWinnerAnnounced$.subscribe(event => {
+        if (event && event.winnerId) {
+          this.openGameOverDialog(event.winnerId);
+        }
+      })
+    );
+
+    // Subscription for Priest card reveal
+    this.subscriptions.add(
+      this.signalrService.priestRevealReceived$.subscribe((data: PriestRevealData) => {
+        this.handlePriestReveal(data);
+      })
+    );
+  }
+
   ngOnDestroy(): void {
-    this.destroy$.next();
-    this.destroy$.complete();
-    const currentId = this.gameId();
-    if (currentId) {
-      this.gameStateService.disconnectFromGame(currentId);
+    this.subscriptions.unsubscribe();
+    if (this.priestRevealTimer) {
+      clearTimeout(this.priestRevealTimer);
+    }
+    // Corrected method name
+    this.gameStateService.clearState(); // Reset state when leaving game view
+    const gameId = this.gameIdSignal();
+    if (gameId) {
+      this.signalrService.leaveGameGroup(gameId);
     }
   }
 
-  private subscribeToGameEvents(): void {
-    this.gameStateService.roundWinnerAnnounced$
-      .pipe(takeUntil(this.destroy$))
-      .subscribe((summaryData: RoundEndSummaryDto) => {
-        this.openRoundSummaryDialog(summaryData);
-      });
-
-    this.gameStateService.gameWinnerAnnounced$
-      .pipe(takeUntil(this.destroy$))
-      .subscribe(data => this.showSnackBar(`Game Over! Player ${this.getPlayerName(data.winnerId)} wins the game!`, 10000));
+  public clearPriestReveal(): void {
+    this.revealedCardSignal.set(null);
+    this.revealedCardTargetPlayerNameSignal.set(null);
+    if (this.priestRevealTimer) {
+      clearTimeout(this.priestRevealTimer);
+      this.priestRevealTimer = null;
+    }
   }
 
-  onCardSelected(card: CardDto): void {
-    if (!this.isMyTurn() || this.isSpectating()) return;
+  private handlePriestReveal(data: PriestRevealData): void {
+    this.revealedCardSignal.set(data.revealedCard);
+    this.revealedCardTargetPlayerNameSignal.set(data.targetPlayerName);
 
-    if (this.selectedCard()?.appearanceId === card.appearanceId) {
+    // Clear previous timer if any
+    if (this.priestRevealTimer) {
+      clearTimeout(this.priestRevealTimer);
+    }
+
+    // Set a new timer to hide the reveal after 5 seconds
+    this.priestRevealTimer = setTimeout(() => {
+      this.clearPriestReveal();
+    }, 5000); // 5 seconds
+  }
+
+  onSelectCard(card: CardDto): void {
+    if (!this.isMyTurn() || this.gameStateService.isSpectating()) return;
+
+    const currentSelected = this.selectedCard();
+    if (currentSelected && currentSelected.appearanceId === card.appearanceId) {
       this.selectedCard.set(null);
       this.selectedTargetPlayerId.set(null);
+      this.guessedCardRankSignal.set(null);
     } else {
       this.selectedCard.set(card);
       this.selectedTargetPlayerId.set(null);
+      this.guessedCardRankSignal.set(null);
 
-      if (!this.isTargetingRequired() && !this.isGuessingRequired()) {
-        this.confirmAndPlayCard();
+      const cardDetail = CARD_DETAILS_MAP[card.rank];
+      if (cardDetail && !cardDetail.requiresTarget && cardDetail.rank !== 1) {
       }
     }
   }
 
-  // --- Targeting Interaction ---
-
-  onPlayerSelected(playerId: string): void {
-    if (!this.isTargetingRequired() || !this.selectedCard() || this.isSpectating()) return;
-
-    const allOpponents = this.spectatorState()?.players.filter(p => p.playerId !== this.currentPlayerId() && p.status === PlayerStatus.Active) ?? [];
-    const selectedOpponent = allOpponents.find(p => p.playerId === playerId);
-
-    if (!selectedOpponent) {
-      console.warn("Attempted to select an invalid or non-existent player.");
-      return;
-    }
-
+  selectTargetPlayer(playerId: string): void {
+    if (!this.isMyTurn() || !this.selectedCard() || this.gameStateService.isSpectating()) return;
     this.selectedTargetPlayerId.set(playerId);
 
-    if (!this.isGuessingRequired()) {
-      this.confirmAndPlayCard();
+    const selectedCardRank = this.selectedCard()?.rank;
+    if (selectedCardRank === 1) {
+      this.promptForGuardGuess(playerId);
     } else {
-      this.openGuessModal();
+      this.onSubmitMove();
     }
   }
 
-  openGuessModal(): void {
-    const cardBeingPlayed = this.selectedCard();
-    if (!cardBeingPlayed || cardBeingPlayed.rank !== 1 || this.isSpectating()) return;
-
+  promptForGuardGuess(targetPlayerId: string): void {
     const dialogData: ActionModalData = {
       actionType: 'guess-card',
-      prompt: `Guess Player ${this.getPlayerName(this.selectedTargetPlayerId())}'s card (not Guard):`,
-      availableCardTypes: Object.entries(CARD_DETAILS_MAP)
-        .map(([valueStr, details]) => ({ value: parseInt(valueStr, 10), name: details.name }))
-        .filter(ct => ct.value !== 1), // Exclude Guard (value 1)
-      excludeCardTypeValue: 1
+      prompt: `Guess a card (2-8) for player ${this.getPlayerName(targetPlayerId)}:`,
+      availableCardTypes: Object.values(CARD_DETAILS_MAP)
+        .filter(card => card.rank !== 1) // Exclude Guard
+        .map(card => ({ value: card.rank, name: card.name })),
+      excludeCardTypeValue: 1 // Exclude Guard (rank 1)
     };
 
-    const dialogRef = this.dialog.open<ActionModalComponent, ActionModalData, ActionModalResult>(
-      ActionModalComponent, { width: '300px', data: dialogData, disableClose: true }
-    );
+    const dialogRef = this.dialog.open<ActionModalComponent, ActionModalData, ActionModalResult>(ActionModalComponent, {
+      width: '350px',
+      data: dialogData,
+      disableClose: true
+    });
 
     dialogRef.afterClosed().subscribe(result => {
-      if (result?.selectedCardTypeValue !== undefined) {
-        this.confirmAndPlayCard(result.selectedCardTypeValue);
+      if (result && result.selectedCardTypeValue !== undefined) {
+        this.guessedCardRankSignal.set(result.selectedCardTypeValue);
+        this.onSubmitMove(); // Proceed to submit move with the guess
       } else {
-        this.selectedCard.set(null);
-        this.selectedTargetPlayerId.set(null);
+        // User cancelled or closed dialog without selection
+        this.snackBar.open('Guard action cancelled.', 'Close', { duration: 2000 });
+        this.selectedTargetPlayerId.set(null); // Reset target
+        this.selectedCard.set(null); // Also reset selected card to avoid inconsistent state
+        this.guessedCardRankSignal.set(null);
       }
     });
   }
 
-  confirmAndPlayCard(guessedCardValue?: number): void {
-    if (this.isSpectating()) return;
-
-    const cardToPlay = this.selectedCard();
+  onSubmitMove(): void {
+    const gameId = this.gameIdSignal();
+    const sc = this.selectedCard();
     const targetId = this.selectedTargetPlayerId();
-    const gameId = this.gameId();
-    const myId = this.currentPlayerId();
+    const guessedRank = this.guessedCardRankSignal();
 
-    if (!cardToPlay || !gameId || !myId) {
-      console.error("Cannot play card, missing required state.", { cardToPlay, gameId, myId });
-      this.showSnackBar("Error: Cannot determine required game state to play card.", 5000);
+    if (!gameId || !sc || !this.isMyTurn()) {
+      this.snackBar.open('Cannot play card: Not your turn or card not selected.', 'Close', { duration: 3000 });
       return;
     }
 
-    if (this.isTargetingRequired() && !targetId) {
-      this.showSnackBar("Please select a target player.", 3000);
-      return;
-    }
-    if (this.isGuessingRequired() && guessedCardValue === undefined) {
-      this.showSnackBar("Please select a card type to guess.", 3000);
+    const cardDetail = CARD_DETAILS_MAP[sc.rank];
+    if (!cardDetail) {
+      console.error('Card details not found for rank:', sc.rank);
+      this.snackBar.open('Error: Card details not found.', 'Close', { duration: 3000 });
       return;
     }
 
-    const payload: PlayCardRequestDto = {
-      cardId: cardToPlay.appearanceId,
-      targetPlayerId: targetId,
-      guessedCardType: guessedCardValue
-    };
-
-    this.gameActionService.playCard(gameId, payload)
-      .pipe(takeUntil(this.destroy$))
-      .subscribe({
-        next: () => {
-          this.selectedCard.set(null);
-          this.selectedTargetPlayerId.set(null);
-          console.log("PlayCard action sent successfully.");
-        },
-        error: (err) => {
-          this.errorState.set(err.message || 'Failed to play card.');
-          this.showSnackBar(`Error: ${this.errorState()}`, 5000);
-          this.cdr.markForCheck();
+    if (cardDetail.requiresTarget && !targetId && sc.rank !== 8) {
+      const otherTargetablePlayers = this.targetablePlayers();
+      if (sc.rank === 3 || sc.rank === 2 || sc.rank === 6) {
+        if (otherTargetablePlayers.length === 0) {
+        } else {
+          this.snackBar.open(`Please select a target player for ${cardDetail.name}.`, 'Close', { duration: 3000 });
+          return;
         }
+      } else {
+        this.snackBar.open(`Please select a target player for ${cardDetail.name}.`, 'Close', { duration: 3000 });
+        return;
+      }
+    }
+
+    if (sc.rank === 1 && (guessedRank === null || guessedRank < 2 || guessedRank > 8)) {
+      this.snackBar.open('Please make a valid guess (2-8) for the Guard.', 'Close', { duration: 3000 });
+      return;
+    }
+
+    this.gameStateService.setLoading(true);
+    firstValueFrom(this.gameActionService.playCard(gameId, sc.appearanceId, targetId, guessedRank))
+      .then(() => {
+        this.snackBar.open(`Played ${cardDetail.name}.`, 'Close', { duration: 2000 });
+      })
+      .catch((error: any) => {
+        console.error('Error playing card:', error);
+        this.gameStateService.setError(error.message || 'Failed to play card.');
+      })
+      .finally(() => {
+        this.gameStateService.setLoading(false);
+        this.resetTurnState();
       });
   }
 
-  openRoundSummaryDialog(summaryData: RoundEndSummaryDto): void {
-    const dialogRef = this.dialog.open<RoundSummaryDialogComponent, RoundEndSummaryDto, void>(
-      RoundSummaryDialogComponent,
-      {
-        width: '500px', // Adjust as needed
-        maxWidth: '90vw',
-        data: summaryData,
-        disableClose: true
-      }
-    );
+  private resetTurnState(): void {
+    this.selectedCard.set(null);
+    this.selectedTargetPlayerId.set(null);
+    this.guessedCardRankSignal.set(null);
+  }
 
-    dialogRef.afterClosed().subscribe(() => {
-      console.debug('Round summary dialog closed.');
-      this.cdr.markForCheck(); // Ensure UI updates if anything changed indirectly
+  getPlayerTokens(playerId: string): number {
+    const state = this.gameStateService.gameState();
+    if (state && state.players) {
+      const playerInfo = state.players.find((p: any) => p.playerId === playerId);
+      return playerInfo?.tokensWon || 0;
+    }
+    return 0;
+  }
+
+  canTargetPlayer(player: NormalizedPlayer): boolean {
+    if (!this.isMyTurn() || !this.selectedCard() || this.gameStateService.isSpectating()) {
+      return false;
+    }
+    return !!this.targetablePlayers().find(tp => tp.id === player.id);
+  }
+
+  getPlayerName(playerId: string): string {
+    const player = this.normalizedPlayersList().find(p => p.id === playerId);
+    return player ? player.name : 'Unknown Player';
+  }
+
+  public canPlaySelectedCard(): boolean {
+    const selectedCard = this.selectedCard();
+    if (!selectedCard || !this.isMyTurn()) {
+      return false;
+    }
+
+    const cardDetails = this.CARD_DETAILS_MAP[selectedCard.rank];
+    const hand = this.myHandCards();
+
+    // Countess logic: Must play Countess if holding King or Prince
+    const hasCountess = hand.some(c => c.rank === 7);
+    const hasKingOrPrince = hand.some(c => c.rank === 5 || c.rank === 6);
+    if (hasCountess && hasKingOrPrince && selectedCard.rank !== 7) {
+      return false; // If holding Countess and King/Prince, only Countess is playable
+    }
+
+    if (cardDetails.requiresTarget) {
+      if (!this.selectedTargetPlayerId()) {
+        return false; // Target required but not selected
+      }
+      // Additional check for Guard: requires target AND a guess (handled by modal)
+      // For now, if target is required and selected, consider it playable from this method's perspective.
+      // The modal pop-up for Guard will be handled in onPlayCard.
+    }
+    return true;
+  }
+
+  public async onPlayCard(): Promise<void> {
+    if (!this.isMyTurn() || !this.selectedCard() || !this.canPlaySelectedCard()) {
+      this.snackBar.open('Cannot play card now.', 'Dismiss', { duration: 2000 });
+      return;
+    }
+
+    const gameId = this.gameIdSignal();
+    const cardToPlay = this.selectedCard();
+    let targetPlayerId = this.selectedTargetPlayerId();
+    let guessedCardRank = this.guessedCardRankSignal();
+
+    if (!gameId || !cardToPlay) {
+      console.error('Game ID or card to play is missing.');
+      this.gameStateService.setError('Could not play card: Game ID or card missing.');
+      return;
+    }
+
+    const cardDetails = this.CARD_DETAILS_MAP[cardToPlay.rank];
+
+    // Handle Guard (rank 1) guess
+    if (cardToPlay.rank === 1) {
+      if (!targetPlayerId) {
+        this.snackBar.open('Please select a target player for the Guard.', 'Dismiss', { duration: 3000 });
+        return;
+      }
+      const targetPlayer = this.normalizedPlayersList().find(p => p.id === targetPlayerId);
+      if (!targetPlayer) return;
+
+      const dialogRef = this.dialog.open<ActionModalComponent, ActionModalData, ActionModalResult>(
+        ActionModalComponent,
+        {
+          data: {
+            actionType: 'guess-card',
+            prompt: `Guess a card (not Guard) for ${targetPlayer.name}:`,
+            availableCardTypes: Object.entries(this.CARD_DETAILS_MAP)
+              .filter(([rankStr, _]) => parseInt(rankStr, 10) !== 1) // Exclude Guard
+              .map(([rankStr, details]) => ({ value: parseInt(rankStr, 10), name: details.name })),
+            excludeCardTypeValue: 1, // Guard
+          },
+        }
+      );
+
+      const result = await firstValueFrom(dialogRef.afterClosed());
+      if (result && result.selectedCardTypeValue) {
+        guessedCardRank = result.selectedCardTypeValue;
+      } else {
+        return; // User cancelled or no guess made
+      }
+    }
+
+    // For cards like Prince (5) that can target self
+    if (cardToPlay.rank === 5 && !targetPlayerId) {
+      targetPlayerId = this.currentPlayerId;
+    }
+
+    if (cardDetails.requiresTarget && !targetPlayerId && cardToPlay.rank !== 5) { // Prince can target self implicitly
+        this.snackBar.open(`The ${cardDetails.name} requires a target player.`, 'Dismiss', { duration: 3000 });
+        return;
+    }
+
+    this.gameStateService.setLoading(true);
+    try {
+      await firstValueFrom(
+        this.gameActionService.playCard(gameId, cardToPlay.appearanceId, targetPlayerId, guessedCardRank)
+      );
+      this.selectedCard.set(null);
+      this.selectedTargetPlayerId.set(null);
+      this.guessedCardRankSignal.set(null);
+    } catch (error: any) {
+      console.error('Error playing card:', error);
+      const errorMessage = error?.error?.Message || error?.message || 'Failed to play card.';
+      this.gameStateService.setError(errorMessage);
+      this.snackBar.open(errorMessage, 'Dismiss', { duration: 3000 });
+    } finally {
+      this.gameStateService.setLoading(false);
+    }
+  }
+
+  public handleHandCardClicked(card: CardDto): void {
+    this.onSelectCard(card); // Corrected method call
+  }
+
+  public handlePlayCardClicked(): void {
+    this.onPlayCard(); // Corrected method call
+  }
+
+  openRoundSummaryDialog(summaryData: RoundEndSummaryDto): void {
+    this.dialog.open(RoundSummaryDialogComponent, {
+      data: summaryData,
+      width: '500px',
+      disableClose: true
     });
   }
 
-  onCardInfoClicked(cardRank: number): void {
-    console.log('GameView: Card info clicked for rank:', cardRank);
-    this.uiInteractionService.requestScrollToCardReference(cardRank);
-  }
+  openGameOverDialog(winnerId: string): void {
+    const winnerPlayer = this.normalizedPlayersList().find(p => p.id === winnerId);
+    const winnerName = winnerPlayer ? winnerPlayer.name : `Player ${winnerId.substring(0, 6)}`;
 
-  // --- Helpers ---
-  getPlayerName(playerId: string | null): string {
-    if (!playerId) return 'Unknown';
-    const state = this.spectatorState();
-    const player = state?.players.find(p => p.playerId === playerId);
-    return player?.name ?? 'Unknown Player';
-  }
-
-  showSnackBar(message: string, duration: number = 3000): void {
-    this.snackBar.open(message, 'Close', { duration });
-  }
-
-  // --- TrackBy Functions ---
-  trackByIndex(index: number, item: any): number { return index; }
-  trackCardById(index: number, card: CardDto): string { return card.appearanceId; }
-  trackCardByAppearanceId(index: number, card: CardDto): string {
-    return card.appearanceId;
-  }
-  trackPlayerById(index: number, item: PlayerHandInfoDto | SpectatorPlayerDto): string {
-    return item.playerId;
+    this.dialog.open(GameOverDialogComponent, {
+      data: { winnerName: winnerName, winnerId: winnerId } as GameOverDialogData,
+      width: '400px',
+      disableClose: true
+    });
   }
 }
