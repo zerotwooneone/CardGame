@@ -1,4 +1,4 @@
-﻿using CardGame.Domain.Game.GameException;
+using CardGame.Domain.Game.GameException;
 using CardGame.Domain.Types;
 
 namespace CardGame.Domain.Game;
@@ -45,24 +45,37 @@ public sealed record Hand
 
     /// <summary>
     /// Returns a *new* Hand instance with the specific card instance removed.
-    /// Uses default record equality (comparing Id and Type).
+    /// Uses reference equality to ensure only the exact instance is removed.
     /// </summary>
-    /// <exception cref="CardNotFoundInHandException">Thrown if the specific card instance is not found.</exception>
-    /// <param name="cardInstance">The specific card instance to remove.</param>
-    public Hand Remove(Card cardInstance) // Parameter is Card instance
+    /// <exception cref="CardNotFoundInHandException">Thrown if the specific card instance is not found by reference.</exception>
+    /// <param name="cardInstanceToRemove">The specific card instance to remove.</param>
+    public Hand Remove(Card cardInstanceToRemove) // Parameter is Card instance
     {
-        if (cardInstance == null) throw new ArgumentNullException(nameof(cardInstance));
+        if (cardInstanceToRemove == null) throw new ArgumentNullException(nameof(cardInstanceToRemove));
 
-        // Find the specific card instance using default record equality (checks Id and Type)
-        var cardToRemove = Cards.FirstOrDefault(c => c == cardInstance); // Use default equality
-        if (cardToRemove == null)
+        var newCards = new List<Card>(Cards.Count - 1); // Pre-allocate assuming one removal
+        bool removed = false;
+        foreach (var cardInHand in Cards)
         {
-            // Card instance provided wasn't found in the hand
-            throw new CardNotFoundInHandException(cardInstance.Type.Name);
+            if (!removed && ReferenceEquals(cardInHand, cardInstanceToRemove))
+            {
+                removed = true; // Skip this instance, only the first one found by reference
+            }
+            else
+            {
+                newCards.Add(cardInHand);
+            }
         }
 
-        // Return a new hand excluding the specific instance found
-        return new Hand(Cards.Where(c => c != cardToRemove)); // Use default inequality
+        if (!removed)
+        {
+            // This means the exact object reference passed in was not found in the hand.
+            // This can happen if cardInstanceToRemove is a copy (equal by value) but not the actual reference from the hand.
+            // Or if the card was already removed or never there.
+            throw new CardNotFoundInHandException($"Specific instance of card '{cardInstanceToRemove.Type.Name}' (AppearanceId: '{cardInstanceToRemove.AppearanceId}') not found in hand by reference.");
+        }
+
+        return new Hand(newCards);
     }
 
 

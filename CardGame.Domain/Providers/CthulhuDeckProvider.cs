@@ -37,10 +37,10 @@ public class CthulhuDeckProvider : IDeckProvider
         // Helper to add multiple cards of the same type with Cthulhu theme
         void AddCards(CardType type, int count)
         {
+            var appearanceId = $"assets/decks/{DeckTheme}/{type.Name.ToLowerInvariant()}.webp";
             for (int i = 0; i < count; i++)
             {
-                // AppearanceId uses the deck theme folder
-                cards.Add(new Card($"assets/decks/{DeckTheme}/{type.Name.ToLowerInvariant()}.webp", type));
+                cards.Add(new Card(appearanceId, type));
             }
         }
 
