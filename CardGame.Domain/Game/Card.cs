@@ -1,44 +1,41 @@
-﻿
-
-
 using CardGame.Domain.Types;
 
 namespace CardGame.Domain.Game;
 
 /// <summary>
-/// Represents a specific Card instance within the game.
-/// Includes a unique ID and its functional type. Behaves as a Value Object via record equality.
+/// Represents a card in the game. A card is defined by its visual appearance and its functional type (which also determines its rank).
+/// It behaves as a Value Object, meaning instances with the same <see cref="AppearanceId"/> and <see cref="Rank"/> (which is the <see cref="CardType"/> instance)
+/// are considered equal. This is crucial for operations like removing a card from a hand, especially
+/// when dealing with deserialized instances where reference equality cannot be relied upon.
 /// </summary>
 public record Card // Using record for immutability and value equality
 {
     /// <summary>
-    /// Gets the unique identifier for this specific card instance.
-    /// While the core game logic primarily uses 'Type', this 'Id' allows
-    /// consumers (like the UI or specific game variants) to track and
-    /// differentiate individual card objects, potentially for appearance variations.
+    /// Gets the identifier for the card's visual appearance.
+    /// This identifier allows the presentation layer to display the correct card art.
+    /// Cards that look the same share the same <see cref="AppearanceId"/>.
+    /// Multiple distinct card instances in a game (e.g., two 'Guard' cards in a hand) will have the same <see cref="AppearanceId"/> if they are visually identical.
+    /// Expansion decks might introduce different <see cref="AppearanceId"/>s for the same functional <see cref="CardType"/>.
+    /// The domain is not concerned with the specific format of this ID (e.g., URL, asset key).
     /// </summary>
     public string AppearanceId { get; }
 
     /// <summary>
-    /// Gets the functional type of the card (Guard, Priest, etc.).
-    /// Initialized with null! to satisfy nullable reference type analysis;
-    /// the constructor ensures a non-null value is assigned.
+    /// Gets the functional type of the card (e.g., Guard, Priest, Baron), which dictates its behavior and rules in the game.
+    /// The <see cref="CardType.Value"/> property of this Rank provides the integer power level of the card.
+    /// See <see cref="CardGame.Domain.Types.CardType"/> for all available types.
     /// </summary>
-    public CardType Type { get; } = null!;
+    public CardType Rank { get; } // This property holds the CardType, its .Value is the integer rank.
 
     /// <summary>
-    /// Initializes a new instance of the Card record.
+    /// Initializes a new instance of the <see cref="Card"/> record.
     /// </summary>
-    /// <param name="appearanceId">The unique identifier for this card instance.</param>
-    /// <param name="type">The functional type of the card.</param>
+    /// <param name="appearanceId">The identifier for the card's visual appearance. Cannot be null or empty.</param>
+    /// <param name="type">The functional type of the card (which also defines its rank). Cannot be null. This will be assigned to the <see cref="Rank"/> property.</param>
     public Card(string appearanceId, CardType type)
     {
+        if (string.IsNullOrEmpty(appearanceId)) throw new ArgumentNullException(nameof(appearanceId));
         AppearanceId = appearanceId;
-        Type = type ?? throw new ArgumentNullException(nameof(type));
-    }   
-
-    /// <summary>
-    /// Gets the rank of the card based on its type.
-    /// </summary>
-    public int Rank => Type.Value;
+        Rank = type ?? throw new ArgumentNullException(nameof(type)); // 'type' is the CardType, assigned to Rank
+    } 
 }

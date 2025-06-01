@@ -66,7 +66,7 @@ public sealed record Hand
 
         if (indexToRemove == -1)
         {
-            throw new CardNotFoundInHandException($"Card '{cardToRemoveByValue.Type.Name}' (AppearanceId: '{cardToRemoveByValue.AppearanceId}') not found in hand by value.");
+            throw new CardNotFoundInHandException($"Card '{cardToRemoveByValue.Rank.Name}' (AppearanceId: '{cardToRemoveByValue.AppearanceId}') not found in hand by value.");
         }
 
         var newCardsList = Cards.ToList(); // Create a mutable copy
@@ -79,7 +79,7 @@ public sealed record Hand
     /// <summary>
     /// Checks if the hand contains a card of the specified type.
     /// </summary>
-    public bool Contains(CardType cardType) => cardType != null && Cards.Any(c => c.Type == cardType);
+    public bool Contains(CardType cardType) => cardType != null && Cards.Any(c => c.Rank == cardType);
 
     /// <summary>
     /// Gets the single card held, assuming the hand contains exactly one card.

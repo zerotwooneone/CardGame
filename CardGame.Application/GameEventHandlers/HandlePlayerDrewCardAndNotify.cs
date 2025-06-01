@@ -43,7 +43,7 @@ public class HandlePlayerDrewCardAndNotify : INotificationHandler<DomainEventNot
             var handDto = player.Hand.GetCards().Select(c => new CardDto
             {
                 AppearanceId = c.AppearanceId, 
-                Rank = c.Rank,
+                Rank = c.Rank.Value,
             }).ToList();
 
             // Send the hand update using the notifier service

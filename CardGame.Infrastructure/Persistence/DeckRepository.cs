@@ -35,7 +35,7 @@ public class DeckRepository : IDeckRepository
 
         var cardDtos = domainDeckDefinition.Cards.Select(card => new CardDto
         {
-            Rank = card.Rank,
+            Rank = card.Rank.Value,
             AppearanceId = card.AppearanceId
         }).ToList();
 

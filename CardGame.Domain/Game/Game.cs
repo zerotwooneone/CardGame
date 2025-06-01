@@ -186,8 +186,8 @@ public class Game // Aggregate Root
         ));
 
         AddDomainEvent(new RoundStarted(
-            Id, RoundNumber, playerIds, Deck.CardsRemaining, SetAsideCard?.Type,
-            PubliclySetAsideCards.Select(c => new PublicCardInfo(c.AppearanceId, c.Type)).ToList(),
+            Id, RoundNumber, playerIds, Deck.CardsRemaining, SetAsideCard?.Rank,
+            PubliclySetAsideCards.Select(c => new PublicCardInfo(c.AppearanceId, c.Rank)).ToList(),
             _deckDefinitionId // Use stored _deckDefinitionId
         ));
         HandleTurnStartDrawing();
@@ -195,7 +195,7 @@ public class Game // Aggregate Root
 
     public void PlayCard(Guid playerId, Card cardToPlayInstance, Guid? targetPlayerId, CardType? guessedCardType)
     {
-        var cardType = cardToPlayInstance.Type;
+        var cardType = cardToPlayInstance.Rank;
         ValidatePlayCardAction(playerId, cardToPlayInstance, targetPlayerId, guessedCardType);
         var actingPlayer = GetPlayerById(playerId);
         Player? targetPlayer = targetPlayerId.HasValue ? GetPlayerById(targetPlayerId.Value) : null;
@@ -252,7 +252,7 @@ public class Game // Aggregate Root
 
     private void ValidatePlayCardAction(Guid playerId, Card cardToPlayInstance, Guid? targetPlayerId, CardType? guessedCardType)
     {
-        var cardType = cardToPlayInstance.Type;
+        var cardType = cardToPlayInstance.Rank;
         if (GamePhase != GamePhase.RoundInProgress) throw new InvalidMoveException("Cannot play cards when the round is not in progress.");
         if (CurrentTurnPlayerId != playerId) throw new InvalidMoveException($"It is not player {GetPlayerById(playerId).Name}'s turn.");
         var player = GetPlayerById(playerId);
@@ -384,7 +384,7 @@ public class Game // Aggregate Root
         }
 
         Card? revealedCard = targetPlayer.Hand.GetHeldCard();
-        string? revealedCardStringName = revealedCard?.Type.ToString();
+        string? revealedCardStringName = revealedCard?.Rank.ToString();
 
         // Public log about the action (without revealing the card)
         string publicLogMessage = $"{actingPlayerName} used Priest on {targetPlayerName} to look at their hand.";
@@ -403,7 +403,7 @@ public class Game // Aggregate Root
         // Domain event to notify the specific player (handler will use this)
         if (revealedCard != null)
         {
-            AddDomainEvent(new PriestEffectUsed(Id, actingPlayer.Id, targetPlayer.Id, revealedCard.AppearanceId, revealedCard.Type));
+            AddDomainEvent(new PriestEffectUsed(Id, actingPlayer.Id, targetPlayer.Id, revealedCard.AppearanceId, revealedCard.Rank));
         }
     }
 
@@ -448,21 +448,21 @@ public class Game // Aggregate Root
         Player? eliminatedPlayer = null;
         string outcomeMessage;
 
-        if (actingPlayerCard.Type.Value > targetPlayerCard.Type.Value)
+        if (actingPlayerCard.Rank.Value > targetPlayerCard.Rank.Value)
         {
             eliminatedPlayer = targetPlayer;
             EliminatePlayer(targetPlayer.Id, "lost Baron comparison to {actingPlayerName} (their {targetPlayerCard.Type.ToString()} vs {actingPlayerCard.Type.ToString()})", baronCardInstance); // Use baronCardInstance
-            outcomeMessage = $"{actingPlayerName} (holding {actingPlayerCard.Type.ToString()}) won the Baron comparison against {targetPlayerName} (holding {targetPlayerCard.Type.ToString()}). {targetPlayerName} is eliminated.";
+            outcomeMessage = $"{actingPlayerName} (holding {actingPlayerCard.Rank.ToString()}) won the Baron comparison against {targetPlayerName} (holding {targetPlayerCard.Rank.ToString()}). {targetPlayerName} is eliminated.";
         }
-        else if (targetPlayerCard.Type.Value > actingPlayerCard.Type.Value)
+        else if (targetPlayerCard.Rank.Value > actingPlayerCard.Rank.Value)
         {
             eliminatedPlayer = actingPlayer;
             EliminatePlayer(actingPlayer.Id, "lost Baron comparison to {targetPlayerName} (their {actingPlayerCard.Type.ToString()} vs {targetPlayerCard.Type.ToString()})", baronCardInstance); // Use baronCardInstance
-            outcomeMessage = $"{targetPlayerName} (holding {targetPlayerCard.Type.ToString()}) won the Baron comparison against {actingPlayerName} (holding {actingPlayerCard.Type.ToString()}). {actingPlayerName} is eliminated.";
+            outcomeMessage = $"{targetPlayerName} (holding {targetPlayerCard.Rank.ToString()}) won the Baron comparison against {actingPlayerName} (holding {actingPlayerCard.Rank.ToString()}). {actingPlayerName} is eliminated.";
         }
         else // Draw
         {
-            outcomeMessage = $"{actingPlayerName} (holding {actingPlayerCard.Type.ToString()}) and {targetPlayerName} (holding {targetPlayerCard.Type.ToString()}) tied in the Baron comparison. No one is eliminated.";
+            outcomeMessage = $"{actingPlayerName} (holding {actingPlayerCard.Rank.ToString()}) and {targetPlayerName} (holding {targetPlayerCard.Rank.ToString()}) tied in the Baron comparison. No one is eliminated.";
         }
 
         AddGameLogEntry(new GameLogEntry(
@@ -483,9 +483,9 @@ public class Game // Aggregate Root
         AddDomainEvent(new BaronComparisonResult(
             Id,
             actingPlayer.Id,
-            actingPlayerCard.Type,
+            actingPlayerCard.Rank,
             targetPlayer.Id,
-            targetPlayerCard.Type,
+            targetPlayerCard.Rank,
             eliminatedPlayer?.Id
         ));
     }
@@ -603,7 +603,7 @@ public class Game // Aggregate Root
              return;
         }
 
-        string discardLogMessage = $"{actingPlayerName} used Prince on {targetPlayerName}. {targetPlayerName} discarded their {discardedCard.Type.ToString()}.";
+        string discardLogMessage = $"{actingPlayerName} used Prince on {targetPlayerName}. {targetPlayerName} discarded their {discardedCard.Rank.ToString()}.";
         AddGameLogEntry(new GameLogEntry(
             GameLogEventType.PrinceDiscard, // Corrected EventType
             actingPlayer.Id,
@@ -617,9 +617,9 @@ public class Game // Aggregate Root
             TargetDiscardedCard = discardedCard // The card the target player discarded
         });
 
-        AddDomainEvent(new PrinceEffectUsed(Id, actingPlayer.Id, targetPlayer.Id, discardedCard.Type, discardedCard.AppearanceId));
+        AddDomainEvent(new PrinceEffectUsed(Id, actingPlayer.Id, targetPlayer.Id, discardedCard.Rank, discardedCard.AppearanceId));
 
-        if (discardedCard.Type == CardType.Princess)
+        if (discardedCard.Rank == CardType.Princess)
         {
             EliminatePlayer(targetPlayer.Id, "discarding the Princess to a Prince", discardedCard); // Princess is responsible for its own elimination
         }
@@ -640,7 +640,7 @@ public class Game // Aggregate Root
                 targetPlayer.GiveCard(SetAsideCard);
                 newCardDrawn = SetAsideCard;
                 AddDomainEvent(new PlayerDrewCard(Id, targetPlayer.Id)); 
-                var usedType = SetAsideCard.Type; SetAsideCard = null; 
+                var usedType = SetAsideCard.Rank; SetAsideCard = null; 
                 AddDomainEvent(new SetAsideCardUsed(Id, usedType));
             }
 
@@ -700,7 +700,7 @@ public class Game // Aggregate Root
                 Id,                         // GameId
                 player.Id,                  // PlayerId
                 reason,                     // Reason for elimination
-                cardResponsible?.Type
+                cardResponsible?.Rank
             );
             AddDomainEvent(playerEliminatedEvent);
         }
@@ -747,8 +747,8 @@ public class Game // Aggregate Root
             }
             else
             {
-                var highestRank = activePlayers.Max(p => p.Hand.GetHeldCard()?.Rank ?? -1);
-                var potentialWinners = activePlayers.Where(p => (p.Hand.GetHeldCard()?.Rank ?? -1) == highestRank).ToList();
+                var highestRank = activePlayers.Max(p => p.Hand.GetHeldCard()?.Rank.Value ?? -1);
+                var potentialWinners = activePlayers.Where(p => (p.Hand.GetHeldCard()?.Rank.Value ?? -1) == highestRank).ToList();
 
                 if (potentialWinners.Count == 1) { winningPlayer = potentialWinners.Single(); }
                 else // Tie in rank, compare discard piles

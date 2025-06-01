@@ -79,22 +79,22 @@ public class Player // Entity
     internal void PlayCard(Card cardInstance)
     {
         _logger.LogDebug("Player {PlayerName} ({PlayerId}) hand BEFORE playing {CardType} ({CardInstanceId}): {HandCards}", 
-            Name, Id, cardInstance.Type.Name, cardInstance.AppearanceId.Substring(0,4), 
-            string.Join(", ", Hand.Cards.Select(c => $"{c.Type.Name}({c.AppearanceId.Substring(0,4)})")));
+            Name, Id, cardInstance.Rank.Name, cardInstance.AppearanceId.Substring(0,4), 
+            string.Join(", ", Hand.Cards.Select(c => $"{c.Rank.Name}({c.AppearanceId.Substring(0,4)})")));
 
         Hand = Hand.Remove(cardInstance); // This is PlayerHand.Remove which calls ImmutableList<Card>.Remove
-        PlayedCards.Add(cardInstance.Type);
+        PlayedCards.Add(cardInstance.Rank);
 
         _logger.LogDebug("Player {PlayerName} ({PlayerId}) hand AFTER playing {CardType} ({CardInstanceId}): {HandCards}", 
-            Name, Id, cardInstance.Type.Name, cardInstance.AppearanceId.Substring(0,4), 
-            string.Join(", ", Hand.Cards.Select(c => $"{c.Type.Name}({c.AppearanceId.Substring(0,4)})")));
+            Name, Id, cardInstance.Rank.Name, cardInstance.AppearanceId.Substring(0,4), 
+            string.Join(", ", Hand.Cards.Select(c => $"{c.Rank.Name}({c.AppearanceId.Substring(0,4)})")));
     }
 
     internal Card? DiscardHand(bool deckEmpty)
     {
         var card = Hand.GetHeldCard();
         Hand = Hand.Empty;
-        if (card != null) PlayedCards.Add(card.Type);
+        if (card != null) PlayedCards.Add(card.Rank);
         return card;
     } // Simplified
 

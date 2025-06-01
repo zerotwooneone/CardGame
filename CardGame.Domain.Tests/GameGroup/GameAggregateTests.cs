@@ -98,12 +98,12 @@ public class GameAggregateTests
             game.CurrentTurnPlayerId.Should().Be(player2.Id);
             player1.Hand.Count.Should().Be(1);
             player1.Hand.GetHeldCard().Should().Be(cardToKeepInstance);
-            player1.PlayedCards.Should().Contain(cardToPlayInstance.Type);
+            player1.PlayedCards.Should().Contain(cardToPlayInstance.Rank);
             game.DiscardPile.Should().Contain(cardToPlayInstance);
             game.DiscardPile.Last().Should().Be(cardToPlayInstance);
             player2.Status.Should().Be(PlayerStatus.Active);
             player2.Hand.Count.Should().Be(2);
-            var player2HandCardTypes = player2.Hand.GetCards().Select(c => c.Type).ToList();
+            var player2HandCardTypes = player2.Hand.GetCards().Select(c => c.Rank).ToList();
             player2HandCardTypes.Should().BeEquivalentTo(new[] {CardType.Guard, CardType.Baron});
             player2.Hand.GetCards().Should().Contain(p2DealtCard);
             player2.Hand.GetCards().Should().Contain(c => c.AppearanceId == CardType.Baron.Name);
@@ -116,7 +116,7 @@ public class GameAggregateTests
                 ExcludeEventMetadata<PlayerPlayedCard>());
 
             events.Should().ContainSingle(e => e is PriestEffectUsed).Which.Should().BeEquivalentTo(
-                new PriestEffectUsed(game.Id, player1.Id, targetPlayerId, p2DealtCard.AppearanceId, p2DealtCard.Type),
+                new PriestEffectUsed(game.Id, player1.Id, targetPlayerId, p2DealtCard.AppearanceId, p2DealtCard.Rank),
                 ExcludeEventMetadata<PriestEffectUsed>());
 
             events.Should().ContainSingle(e => e is TurnStarted).Which.Should().BeEquivalentTo(
@@ -197,7 +197,7 @@ public class GameAggregateTests
                 // Construct expected PlayerRoundEndSummary list
                 var expectedPlayerSummaries = new List<PlayerRoundEndSummary>
                 {
-                    new PlayerRoundEndSummary(player1.Id, player1.Name, new List<Card> { cardToKeepInstance }, new List<int> { cardToPlayInstance.Rank }, 1),
+                    new PlayerRoundEndSummary(player1.Id, player1.Name, new List<Card> { cardToKeepInstance }, new List<int> { cardToPlayInstance.Rank.Value }, 1),
                     new PlayerRoundEndSummary(player2.Id, player2.Name, new List<Card>(), new List<int>(), 0) // Bob eliminated, no card, empty discard
                 };
                 events.OfType<RoundEnded>().Should().ContainSingle().Which.Should().BeEquivalentTo(
@@ -281,7 +281,7 @@ public class GameAggregateTests
 
                 var expectedPlayerSummariesRound1 = new List<PlayerRoundEndSummary>
                 {
-                    new PlayerRoundEndSummary(p1Id, "Alice", new List<Card> { p1Card_King }, new List<int> { p1Card_Handmaid.Rank }, 0),
+                    new PlayerRoundEndSummary(p1Id, "Alice", new List<Card> { p1Card_King }, new List<int> { p1Card_Handmaid.Rank.Value }, 0),
                     new PlayerRoundEndSummary(p2Id, "Bob", new List<Card> { p2Card_Princess }, new List<int>(), 1)
                 };
                 events.OfType<RoundEnded>().Should().ContainSingle().Which.Should().BeEquivalentTo(

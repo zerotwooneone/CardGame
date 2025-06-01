@@ -65,7 +65,7 @@ public class HandleKingEffectUsedAndNotify : INotificationHandler<DomainEventNot
         if (player1 != null)
         {
             var hand1Dto = player1.Hand.GetCards()
-                .Select(c => new CardDto {Rank = c.Rank, AppearanceId = c.AppearanceId}).ToList();
+                .Select(c => new CardDto {Rank = c.Rank.Value, AppearanceId = c.AppearanceId}).ToList();
             await _playerNotifier.SendHandUpdateAsync(player1.Id, hand1Dto, cancellationToken).ConfigureAwait(false);
         }
         else
@@ -78,7 +78,7 @@ public class HandleKingEffectUsedAndNotify : INotificationHandler<DomainEventNot
         if (player2 != null)
         {
             var hand2Dto = player2.Hand.GetCards()
-                .Select(c => new CardDto {Rank = c.Rank, AppearanceId = c.AppearanceId}).ToList();
+                .Select(c => new CardDto {Rank = c.Rank.Value, AppearanceId = c.AppearanceId}).ToList();
             await _playerNotifier.SendHandUpdateAsync(player2.Id, hand2Dto, cancellationToken).ConfigureAwait(false);
         }
         else
