@@ -19,6 +19,16 @@ This project acts as an orchestrator for the domain logic, handling application-
 *   **Direct Database Access or External Service Implementation**: These are responsibilities of `CardGame.Infrastructure`. The Application layer should use interfaces for these.
 *   **ASP.NET Core specific constructs**: Controllers, middleware, etc. belong in `CardGame.Web`.
 
+## Development Environment Setup
+
+*   **.NET SDK**: Ensure you have the .NET SDK installed (version compatible with the project).
+*   **IDE**: A C# compatible IDE like Visual Studio or Visual Studio Code with C# extensions.
+*   **Building**:
+    ```bash
+    dotnet build CardGame.Application.csproj
+    ```
+    (Usually built as part of the solution build).
+
 ## Tips for AI Assistants
 
 *   **CQRS Pattern**: This project heavily utilizes Command Query Responsibility Segregation (CQRS), often with MediatR. Look for `IRequest`, `IRequestHandler` implementations.

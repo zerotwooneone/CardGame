@@ -21,6 +21,16 @@ This project is the heart of the Love Letter card game application. It contains 
 *   Application-level services or command/query handlers (these belong in `CardGame.Application`).
 *   Direct dependencies on other projects within this solution, except potentially a shared kernel if one existed. It should be highly independent.
 
+## Development Environment Setup
+
+*   **.NET SDK**: Ensure you have the .NET SDK installed (version compatible with the project, likely .NET 6.0 or newer). You can download it from [the official .NET website](https://dotnet.microsoft.com/download).
+*   **IDE**: A C# compatible IDE like Visual Studio or Visual Studio Code with C# extensions.
+*   **Building**:
+    ```bash
+    dotnet build CardGame.Domain.csproj
+    ```
+    (Usually built as part of the solution build from the root or `CardGame.Web` project).
+
 ## Tips for AI Assistants
 
 *   **Ubiquitous Language**: This project defines the core terms and concepts of the game. Pay close attention to class and method names.

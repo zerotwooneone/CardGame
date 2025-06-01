@@ -18,6 +18,17 @@ This project implements the technical and external concerns of the application. 
 *   **Application-Level Orchestration**: This is the responsibility of `CardGame.Application`.
 *   **UI or API Controllers**: These belong in `CardGame.Web`.
 
+## Development Environment Setup
+
+*   **.NET SDK**: Ensure you have the .NET SDK installed (version compatible with the project).
+*   **IDE**: A C# compatible IDE like Visual Studio or Visual Studio Code with C# extensions.
+*   **Database (if applicable)**: If using a database like SQL Server, ensure it's running and accessible. Connection strings might need to be configured in `CardGame.Web`'s `appsettings.json`. (Note: Current project structure uses EF Core, but specific database setup details beyond this are not in current context).
+*   **Building**:
+    ```bash
+    dotnet build CardGame.Infrastructure.csproj
+    ```
+    (Usually built as part of the solution build).
+
 ## Tips for AI Assistants
 
 *   **Implementation Details**: This project contains the "how" – how data is stored, how notifications are sent, etc.
