@@ -23,22 +23,7 @@ public class TestRandomizer : CardGame.Domain.Common.IRandomizer
         {
             n--;
             int k = _random.Next(n + 1);
-            T value = list[k];
-            list[k] = list[n];
-            list[n] = value;
-        }
-    }
-
-    public void Shuffle<T>(T[] array)
-    {
-        int n = array.Length;
-        while (n > 1)
-        {
-            n--;
-            int k = _random.Next(n + 1);
-            T value = array[k];
-            array[k] = array[n];
-            array[n] = value;
+            (list[k], list[n]) = (list[n], list[k]);
         }
     }
 }
