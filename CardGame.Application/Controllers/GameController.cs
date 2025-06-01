@@ -135,7 +135,7 @@ public class GameController : ControllerBase
 
             return CreatedAtRoute("GetSpectatorGameState", new {gameId = gameId}, gameId);
         }
-        catch (FluentValidation.ValidationException ex) // Catch validation errors from handler/pipeline
+        catch (ValidationException ex) // Catch validation errors from handler/pipeline
         {
             var errors = ex.Errors.GroupBy(e => e.PropertyName)
                 .ToDictionary(g => g.Key, g => g.Select(e => e.ErrorMessage).ToArray());

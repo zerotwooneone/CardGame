@@ -100,14 +100,14 @@ public class Player // Entity
 
     internal void SwapHandWith(Player otherPlayer)
     {
-        var tmp = this.Hand;
-        this.Hand = otherPlayer.Hand;
+        var tmp = Hand;
+        Hand = otherPlayer.Hand;
         otherPlayer.Hand = tmp;
     } // Simplified
 
     internal void SetProtection(bool isProtected)
     {
-        this.IsProtected = isProtected;
+        IsProtected = isProtected;
     }
 
     internal void Eliminate()

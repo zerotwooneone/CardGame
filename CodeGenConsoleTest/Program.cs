@@ -41,7 +41,7 @@ namespace CodeGenConsoleTest
         private static readonly int _princess = 8;
 
         // You can add other non-static or static members to this partial class manually
-        public bool IsRoyalty() => this == CardType.King || this == CardType.Prince || this == CardType.Princess || this == CardType.Countess;
+        public bool IsRoyalty() => this == King || this == Prince || this == Princess || this == Countess;
     }
 
     // 2. Use the generated members on the CardType class

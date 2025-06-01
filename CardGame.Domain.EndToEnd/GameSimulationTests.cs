@@ -330,12 +330,12 @@ namespace CardGame.Domain.EndToEnd
         [Test]
         public void Should_Successfully_Complete_Multiple_Games_In_Parallel()
         {
-            int numberOfGames = 60;
+            int numberOfGames = 600;
             var exceptions = new System.Collections.Concurrent.ConcurrentBag<Exception>();
 
             Console.WriteLine($"Starting {numberOfGames} games in parallel...");
 
-            System.Threading.Tasks.Parallel.For(0, numberOfGames, i =>
+            Parallel.For(0, numberOfGames, i =>
             {
                 try
                 {

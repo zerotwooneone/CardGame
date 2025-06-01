@@ -6,7 +6,7 @@
 /// </summary>
 // Optional: Add Serializable attribute if needed
 // [Serializable]
-public class DomainException : System.Exception
+public class DomainException : Exception
 {
     /// <summary>
     /// Gets the integer error code associated with this exception type.
@@ -45,7 +45,7 @@ public class DomainException : System.Exception
     /// <param name="message">The error message that explains the reason for the exception.</param>
     /// <param name="innerException">The exception that is the cause of the current exception.</param>
     /// <param name="errorCode">The integer error code (>= 1000).</param>
-    public DomainException(string message, System.Exception innerException, int errorCode)
+    public DomainException(string message, Exception innerException, int errorCode)
         : base(message, innerException)
     {
         ValidateErrorCode(errorCode);
