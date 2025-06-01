@@ -5,13 +5,9 @@ using CardGame.Domain.Providers;  // For DefaultDeckProvider
 using CardGame.Domain.Types;      // For CardType, PlayerStatus
 using CardGame.Domain.Game.GameException; // For GameRuleException and InvalidMoveException
 using GameUnderTest = CardGame.Domain.Game.Game;
-using NUnit.Framework;
-using FluentAssertions.Execution;
 
 namespace CardGame.Domain.EndToEnd
 {
-    // TestRandomizer now implements the correct IRandomizer interface
-
     [TestFixture]
     public class GameSimulationTests
     {

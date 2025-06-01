@@ -1,6 +1,6 @@
 namespace CardGame.Domain.EndToEnd;
 
-public class TestRandomizer : CardGame.Domain.Common.IRandomizer
+public class TestRandomizer : Common.IRandomizer
 {
     private readonly Random _random;
     public int Seed { get; }
@@ -16,12 +16,7 @@ public class TestRandomizer : CardGame.Domain.Common.IRandomizer
         return _random.Next(minValue, maxValue);
     }
 
-    public int Next(int maxValue)
-    {
-        return Next(0, maxValue);
-    }
-
-    public void Shuffle<T>(System.Collections.Generic.IList<T> list)
+    public void Shuffle<T>(IList<T> list)
     {
         int n = list.Count;
         while (n > 1)
