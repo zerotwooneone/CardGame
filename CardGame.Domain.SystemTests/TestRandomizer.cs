@@ -1,4 +1,4 @@
-namespace CardGame.Domain.EndToEnd;
+namespace CardGame.Domain.SystemTests;
 
 public class TestRandomizer : Common.IRandomizer
 {

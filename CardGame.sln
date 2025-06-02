@@ -27,7 +27,7 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CardGame.Application", "Car
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CardGame.Infrastructure", "CardGame.Infrastructure\CardGame.Infrastructure.csproj", "{976E059D-B6E2-45E4-AAE7-31F47C5DA843}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CardGame.Domain.EndToEnd", "CardGame.Domain.EndToEnd\CardGame.Domain.EndToEnd.csproj", "{E9404599-AA6B-42D7-8CBC-723188797C81}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CardGame.Domain.SystemTests", "CardGame.Domain.SystemTests\CardGame.Domain.SystemTests.csproj", "{E9404599-AA6B-42D7-8CBC-723188797C81}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

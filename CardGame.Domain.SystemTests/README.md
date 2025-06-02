@@ -1,6 +1,6 @@
-# CardGame.Domain.EndToEnd
+# CardGame.Domain.SystemTests
 
-This project contains end-to-end (E2E) tests for the `CardGame.Domain` library. The primary purpose of these tests is to simulate complete game plays to validate the core domain logic, game progression, rule enforcement, and overall stability of the Love Letter game implementation under various scenarios.
+This project contains system tests for the `CardGame.Domain` library. The primary purpose of these tests is to simulate complete game plays to validate the core domain logic, game progression, rule enforcement, and overall stability of the Love Letter game implementation under various scenarios.
 
 ## Key Focus Areas for Tests
 
@@ -21,10 +21,10 @@ This project contains end-to-end (E2E) tests for the `CardGame.Domain` library. 
 Tests can be executed through:
 
 *   **Visual Studio Test Explorer:** Discover and run tests directly within the IDE.
-*   **Command Line:** Using the `dotnet test` command in the terminal, typically navigated to the solution root or the `CardGame.Domain.EndToEnd` project directory.
+*   **Command Line:** Using the `dotnet test` command in the terminal, typically navigated to the solution root or the `CardGame.Domain.SystemTests` project directory.
     ```bash
     # From solution root
-    dotnet test --filter "TestCategory=CardGame.Domain.EndToEnd"
+    dotnet test --filter "TestCategory=CardGame.Domain.SystemTests"
 
     # Or from the project directory
     dotnet test
@@ -32,6 +32,6 @@ Tests can be executed through:
 
 ## Important Notes
 
-*   **High-Level Validation:** These E2E tests focus on the overall game flow, critical rule enforcement (e.g., card effects, player elimination, round/game end conditions), and the integrity of the `Game` aggregate. They are not intended to exhaustively check every possible game state permutation after each individual turn, as unit tests in `CardGame.Domain.Tests` cover more granular logic.
+*   **High-Level Validation:** These system tests focus on the overall game flow, critical rule enforcement (e.g., card effects, player elimination, round/game end conditions), and the integrity of the `Game` aggregate. They are not intended to exhaustively check every possible game state permutation after each individual turn, as unit tests in `CardGame.Domain.Tests` cover more granular logic.
 *   **Seed-Based Debugging:** When a test fails, the logged seed is crucial for debugging. The `Should_Successfully_Complete_Specific_Game_With_Random_Plays` test method can be used by providing it the failing seed to deterministically reproduce the scenario.
 *   **Test AI Limitations:** The 'AI' within the tests for selecting cards and targets is designed to make valid moves where possible. If it encounters a situation where no valid move can be made according to its logic (and the game rules), it may throw an assertion to highlight this, which is distinct from a domain exception.

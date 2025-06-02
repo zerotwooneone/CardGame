@@ -1,13 +1,18 @@
+using CardGame.Domain.Game;
+using CardGame.Domain.Game.GameException;
+using CardGame.Domain.Interfaces;
+using CardGame.Domain.Providers;
+using CardGame.Domain.Types;
 using FluentAssertions;
-using CardGame.Domain.Game;       // For Game, Player, Card, Hand, PlayerInfo, DeckDefinition
-using CardGame.Domain.Interfaces; // For IDeckProvider
-using CardGame.Domain.Providers;  // For DefaultDeckProvider
-using CardGame.Domain.Types;      // For CardType, PlayerStatus
-using CardGame.Domain.Game.GameException; // For GameRuleException and InvalidMoveException
 using Microsoft.Extensions.Logging;
+// For Game, Player, Card, Hand, PlayerInfo, DeckDefinition
+// For IDeckProvider
+// For DefaultDeckProvider
+// For CardType, PlayerStatus
+// For GameRuleException and InvalidMoveException
 using GameUnderTest = CardGame.Domain.Game.Game;
 
-namespace CardGame.Domain.EndToEnd
+namespace CardGame.Domain.SystemTests
 {
     [TestFixture]
     public class GameSimulationTests

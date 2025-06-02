@@ -23,6 +23,7 @@ This project is a C# and Angular implementation of the popular card game "Love L
 * **`CardGame.Application`:** Orchestrates use cases. Contains Commands, Queries, Handlers (using MediatR), DTOs, validation logic (FluentValidation), and application-level interfaces (`INotificationService`, `IGameStateBroadcaster`, `IUserAuthenticationService`). Depends on Domain.
 * **`CardGame.Infrastructure`:** Implements interfaces defined in lower layers. Contains repository implementations (`InMemoryGameRepository`, `InMemoryUserRepository`), SignalR notification/broadcaster implementations, and potentially database access logic (e.g., EF Core DbContext) in a real-world scenario. Depends on Application and Domain.
 * **`CardGame.Web`:** The ASP.NET Core Web API project. Contains API Controllers, SignalR Hubs (`NotificationHub`, `GameHub`), `Program.cs` for setup (DI, middleware), DTOs specific to API requests/responses, and serves the built Angular frontend. Depends on Application and Infrastructure.
+* **`CardGame.Domain.SystemTests`:** Contains system tests for the `CardGame.Domain` library, simulating full game plays.
 
 ### Frontend (Angular) - Package by Feature
 
