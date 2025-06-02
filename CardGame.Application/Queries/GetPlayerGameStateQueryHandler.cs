@@ -98,6 +98,7 @@ public class GetPlayerGameStateQueryHandler : IRequestHandler<GetPlayerGameState
         var playerStateDto = new PlayerGameStateDto
         {
             GameId = game.Id,
+            DeckDefinitionId = game.DeckDefinitionId, // Populate DeckDefinitionId
             RoundNumber = game.RoundNumber,
             GamePhase = game.GamePhase.Value,
             CurrentTurnPlayerId = game.CurrentTurnPlayerId,

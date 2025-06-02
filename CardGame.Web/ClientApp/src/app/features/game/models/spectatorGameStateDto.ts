@@ -11,6 +11,7 @@ export interface SpectatorGameStateDto {
   roundNumber: number;
   gamePhase: GamePhase;
   currentTurnPlayerId: string;
+  deckDefinitionId: string;
   tokensNeededToWin: number;
   players: SpectatorPlayerDto[];
   deckCardsRemaining: number;

@@ -9,6 +9,7 @@ public class SpectatorGameStateDto
     public int RoundNumber { get; set; }
     public int GamePhase { get; set; } 
     public Guid CurrentTurnPlayerId { get; set; }
+    public Guid DeckDefinitionId { get; set; } // Added DeckDefinitionId
     public int TokensNeededToWin { get; set; }
     public List<SpectatorPlayerDto> Players { get; set; } = new List<SpectatorPlayerDto>();
     public int DeckCardsRemaining { get; set; } // Count only

@@ -16,6 +16,11 @@ public class PlayerGameStateDto
     public List<CardDto> DiscardPile { get; set; } = new List<CardDto>();
 
     /// <summary>
+    /// Gets or sets the ID of the deck definition used for this game.
+    /// </summary>
+    public Guid DeckDefinitionId { get; set; }
+
+    /// <summary>
     /// Gets or sets the game log entries.
     /// </summary>
     public List<GameLogEntryDto> GameLog { get; set; } = new List<GameLogEntryDto>();

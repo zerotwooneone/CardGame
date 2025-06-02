@@ -140,6 +140,9 @@ export class GameStateService implements OnDestroy {
       state => { // state here is SpectatorGameStateDto
         console.log(`GameStateService Received spectator state update via SignalR.`);
         this.combinedStateSignal.set(state); // Update combinedStateSignal
+        if (state?.deckDefinitionId) {
+          this.deckService.setSelectedDeckId(state.deckDefinitionId);
+        }
       }
     );
 
@@ -199,6 +202,9 @@ export class GameStateService implements OnDestroy {
 
       // 2. Set initial state from API response
       this.combinedStateSignal.set(initialState); // Set combinedStateSignal with PlayerGameStateDto
+      if (initialState?.deckDefinitionId) {
+        this.deckService.setSelectedDeckId(initialState.deckDefinitionId);
+      }
       this.playerHandSignal.set(initialState.playerHand ?? []); // Set the initial hand
       console.log("GameStateService: Initial state loaded.");
 
@@ -246,6 +252,9 @@ export class GameStateService implements OnDestroy {
         try {
           const playerState = await this.fetchInitialPlayerState(gameId, currentUserId);
           this.combinedStateSignal.set(playerState);
+          if (playerState?.deckDefinitionId) {
+            this.deckService.setSelectedDeckId(playerState.deckDefinitionId);
+          }
           this.playerHandSignal.set(playerState.playerHand ?? []);
           console.log("GameStateService: Player state loaded.");
           isSpectator = false;
@@ -259,6 +268,9 @@ export class GameStateService implements OnDestroy {
         console.log(`GameStateService: Fetching spectator state for Game ${gameId}`);
         const spectatorState = await this.fetchInitialSpectatorState(gameId);
         this.combinedStateSignal.set(spectatorState);
+        if (spectatorState?.deckDefinitionId) {
+          this.deckService.setSelectedDeckId(spectatorState.deckDefinitionId);
+        }
         this.playerHandSignal.set([]); // Ensure hand is empty for spectators
         console.log("GameStateService: Spectator state loaded.");
       }
@@ -305,6 +317,9 @@ export class GameStateService implements OnDestroy {
       console.log(`GameStateService: Fetching spectator state for Game ${gameId}`);
       const spectatorState = await this.fetchInitialSpectatorState(gameId);
       this.combinedStateSignal.set(spectatorState);
+      if (spectatorState?.deckDefinitionId) {
+        this.deckService.setSelectedDeckId(spectatorState.deckDefinitionId);
+      }
       this.playerHandSignal.set([]); // Ensure hand is empty for spectators
       console.log("GameStateService: Spectator state loaded.");
 
@@ -359,6 +374,9 @@ export class GameStateService implements OnDestroy {
       const initialState = await this.fetchInitialSpectatorState(gameId);
 
       this.combinedStateSignal.set(initialState);
+      if (initialState?.deckDefinitionId) {
+        this.deckService.setSelectedDeckId(initialState.deckDefinitionId);
+      }
       // Spectators don't have a hand, but clear it to be safe
       this.playerHandSignal.set([]);
       console.log("GameStateService: Initial spectator state loaded.");

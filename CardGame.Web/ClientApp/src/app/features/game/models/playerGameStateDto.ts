@@ -12,6 +12,7 @@ export interface PlayerGameStateDto {
   roundNumber: number;
   gamePhase: GamePhase;
   currentTurnPlayerId: string;
+  deckDefinitionId: string;
   tokensNeededToWin: number;
   players: PlayerHandInfoDto[];
   deckCardsRemaining: number;

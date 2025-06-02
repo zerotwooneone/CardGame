@@ -48,6 +48,7 @@ public class GetSpectatorGameStateQueryHandler : IRequestHandler<GetSpectatorGam
         var spectatorDto = new SpectatorGameStateDto
         {
             GameId = game.Id,
+            DeckDefinitionId = game.DeckDefinitionId, // Populate DeckDefinitionId
             RoundNumber = game.RoundNumber,
             GamePhase = game.GamePhase.Value, 
             CurrentTurnPlayerId = game.CurrentTurnPlayerId,
