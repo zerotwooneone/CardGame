@@ -10,7 +10,7 @@ export interface DeckDefinitionDto {
 }
 
 @Injectable({
-  providedIn: 'any'
+  providedIn: 'root'
 })
 export class DeckService {
   private apiUrl = '/api/deck';
@@ -37,7 +37,8 @@ export class DeckService {
     return map;
   });
   public readonly backAppearanceId: Signal<string | null> = computed(() => {
-    return this._deckDefinition()?.backAppearanceId ?? null;
+    const deck = this._deckDefinition();
+    return deck?.backAppearanceId ?? null;
   });
 
   constructor() {
@@ -68,6 +69,14 @@ export class DeckService {
         this._error.set(null);
       }
     });
+  }
+
+  /**
+   * Sets the selected deck ID, triggering a new deck fetch.
+   * @param deckId The ID of the deck to select.
+   */
+  public setSelectedDeckId(deckId: string): void {
+    this.selectedDeckId.set(deckId);
   }
 
   /**

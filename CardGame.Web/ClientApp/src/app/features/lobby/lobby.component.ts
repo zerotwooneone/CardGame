@@ -33,6 +33,7 @@ import {CreateGameDialogResult} from './models/createGameDialogResult';
 import {CreateGameDialogComponent} from './create-game-dialog/create-game-dialog.component';
 import {CreateGameDialogData} from './models/createGameDialogData';
 import {CreateGameRequestDto} from '../game/models/createGameRequestDto'; // Still needed to start connection
+import { DeckService } from '@features/game/services/deck.service'; // Added DeckService import
 
 
 @Component({
@@ -74,6 +75,7 @@ export class LobbyComponent implements OnInit, OnDestroy {
   private dialog = inject(MatDialog);
   private cdr = inject(ChangeDetectorRef);
   private gameActionService = inject(GameActionService); // Inject GameActionService
+  private deckService = inject(DeckService); // Inject DeckService
 
   constructor() { }
 
@@ -177,6 +179,9 @@ export class LobbyComponent implements OnInit, OnDestroy {
               } catch (e) { console.warn("Dialog returned invalid friend code string:", code); }
             });
           }
+
+          // Set the selected deck ID in the DeckService
+          this.deckService.setSelectedDeckId(result.deckId);
 
           // Call backend to create game
           this.createGame(allPlayerIds.filter(id => id !== null) as string[], result.deckId); 
