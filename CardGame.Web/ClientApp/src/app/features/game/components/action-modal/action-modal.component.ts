@@ -1,4 +1,4 @@
-import {Component, inject, OnInit} from '@angular/core';
+import {Component, inject, OnInit, computed} from '@angular/core';
 import {CommonModule} from '@angular/common';
 import {FormBuilder, FormGroup, ReactiveFormsModule, Validators} from '@angular/forms';
 import {MAT_DIALOG_DATA, MatDialogModule, MatDialogRef} from '@angular/material/dialog';
@@ -10,6 +10,8 @@ import {ActionModalData} from '../../actionModalData';
 import {ActionModalResult} from '../../actionModalResult';
 import {MatSelectModule} from '@angular/material/select';
 import {MatRadioModule} from '@angular/material/radio';
+import { CardDisplayComponent } from '../card-display/card-display.component';
+import { DeckService } from '../../services/deck.service';
 
 @Component({
   selector: 'app-action-modal',
@@ -23,7 +25,8 @@ import {MatRadioModule} from '@angular/material/radio';
     MatSelectModule,
     MatRadioModule,
     MatDividerModule,
-    MatListModule
+    MatListModule,
+    CardDisplayComponent
   ],
   templateUrl: './action-modal.component.html',
   styleUrls: ['./action-modal.component.scss']
@@ -35,11 +38,24 @@ export class ActionModalComponent implements OnInit {
   public data: ActionModalData = inject(MAT_DIALOG_DATA);
   private dialogRef = inject(MatDialogRef<ActionModalComponent, ActionModalResult>); // Specify result type
   private fb = inject(FormBuilder);
+  private deckService = inject(DeckService);
 
   actionForm: FormGroup;
   filteredPlayers: { id: string; name: string; isProtected: boolean }[] = [];
   // This property will hold the filtered card types { value: number; name: string }
   filteredCardTypes: { value: number; name: string }[] = [];
+
+  // Computed signal for display
+  cardTypesForDisplay = computed(() => {
+    const currentDeck = this.deckService.deckDefinition();
+    if (!currentDeck || !currentDeck.cards) {
+      return this.filteredCardTypes.map(ct => ({ ...ct, appearanceId: '' }));
+    }
+    return this.filteredCardTypes.map(ct => {
+      const deckCard = currentDeck.cards.find(dc => dc.rank === ct.value);
+      return { ...ct, appearanceId: deckCard?.appearanceId ?? '' };
+    });
+  });
 
   constructor() {
     // Initialize form - controls added dynamically in ngOnInit

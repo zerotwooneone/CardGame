@@ -8,15 +8,23 @@
 <mat-tab-group class="full-height-tabs" #tabGroup>
   <mat-tab label="Cards">
     <mat-list role="list" class="reference-list">
-      <div *ngFor="let card of cardReferences;  let last = last; trackBy: trackByRank">
-        <mat-list-item role="listitem" class="reference-item" [id]="'card-ref-' + card.rank">
-          <mat-icon matListItemIcon class="card-rank-icon">{{ 'filter_' + card.rank }}</mat-icon>
-          <div matListItemTitle class="card-name">{{ card.name }} ({{ card.rank }})</div>
-          <div matListItemLine class="card-count">In deck: {{ card.countInDeck }}</div>
-          <div matListItemLine class="card-effect">{{ card.effectDescription }}</div>
-          <div *ngIf="card.specialNote" matListItemLine class="card-special-note">
-            <mat-icon class="note-icon">info_outline</mat-icon>
-            <span>{{ card.specialNote }}</span>
+      <div *ngFor="let refItem of cardReferencesForDisplay(); let i = index; let last = last; trackBy: trackByRank">
+        <mat-list-item role="listitem" class="reference-item" [id]="'card-ref-' + refItem.rank">
+          <div class="reference-item-content">
+            <div class="card-visuals-container">
+              <div *ngFor="let appearance of refItem.appearances" class="card-visual-wrapper">
+                <app-card-display [card]="{ rank: appearance.rank, appearanceId: appearance.appearanceId }" [isPlayable]="false"></app-card-display>
+              </div>
+            </div>
+            <div class="card-details-container">
+              <div matListItemTitle class="card-name">{{ refItem.name }} ({{ refItem.rank }})</div>
+              <div matListItemLine class="card-count">In deck: {{ refItem.countInDeck }}</div>
+              <div matListItemLine class="card-effect">{{ refItem.effectDescription }}</div>
+              <div *ngIf="refItem.specialNote" matListItemLine class="card-special-note">
+                <mat-icon class="note-icon">info_outline</mat-icon>
+                <span>{{ refItem.specialNote }}</span>
+              </div>
+            </div>
           </div>
         </mat-list-item>
         <mat-divider *ngIf="!last"></mat-divider>
@@ -27,3 +35,45 @@
     <app-game-log></app-game-log>
   </mat-tab>
 </mat-tab-group>
+
+<style>
+  .reference-list {
+    height: 100%; /* Ensure list takes up available space */
+    overflow-y: auto; /* Enable scrolling on the list itself */
+  }
+
+  .reference-item {
+    /* Ensure the list item itself has a layout context and some min height */
+    display: block; /* Or flex, if you prefer to align its direct children */
+    min-height: 100px; /* Adjust as needed, should be enough for card + text */
+    padding-top: 10px; /* Add some padding */
+    padding-bottom: 10px;
+    border-bottom: 1px solid rgba(255,255,255,0.1); /* Optional: visual separator */
+  }
+
+  .reference-item-content {
+    display: flex;
+    align-items: flex-start; /* Align items to the top */
+    width: 100%;
+  }
+  .card-visuals-container {
+    display: flex; /* Arrange card visuals horizontally */
+    flex-wrap: wrap; /* Allow wrapping if too many cards */
+    gap: 5px; /* Space between card visuals */
+    margin-right: 15px;
+    /* max-width: 200px; /* Example: constrain width if needed */
+  }
+  .card-visual-wrapper {
+    /* Styles for individual card visual wrapper if needed, e.g., for consistent sizing */
+    width: 60px; /* Adjust as needed for desired card size in the list */
+    height: 90px; /* Adjust as needed */
+  }
+  .card-visual-wrapper app-card-display {
+    transform: scale(0.6); /* Scale down the card display */
+    transform-origin: top left;
+    display: block;
+  }
+  .card-details-container {
+    flex-grow: 1;
+  }
+</style>

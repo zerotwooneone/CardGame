@@ -16,7 +16,7 @@ import { SignalrService } from '@core/services/signalr.service';
 import { UiInteractionService } from '@features/card-reference/services/ui-interaction-service.service';
 import { CARD_DETAILS_MAP } from '../components/card-display/CARD_DETAILS_MAP';
 
-import { CardDisplayComponent } from '../components/card-display/card-display.component'; 
+import { CardDisplayComponent } from '../components/card-display/card-display.component';
 import { PlayerDisplayComponent } from '../components/player-display/player-display.component';
 import { CurrentPlayerControlComponent } from '../components/current-player-control/current-player-control.component';
 
@@ -349,7 +349,7 @@ export class GameViewComponent implements OnInit, OnDestroy {
   promptForGuardGuess(targetPlayerId: string): void {
     const dialogData: ActionModalData = {
       actionType: 'guess-card',
-      prompt: `Guess a card (2-8) for player ${this.getPlayerName(targetPlayerId)}:`,
+      prompt: `Guess a card for player ${this.getPlayerName(targetPlayerId)}:`,
       availableCardTypes: Object.values(CARD_DETAILS_MAP)
         .filter(card => card.rank !== 1) // Exclude Guard
         .map(card => ({ value: card.rank, name: card.name })),

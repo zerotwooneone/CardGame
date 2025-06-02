@@ -18,8 +18,14 @@
 
     <div *ngIf="data.actionType === 'guess-card'" class="radio-group-container">
       <mat-radio-group formControlName="selectedCardTypeValue" required color="primary">
-        <mat-radio-button *ngFor="let cardType of filteredCardTypes" [value]="cardType.value" class="radio-button">
-          {{ cardType.name }} </mat-radio-button>
+        <mat-radio-button *ngFor="let cardType of cardTypesForDisplay()" [value]="cardType.value" class="radio-button-with-card">
+          <div class="radio-option-content">
+            <div class="card-display-container">
+              <app-card-display [card]="{ rank: cardType.value, appearanceId: cardType.appearanceId }" [isPlayable]="false"></app-card-display>
+            </div>
+            <span class="card-name-label">{{ cardType.name }}</span>
+          </div>
+        </mat-radio-button>
       </mat-radio-group>
       <mat-error *ngIf="actionForm.get('selectedCardTypeValue')?.hasError('required') && actionForm.get('selectedCardTypeValue')?.touched">
         Card guess is required.
@@ -33,3 +39,41 @@
   <button mat-button (click)="onCancel()">Cancel</button>
   <button mat-raised-button color="primary" (click)="onConfirm()" [disabled]="actionForm.invalid">Confirm</button>
 </mat-dialog-actions>
+
+<style>
+  .radio-button-with-card {
+    display: flex; /* Use flex to align items */
+    align-items: center; /* Vertically center items */
+    margin-bottom: 10px; /* Spacing between radio buttons */
+  }
+
+  .radio-option-content {
+    display: flex;
+    align-items: center;
+  }
+
+  .card-display-container {
+    margin-right: 10px; /* Space between card image and text label */
+    width: 60px; /* Adjust as needed for desired card size */
+    height: 90px; /* Adjust as needed */
+  }
+
+  .card-display-container app-card-display {
+    transform: scale(0.6); /* Scale down the card display if it's too large */
+    transform-origin: top left;
+    display: block; /* Ensure it takes up space */
+  }
+
+  .card-name-label {
+    /* Style for the card name text if needed */
+  }
+
+  .full-width {
+    width: 100%;
+  }
+
+  .radio-group-container {
+    display: flex;
+    flex-direction: column;
+  }
+</style>

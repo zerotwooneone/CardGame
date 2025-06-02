@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import {Component, EventEmitter, inject, OnInit, Output, ViewChild, OnDestroy} from '@angular/core';
+import {Component, EventEmitter, inject, OnInit, Output, ViewChild, OnDestroy, computed } from '@angular/core';
 import {MatListModule} from '@angular/material/list';
 import {MatIconModule} from '@angular/material/icon';
 import {MatDividerModule} from '@angular/material/divider';
@@ -11,6 +11,8 @@ import { GameLogComponent } from '../../../game/components/game-log/game-log.com
 import { UiInteractionService, ScrollToCardReferenceRequest } from '../../services/ui-interaction-service.service';
 import { Subscription } from 'rxjs';
 import { ElementRef } from '@angular/core';
+import { CardDisplayComponent } from '../../../game/components/card-display/card-display.component';
+import { DeckService } from '../../../game/services/deck.service';
 
 @Component({
   selector: 'app-card-reference-sheet',
@@ -22,7 +24,8 @@ import { ElementRef } from '@angular/core';
     MatDividerModule,
     MatButtonModule,
     MatTabsModule,
-    GameLogComponent
+    GameLogComponent,
+    CardDisplayComponent
   ],
   templateUrl: './card-reference-sheet.component.html',
   styleUrls: ['./card-reference-sheet.component.scss']
@@ -31,12 +34,51 @@ export class CardReferenceSheetComponent implements OnInit, OnDestroy {
   private cardReferenceService = inject(CardReferenceService);
   private uiInteractionService = inject(UiInteractionService);
   private elementRef = inject(ElementRef);
+  private deckService = inject(DeckService);
 
   @ViewChild('tabGroup') tabGroup!: MatTabGroup;
   @Output() closeClicked = new EventEmitter<void>();
 
   cardReferences: CardReferenceItem[] = [];
   private scrollSubscription: Subscription | undefined;
+
+  public cardReferencesForDisplay = computed(() => {
+    const staticRefs = this.cardReferences;
+    const currentDeck = this.deckService.deckDefinition();
+
+    if (!currentDeck || !currentDeck.cards || currentDeck.cards.length === 0) {
+      // If no deck or deck has no cards, return static refs with a single placeholder appearance
+      return staticRefs.map(ref => ({
+        ...ref,
+        appearances: [{ rank: ref.rank, appearanceId: '' }] 
+      }));
+    }
+
+    return staticRefs.map(ref => {
+      const allMatchingCardsFromDeck = currentDeck.cards
+        .filter(deckCard => deckCard.rank === ref.rank);
+
+      // Get unique appearanceIds for the current rank
+      const uniqueAppearanceIds = Array.from(new Set(allMatchingCardsFromDeck.map(c => c.appearanceId)));
+
+      const appearances = uniqueAppearanceIds.map(appId => {
+        // Find the first card that matches this rank and unique appearanceId to get its details
+        // (rank should be the same, but this confirms we're linking correctly)
+        const originalCard = allMatchingCardsFromDeck.find(c => c.appearanceId === appId);
+        return {
+          rank: originalCard ? originalCard.rank : ref.rank, // Fallback to ref.rank if something is off
+          appearanceId: appId
+        };
+      });
+
+      return {
+        ...ref,
+        // If no specific appearances found for a rank, show one placeholder.
+        // Otherwise, show all unique found appearances.
+        appearances: appearances.length > 0 ? appearances : [{ rank: ref.rank, appearanceId: '' }]
+      };
+    });
+  });
 
   ngOnInit(): void {
     this.cardReferences = this.cardReferenceService.getAllCardReferences();
@@ -57,7 +99,7 @@ export class CardReferenceSheetComponent implements OnInit, OnDestroy {
       setTimeout(() => {
         const cardElement = this.elementRef.nativeElement.querySelector(`#card-ref-${rank}`);
         if (cardElement) {
-          cardElement.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+          cardElement.scrollIntoView({ behavior: 'smooth', block: 'start' });
         } else {
           console.warn(`CardReferenceSheet: Could not find element for card rank ${rank}`);
         }
@@ -75,7 +117,7 @@ export class CardReferenceSheetComponent implements OnInit, OnDestroy {
   }
 
   // Helper for ngFor trackBy
-  trackByRank(index: number, item: CardReferenceItem): number {
+  trackByRank(index: number, item: CardReferenceItem & { appearances: any[] }): number {
     return item.rank;
   }
 }
