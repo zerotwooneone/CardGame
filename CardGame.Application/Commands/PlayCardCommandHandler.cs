@@ -1,4 +1,4 @@
-﻿using CardGame.Domain.Game.GameException;
+using CardGame.Domain.Game.GameException;
 using CardGame.Domain.Interfaces;
 using CardGame.Domain.Types;
 using FluentValidation;
@@ -16,16 +16,19 @@ public class PlayCardCommandHandler : IRequestHandler<PlayCardCommand>
     private readonly IGameRepository _gameRepository;
     private readonly IDomainEventPublisher _domainEventPublisher; 
     private readonly ILogger<PlayCardCommandHandler> _logger; 
+    private readonly IDeckRegistry _deckRegistry;
 
     public PlayCardCommandHandler(
         IGameRepository gameRepository,
         IDomainEventPublisher domainEventPublisher, 
-        ILogger<PlayCardCommandHandler> logger) 
+        ILogger<PlayCardCommandHandler> logger,
+        IDeckRegistry deckRegistry)
     {
         _gameRepository = gameRepository ?? throw new ArgumentNullException(nameof(gameRepository));
         _domainEventPublisher =
             domainEventPublisher ?? throw new ArgumentNullException(nameof(domainEventPublisher)); // Assign publisher
         _logger = logger ?? throw new ArgumentNullException(nameof(logger)); // Assign logger
+        _deckRegistry = deckRegistry ?? throw new ArgumentNullException(nameof(deckRegistry));
     }
 
     public async Task Handle(PlayCardCommand request, CancellationToken cancellationToken)
@@ -39,6 +42,15 @@ public class PlayCardCommandHandler : IRequestHandler<PlayCardCommand>
         {
             _logger.LogWarning("Game not found: {GameId}", request.GameId);
             throw new KeyNotFoundException($"Game with ID {request.GameId} not found.");
+        }
+
+        // Resolve IDeckProvider using the game's DeckDefinitionId
+        var deckProvider = _deckRegistry.GetProvider(game.DeckDefinitionId);
+        if (deckProvider == null)
+        {
+            _logger.LogError("Could not resolve IDeckProvider for DeckDefinitionId {DeckDefinitionId} in Game {GameId}", game.DeckDefinitionId, request.GameId);
+            // Consider throwing a specific exception or handling this scenario appropriately
+            throw new InvalidOperationException($"Deck provider not found for deck definition ID {game.DeckDefinitionId}.");
         }
 
         // --- Fail Fast Validations ---
@@ -104,7 +116,8 @@ public class PlayCardCommandHandler : IRequestHandler<PlayCardCommand>
             request.PlayerId,
             cardToPlayInstance, // Pass the found instance
             request.TargetPlayerId,
-            request.GuessedCardType
+            request.GuessedCardType,
+            deckProvider
         );
         _logger.LogDebug("Game.PlayCard executed for Game {GameId}. {EventCount} domain events to raise.", request.GameId,
             game.DomainEvents.Count);

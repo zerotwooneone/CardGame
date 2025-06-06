@@ -255,7 +255,7 @@ namespace CardGame.Domain.SystemTests
                 
                     try
                     {
-                        game.PlayCard(currentPlayer.Id, cardToPlay, targetPlayerId, guessedCardType);
+                        game.PlayCard(currentPlayer.Id, cardToPlay, targetPlayerId, guessedCardType, _deckProvider);
                     }
                     catch (GameRuleException ex)
                     {

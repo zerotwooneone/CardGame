@@ -1,25 +1,28 @@
 using CardGame.Domain.Game;
 using CardGame.Domain.Interfaces;
 using CardGame.Domain.Types;
+using CardGame.Domain.Game.GameException; 
 using System;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace CardGame.Domain.Providers;
 
 /// <summary>
 /// Provides a Cthulhu-themed deck configuration.
 /// </summary>
-public class CthulhuDeckProvider : IDeckProvider
+public class CthulhuDeckProvider : BaseDeckProvider 
 {
-    private const string CthulhuBackAppearanceId = "assets/decks/cthulu/back.webp";
-    private const string DeckTheme = "cthulu";
-
-    /// <inheritdoc />
-    public Guid DeckId => new Guid("00000000-0000-0000-0000-000000000002");
+    // DeckId, DisplayName, Description, ThemeName, DeckBackAppearanceId implemented via overrides
+    public override Guid DeckId => new Guid("00000000-0000-0000-0000-000000000002");
+    public override string DisplayName => "Cthulhu Mythos";
+    public override string Description => "A Love Letter variant with a Cthulhu Mythos theme.";
+    protected override string ThemeName => "cthulu";
+    protected override string DeckBackAppearanceId => "assets/decks/cthulu/back.webp";
 
     /// <summary>
-    /// Gets the Cthulhu-themed deck.
-    /// The deck composition is functionally similar to Love Letter:
+    /// Gets the Cthulhu-themed deck card quantities.
+    /// Functionally similar to Love Letter:
     /// - 5 Investigators (Guard)
     /// - 2 Cultists (Priest)
     /// - 2 Researchers (Baron)
@@ -29,30 +32,18 @@ public class CthulhuDeckProvider : IDeckProvider
     /// - 1 Shoggoth (Countess)
     /// - 1 Cthulhu (Princess)
     /// </summary>
-    /// <returns>A <see cref="DeckDefinition"/> representing the Cthulhu deck.</returns>
-    public DeckDefinition GetDeck()
+    protected override IEnumerable<CardQuantity> GetCardQuantities()
     {
-        var cards = new List<Card>();
-
-        // Helper to add multiple cards of the same type with Cthulhu theme
-        void AddCards(CardType type, int count)
+        return new List<CardQuantity>
         {
-            var appearanceId = $"assets/decks/{DeckTheme}/{type.Name.ToLowerInvariant()}.webp";
-            for (int i = 0; i < count; i++)
-            {
-                cards.Add(new Card(appearanceId, type));
-            }
-        }
-
-        AddCards(CardType.Guard, 5);      // Investigators
-        AddCards(CardType.Priest, 2);     // Cultists
-        AddCards(CardType.Baron, 2);      // Researchers
-        AddCards(CardType.Handmaid, 2);   // Elder Signs
-        AddCards(CardType.Prince, 2);     // Necronomicons
-        AddCards(CardType.King, 1);       // Mad King
-        AddCards(CardType.Countess, 1);   // Shoggoth
-        AddCards(CardType.Princess, 1);   // Cthulhu
-
-        return new DeckDefinition(cards, CthulhuBackAppearanceId);
+            new(CardType.Guard, 5),
+            new(CardType.Priest, 2),
+            new(CardType.Baron, 2),
+            new(CardType.Handmaid, 2),
+            new(CardType.Prince, 2),
+            new(CardType.King, 1),
+            new(CardType.Countess, 1),
+            new(CardType.Princess, 1)
+        };
     }
 }

@@ -1,5 +1,6 @@
 using CardGame.Domain.Types;
 using Microsoft.Extensions.Logging;
+using CardGame.Domain.Interfaces;
 
 namespace CardGame.Domain.Game;
 
@@ -15,6 +16,7 @@ public class Player // Entity
     public List<CardType> PlayedCards { get; private set; } = new List<CardType>();
     public int TokensWon { get; private set; } = 0;
     public bool IsProtected { get; private set; } = false;
+    public bool IsPlayersTurn { get; set; } = false;
 
     private readonly ILogger<Player> _logger;
 
@@ -62,6 +64,14 @@ public class Player // Entity
     // --- End Factory Methods ---
 
 
+    // --- Public Methods ---
+    public bool CanDrawCard() // gameContext might be needed for more complex rules later
+    {
+        // In Love Letter, a player draws if they are active and have 0 or 1 card.
+        // They draw to 2, then play one down to 1.
+        return Status == PlayerStatus.Active && Hand.Cards.Count < 2;
+    }
+
     // --- Internal Methods for Aggregate ---
     internal void PrepareForNewRound()
     {
@@ -100,9 +110,7 @@ public class Player // Entity
 
     internal void SwapHandWith(Player otherPlayer)
     {
-        var tmp = Hand;
-        Hand = otherPlayer.Hand;
-        otherPlayer.Hand = tmp;
+        (Hand, otherPlayer.Hand) = (otherPlayer.Hand, Hand);
     } // Simplified
 
     internal void SetProtection(bool isProtected)
@@ -118,5 +126,17 @@ public class Player // Entity
     internal void AddToken()
     {
         TokensWon++;
+    }
+
+    // Method to reset player state for a new round
+    internal void StartNewRound(ILogger<Player> logger) // Added logger parameter to match Game.cs call, though _logger field exists
+    {
+        // _logger = logger; // Could re-assign if intended, or use existing _logger if constructor injects it properly.
+        Hand = Hand.Empty; 
+        Status = PlayerStatus.Active;
+        IsProtected = false;
+        IsPlayersTurn = false;
+        // PlayedCards.Clear(); // Typically, played cards history is for the whole game, not per round. Confirm if this should be cleared.
+        _logger.LogDebug("Player {PlayerName} ({PlayerId}) state reset for new round.", Name, Id);
     }
 }

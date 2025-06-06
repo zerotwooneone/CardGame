@@ -75,8 +75,15 @@ public class CreateGameCommandHandler : IRequestHandler<CreateGameCommand, Guid>
         // --- Create Game ---
         _logger.LogDebug("Creating new game aggregate...");
         // Pass playerInfos, creatorPlayerId, the actual cards from deckDefinition, and tokensToWin
-        // Also pass request.DeckId as the deckDefinitionId
-        var game = Game.CreateNewGame(request.DeckId, playerInfosForGame, request.CreatorPlayerId, deckDefinition.Cards, _loggerFactory, request.TokensToWin ?? 4, _randomizer);
+        // Also pass request.DeckId as the deckDefinitionId 
+        var game = Game.CreateNewGame(
+            request.DeckId, 
+            playerInfosForGame, 
+            request.CreatorPlayerId, 
+            deckDefinition.Cards, 
+            _loggerFactory,
+            request.TokensToWin ?? 4, 
+            _randomizer);
         // GameCreated event is now in game.DomainEvents
 
         // --- Start First Round ---

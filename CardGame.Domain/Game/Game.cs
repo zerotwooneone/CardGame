@@ -5,11 +5,11 @@ using CardGame.Domain.Game.Event;
 using CardGame.Domain.Game.GameException;
 using CardGame.Domain.Interfaces;
 using CardGame.Domain.Types;
-using Microsoft.Extensions.Logging; // ADDED
+using Microsoft.Extensions.Logging;
 
 namespace CardGame.Domain.Game;
 
-public class Game // Aggregate Root
+public class Game : IGameOperations // Aggregate Root
 {
     public Guid Id { get; private set; }
     public List<Player> Players { get; private set; } = new List<Player>();
@@ -30,6 +30,7 @@ public class Game // Aggregate Root
     private readonly IRandomizer _gameRandomizer;
     private readonly ILogger<Game> _logger; // ADDED
     private readonly ILoggerFactory _loggerFactory; // ADDED
+    private bool _isSettingUpRound = false;
 
     // --- Domain Event Handling ---
     private readonly List<IDomainEvent> _domainEvents = new List<IDomainEvent>();
@@ -40,6 +41,90 @@ public class Game // Aggregate Root
     // --- End Domain Event Handling ---
 
     public IReadOnlyList<GameLogEntry> LogEntries => _logEntries.AsReadOnly(); // Public accessor for log entries
+    
+    #region IGameOperations Implementation
+    
+    // Explicit interface implementation to avoid cluttering the public API
+    IGameStateInfo IGameOperations.GetGameState() => new GameStateInfo(this);
+    
+    void IGameOperations.AddLogEntry(GameLogEntry entry) => AddLogEntry(entry);
+    
+    private class GameStateInfo : IGameStateInfo
+    {
+        private readonly Game _game;
+        
+        public GameStateInfo(Game game)
+        {
+            _game = game;
+        }
+        
+        public int CardsRemaining => _game.Deck.CardsRemaining;
+        public int RoundNumber => _game.RoundNumber;
+        public Guid CurrentTurnPlayerId => _game.CurrentTurnPlayerId;
+        public IReadOnlyList<Player> Players => _game.Players.AsReadOnly();
+    }
+    
+    Player? IGameOperations.GetPlayer(Guid playerId)
+    {
+        return GetPlayerById(playerId); // GetPlayerById will throw if not found
+    }
+    
+    void IGameOperations.EliminatePlayer(Guid playerId, string reason, Card? cardResponsible)
+    {
+        // Delegate directly to the private method which contains all the logic
+        EliminatePlayer(playerId, reason, cardResponsible);
+    }
+    
+    void IGameOperations.GiveCardToPlayer(Guid playerId, Card card)
+    {
+        var player = GetPlayerById(playerId); // GetPlayerById will throw if not found
+        if (player.Status == PlayerStatus.Eliminated)
+            throw new InvalidOperationException("Cannot give cards to an eliminated player");
+            
+        player.GiveCard(card);
+    }
+    
+    Card? IGameOperations.DrawCardForPlayer(Guid playerId)
+    {
+        if (Deck.CardsRemaining == 0)
+            return null;
+            
+        var (card, remainingDeck) = Deck.Draw();
+        Deck = remainingDeck;
+        
+        var player = GetPlayerById(playerId); // GetPlayerById will throw if not found
+        // if (player != null && player.Status != PlayerStatus.Eliminated) // No longer needed here
+        // {
+        player.GiveCard(card);
+        AddDomainEvent(new PlayerDrewCard(Id, playerId));
+        // }
+        return card;
+    }
+    
+    void IGameOperations.SwapPlayerHands(Guid player1Id, Guid player2Id)
+    {
+        var player1 = GetPlayerById(player1Id); // GetPlayerById will throw if not found
+        var player2 = GetPlayerById(player2Id); // GetPlayerById will throw if not found
+        
+        // if (player1 == null || player2 == null) // No longer needed here
+        //     throw new DomainException("One or both players not found for hand swap.", 1002);
+            
+        if (player1.Status == PlayerStatus.Eliminated || player2.Status == PlayerStatus.Eliminated)
+            throw new InvalidOperationException("Cannot swap hands with an eliminated player");
+            
+        // Use the Player.SwapHandWith method to handle the swap
+        player1.SwapHandWith(player2);
+        
+        // Log the hand swap
+        AddLogEntry(new GameLogEntry(
+            GameLogEventType.KingTrade,
+            player1.Id,
+            player1.Name,
+            $"{player1.Name} swapped hands with {player2.Name} using the King")
+        );
+    }
+    
+    #endregion
 
     private Game(Guid id, Guid deckDefinitionId, IReadOnlyList<Card> initialDeckCardSet, IRandomizer? randomizer, ILogger<Game> logger, ILoggerFactory loggerFactory) // MODIFIED
     {
@@ -61,20 +146,20 @@ public class Game // Aggregate Root
         IEnumerable<Card> initialDeckCards, 
         ILoggerFactory loggerFactory, 
         int tokensToWin = 4, 
-        IRandomizer? randomizer = null) // ADDED loggerFactory
+        IRandomizer? randomizer = null) // MODIFIED: Removed IDeckProvider
     {
         var gameId = Guid.NewGuid();
         var cardSetToUse = initialDeckCards?.ToList() ?? throw new ArgumentNullException(nameof(initialDeckCards));
         if (!cardSetToUse.Any()) throw new ArgumentException("Initial deck cards cannot be empty.", nameof(initialDeckCards));
 
-        var gameLogger = loggerFactory.CreateLogger<Game>(); // ADDED
+        var gameLogger = loggerFactory.CreateLogger<Game>();
         var game = new Game(
                 gameId, 
                 deckDefinitionId, 
                 new ReadOnlyCollection<Card>(cardSetToUse),
                 randomizer, 
                 gameLogger, 
-                loggerFactory) // MODIFIED
+                loggerFactory) // MODIFIED: Removed deckProvider
         {
             TokensNeededToWin = tokensToWin,
             GamePhase = GamePhase.NotStarted,
@@ -83,6 +168,18 @@ public class Game // Aggregate Root
 
         var playerInfoList = playerInfos?.ToList() ?? new List<PlayerInfo>();
         if (!playerInfoList.Any()) throw new ArgumentException("Player information cannot be empty.", nameof(playerInfos));
+        
+        // Check for duplicate player IDs
+        var duplicatePlayerIds = playerInfoList
+            .GroupBy(p => p.Id)
+            .Where(g => g.Count() > 1)
+            .Select(g => g.Key)
+            .ToList();
+            
+        if (duplicatePlayerIds.Any())
+        {
+            throw new DomainException("Duplicate player IDs are not allowed.", 1001);
+        }
 
         bool creatorFound = false;
         foreach (var pInfo in playerInfoList)
@@ -104,8 +201,14 @@ public class Game // Aggregate Root
         if (initialDeckCardSet == null) throw new ArgumentNullException(nameof(initialDeckCardSet));
         if (!initialDeckCardSet.Any()) throw new ArgumentException("Initial deck card set cannot be empty for loading.", nameof(initialDeckCardSet));
 
-        var gameLogger = loggerFactory.CreateLogger<Game>(); // ADDED
-        var game = new Game(id, deckDefinitionId, new ReadOnlyCollection<Card>(initialDeckCardSet), null, gameLogger, loggerFactory) // MODIFIED
+        var gameLogger = loggerFactory.CreateLogger<Game>();
+        var game = new Game(
+            id, 
+            deckDefinitionId, 
+            new ReadOnlyCollection<Card>(initialDeckCardSet), 
+            null, 
+            gameLogger, 
+            loggerFactory) // Pass the loggerFactory to the constructor
         {
             RoundNumber = roundNumber,
             GamePhase = gamePhase,
@@ -121,560 +224,180 @@ public class Game // Aggregate Root
         return game;
     }
 
-    // --- Public Methods (Game Actions) ---
     public void StartNewRound()
     {
-        if (GamePhase == GamePhase.GameOver) throw new GameRuleException("Cannot start a new round, the game is over.");
-        if (GamePhase == GamePhase.RoundInProgress) throw new GameRuleException("Cannot start a new round while one is in progress.");
-
-        RoundNumber++;
-        Deck = Deck.CreateShuffled(_initialDeckCardSet, _gameRandomizer);
-        DiscardPile.Clear();
-        SetAsideCard = null;
-        PubliclySetAsideCards.Clear();
-
-        foreach (var player in Players) { player.PrepareForNewRound(); }
-
-        // Set Aside Cards Logic
-        int playerCount = Players.Count;
-        if (playerCount >= 2 && !Deck.IsEmpty)
+        _logger.LogDebug("[Game {GameId}] StartNewRound: Entry. Current _isSettingUpRound: {IsSettingUpValue}, GamePhase: {CurrentPhase}", Id, _isSettingUpRound, GamePhase);
+        _isSettingUpRound = true; // Set flag at the beginning
+        try
         {
-            (Card drawnDown, Deck afterDown) = Deck.Draw();
-            SetAsideCard = drawnDown; Deck = afterDown;
-            if (playerCount == 2)
+            if (GamePhase == GamePhase.GameOver) 
+                throw new InvalidOperationException("Cannot start a new round, game is over.");
+            if (GamePhase == GamePhase.RoundInProgress) 
+                throw new InvalidOperationException("Cannot start a new round while one is in progress.");
+
+            RoundNumber++;
+            _logger.LogInformation("Starting Round {RoundNumber} for Game {GameId}", RoundNumber, Id);
+            DiscardPile.Clear();
+            SetAsideCard = null;
+            PubliclySetAsideCards.Clear();
+
+            // Use the _initialDeckCardSet provided when the game was created/loaded.
+            var deckCards = new List<Card>(_initialDeckCardSet);
+            Deck = Deck.CreateShuffled(deckCards, _gameRandomizer); 
+
+            // Reset players for the new round
+            foreach (var player in Players)
             {
-                for (int i = 0; i < 3 && !Deck.IsEmpty; i++)
+                 player.StartNewRound(_loggerFactory.CreateLogger<Player>());
+            }
+
+            // Set aside one card if 2 players, three if more (Love Letter rules for some editions/variants)
+            // Standard rules: 2 players: 3 cards face up. >2 players: 1 card face down.
+            if (Players.Count == 2)
+            {
+                for (int i = 0; i < 3; i++)
                 {
-                    (Card drawnUp, Deck afterUp) = Deck.Draw();
-                    PubliclySetAsideCards.Add(drawnUp); Deck = afterUp;
+                    if (Deck.CardsRemaining > 0)
+                    {
+                        var (publiclySetAside, newDeck) = Deck.Draw();
+                        Deck = newDeck;
+                        PubliclySetAsideCards.Add(publiclySetAside);
+                        AddLogEntry(new GameLogEntry(
+                            GameLogEventType.CardSetAsidePublicly,
+                            Id,
+                            "System",
+                            $"Card {publiclySetAside.Rank.Name} ({publiclySetAside.AppearanceId}) set aside publicly.")
+                        { PlayedCard = publiclySetAside });
+                    }
                 }
             }
-        }
+            else if (Players.Count > 2)
+            {
+                if (Deck.CardsRemaining > 0)
+                {
+                    var (setAside, newDeck) = Deck.Draw();
+                    Deck = newDeck;
+                    SetAsideCard = setAside;
+                }
+            }
 
-        // Deal initial hands
-        var playerIds = new List<Guid>();
-        foreach (var player in Players)
+            // Deal one card to each player
+            foreach (var player in Players)
+            {
+                if (Deck.CardsRemaining > 0)
+                {
+                    var (card, newDeck) = Deck.Draw();
+                    Deck = newDeck;
+                    player.GiveCard(card); // Assuming Player.GiveCard adds to hand
+                    AddLogEntry(new GameLogEntry(GameLogEventType.PlayerDrewCard, player.Id, player.Name, $"{player.Name} drew a card.", true) { DrawnCard = card });
+                    AddDomainEvent(new PlayerDrewCard(Id, player.Id));
+                    AddDomainEvent(new DeckChanged(Id, Deck.CardsRemaining)); // Inform about deck change
+                }
+                else
+                {
+                    throw new GameRuleException($"Not enough cards to deal initial hand to player {player.Name} in Game {Id}, Round {RoundNumber}.");
+                }
+            }
+
+            CurrentTurnPlayerId = LastRoundWinnerId ?? Players.First().Id; 
+            GetPlayerById(CurrentTurnPlayerId).IsPlayersTurn = true;
+
+            GamePhase = GamePhase.RoundInProgress;
+            _logger.LogDebug("[Game {GameId}] StartNewRound: Set GamePhase to RoundInProgress. Current _isSettingUpRound: {IsSettingUpValue}", Id, _isSettingUpRound);
+
+            AddDomainEvent(new RoundStarted(
+                Id,                                         
+                RoundNumber,                                
+                Players.Select(p => p.Id).ToList(),         
+                Deck.CardsRemaining,                        
+                SetAsideCard?.Rank,                         
+                PubliclySetAsideCards.Select(c => new PublicCardInfo(c.AppearanceId, c.Rank)).ToList(), 
+                _deckDefinitionId                           
+            ));
+            AddLogEntry(new GameLogEntry(GameLogEventType.RoundStart, Id, "System", $"Round {RoundNumber} started. {GetPlayerById(CurrentTurnPlayerId).Name} begins."));
+            
+            _logger.LogDebug("[Game {GameId}] StartNewRound: Calling DrawInitialTurnCard. _isSettingUpRound: {IsSettingUpValue}", Id, _isSettingUpRound);
+            DrawInitialTurnCard(CurrentTurnPlayerId);
+            _logger.LogDebug("[Game {GameId}] StartNewRound: Returned from DrawInitialTurnCard. GamePhase: {CurrentPhase}, _isSettingUpRound: {IsSettingUpValue}", Id, GamePhase, _isSettingUpRound);
+        }
+        finally
         {
-             if (!Deck.IsEmpty)
-             {
-                 (Card dealtCard, Deck remainingDeck) = Deck.Draw();
-                 player.GiveCard(dealtCard); Deck = remainingDeck;
-             }
-             playerIds.Add(player.Id);
+            _logger.LogDebug("[Game {GameId}] StartNewRound: Finally block. Current _isSettingUpRound: {IsSettingUpValue}. Setting to false.", Id, _isSettingUpRound);
+            _isSettingUpRound = false;
+            _logger.LogDebug("[Game {GameId}] StartNewRound: Finally block. _isSettingUpRound after setting to false: {IsSettingUpValue}", Id, _isSettingUpRound);
         }
-
-        if (CheckRoundEndCondition()) return;
-
-        // Determine Starting Player
-        Guid startingPlayerId;
-        if (RoundNumber == 1 || LastRoundWinnerId == null || !Players.Any(p => p.Id == LastRoundWinnerId)) { startingPlayerId = Players.First().Id; }
-        else { startingPlayerId = LastRoundWinnerId.Value; }
-        CurrentTurnPlayerId = startingPlayerId;
-
-        GamePhase = GamePhase.RoundInProgress;
-
-        string startingPlayerName = GetPlayerById(startingPlayerId).Name;
-        string roundStartMessage = $"Round {RoundNumber} has started. {startingPlayerName} will go first.";
-        if (SetAsideCard != null) roundStartMessage += $" A card was set aside face down.";
-        if (PubliclySetAsideCards.Any()) roundStartMessage += $" {PubliclySetAsideCards.Count} cards were set aside face up.";
-        
-        AddGameLogEntry(new GameLogEntry(
-            GameLogEventType.RoundStart,
-            null, // No specific acting player for round start
-            "Game", // No specific acting player name, use "Game"
-            roundStartMessage
-        ));
-
-        AddDomainEvent(new RoundStarted(
-            Id, RoundNumber, playerIds, Deck.CardsRemaining, SetAsideCard?.Rank,
-            PubliclySetAsideCards.Select(c => new PublicCardInfo(c.AppearanceId, c.Rank)).ToList(),
-            _deckDefinitionId // Use stored _deckDefinitionId
-        ));
-        HandleTurnStartDrawing();
+        _logger.LogDebug("[Game {GameId}] StartNewRound: Exit. GamePhase: {CurrentPhase}, _isSettingUpRound: {IsSettingUpValue}", Id, GamePhase, _isSettingUpRound);
     }
 
-    public void PlayCard(Guid playerId, Card cardToPlayInstance, Guid? targetPlayerId, CardType? guessedCardType)
+    public void PlayCard(Guid playerId, Card cardToPlay, Guid? targetPlayerId, CardType? guessedCardType, IDeckProvider deckProvider) // Corrected: deckProvider parameter restored
     {
-        var cardType = cardToPlayInstance.Rank;
-        ValidatePlayCardAction(playerId, cardToPlayInstance, targetPlayerId, guessedCardType);
-        var actingPlayer = GetPlayerById(playerId);
-        Player? targetPlayer = targetPlayerId.HasValue ? GetPlayerById(targetPlayerId.Value) : null;
+        var player = GetPlayerById(playerId); // GetPlayerById will throw if not found
+        ValidatePlayCard(player, cardToPlay, targetPlayerId, guessedCardType); // Correct: no deckProvider here
 
-        actingPlayer.PlayCard(cardToPlayInstance);
+        var cardToPlayInstance = player.Hand.Cards.First(c => c.AppearanceId == cardToPlay.AppearanceId && c.Rank == cardToPlay.Rank);
+        player.PlayCard(cardToPlayInstance);
         DiscardPile.Add(cardToPlayInstance);
 
-        string actingPlayerName = actingPlayer.Name;
-        string? targetPlayerName = targetPlayer?.Name;
-        string playedCardStringName = cardType.ToString();
-        string message;
-
-        message = $"{actingPlayerName} played {playedCardStringName}.";
-
+        Player? targetPlayer = targetPlayerId.HasValue ? GetPlayerById(targetPlayerId.Value) : null; 
         var logEntry = new GameLogEntry(
             GameLogEventType.CardPlayed,
             playerId,
-            actingPlayerName,
-            message,
-            false // isPrivate
-        )
+            player.Name,
+            $"{player.Name} played {cardToPlayInstance.Rank.Name}" + 
+            (targetPlayer != null ? $" targeting {targetPlayer.Name}" : "") +
+            (guessedCardType != null ? $" guessing {guessedCardType.Name}" : ""))
         {
-            PlayedCard = cardToPlayInstance
+            PlayedCard = cardToPlayInstance,
+            TargetPlayerId = targetPlayerId,
+            TargetPlayerName = targetPlayer?.Name,
+            GuessedRank = guessedCardType
         };
-        AddGameLogEntry(logEntry);
+        AddLogEntry(logEntry);
 
         AddDomainEvent(new PlayerPlayedCard(Id, playerId, cardToPlayInstance, targetPlayerId, guessedCardType));
 
-        // Dispatch to specific card logic
-        switch (cardType)
-        {
-            case var _ when cardType == CardType.Guard: ExecuteGuardEffect(actingPlayer, targetPlayer, guessedCardType, cardToPlayInstance); break;
-            case var _ when cardType == CardType.Priest: ExecutePriestEffect(actingPlayer, targetPlayer, cardToPlayInstance); break;
-            case var _ when cardType == CardType.Baron: ExecuteBaronEffect(actingPlayer, targetPlayer, cardToPlayInstance); break;
-            case var _ when cardType == CardType.Handmaid: ExecuteHandmaidEffect(actingPlayer, cardToPlayInstance); break;
-            case var _ when cardType == CardType.Prince: ExecutePrinceEffect(actingPlayer, targetPlayer ?? actingPlayer, cardToPlayInstance); break;
-            case var _ when cardType == CardType.King: ExecuteKingEffect(actingPlayer, targetPlayer, cardToPlayInstance); break;
-            case var _ when cardType == CardType.Countess: ExecuteCountessEffect(actingPlayer); break;
-            case var _ when cardType == CardType.Princess: ExecutePrincessEffect(actingPlayer, cardToPlayInstance); break;
-            default: throw new ArgumentOutOfRangeException(nameof(cardToPlayInstance), $"Unknown card type: {cardType.Name}");
-        }
+        // Execute the card effect using the provided deck provider
+        deckProvider.ExecuteCardEffect(this, player, cardToPlayInstance, targetPlayer, guessedCardType); // Corrected: Call is active
 
-        // Check if the round ended due to the card play (elimination) or if deck was already empty.
         bool roundEndedImmediately = CheckRoundEndCondition();
 
-        // If the round didn't end from the card play itself, advance the turn.
-        if (!roundEndedImmediately && GamePhase == GamePhase.RoundInProgress)
+        if (!roundEndedImmediately && GamePhase == GamePhase.RoundInProgress) 
         {
              AdvanceTurn();
         }
     }
 
+    private void ValidatePlayCard(Player player, Card cardToPlayInstance, Guid? targetPlayerId, CardType? guessedCardType) // Correct: no deckProvider parameter
+    {
+        if (GamePhase != GamePhase.RoundInProgress) 
+            throw new InvalidMoveException("Game is not in progress.");
+        if (player.Id != CurrentTurnPlayerId) 
+            throw new InvalidMoveException($"It is not player {player.Name}'s turn.");
+        if (player.Status == PlayerStatus.Eliminated) 
+            throw new InvalidMoveException($"Player {player.Name} is eliminated and cannot play cards.");
+        if (!player.Hand.Cards.Any(c => c.AppearanceId == cardToPlayInstance.AppearanceId && c.Rank == cardToPlayInstance.Rank)) 
+            throw new InvalidMoveException($"Player {player.Name} does not hold the specified card instance (ID: {cardToPlayInstance.AppearanceId}).");
+        
+        // Card-specific validation is now handled by ExecuteCardEffect in the IDeckProvider implementation.
+        // Player? targetPlayerObject = targetPlayerId.HasValue ? GetPlayerById(targetPlayerId.Value) : null;
+        // if (!deckProvider.CanPlayCard(player, cardToPlayInstance, targetPlayerObject, guessedCardType))
+        // {
+        //     throw new InvalidMoveException("Invalid card play according to deck rules.");
+        // }
+    }
+
     // --- Private Helper Methods ---
-
-    private void ValidatePlayCardAction(Guid playerId, Card cardToPlayInstance, Guid? targetPlayerId, CardType? guessedCardType)
+    private Player GetPlayerById(Guid playerId)
     {
-        var cardType = cardToPlayInstance.Rank;
-        if (GamePhase != GamePhase.RoundInProgress) throw new InvalidMoveException("Cannot play cards when the round is not in progress.");
-        if (CurrentTurnPlayerId != playerId) throw new InvalidMoveException($"It is not player {GetPlayerById(playerId).Name}'s turn.");
-        var player = GetPlayerById(playerId);
-        if (!player.Hand.GetCards().Any(c => c.AppearanceId == cardToPlayInstance.AppearanceId)) throw new InvalidMoveException($"Player {player.Name} does not hold the specified card instance (ID: {cardToPlayInstance.AppearanceId}).");
-        if ((cardType == CardType.King || cardType == CardType.Prince) && player.Hand.Contains(CardType.Countess)) throw new GameRuleException($"Player {player.Name} must play the Countess.");
-
-        if (targetPlayerId.HasValue)
-        {
-            var targetPlayer = GetPlayerById(targetPlayerId.Value); // Check existence
-            if (targetPlayer.Status == PlayerStatus.Eliminated) throw new InvalidMoveException($"Cannot target eliminated player {targetPlayer.Name}.");
-            if (targetPlayerId.Value == playerId && !CanTargetSelf(cardType) && (cardType == CardType.Guard || cardType == CardType.Priest || cardType == CardType.Baron || cardType == CardType.King)) throw new InvalidMoveException($"Cannot target self with {cardType.Name}.");
-        }
-        else if ((cardType == CardType.Guard || cardType == CardType.Priest || cardType == CardType.Baron || cardType == CardType.King)) // Cards requiring a target (unless no valid targets exist)
-        {
-             bool validTargetsExist = Players.Any(p => p.Id != playerId && p.Status == PlayerStatus.Active && !p.IsProtected);
-             bool onlyProtectedTargetsExist = !validTargetsExist && Players.Any(p => p.Id != playerId && p.Status == PlayerStatus.Active && p.IsProtected);
-             if (validTargetsExist || onlyProtectedTargetsExist) // If any target exists (protected or not)
-             {
-                  throw new InvalidMoveException($"{cardType.Name} requires a target player.");
-             }
-             // If no active opponents exist at all, the play is allowed but will have no effect (no exception)
-        }
-
-        if (cardType == CardType.Guard && (targetPlayerId == null || guessedCardType == null || guessedCardType == CardType.Guard)) throw new InvalidMoveException("Guard requires a valid target player and a non-Guard guess.");
+        var player = Players.FirstOrDefault(p => p.Id == playerId);
+        if (player == null) throw new DomainException($"Player with ID '{playerId}' not found.", 1002); // CORRECTED
+        return player;
     }
 
-    private bool CanTargetSelf(CardType cardType) => cardType == CardType.Prince;
-
-    private void ExecuteGuardEffect(Player actingPlayer, Player? targetPlayer, CardType? guessedCardType, Card guardCardInstance)
+    private void AddLogEntry(GameLogEntry entry)
     {
-        if (targetPlayer == null || guessedCardType == null) 
-        {
-            throw new GameRuleException("Guard requires a valid target player and a non-Guard guess.");
-        }
-
-        string actingPlayerName = actingPlayer.Name;
-        string targetPlayerName = targetPlayer.Name;
-
-        // Check protection BEFORE applying effect
-        if (targetPlayer.IsProtected)
-        {
-            string fizzleMessage = $"{actingPlayerName}'s Guard against {targetPlayerName} had no effect because {targetPlayerName} is protected by a Handmaid.";
-            AddGameLogEntry(new GameLogEntry(
-                GameLogEventType.EffectFizzled,
-                actingPlayer.Id,
-                actingPlayerName,
-                targetPlayer.Id,
-                targetPlayerName,
-                fizzleMessage
-            ) 
-            {
-                PlayedCard = guardCardInstance, // The Guard card that was played
-                FizzleReason = "Target was protected"
-            });
-            AddDomainEvent(new CardEffectFizzled(Id, actingPlayer.Id, CardType.Guard, targetPlayer.Id, "Target was protected"));
-            return; // Effect fizzles
-        }
-
-        bool correctGuess = targetPlayer.Hand.Contains(guessedCardType); // .Value as guessedCardType is CardType?
-        if (correctGuess)
-        {
-            string hitMessage = $"{actingPlayerName} correctly guessed that {targetPlayerName} held a {guessedCardType.Value.ToString()} with their Guard! {targetPlayerName} is eliminated.";
-            Card? revealedTargetCard = targetPlayer.Hand.GetHeldCard(); // Get for logging
-            AddGameLogEntry(new GameLogEntry(
-                GameLogEventType.GuardHit, 
-                actingPlayer.Id,
-                actingPlayerName,
-                targetPlayer.Id,
-                targetPlayerName,
-                hitMessage
-            )
-            {
-                PlayedCard = guardCardInstance,
-                GuessedRank = guessedCardType, // The rank that was guessed. Ensure GuessedRank in GameLogEntry is CardType not int.
-                GuessedPlayerActualCard = revealedTargetCard, // The actual card the target player held
-                WasGuessCorrect = true
-            });
-            string eliminationReason = $"guessed correctly by {actingPlayerName} with a Guard";
-            EliminatePlayer(targetPlayer.Id, eliminationReason, guardCardInstance); // Use guardCardInstance
-        }
-        else // Incorrect Guess
-        {
-            string missMessage = $"{actingPlayerName} guessed that {targetPlayerName} held a {guessedCardType.Value.ToString()}, but was incorrect.";
-            AddGameLogEntry(new GameLogEntry(
-                GameLogEventType.GuardMiss, 
-                actingPlayer.Id,
-                actingPlayerName,
-                targetPlayer.Id,
-                targetPlayerName,
-                missMessage
-            )
-            {
-                PlayedCard = guardCardInstance, // The Guard card that was played
-                GuessedRank = guessedCardType, // The rank that was guessed
-                // GuessedPlayerActualCard remains null on a miss for public logs
-                WasGuessCorrect = false
-            });
-        }
-        AddDomainEvent(new GuardGuessResult(Id, actingPlayer.Id, targetPlayer.Id, guessedCardType, correctGuess));
-    }
-
-    private void ExecutePriestEffect(Player actingPlayer, Player? targetPlayer, Card priestCardInstance) 
-    {
-        if (targetPlayer == null)
-        {
-            throw new GameRuleException("Priest requires a valid target player.");
-        }
-
-        string actingPlayerName = actingPlayer.Name;
-        string targetPlayerName = targetPlayer.Name;
-
-        if (targetPlayer.IsProtected)
-        {
-            string fizzleMessage = $"{actingPlayerName}'s Priest targeting {targetPlayerName} had no effect because {targetPlayerName} is protected by a Handmaid.";
-            AddGameLogEntry(new GameLogEntry(
-                GameLogEventType.EffectFizzled,
-                actingPlayer.Id,
-                actingPlayerName,
-                targetPlayer.Id,
-                targetPlayerName,
-                fizzleMessage
-            ) 
-            {
-                PlayedCard = priestCardInstance, // The Priest card that was played
-                FizzleReason = "Target was protected"
-            });
-            AddDomainEvent(new CardEffectFizzled(Id, actingPlayer.Id, CardType.Priest, targetPlayer.Id, "Target was protected"));
-            return; // Effect fizzles
-        }
-
-        Card? revealedCard = targetPlayer.Hand.GetHeldCard();
-        string? revealedCardStringName = revealedCard?.Rank.ToString();
-
-        // Public log about the action (without revealing the card)
-        string publicLogMessage = $"{actingPlayerName} used Priest on {targetPlayerName} to look at their hand.";
-        AddGameLogEntry(new GameLogEntry(
-            GameLogEventType.PriestEffect, // General event type for Priest action
-            actingPlayer.Id,
-            actingPlayerName,
-            targetPlayer.Id,
-            targetPlayerName,
-            publicLogMessage
-        )
-        {
-            PlayedCard = priestCardInstance // Keep the card that was played
-        });
-
-        // Domain event to notify the specific player (handler will use this)
-        if (revealedCard != null)
-        {
-            AddDomainEvent(new PriestEffectUsed(Id, actingPlayer.Id, targetPlayer.Id, revealedCard.AppearanceId, revealedCard.Rank));
-        }
-    }
-
-    private void ExecuteBaronEffect(Player actingPlayer, Player? targetPlayer, Card baronCardInstance) // Added baronCardInstance
-    {
-        if (targetPlayer == null)
-        {
-            throw new GameRuleException("Baron requires a valid target player.");
-        }
-
-        string actingPlayerName = actingPlayer.Name;
-        string targetPlayerName = targetPlayer.Name;
-
-        // Check protection BEFORE applying effect
-        if (targetPlayer.IsProtected)
-        {
-            string fizzleMessage = $"{actingPlayerName}'s Baron against {targetPlayerName} had no effect because {targetPlayerName} is protected by a Handmaid.";
-            AddGameLogEntry(new GameLogEntry(
-                GameLogEventType.EffectFizzled,
-                actingPlayer.Id,
-                actingPlayerName,
-                targetPlayer.Id,
-                targetPlayerName,
-                fizzleMessage
-            ) 
-            {
-                PlayedCard = baronCardInstance, // The Baron card that was played
-                FizzleReason = "Target was protected"
-            });
-            AddDomainEvent(new CardEffectFizzled(Id, actingPlayer.Id, CardType.Baron, targetPlayer.Id, "Target was protected"));
-            return; // Effect fizzles
-        }
-
-        Card? actingPlayerCard = actingPlayer.Hand.GetHeldCard();
-        Card? targetPlayerCard = targetPlayer.Hand.GetHeldCard();
-
-        if (actingPlayerCard == null || targetPlayerCard == null) 
-        {
-            throw new GameRuleException("Baron requires both players to have a card in their hand."); 
-        }
-
-        Player? eliminatedPlayer = null;
-        string outcomeMessage;
-
-        if (actingPlayerCard.Rank.Value > targetPlayerCard.Rank.Value)
-        {
-            eliminatedPlayer = targetPlayer;
-            EliminatePlayer(targetPlayer.Id, "lost Baron comparison to {actingPlayerName} (their {targetPlayerCard.Type.ToString()} vs {actingPlayerCard.Type.ToString()})", baronCardInstance); // Use baronCardInstance
-            outcomeMessage = $"{actingPlayerName} (holding {actingPlayerCard.Rank.ToString()}) won the Baron comparison against {targetPlayerName} (holding {targetPlayerCard.Rank.ToString()}). {targetPlayerName} is eliminated.";
-        }
-        else if (targetPlayerCard.Rank.Value > actingPlayerCard.Rank.Value)
-        {
-            eliminatedPlayer = actingPlayer;
-            EliminatePlayer(actingPlayer.Id, "lost Baron comparison to {targetPlayerName} (their {actingPlayerCard.Type.ToString()} vs {targetPlayerCard.Type.ToString()})", baronCardInstance); // Use baronCardInstance
-            outcomeMessage = $"{targetPlayerName} (holding {targetPlayerCard.Rank.ToString()}) won the Baron comparison against {actingPlayerName} (holding {actingPlayerCard.Rank.ToString()}). {actingPlayerName} is eliminated.";
-        }
-        else // Draw
-        {
-            outcomeMessage = $"{actingPlayerName} (holding {actingPlayerCard.Rank.ToString()}) and {targetPlayerName} (holding {targetPlayerCard.Rank.ToString()}) tied in the Baron comparison. No one is eliminated.";
-        }
-
-        AddGameLogEntry(new GameLogEntry(
-            GameLogEventType.BaronCompare,
-            actingPlayer.Id, 
-            actingPlayerName,
-            targetPlayer.Id,
-            targetPlayerName,
-            outcomeMessage
-        ) 
-        {
-            PlayedCard = baronCardInstance, // The Baron card that was played
-            ActingPlayerBaronCard = actingPlayerCard, // Card acting player compared
-            TargetPlayerBaronCard = targetPlayerCard, // Card target player compared
-            BaronLoserPlayerId = eliminatedPlayer?.Id // Log the ID of the player who lost the Baron comparison
-        });
-
-        AddDomainEvent(new BaronComparisonResult(
-            Id,
-            actingPlayer.Id,
-            actingPlayerCard.Rank,
-            targetPlayer.Id,
-            targetPlayerCard.Rank,
-            eliminatedPlayer?.Id
-        ));
-    }
-
-    private void ExecuteKingEffect(Player actingPlayer, Player? targetPlayer, Card kingCardInstance) 
-    {
-        if (targetPlayer == null)
-        {
-            throw new GameRuleException("King requires a valid target player.");
-        }
-
-        string actingPlayerName = actingPlayer.Name;
-        string targetPlayerName = targetPlayer.Name;
-
-        if (targetPlayer.IsProtected)
-        {
-            string fizzleMessage = $"{actingPlayerName}'s King targeting {targetPlayerName} had no effect because {targetPlayerName} is protected by a Handmaid.";
-            AddGameLogEntry(new GameLogEntry(
-                GameLogEventType.EffectFizzled,
-                actingPlayer.Id,
-                actingPlayerName,
-                targetPlayer.Id,
-                targetPlayerName,
-                fizzleMessage
-            ) 
-            {
-                PlayedCard = kingCardInstance, // The King card that was played
-                FizzleReason = "Target was protected"
-            });
-            AddDomainEvent(new CardEffectFizzled(Id, actingPlayer.Id, CardType.King, targetPlayer.Id, "Target was protected"));
-            return;
-        }
-
-        Card? actingPlayerCard = actingPlayer.Hand.GetHeldCard();
-        Card? targetPlayerCard = targetPlayer.Hand.GetHeldCard();
-
-        if (actingPlayerCard == null || targetPlayerCard == null)
-        {
-            throw new GameRuleException("King requires both players to have a card in their hand.");
-        }
-
-        actingPlayer.Hand.Remove(actingPlayerCard);
-        targetPlayer.Hand.Remove(targetPlayerCard);
-        actingPlayer.Hand.Add(targetPlayerCard);
-        targetPlayer.Hand.Add(actingPlayerCard);
-
-        string successMessage = $"{actingPlayerName} used King and swapped hands with {targetPlayerName}.";
-        AddGameLogEntry(new GameLogEntry(
-            GameLogEventType.KingTrade,
-            actingPlayer.Id,
-            actingPlayerName,
-            targetPlayer.Id,
-            targetPlayerName,
-            successMessage
-        ) 
-        {
-            PlayedCard = kingCardInstance, 
-            // OriginalCardInTrade = actingPlayerCard, // Removed, not a property on GameLogEntry
-            RevealedTradedCard = targetPlayerCard    // Card acting player received (originally target's)
-        });
-
-        AddDomainEvent(new KingEffectUsed(Id, actingPlayer.Id, targetPlayer.Id));
-    }
-
-    private void ExecuteHandmaidEffect(Player actingPlayer, Card handmaidCardInstance)
-    {
-        actingPlayer.SetProtection(true);
-
-        string message = $"{actingPlayer.Name} played Handmaid and is protected until their next turn.";
-        AddGameLogEntry(new GameLogEntry(
-            GameLogEventType.HandmaidProtection, // Corrected EventType
-            actingPlayer.Id,
-            actingPlayer.Name,
-            message
-        ) 
-        {
-            PlayedCard = handmaidCardInstance, // The Handmaid card that was played
-        });
-
-        AddDomainEvent(new HandmaidProtectionSet(Id, actingPlayer.Id));
-    }
-
-    private void ExecutePrinceEffect(Player actingPlayer, Player targetPlayer, Card princeCardInstance) // Added princeCardInstance
-    {
-        string actingPlayerName = actingPlayer.Name;
-        string targetPlayerName = targetPlayer.Name;
-
-        if (targetPlayer.IsProtected)
-        {
-            string fizzleMessage = $"{actingPlayerName}'s Prince targeting {targetPlayerName} had no effect because {targetPlayerName} is protected by a Handmaid.";
-            AddGameLogEntry(new GameLogEntry(
-                GameLogEventType.EffectFizzled,
-                actingPlayer.Id,
-                actingPlayerName,
-                targetPlayer.Id,
-                targetPlayerName,
-                fizzleMessage
-            ) 
-            {
-                PlayedCard = princeCardInstance, // The Prince card that was played
-                FizzleReason = "Target was protected"
-            });
-            AddDomainEvent(new CardEffectFizzled(Id, actingPlayer.Id, CardType.Prince, targetPlayer.Id, "Target was protected"));
-            return;
-        }
-
-        if (targetPlayer.Hand.IsEmpty)
-        {
-            throw new GameRuleException("Prince requires the target player's hand to not be empty."); 
-        }
-
-        Card? discardedCard = targetPlayer.DiscardHand(Deck.IsEmpty);
-        if (discardedCard == null)
-        {
-             return;
-        }
-
-        string discardLogMessage = $"{actingPlayerName} used Prince on {targetPlayerName}. {targetPlayerName} discarded their {discardedCard.Rank.ToString()}.";
-        AddGameLogEntry(new GameLogEntry(
-            GameLogEventType.PrinceDiscard, // Corrected EventType
-            actingPlayer.Id,
-            actingPlayerName,
-            targetPlayer.Id,
-            targetPlayerName,
-            discardLogMessage
-        ) 
-        {
-            PlayedCard = princeCardInstance, // The Prince card that was played
-            TargetDiscardedCard = discardedCard // The card the target player discarded
-        });
-
-        AddDomainEvent(new PrinceEffectUsed(Id, actingPlayer.Id, targetPlayer.Id, discardedCard.Rank, discardedCard.AppearanceId));
-
-        if (discardedCard.Rank == CardType.Princess)
-        {
-            EliminatePlayer(targetPlayer.Id, "discarding the Princess to a Prince", discardedCard); // Princess is responsible for its own elimination
-        }
-        else if (targetPlayer.Status == PlayerStatus.Active)
-        {
-            Card? newCardDrawn = null;
-            if (!Deck.IsEmpty)
-            {
-                (Card c, Deck d) = Deck.Draw(); 
-                Deck = d; 
-                targetPlayer.GiveCard(c);
-                newCardDrawn = c;
-                AddDomainEvent(new PlayerDrewCard(Id, targetPlayer.Id)); 
-                AddDomainEvent(new DeckChanged(Id, Deck.CardsRemaining));
-            }
-            else if (SetAsideCard != null)
-            {
-                targetPlayer.GiveCard(SetAsideCard);
-                newCardDrawn = SetAsideCard;
-                AddDomainEvent(new PlayerDrewCard(Id, targetPlayer.Id)); 
-                var usedType = SetAsideCard.Rank; SetAsideCard = null; 
-                AddDomainEvent(new SetAsideCardUsed(Id, usedType));
-            }
-
-            if (newCardDrawn != null)
-            {
-                string drawMessage = $"{targetPlayerName} drew a new card after being targeted by Prince.";
-                // This log can be private to the target player if the new card shouldn't be public knowledge
-                // Or public if the act of drawing is public, but card itself isn't revealed here.
-                // For now, making it a general public log about the draw action.
-                AddGameLogEntry(new GameLogEntry(
-                    GameLogEventType.PrincePlayerDrawsNewCard, // New specific event type
-                    actingPlayer.Id,    // Prince player
-                    actingPlayerName,
-                    targetPlayer.Id,    // Player who drew
-                    targetPlayerName,
-                    drawMessage,
-                    false // isPrivate - false for now, can be adjusted
-                )
-                {
-                    PlayedCard = princeCardInstance, // The Prince that caused this
-                    TargetNewCardAfterPrince = newCardDrawn // The new card drawn by the target
-                });
-            }
-        }
-    }
-
-    private void ExecuteCountessEffect(Player actingPlayer)
-    {
-        AddDomainEvent(new PlayerPlayedCountess(Id, actingPlayer.Id));
-    }
-
-    private void ExecutePrincessEffect(Player actingPlayer, Card princessCardInstance)
-    {
-        EliminatePlayer(actingPlayer.Id, "discarded the Princess", princessCardInstance);
+        if (entry == null) throw new ArgumentNullException(nameof(entry));
+        _logEntries.Insert(0, entry); // Insert at the beginning to keep newest first
     }
 
     private void EliminatePlayer(Guid playerId, string reason, Card? cardResponsible = null)
@@ -683,265 +406,235 @@ public class Game // Aggregate Root
         if (player.Status == PlayerStatus.Active)
         {
             player.Eliminate();
-            string playerName = player.Name;
-            string logMessage = $"{playerName} was eliminated because they {reason}.";
-            AddGameLogEntry(new GameLogEntry(
-                GameLogEventType.PlayerEliminated,
-                player.Id,      // The player who was eliminated (as ActingPlayerId for this log type)
-                playerName,     // (as ActingPlayerName for this log type)
-                logMessage
-            )
-            {
-                RevealedCardOnElimination = cardResponsible
-            });
-
-            // Instantiate the domain event separately
-            var playerEliminatedEvent = new PlayerEliminated(
-                Id,                         // GameId
-                player.Id,                  // PlayerId
-                reason,                     // Reason for elimination
-                cardResponsible?.Rank
-            );
-            AddDomainEvent(playerEliminatedEvent);
+            AddLogEntry(new GameLogEntry(GameLogEventType.PlayerEliminated, playerId, player.Name, $"{player.Name} was eliminated: {reason}") { RevealedCardOnElimination = cardResponsible });
+            AddDomainEvent(new PlayerEliminated(Id, playerId, reason, cardResponsible?.Rank));
         }
     }
 
-   private bool CheckRoundEndCondition()
+    private void DrawInitialTurnCard(Guid playerId)
     {
-        // Check only if the round is currently marked as in progress
-        if (GamePhase != GamePhase.RoundInProgress) return false; // Already ended or not started
+        var player = GetPlayerById(playerId);
+        _logger.LogDebug("[Game {GameId}] DrawInitialTurnCard for Player {PlayerId}. Entry. Current _isSettingUpRound: {IsSettingUpValue}, GamePhase: {CurrentPhase}", Id, playerId, _isSettingUpRound, GamePhase);
+
+        if (!player.CanDrawCard())
+        {
+            throw new GameRuleException($"Player {player.Name} (ID: {playerId}) in game {Id} cannot draw initial turn card. Hand state may be invalid or player status prevents drawing.");
+        }
+
+        if (Deck.CardsRemaining == 0)
+        {
+            _logger.LogWarning("[Game {GameId}] Deck is empty, cannot draw initial turn card for Player {PlayerId}.", Id, playerId);
+        }
+        else
+        {
+            var (drawnCard, newDeck) = Deck.Draw();
+            Deck = newDeck;
+            player.GiveCard(drawnCard);
+            AddLogEntry(new GameLogEntry(GameLogEventType.PlayerDrewCard, player.Id, player.Name, $"{player.Name} drew their starting second card for the turn.", true) { DrawnCard = drawnCard });
+            AddDomainEvent(new PlayerDrewCard(Id, player.Id));
+            AddDomainEvent(new DeckChanged(Id, Deck.CardsRemaining));
+            _logger.LogDebug("[Game {GameId}] Player {PlayerId} drew initial card. Deck remaining: {DeckCount}", Id, playerId, Deck.CardsRemaining);
+        }
+
+        _logger.LogDebug("[Game {GameId}] DrawInitialTurnCard: Calling CheckRoundEndCondition. _isSettingUpRound: {IsSettingUpValue}", Id, _isSettingUpRound);
+        bool roundEnded = CheckRoundEndCondition();
+        _logger.LogDebug("[Game {GameId}] DrawInitialTurnCard: Returned from CheckRoundEndCondition. roundEnded: {EndedValue}, GamePhase: {CurrentPhase}, _isSettingUpRound: {IsSettingUpValue}", Id, roundEnded, GamePhase, _isSettingUpRound);
+    }
+
+    private bool CheckRoundEndCondition()
+    {
+        _logger.LogDebug("[Game {GameId}] CheckRoundEndCondition: Entry. _isSettingUpRound: {IsSettingUpValue}, GamePhase: {CurrentPhase}, DeckRemaining: {DeckCount}", Id, _isSettingUpRound, GamePhase, Deck.CardsRemaining);
+
+        if (_isSettingUpRound)
+        {
+            _logger.LogDebug("[Game {GameId}] CheckRoundEndCondition: _isSettingUpRound is TRUE. Returning false.", Id);
+            return false; // Do not end round during setup phase
+        }
+
+        if (GamePhase != GamePhase.RoundInProgress)
+        {
+            _logger.LogDebug("[Game {GameId}] CheckRoundEndCondition: GamePhase is not RoundInProgress ({CurrentPhase}). Returning false.", Id, GamePhase);
+            return false; 
+        }
 
         var activePlayers = Players.Where(p => p.Status == PlayerStatus.Active).ToList();
-        if (activePlayers.Count <= 1 || Deck.IsEmpty)
+        if (activePlayers.Count <= 1 || Deck.CardsRemaining == 0)
         {
+            _logger.LogInformation("[Game {GameId}] CheckRoundEndCondition: Condition met (ActivePlayers: {ACount}, Deck: {DCount}). Calling EndRound.", Id, activePlayers.Count, Deck.CardsRemaining);
             EndRound(activePlayers);
-            return true; // Indicate round has ended
+            _logger.LogDebug("[Game {GameId}] CheckRoundEndCondition: Returned from EndRound. GamePhase: {CurrentPhase}. Returning true.", Id, GamePhase);
+            return true;
         }
-        return false; // Round continues
+        _logger.LogDebug("[Game {GameId}] CheckRoundEndCondition: Condition NOT met. Returning false.", Id);
+        return false;
     }
 
     private void EndRound(List<Player> activePlayers)
     {
-        if (GamePhase != GamePhase.RoundInProgress) return; // Prevent multiple calls
+        _logger.LogDebug("[Game {GameId}] EndRound: Entry. Current GamePhase: {CurrentPhase}, _isSettingUpRound: {IsSettingUpValue}", Id, GamePhase, _isSettingUpRound);
+        if (GamePhase == GamePhase.RoundOver || GamePhase == GamePhase.GameOver) 
+        {
+            throw new InvalidMoveException($"[Game {Id}] EndRound cannot be called when the game phase is already {GamePhase}.");
+        }
 
-        GamePhase = GamePhase.RoundOver; // Mark round as over first
-        Guid? winnerId = null;
-        string reason;
-        Player? winningPlayer = null;
-        string roundEndMessage;
+        Player? roundWinner = null;
+        Card? winningCard = null;
+        string roundEndReason;
 
         if (activePlayers.Count == 1)
         {
-            winningPlayer = activePlayers.Single();
-            winnerId = winningPlayer.Id;
-            reason = "Last player standing";
-            roundEndMessage = $"Round {RoundNumber} ended. {winningPlayer.Name} wins as the last player standing.";
+            roundWinner = activePlayers.Single();
+            winningCard = roundWinner.Hand.GetHeldCard();
+            roundEndReason = $"Player {roundWinner.Name} is the last one active.";
+            _logger.LogDebug("[Game {GameId}] Round {RoundNumber} ended. Winner: {PlayerName} (last active).", Id, RoundNumber, roundWinner.Name); 
         }
-        else // Deck is empty
+        else if (activePlayers.Count > 1 && Deck.CardsRemaining == 0)
         {
-            reason = "Deck empty, highest card wins";
-            if (!activePlayers.Any()) 
-            {
-                winnerId = null; 
-                roundEndMessage = $"Round {RoundNumber} ended. No winner as deck is empty and no active players remain.";
-            }
-            else
-            {
-                var highestRank = activePlayers.Max(p => p.Hand.GetHeldCard()?.Rank.Value ?? -1);
-                var potentialWinners = activePlayers.Where(p => (p.Hand.GetHeldCard()?.Rank.Value ?? -1) == highestRank).ToList();
+            roundEndReason = "Deck is empty. Comparing hands.";
+            _logger.LogDebug("[Game {GameId}] Round {RoundNumber} ended. Deck empty, comparing hands of {ActivePlayerCount} players.", Id, RoundNumber, activePlayers.Count); 
+    
+            int highestRank = -1;
+            List<Player> potentialWinners = new List<Player>();
 
-                if (potentialWinners.Count == 1) { winningPlayer = potentialWinners.Single(); }
-                else // Tie in rank, compare discard piles
+            foreach (var player in activePlayers)
+            {
+                var playerHeldCard = player.Hand.GetHeldCard();
+                if (playerHeldCard != null)
                 {
-                    int highestDiscardSum = -1;
-                    List<Player> finalWinners = new List<Player>();
-                    foreach (var potentialWinner in potentialWinners)
+                    _logger.LogTrace("[Game {GameId}] Player {PlayerName} holds {CardRank} (Value: {CardValue}).", Id, player.Name, playerHeldCard.Rank.Name, playerHeldCard.Rank.Value); 
+                    if (playerHeldCard.Rank.Value > highestRank)
                     {
-                        int currentSum = potentialWinner.PlayedCards.Select(cardType => cardType.Value).Sum();
-                        if (currentSum > highestDiscardSum) { highestDiscardSum = currentSum; finalWinners.Clear(); finalWinners.Add(potentialWinner); }
-                        else if (currentSum == highestDiscardSum) { finalWinners.Add(potentialWinner); }
+                        highestRank = playerHeldCard.Rank.Value;
+                        potentialWinners.Clear();
+                        potentialWinners.Add(player);
                     }
-                    if (finalWinners.Count == 1) { winningPlayer = finalWinners.Single(); reason += " (Tie broken by discard sum)"; }
-                    else { reason += " (Tie in rank and discard sum)"; } // No single winner
-                }
-                winnerId = winningPlayer?.Id;
-                if (winningPlayer != null)
-                {
-                    roundEndMessage = $"Round {RoundNumber} ended. {winningPlayer.Name} wins: {reason}.";
+                    else if (playerHeldCard.Rank.Value == highestRank)
+                    {                    potentialWinners.Add(player);
+                    }
                 }
                 else
                 {
-                    roundEndMessage = $"Round {RoundNumber} ended. Tie: {reason}.";
+                    throw new GameRuleException($"[Game {Id}] Player {player.Name} (ID: {player.Id}) is active and deck is empty, but has no card in hand to compare. This indicates an inconsistent state or rule violation.");
                 }
             }
+
+            if (potentialWinners.Count == 1)
+            {
+                roundWinner = potentialWinners.Single();
+                winningCard = roundWinner.Hand.GetHeldCard();
+                _logger.LogDebug("[Game {GameId}] Round {RoundNumber} winner by highest card: {PlayerName} with {CardName} (Value: {CardValue}).", Id, RoundNumber, roundWinner.Name, winningCard?.Rank.Name, winningCard?.Rank.Value); 
+            }
+            else if (potentialWinners.Count > 1)
+            {
+                _logger.LogDebug("[Game {GameId}] Round {RoundNumber} ended in a tie for highest card. No token awarded this round.", Id, RoundNumber); 
+            }
+            else
+            {
+                 _logger.LogDebug("[Game {GameId}] Round {RoundNumber} ended. No players had cards to compare or some other edge case. No token awarded.", Id, RoundNumber); 
+            }
+        }
+        else
+        {
+            throw new InvalidMoveException($"[Game {Id}] EndRound was called under unexpected conditions. ActivePlayers: {activePlayers.Count}, DeckRemaining: {Deck.CardsRemaining}. The game state does not permit ending the round.");
         }
 
-        LastRoundWinnerId = winnerId;
-        
-        AddGameLogEntry(new GameLogEntry(
-            GameLogEventType.RoundEnd,
-            winningPlayer?.Id, // Winner is the 'acting' player in this context
-            winningPlayer?.Name ?? string.Empty,
-            roundEndMessage
-        )
-        {
-            RoundEndReason = reason
-        });
+        LastRoundWinnerId = roundWinner?.Id;
 
-        // If there's a winner, award token *before* creating summaries for RoundEnded event
-        if (winningPlayer != null)
+        // Create GameLogEntry
+        var logEntry = new GameLogEntry(GameLogEventType.RoundEnd, roundEndReason) 
         {
-            AwardTokenToPlayer(winningPlayer); // This increments TokensWon and raises TokenAwarded
-        }
+            WinnerPlayerId = roundWinner?.Id,
+            WinnerPlayerName = roundWinner?.Name,
+            RoundPlayerSummaries = Players.Select(p => 
+                new GameLogEntry.GameLogPlayerRoundSummary(p.Id, p.Name) 
+                {
+                    CardsHeld = p.Hand.GetCards().ToList(),
+                    Score = p.TokensWon,
+                    WasActive = p.Status == PlayerStatus.Active
+                }
+            ).ToList()
+        };
+        AddLogEntry(logEntry);
 
-        // Create detailed player summaries *after* token has been awarded
-        var playerSummaries = Players.Select(p => new PlayerRoundEndSummary(
-            p.Id,
-            p.Name,
-            p.Status == PlayerStatus.Active && !p.Hand.IsEmpty ? p.Hand.Cards.ToList() : new List<Card>(), // Correctly provide List<Card>
-            p.PlayedCards.Select(cardType => cardType.Value).ToList(), // Corrected: Use PlayedCards and cardType.Value
-            p.TokensWon
-        )).ToList();
+        var playerSummariesForEvent = Players.Select(p => 
+            new PlayerRoundEndSummary(
+                p.Id, 
+                p.Name, 
+                p.Hand.GetCards().ToList(), 
+                p.PlayedCards.Select(card => card.Value).ToList(), 
+                p.TokensWon
+            )
+        ).ToList();
 
-        AddDomainEvent(new RoundEnded(Id, winnerId, reason, playerSummaries));
-
-        // Check for game end or start next round
-        if (winningPlayer != null && winningPlayer.TokensWon >= TokensNeededToWin)
+        if (roundWinner != null)
         {
-            EndGame(winningPlayer.Id);
-        }
-        else if (GamePhase != GamePhase.GameOver) // If game not over (either by win or no winner)
-        {
-             StartNewRound(); // Automatically start the next round
-        }
-    }
+            roundWinner.AddToken();
+            _logger.LogDebug("[Game {GameId}] Player {PlayerName} awarded a token. Total tokens: {Tokens}", Id, roundWinner.Name, roundWinner.TokensWon); 
     
-    /// <summary>
-    /// Awards a token to the player and raises the TokenAwarded event.
-    /// Game end check is now handled after this call in EndRound.
-    /// </summary>
-    private void AwardTokenToPlayer(Player player)
-    {
-        player.AddToken(); // This increments player.TokensWon
-        string tokenMessage = $"{player.Name} was awarded a token of affection. They now have {player.TokensWon} token(s).";
-        AddGameLogEntry(new GameLogEntry(
-            GameLogEventType.TokenAwarded,
-            player.Id,
-            player.Name,
-            tokenMessage
-        )
-        {
-            TokensHeld = player.TokensWon
-        });
-        AddDomainEvent(new TokenAwarded(Id, player.Id, player.TokensWon));
-    }
+            AddDomainEvent(new RoundEnded(Id, roundWinner.Id, winningCard?.Rank.Name ?? "N/A", playerSummariesForEvent));
 
-    private void EndGame(Guid winnerId)
-    {
-        if (GamePhase == GamePhase.GameOver) return;
-        GamePhase = GamePhase.GameOver;
-        string endMessage = $"Game ended. {GetPlayerById(winnerId).Name} wins with {TokensNeededToWin} token(s).";
-        AddGameLogEntry(new GameLogEntry(
-            GameLogEventType.GameEnd,
-            winnerId,
-            GetPlayerById(winnerId).Name,
-            endMessage
-        ));
-        AddDomainEvent(new GameEnded(Id, winnerId));
+            if (roundWinner.TokensWon >= TokensNeededToWin)
+            {
+                GamePhase = GamePhase.GameOver;
+                _logger.LogInformation("[Game {GameId}] Game Over! Winner: {PlayerName} reached {TokensWon} tokens (needed {TokensNeeded}).", Id, roundWinner.Name, roundWinner.TokensWon, TokensNeededToWin); 
+                AddDomainEvent(new GameEnded(Id, roundWinner.Id));
+            }
+            else
+            {
+                GamePhase = GamePhase.RoundOver;
+            }
+        }
+        else
+        {
+            GamePhase = GamePhase.RoundOver;
+            AddDomainEvent(new RoundEnded(Id, null, "Tie or no winner determined this round.", playerSummariesForEvent)); 
+        }
+        _logger.LogDebug("[Game {GameId}] EndRound: Exit. GamePhase set to {CurrentPhase}. LastRoundWinnerId: {WinnerId}", Id, GamePhase, LastRoundWinnerId);
     }
 
     private void AdvanceTurn()
     {
-        if (GamePhase != GamePhase.RoundInProgress) return;
-        GetPlayerById(CurrentTurnPlayerId).SetProtection(false);
+        _logger.LogDebug("[Game {GameId}] AdvanceTurn: Entry. CurrentTurnPlayerId: {PlayerId}, GamePhase: {CurrentPhase}", Id, CurrentTurnPlayerId, GamePhase);
+        if (GamePhase != GamePhase.RoundInProgress)
+        {
+            throw new InvalidMoveException($"Cannot advance turn in game {Id}: GamePhase is {GamePhase}, but must be RoundInProgress.");
+        }
+
+        var currentPlayer = GetPlayerById(CurrentTurnPlayerId);
+        currentPlayer.SetProtection(false); // Current player loses protection at end of their turn
+        currentPlayer.IsPlayersTurn = false;
+        _logger.LogDebug("[Game {GameId}] AdvanceTurn: Player {PlayerId} turn ended. Protection removed.", Id, currentPlayer.Id);
+
         int currentPlayerIndex = Players.FindIndex(p => p.Id == CurrentTurnPlayerId);
-        int nextPlayerIndex = currentPlayerIndex;
         Player nextPlayer;
-        int loopCheck = 0;
+        int attempts = 0;
         do
         {
-            nextPlayerIndex = (nextPlayerIndex + 1) % Players.Count;
-            nextPlayer = Players[nextPlayerIndex];
-            if (++loopCheck > Players.Count * 2) {
-                 if (!CheckRoundEndCondition()) EndRound(new List<Player>());
-                 return;
+            currentPlayerIndex = (currentPlayerIndex + 1) % Players.Count;
+            nextPlayer = Players[currentPlayerIndex];
+            attempts++;
+            if (attempts > Players.Count * 2) // Safety break for infinite loops
+            {
+                throw new GameRuleException($"Failed to determine next active player in game {Id} after {attempts} attempts. Game state is inconsistent. CurrentTurnPlayerId: {CurrentTurnPlayerId}");
             }
         } while (nextPlayer.Status == PlayerStatus.Eliminated);
 
-        // Check if only one player remains active after skipping
-        // This check might be redundant if CheckRoundEndCondition is robust, but safe to keep
-        var activePlayers = Players.Count(p => p.Status == PlayerStatus.Active);
-        if(activePlayers <= 1)
-        {
-             if (CheckRoundEndCondition()) return; // Let Check call EndRound
-             EndRound(Players.Where(p => p.Status == PlayerStatus.Active).ToList()); // Force EndRound if Check missed it
-             return;
-        }
-
         CurrentTurnPlayerId = nextPlayer.Id;
-        HandleTurnStartDrawing(); // This method now checks for round end after drawing
-    }
+        nextPlayer.IsPlayersTurn = true;
+        _logger.LogInformation("[Game {GameId}] AdvanceTurn: Next player is {PlayerName} ({PlayerId}).", Id, nextPlayer.Name, nextPlayer.Id);
 
-    private void HandleTurnStartDrawing()
-    {
-        var player = GetPlayerById(CurrentTurnPlayerId);
-        if (player.Status != PlayerStatus.Active) return;
+        // New player draws their turn card
+        _logger.LogDebug("[Game {GameId}] AdvanceTurn: Calling DrawInitialTurnCard for new player {PlayerId}. _isSettingUpRound: {IsSettingUpValue}", Id, CurrentTurnPlayerId, _isSettingUpRound);
+        DrawInitialTurnCard(CurrentTurnPlayerId); 
+        _logger.LogDebug("[Game {GameId}] AdvanceTurn: Returned from DrawInitialTurnCard for new player. GamePhase: {CurrentPhase}", Id, GamePhase);
 
-        Card? drawnCard = null; // Keep track of the card drawn this turn
-        if (!Deck.IsEmpty)
-        {
-            (Card card, Deck remainingDeck) = Deck.Draw();
-            Deck = remainingDeck;
-            player.GiveCard(card);
-            drawnCard = card; // Store the drawn card
+        // This check is important if DrawInitialTurnCard itself could end the round (e.g. deck empty)
+        // However, CheckRoundEndCondition is already called at the end of DrawInitialTurnCard.
+        // If DrawInitialTurnCard didn't end the round, but something else needs to be checked before turn truly starts, do it here.
 
-            string drawMessage = $"{player.Name} drew a card.";
-            AddGameLogEntry(new GameLogEntry(
-                GameLogEventType.PlayerDrewCard, 
-                player.Id, 
-                player.Name, 
-                drawMessage,
-                true // This log is private to the player who drew
-            )
-            {
-                DrawnCard = drawnCard // Corrected property name from CardDrawn
-            });
-
-            AddDomainEvent(new PlayerDrewCard(Id, player.Id)); // Corrected PlayerDrewCard domain event constructor call
-
-            AddDomainEvent(new DeckChanged(Id, Deck.CardsRemaining));
-        }
-
-        // Check round end condition AFTER the draw attempt.
-        // This handles the case where the draw emptied the deck or player drew a game-ending card (if such logic existed).
-        // CheckRoundEndCondition() calls EndRound() if true.
-        bool roundEnded = CheckRoundEndCondition();
-
-        // Only raise TurnStarted event and log if the round didn't just end
-        if(!roundEnded && GamePhase == GamePhase.RoundInProgress)
-        {
-            string turnStartMessage = $"{player.Name}'s turn has started.";
-            AddGameLogEntry(new GameLogEntry(
-                GameLogEventType.TurnStart,
-                player.Id,
-                player.Name,
-                turnStartMessage
-            ));
-            AddDomainEvent(new TurnStarted(Id, CurrentTurnPlayerId, RoundNumber)); // Domain event for system use
-        }
-    }
-
-    private Player GetPlayerById(Guid playerId) { var player = Players.FirstOrDefault(p => p.Id == playerId); if (player == null) throw new ArgumentException($"Player with ID {playerId} not found in this game."); return player; }
-
-    // New method to add log entries
-    public void AddLogEntry(GameLogEntry entry)
-    {
-        if (entry == null) throw new ArgumentNullException(nameof(entry));
-        _logEntries.Insert(0, entry); // Insert at the beginning to keep newest first
-    }
-
-    private void AddGameLogEntry(GameLogEntry logEntry)
-    {
-        _logEntries.Insert(0, logEntry); // Keep newest first
+        // Log turn start event after card is drawn and player is ready
+        AddLogEntry(new GameLogEntry(GameLogEventType.TurnStart, CurrentTurnPlayerId, nextPlayer.Name, $"{nextPlayer.Name}'s turn started."));
+        AddDomainEvent(new TurnStarted(Id, CurrentTurnPlayerId, RoundNumber));
+        _logger.LogDebug("[Game {GameId}] AdvanceTurn: Exit. CurrentTurnPlayerId: {PlayerId}", Id, CurrentTurnPlayerId);
     }
 }

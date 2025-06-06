@@ -1,56 +1,41 @@
-using CardGame.Domain.Game;
 using CardGame.Domain.Interfaces;
 using CardGame.Domain.Types;
+using System;
+using System.Collections.Generic;
 
 namespace CardGame.Domain.Providers;
 
 /// <summary>
 /// Provides the default Love Letter deck configuration.
 /// </summary>
-public class DefaultDeckProvider : IDeckProvider
+public class DefaultDeckProvider : BaseDeckProvider
 {
-    private const string DefaultBackAppearanceId = "assets/decks/default/back.webp";
+    public override Guid DeckId => new Guid("00000000-0000-0000-0000-000000000001");
+    
+    public override string DisplayName => "Standard Love Letter";
+    
+    public override string Description => "The original Love Letter deck with 16 cards and 8 different character types.";
+    
+    protected override string ThemeName => "default";
+    
+    protected override string DeckBackAppearanceId => "assets/decks/default/back.webp";
 
-    /// <inheritdoc />
-    public Guid DeckId => new Guid("00000000-0000-0000-0000-000000000001");
-
-    /// <summary>
-    /// Gets the default Love Letter deck.
-    /// The deck composition is:
-    /// - 5 Guards (Rank 1)
-    /// - 2 Priests (Rank 2)
-    /// - 2 Barons (Rank 3)
-    /// - 2 Handmaids (Rank 4)
-    /// - 2 Princes (Rank 5)
-    /// - 1 King (Rank 6)
-    /// - 1 Countess (Rank 7)
-    /// - 1 Princess (Rank 8)
-    /// </summary>
-    /// <returns>A <see cref="DeckDefinition"/> representing the default deck.</returns>
-    public DeckDefinition GetDeck()
+    protected override IEnumerable<CardQuantity> GetCardQuantities()
     {
-        var cards = new List<Card>();
-
-        // Helper to add multiple cards of the same type
-        void AddCards(CardType type, int count)
+        return new List<CardQuantity>
         {
-            for (int i = 0; i < count; i++)
-            {
-                // AppearanceId can be simple for now, e.g., TypeName
-                // This could be enhanced later for actual visual variants if needed.
-                cards.Add(new Card($"assets/decks/default/{type.Name.ToLowerInvariant()}.webp", type));
-            }
-        }
-
-        AddCards(CardType.Guard, 5);
-        AddCards(CardType.Priest, 2);
-        AddCards(CardType.Baron, 2);
-        AddCards(CardType.Handmaid, 2);
-        AddCards(CardType.Prince, 2);
-        AddCards(CardType.King, 1);
-        AddCards(CardType.Countess, 1);
-        AddCards(CardType.Princess, 1);
-
-        return new DeckDefinition(cards, DefaultBackAppearanceId); 
+            new(CardType.Guard, 5),
+            new(CardType.Priest, 2),
+            new(CardType.Baron, 2),
+            new(CardType.Handmaid, 2),
+            new(CardType.Prince, 2),
+            new(CardType.King, 1),
+            new(CardType.Countess, 1),
+            new(CardType.Princess, 1)
+        };
     }
+
+    // All card effect logic (PerformCardEffect and Execute[CardName]Effect methods)
+    // is now inherited from BaseDeckProvider.
+    // DefaultDeckProvider only needs to define its unique properties and card quantities.
 }

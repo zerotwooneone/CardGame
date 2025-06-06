@@ -19,5 +19,6 @@ public enum GameLogEventType
     RoundStart = 17,
     TurnStart = 18,
     PlayerDrewCard = 19,
-    PrincePlayerDrawsNewCard = 20 // New event type for when Prince target draws a card
+    PrincePlayerDrawsNewCard = 20, // New event type for when Prince target draws a card
+    CardSetAsidePublicly = 21   // Card set aside face up at round start (e.g., in 2-player games)
 }
