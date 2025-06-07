@@ -95,11 +95,11 @@ public class PlayCardCommandHandler : IRequestHandler<PlayCardCommand>
         }
 
         // 7. Perform validation that depends on the actual card type being played (e.g., Guard guess)
-        if (cardToPlayInstance.Rank == CardType.Guard)
+        if (cardToPlayInstance.Rank == CardRank.Guard)
         {
             if (request.GuessedCardType == null)
                 throw new ValidationException("A card type must be guessed when playing a Guard.");
-            if (request.GuessedCardType == CardType.Guard)
+            if (request.GuessedCardType == CardRank.Guard)
                 throw new ValidationException("Cannot guess Guard when playing a Guard.");
             if (request.TargetPlayerId == null)
                 throw new ValidationException("Target player must be specified when playing a Guard.");

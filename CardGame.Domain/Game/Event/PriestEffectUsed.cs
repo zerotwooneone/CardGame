@@ -15,9 +15,9 @@ public record PriestEffectUsed : IDomainEvent
     public Guid TargetPlayerId { get; }
     // Changed from RevealedCardType to specific card info
     public string RevealedCardId { get; }
-    public CardType RevealedCardType { get; } // Keep type for convenience
+    public CardRank RevealedCardRank { get; } // Keep type for convenience
 
-    public PriestEffectUsed(Guid gameId, Guid priestPlayerId, Guid targetPlayerId, string revealedCardId, CardType revealedCardType, Guid? correlationId = null) // Updated constructor
+    public PriestEffectUsed(Guid gameId, Guid priestPlayerId, Guid targetPlayerId, string revealedCardId, CardRank revealedCardRank, Guid? correlationId = null) // Updated constructor
     {
         EventId = Guid.NewGuid();
         OccurredOn = DateTimeOffset.UtcNow;
@@ -26,6 +26,6 @@ public record PriestEffectUsed : IDomainEvent
         PriestPlayerId = priestPlayerId;
         TargetPlayerId = targetPlayerId;
         RevealedCardId = revealedCardId; // Assign ID
-        RevealedCardType = revealedCardType ?? throw new ArgumentNullException(nameof(revealedCardType)); // Assign Type
+        RevealedCardRank = revealedCardRank ?? throw new ArgumentNullException(nameof(revealedCardRank)); // Assign Type
     }
 }

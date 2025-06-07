@@ -14,11 +14,11 @@ public record RoundStarted : IDomainEvent
     public int RoundNumber { get; }
     public List<Guid> PlayerIds { get; }
     public int DeckCount { get; }
-    public CardType? SetAsideCardType { get; }
+    public CardRank? SetAsideCardType { get; }
     public List<PublicCardInfo> PubliclySetAsideCards { get; }
     public Guid DeckId { get; }
 
-    public RoundStarted(Guid gameId, int roundNumber, List<Guid> playerIds, int deckCount, CardType? setAsideCardType,
+    public RoundStarted(Guid gameId, int roundNumber, List<Guid> playerIds, int deckCount, CardRank? setAsideCardType,
         List<PublicCardInfo> publiclySetAsideCards, Guid deckId, Guid? correlationId = null)
     {
         EventId = Guid.NewGuid();

@@ -15,18 +15,18 @@ public record CardEffectFizzled : IDomainEvent // Implement IDomainEvent
     // Event Specific Properties
     public Guid GameId { get; }
     public Guid ActorId { get; } // Player who played the card
-    public CardType CardType { get; } // The card whose effect fizzled
+    public CardRank Rank { get; } // The card whose effect fizzled
     public Guid TargetId { get; } // The player targeted
     public string Reason { get; } // e.g., "Target was protected"
 
-    public CardEffectFizzled(Guid gameId, Guid actorId, CardType cardType, Guid targetId, string reason, Guid? correlationId = null)
+    public CardEffectFizzled(Guid gameId, Guid actorId, CardRank cardRank, Guid targetId, string reason, Guid? correlationId = null)
     {
         EventId = Guid.NewGuid();
         OccurredOn = DateTimeOffset.UtcNow;
         CorrelationId = correlationId;
         GameId = gameId;
         ActorId = actorId;
-        CardType = cardType ?? throw new ArgumentNullException(nameof(cardType));
+        Rank = cardRank ?? throw new ArgumentNullException(nameof(cardRank));
         TargetId = targetId;
         Reason = reason ?? string.Empty;
     }

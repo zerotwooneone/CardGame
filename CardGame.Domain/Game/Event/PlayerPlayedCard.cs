@@ -15,9 +15,9 @@ public record PlayerPlayedCard : IDomainEvent
     public Guid PlayerId { get; }
     public Card PlayedCard { get; }
     public Guid? TargetPlayerId { get; }
-    public CardType? GuessedCardType { get; }
+    public CardRank? GuessedCardType { get; }
 
-    public PlayerPlayedCard(Guid gameId, Guid playerId, Card playedCard, Guid? targetPlayerId, CardType? guessedCardType, Guid? correlationId = null)
+    public PlayerPlayedCard(Guid gameId, Guid playerId, Card playedCard, Guid? targetPlayerId, CardRank? guessedCardType, Guid? correlationId = null)
     {
         EventId = Guid.NewGuid();
         OccurredOn = DateTimeOffset.UtcNow;

@@ -2,4 +2,4 @@
 
 namespace CardGame.Domain.Game;
 
-public record PublicCardInfo(string Id, CardType Type);
+public record PublicCardInfo(string Id, CardRank Rank);

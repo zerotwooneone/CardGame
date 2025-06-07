@@ -13,7 +13,7 @@ public class Player // Entity
     public string Name { get; private set; }
     public PlayerStatus Status { get; private set; } = PlayerStatus.Active;
     public Hand Hand { get; private set; } = Hand.Empty;
-    public List<CardType> PlayedCards { get; private set; } = new List<CardType>();
+    public List<CardRank> PlayedCards { get; private set; } = new List<CardRank>();
     public int TokensWon { get; private set; } = 0;
     public bool IsProtected { get; private set; } = false;
     public bool IsPlayersTurn { get; set; } = false;
@@ -48,7 +48,7 @@ public class Player // Entity
         string name,
         PlayerStatus status,
         Hand hand, // Assume Hand VO is already loaded
-        List<CardType> playedCards, // Assume List<CardType> is loaded
+        List<CardRank> playedCards, // Assume List<CardType> is loaded
         int tokensWon,
         bool isProtected,
         ILogger<Player> logger)
@@ -56,7 +56,7 @@ public class Player // Entity
         var player = new Player(id, name, logger); // Use private constructor
         player.Status = status ?? PlayerStatus.Active;
         player.Hand = hand ?? Hand.Empty;
-        player.PlayedCards = playedCards ?? new List<CardType>();
+        player.PlayedCards = playedCards ?? new List<CardRank>();
         player.TokensWon = tokensWon;
         player.IsProtected = isProtected;
         return player;
@@ -111,7 +111,7 @@ public class Player // Entity
         foreach (var cardInHand in cardsInHandBeforeDiscard)
         {
             PlayedCards.Add(cardInHand.Rank); // Add all discarded cards to played cards
-            if (cardInHand.Rank == CardGame.Domain.Types.CardType.Princess) 
+            if (cardInHand.Rank == CardGame.Domain.Types.CardRank.Princess) 
             {
                 princessCard = cardInHand; // Note if Princess was discarded
             }

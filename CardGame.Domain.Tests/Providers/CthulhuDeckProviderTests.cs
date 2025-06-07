@@ -49,7 +49,7 @@ namespace CardGame.Domain.Tests.Providers
         public void GetDeck_ShouldReturnCorrectCountOfEachCardType(int cardRank, int expectedCount, string cardNameForMessage)
         {
             // Arrange
-            var cardType = CardType.FromValue(cardRank);
+            var cardType = CardRank.FromValue(cardRank);
             
             // Act
             var cards = _provider.GetDeck().Cards;
@@ -84,13 +84,13 @@ namespace CardGame.Domain.Tests.Providers
         public void ExecuteCardEffect_Guard_NoTargetPlayer_ThrowsInvalidMoveException()
         {
             // Arrange
-            var guardCard = new Card("guard_1.webp", CardType.Guard);
+            var guardCard = new Card("guard_1.webp", CardRank.Guard);
             var playerHand = Hand.Load(new List<Card> { guardCard });
-            var actingPlayer = Player.Load(Guid.NewGuid(), "P1", PlayerStatus.Active, playerHand, new List<CardType>(), 0, false, _playerLogger);
+            var actingPlayer = Player.Load(Guid.NewGuid(), "P1", PlayerStatus.Active, playerHand, new List<CardRank>(), 0, false, _playerLogger);
 
             // Act & Assert
             var ex = Assert.Throws<InvalidMoveException>(() => 
-                _provider.ExecuteCardEffect(_mockGameOperations.Object, actingPlayer, guardCard, null, CardType.Priest));
+                _provider.ExecuteCardEffect(_mockGameOperations.Object, actingPlayer, guardCard, null, CardRank.Priest));
             Assert.That(ex.Message, Is.EqualTo("Guard requires a target player."));
         }
 
@@ -98,10 +98,10 @@ namespace CardGame.Domain.Tests.Providers
         public void ExecuteCardEffect_Guard_NoGuessedCardType_ThrowsInvalidMoveException()
         {
             // Arrange
-            var guardCard = new Card("guard_1.webp", CardType.Guard);
+            var guardCard = new Card("guard_1.webp", CardRank.Guard);
             var playerHand = Hand.Load(new List<Card> { guardCard });
-            var actingPlayer = Player.Load(Guid.NewGuid(), "P1", PlayerStatus.Active, playerHand, new List<CardType>(), 0, false, _playerLogger);
-            var targetPlayer = Player.Load(Guid.NewGuid(), "P2", PlayerStatus.Active, Hand.Load(new List<Card> { new Card("priest.webp", CardType.Priest) }), new List<CardType>(), 0, false, _playerLogger);
+            var actingPlayer = Player.Load(Guid.NewGuid(), "P1", PlayerStatus.Active, playerHand, new List<CardRank>(), 0, false, _playerLogger);
+            var targetPlayer = Player.Load(Guid.NewGuid(), "P2", PlayerStatus.Active, Hand.Load(new List<Card> { new Card("priest.webp", CardRank.Priest) }), new List<CardRank>(), 0, false, _playerLogger);
 
             // Act & Assert
             var ex = Assert.Throws<InvalidMoveException>(() => 
@@ -113,14 +113,14 @@ namespace CardGame.Domain.Tests.Providers
         public void ExecuteCardEffect_Guard_GuessingGuard_ThrowsInvalidMoveException()
         {
             // Arrange
-            var guardCard = new Card("guard_1.webp", CardType.Guard);
+            var guardCard = new Card("guard_1.webp", CardRank.Guard);
             var playerHand = Hand.Load(new List<Card> { guardCard });
-            var actingPlayer = Player.Load(Guid.NewGuid(), "P1", PlayerStatus.Active, playerHand, new List<CardType>(), 0, false, _playerLogger);
-            var targetPlayer = Player.Load(Guid.NewGuid(), "P2", PlayerStatus.Active, Hand.Load(new List<Card> { new Card("priest.webp", CardType.Priest) }), new List<CardType>(), 0, false, _playerLogger);
+            var actingPlayer = Player.Load(Guid.NewGuid(), "P1", PlayerStatus.Active, playerHand, new List<CardRank>(), 0, false, _playerLogger);
+            var targetPlayer = Player.Load(Guid.NewGuid(), "P2", PlayerStatus.Active, Hand.Load(new List<Card> { new Card("priest.webp", CardRank.Priest) }), new List<CardRank>(), 0, false, _playerLogger);
 
             // Act & Assert
             var ex = Assert.Throws<InvalidMoveException>(() => 
-                _provider.ExecuteCardEffect(_mockGameOperations.Object, actingPlayer, guardCard, targetPlayer, CardType.Guard));
+                _provider.ExecuteCardEffect(_mockGameOperations.Object, actingPlayer, guardCard, targetPlayer, CardRank.Guard));
             Assert.That(ex.Message, Is.EqualTo("Cannot guess Guard with a Guard."));
         }
 
@@ -128,13 +128,13 @@ namespace CardGame.Domain.Tests.Providers
         public void ExecuteCardEffect_Guard_TargetingSelf_ThrowsInvalidMoveException()
         {
             // Arrange
-            var guardCard = new Card("guard_1.webp", CardType.Guard);
+            var guardCard = new Card("guard_1.webp", CardRank.Guard);
             var playerHand = Hand.Load(new List<Card> { guardCard });
-            var actingPlayer = Player.Load(Guid.NewGuid(), "P1", PlayerStatus.Active, playerHand, new List<CardType>(), 0, false, _playerLogger);
+            var actingPlayer = Player.Load(Guid.NewGuid(), "P1", PlayerStatus.Active, playerHand, new List<CardRank>(), 0, false, _playerLogger);
 
             // Act & Assert
             var ex = Assert.Throws<InvalidMoveException>(() => 
-                _provider.ExecuteCardEffect(_mockGameOperations.Object, actingPlayer, guardCard, actingPlayer, CardType.Priest));
+                _provider.ExecuteCardEffect(_mockGameOperations.Object, actingPlayer, guardCard, actingPlayer, CardRank.Priest));
             Assert.That(ex.Message, Is.EqualTo("Guard cannot target self."));
         }
 
@@ -143,11 +143,11 @@ namespace CardGame.Domain.Tests.Providers
         public void ExecuteCardEffect_PlayerHoldsCountessAndKing_PlayingKing_ThrowsInvalidMoveException()
         {
             // Arrange
-            var countessCard = new Card("countess.webp", CardType.Countess);
-            var kingCard = new Card("king.webp", CardType.King);
+            var countessCard = new Card("countess.webp", CardRank.Countess);
+            var kingCard = new Card("king.webp", CardRank.King);
             var playerHand = Hand.Load(new List<Card> { countessCard, kingCard });
-            var actingPlayer = Player.Load(Guid.NewGuid(), "P1", PlayerStatus.Active, playerHand, new List<CardType>(), 0, false, _playerLogger);
-            var targetPlayer = Player.Load(Guid.NewGuid(), "P2", PlayerStatus.Active, Hand.Load(new List<Card> { new Card("priest.webp", CardType.Priest) }), new List<CardType>(), 0, false, _playerLogger); // King needs a target
+            var actingPlayer = Player.Load(Guid.NewGuid(), "P1", PlayerStatus.Active, playerHand, new List<CardRank>(), 0, false, _playerLogger);
+            var targetPlayer = Player.Load(Guid.NewGuid(), "P2", PlayerStatus.Active, Hand.Load(new List<Card> { new Card("priest.webp", CardRank.Priest) }), new List<CardRank>(), 0, false, _playerLogger); // King needs a target
 
             // Act & Assert
             var ex = Assert.Throws<InvalidMoveException>(() => 
@@ -159,11 +159,11 @@ namespace CardGame.Domain.Tests.Providers
         public void ExecuteCardEffect_PlayerHoldsCountessAndPrince_PlayingPrince_ThrowsInvalidMoveException()
         {
             // Arrange
-            var countessCard = new Card("countess.webp", CardType.Countess);
-            var princeCard = new Card("prince.webp", CardType.Prince);
+            var countessCard = new Card("countess.webp", CardRank.Countess);
+            var princeCard = new Card("prince.webp", CardRank.Prince);
             var playerHand = Hand.Load(new List<Card> { countessCard, princeCard });
-            var actingPlayer = Player.Load(Guid.NewGuid(), "P1", PlayerStatus.Active, playerHand, new List<CardType>(), 0, false, _playerLogger);
-            var targetPlayer = Player.Load(Guid.NewGuid(), "P2", PlayerStatus.Active, Hand.Load(new List<Card> { new Card("priest.webp", CardType.Priest) }), new List<CardType>(), 0, false, _playerLogger); // Prince can target others
+            var actingPlayer = Player.Load(Guid.NewGuid(), "P1", PlayerStatus.Active, playerHand, new List<CardRank>(), 0, false, _playerLogger);
+            var targetPlayer = Player.Load(Guid.NewGuid(), "P2", PlayerStatus.Active, Hand.Load(new List<Card> { new Card("priest.webp", CardRank.Priest) }), new List<CardRank>(), 0, false, _playerLogger); // Prince can target others
 
             // Act & Assert
             var ex = Assert.Throws<InvalidMoveException>(() => 
@@ -176,9 +176,9 @@ namespace CardGame.Domain.Tests.Providers
         public void ExecuteCardEffect_Priest_NoTargetPlayer_ThrowsInvalidMoveException()
         {
             // Arrange
-            var priestCard = new Card("priest.webp", CardType.Priest);
+            var priestCard = new Card("priest.webp", CardRank.Priest);
             var playerHand = Hand.Load(new List<Card> { priestCard });
-            var actingPlayer = Player.Load(Guid.NewGuid(), "P1", PlayerStatus.Active, playerHand, new List<CardType>(), 0, false, _playerLogger);
+            var actingPlayer = Player.Load(Guid.NewGuid(), "P1", PlayerStatus.Active, playerHand, new List<CardRank>(), 0, false, _playerLogger);
 
             // Act & Assert
             var ex = Assert.Throws<InvalidMoveException>(() => 
@@ -190,9 +190,9 @@ namespace CardGame.Domain.Tests.Providers
         public void ExecuteCardEffect_Priest_TargetingSelf_ThrowsInvalidMoveException()
         {
             // Arrange
-            var priestCard = new Card("priest.webp", CardType.Priest);
+            var priestCard = new Card("priest.webp", CardRank.Priest);
             var playerHand = Hand.Load(new List<Card> { priestCard });
-            var actingPlayer = Player.Load(Guid.NewGuid(), "P1", PlayerStatus.Active, playerHand, new List<CardType>(), 0, false, _playerLogger);
+            var actingPlayer = Player.Load(Guid.NewGuid(), "P1", PlayerStatus.Active, playerHand, new List<CardRank>(), 0, false, _playerLogger);
 
             // Act & Assert
             var ex = Assert.Throws<InvalidMoveException>(() => 
@@ -205,9 +205,9 @@ namespace CardGame.Domain.Tests.Providers
         public void ExecuteCardEffect_Baron_NoTargetPlayer_ThrowsInvalidMoveException()
         {
             // Arrange
-            var baronCard = new Card("baron.webp", CardType.Baron);
+            var baronCard = new Card("baron.webp", CardRank.Baron);
             var playerHand = Hand.Load(new List<Card> { baronCard });
-            var actingPlayer = Player.Load(Guid.NewGuid(), "P1", PlayerStatus.Active, playerHand, new List<CardType>(), 0, false, _playerLogger);
+            var actingPlayer = Player.Load(Guid.NewGuid(), "P1", PlayerStatus.Active, playerHand, new List<CardRank>(), 0, false, _playerLogger);
 
             // Act & Assert
             var ex = Assert.Throws<InvalidMoveException>(() => 
@@ -219,9 +219,9 @@ namespace CardGame.Domain.Tests.Providers
         public void ExecuteCardEffect_Baron_TargetingSelf_ThrowsInvalidMoveException()
         {
             // Arrange
-            var baronCard = new Card("baron.webp", CardType.Baron);
+            var baronCard = new Card("baron.webp", CardRank.Baron);
             var playerHand = Hand.Load(new List<Card> { baronCard });
-            var actingPlayer = Player.Load(Guid.NewGuid(), "P1", PlayerStatus.Active, playerHand, new List<CardType>(), 0, false, _playerLogger);
+            var actingPlayer = Player.Load(Guid.NewGuid(), "P1", PlayerStatus.Active, playerHand, new List<CardRank>(), 0, false, _playerLogger);
 
             // Act & Assert
             var ex = Assert.Throws<InvalidMoveException>(() => 
@@ -234,9 +234,9 @@ namespace CardGame.Domain.Tests.Providers
         public void ExecuteCardEffect_King_NoTargetPlayer_ThrowsInvalidMoveException()
         {
             // Arrange
-            var kingCard = new Card("king.webp", CardType.King);
+            var kingCard = new Card("king.webp", CardRank.King);
             var playerHand = Hand.Load(new List<Card> { kingCard });
-            var actingPlayer = Player.Load(Guid.NewGuid(), "P1", PlayerStatus.Active, playerHand, new List<CardType>(), 0, false, _playerLogger);
+            var actingPlayer = Player.Load(Guid.NewGuid(), "P1", PlayerStatus.Active, playerHand, new List<CardRank>(), 0, false, _playerLogger);
 
             // Act & Assert
             var ex = Assert.Throws<InvalidMoveException>(() => 
@@ -248,9 +248,9 @@ namespace CardGame.Domain.Tests.Providers
         public void ExecuteCardEffect_King_TargetingSelf_ThrowsInvalidMoveException()
         {
             // Arrange
-            var kingCard = new Card("king.webp", CardType.King);
+            var kingCard = new Card("king.webp", CardRank.King);
             var playerHand = Hand.Load(new List<Card> { kingCard });
-            var actingPlayer = Player.Load(Guid.NewGuid(), "P1", PlayerStatus.Active, playerHand, new List<CardType>(), 0, false, _playerLogger);
+            var actingPlayer = Player.Load(Guid.NewGuid(), "P1", PlayerStatus.Active, playerHand, new List<CardRank>(), 0, false, _playerLogger);
 
             // Act & Assert
             var ex = Assert.Throws<InvalidMoveException>(() => 
@@ -263,9 +263,9 @@ namespace CardGame.Domain.Tests.Providers
         public void ExecuteCardEffect_Prince_NoTargetPlayer_ThrowsInvalidMoveException()
         {
             // Arrange
-            var princeCard = new Card("prince.webp", CardType.Prince);
+            var princeCard = new Card("prince.webp", CardRank.Prince);
             var playerHand = Hand.Load(new List<Card> { princeCard });
-            var actingPlayer = Player.Load(Guid.NewGuid(), "P1", PlayerStatus.Active, playerHand, new List<CardType>(), 0, false, _playerLogger);
+            var actingPlayer = Player.Load(Guid.NewGuid(), "P1", PlayerStatus.Active, playerHand, new List<CardRank>(), 0, false, _playerLogger);
 
             // Act & Assert
             var ex = Assert.Throws<InvalidMoveException>(() => 
@@ -277,9 +277,9 @@ namespace CardGame.Domain.Tests.Providers
         public void ExecuteCardEffect_Prince_TargetingSelf_DoesNotThrow()
         {
             // Arrange
-            var princeCard = new Card("prince.webp", CardType.Prince);
+            var princeCard = new Card("prince.webp", CardRank.Prince);
             var playerHand = Hand.Load(new List<Card> { princeCard });
-            var actingPlayer = Player.Load(Guid.NewGuid(), "P1", PlayerStatus.Active, playerHand, new List<CardType>(), 0, false, _playerLogger);
+            var actingPlayer = Player.Load(Guid.NewGuid(), "P1", PlayerStatus.Active, playerHand, new List<CardRank>(), 0, false, _playerLogger);
             _mockGameOperations.Setup(g => g.AddLogEntry(It.IsAny<GameLogEntry>()));
             _mockGameOperations.Setup(g => g.DrawCardForPlayer(actingPlayer.Id)); // Prince effect might draw a card
 
@@ -294,10 +294,10 @@ namespace CardGame.Domain.Tests.Providers
         public void ExecuteCardEffect_PlayerHoldsCountessAndKing_PlayingCountess_DoesNotThrow()
         {
             // Arrange
-            var countessCard = new Card("countess.webp", CardType.Countess);
-            var kingCard = new Card("king.webp", CardType.King);
+            var countessCard = new Card("countess.webp", CardRank.Countess);
+            var kingCard = new Card("king.webp", CardRank.King);
             var playerHand = Hand.Load(new List<Card> { countessCard, kingCard });
-            var actingPlayer = Player.Load(Guid.NewGuid(), "P1", PlayerStatus.Active, playerHand, new List<CardType>(), 0, false, _playerLogger);
+            var actingPlayer = Player.Load(Guid.NewGuid(), "P1", PlayerStatus.Active, playerHand, new List<CardRank>(), 0, false, _playerLogger);
             _mockGameOperations.Setup(g => g.AddLogEntry(It.IsAny<GameLogEntry>()));
 
             // Act & Assert
@@ -310,10 +310,10 @@ namespace CardGame.Domain.Tests.Providers
         public void ExecuteCardEffect_PlayerHoldsCountessAndPrince_PlayingCountess_DoesNotThrow()
         {
             // Arrange
-            var countessCard = new Card("countess.webp", CardType.Countess);
-            var princeCard = new Card("prince.webp", CardType.Prince);
+            var countessCard = new Card("countess.webp", CardRank.Countess);
+            var princeCard = new Card("prince.webp", CardRank.Prince);
             var playerHand = Hand.Load(new List<Card> { countessCard, princeCard });
-            var actingPlayer = Player.Load(Guid.NewGuid(), "P1", PlayerStatus.Active, playerHand, new List<CardType>(), 0, false, _playerLogger);
+            var actingPlayer = Player.Load(Guid.NewGuid(), "P1", PlayerStatus.Active, playerHand, new List<CardRank>(), 0, false, _playerLogger);
             _mockGameOperations.Setup(g => g.AddLogEntry(It.IsAny<GameLogEntry>()));
 
             // Act & Assert
@@ -326,20 +326,20 @@ namespace CardGame.Domain.Tests.Providers
         public void ExecuteCardEffect_PlayerHoldsCountessNoKingOrPrince_PlayingOtherCard_DoesNotThrow()
         {
             // Arrange
-            var countessCard = new Card("countess.webp", CardType.Countess);
-            var guardCard = new Card("guard.webp", CardType.Guard);
+            var countessCard = new Card("countess.webp", CardRank.Countess);
+            var guardCard = new Card("guard.webp", CardRank.Guard);
             var playerHand = Hand.Load(new List<Card> { countessCard, guardCard });
-            var actingPlayer = Player.Load(Guid.NewGuid(), "P1", PlayerStatus.Active, playerHand, new List<CardType>(), 0, false, _playerLogger);
-            var targetPlayer = Player.Load(Guid.NewGuid(), "P2", PlayerStatus.Active, Hand.Load(new List<Card> { new Card("priest.webp", CardType.Priest) }), new List<CardType>(), 0, false, _playerLogger);
+            var actingPlayer = Player.Load(Guid.NewGuid(), "P1", PlayerStatus.Active, playerHand, new List<CardRank>(), 0, false, _playerLogger);
+            var targetPlayer = Player.Load(Guid.NewGuid(), "P2", PlayerStatus.Active, Hand.Load(new List<Card> { new Card("priest.webp", CardRank.Priest) }), new List<CardRank>(), 0, false, _playerLogger);
             _mockGameOperations.Setup(g => g.AddLogEntry(It.IsAny<GameLogEntry>()));
             // Mock for Guard effect if it proceeds
             _mockGameOperations.Setup(g => g.GetPlayer(targetPlayer.Id)).Returns(targetPlayer);
-            var targetCardInHand = new Card("baron.webp", CardType.Baron);
+            var targetCardInHand = new Card("baron.webp", CardRank.Baron);
             targetPlayer.Hand.Add(targetCardInHand); // Ensure target has a card for Guard to potentially interact with
 
             // Act & Assert
             Assert.DoesNotThrow(() => 
-                _provider.ExecuteCardEffect(_mockGameOperations.Object, actingPlayer, guardCard, targetPlayer, CardType.Baron), // Playing Guard
+                _provider.ExecuteCardEffect(_mockGameOperations.Object, actingPlayer, guardCard, targetPlayer, CardRank.Baron), // Playing Guard
                 "Playing another card (Guard) when holding Countess but no King/Prince should be valid.");
         }
 
@@ -347,10 +347,10 @@ namespace CardGame.Domain.Tests.Providers
         public void ExecuteCardEffect_PlayerPlaysCountess_NoKingOrPrinceInHand_DoesNotThrow()
         {
             // Arrange
-            var countessCard = new Card("countess.webp", CardType.Countess);
-            var guardCard = new Card("guard.webp", CardType.Guard); // Another card, not King or Prince
+            var countessCard = new Card("countess.webp", CardRank.Countess);
+            var guardCard = new Card("guard.webp", CardRank.Guard); // Another card, not King or Prince
             var playerHand = Hand.Load(new List<Card> { countessCard, guardCard });
-            var actingPlayer = Player.Load(Guid.NewGuid(), "P1", PlayerStatus.Active, playerHand, new List<CardType>(), 0, false, _playerLogger);
+            var actingPlayer = Player.Load(Guid.NewGuid(), "P1", PlayerStatus.Active, playerHand, new List<CardRank>(), 0, false, _playerLogger);
             _mockGameOperations.Setup(g => g.AddLogEntry(It.IsAny<GameLogEntry>()));
 
             // Act & Assert

@@ -3,7 +3,7 @@ using GeneratorAttributes;
 namespace CardGame.Domain.Types;
 
 [EnumLike]
-public sealed partial class CardType 
+public sealed partial class CardRank 
 {
 #pragma warning disable CS0414 // Used by source generator
     [GeneratedEnumValue]

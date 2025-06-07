@@ -13,10 +13,10 @@ public record GuardGuessResult : IDomainEvent
     public Guid GameId { get; }
     public Guid GuesserId { get; }
     public Guid TargetId { get; }
-    public CardType GuessedCardType { get; }
+    public CardRank GuessedCardRank { get; }
     public bool WasCorrect { get; }
 
-    public GuardGuessResult(Guid gameId, Guid guesserId, Guid targetId, CardType guessedCardType, bool wasCorrect, Guid? correlationId = null)
+    public GuardGuessResult(Guid gameId, Guid guesserId, Guid targetId, CardRank guessedCardRank, bool wasCorrect, Guid? correlationId = null)
     {
         EventId = Guid.NewGuid();
         OccurredOn = DateTimeOffset.UtcNow;
@@ -24,7 +24,7 @@ public record GuardGuessResult : IDomainEvent
         GameId = gameId;
         GuesserId = guesserId;
         TargetId = targetId;
-        GuessedCardType = guessedCardType;
+        GuessedCardRank = guessedCardRank;
         WasCorrect = wasCorrect;
     }
 }

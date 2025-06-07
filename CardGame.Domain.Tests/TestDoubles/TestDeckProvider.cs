@@ -19,10 +19,10 @@ namespace CardGame.Domain.Tests.TestDoubles
         private readonly DefaultDeckProvider _defaultProvider = new();
 
         // Custom behaviors that can be set by tests
-        private Action<IGameOperations, Player, Card, Player?, CardType?>? _executeCardEffectBehavior;
-        private Func<CardType, bool>? _requiresTargetPlayerBehavior;
-        private Func<CardType, bool>? _canTargetSelfBehavior;
-        private Func<CardType, bool>? _requiresGuessBehavior;
+        private Action<IGameOperations, Player, Card, Player?, CardRank?>? _executeCardEffectBehavior;
+        private Func<CardRank, bool>? _requiresTargetPlayerBehavior;
+        private Func<CardRank, bool>? _canTargetSelfBehavior;
+        private Func<CardRank, bool>? _requiresGuessBehavior;
 
         public TestDeckProvider(Guid? deckId = null, IEnumerable<Card>? deckCards = null)
         {
@@ -86,7 +86,7 @@ namespace CardGame.Domain.Tests.TestDoubles
         /// <summary>
         /// Executes the effect of a played card.
         /// </summary>
-        public void ExecuteCardEffect(IGameOperations game, Player actingPlayer, Card card, Player? targetPlayer, CardType? guessedCardType)
+        public void ExecuteCardEffect(IGameOperations game, Player actingPlayer, Card card, Player? targetPlayer, CardRank? guessedCardType)
         {
             if (_executeCardEffectBehavior != null)
             {
@@ -101,28 +101,28 @@ namespace CardGame.Domain.Tests.TestDoubles
         /// <summary>
         /// Determines if a card type requires a target player.
         /// </summary>
-        public bool RequiresTargetPlayer(CardType cardType)
+        public bool RequiresTargetPlayer(CardRank cardRank)
         {
-            return _requiresTargetPlayerBehavior?.Invoke(cardType) 
-                ?? _defaultProvider.RequiresTargetPlayer(cardType);
+            return _requiresTargetPlayerBehavior?.Invoke(cardRank) 
+                ?? _defaultProvider.RequiresTargetPlayer(cardRank);
         }
 
         /// <summary>
         /// Determines if a card type can target the player who played it.
         /// </summary>
-        public bool CanTargetSelf(CardType cardType)
+        public bool CanTargetSelf(CardRank cardRank)
         {
-            return _canTargetSelfBehavior?.Invoke(cardType) 
-                ?? _defaultProvider.CanTargetSelf(cardType);
+            return _canTargetSelfBehavior?.Invoke(cardRank) 
+                ?? _defaultProvider.CanTargetSelf(cardRank);
         }
 
         /// <summary>
         /// Determines if a card type requires a guess.
         /// </summary>
-        public bool RequiresGuess(CardType cardType)
+        public bool RequiresGuess(CardRank cardRank)
         {
-            return _requiresGuessBehavior?.Invoke(cardType) 
-                ?? _defaultProvider.RequiresGuess(cardType);
+            return _requiresGuessBehavior?.Invoke(cardRank) 
+                ?? _defaultProvider.RequiresGuess(cardRank);
         }
 
         #region Test Configuration Methods
@@ -130,25 +130,25 @@ namespace CardGame.Domain.Tests.TestDoubles
         /// <summary>
         /// Sets a custom behavior for the ExecuteCardEffect method.
         /// </summary>
-        public void SetupExecuteCardEffect(Action<IGameOperations, Player, Card, Player?, CardType?> behavior)
+        public void SetupExecuteCardEffect(Action<IGameOperations, Player, Card, Player?, CardRank?> behavior)
             => _executeCardEffectBehavior = behavior;
 
         /// <summary>
         /// Sets a custom behavior for the RequiresTargetPlayer method.
         /// </summary>
-        public void SetupRequiresTargetPlayer(Func<CardType, bool> behavior)
+        public void SetupRequiresTargetPlayer(Func<CardRank, bool> behavior)
             => _requiresTargetPlayerBehavior = behavior;
 
         /// <summary>
         /// Sets a custom behavior for the CanTargetSelf method.
         /// </summary>
-        public void SetupCanTargetSelf(Func<CardType, bool> behavior)
+        public void SetupCanTargetSelf(Func<CardRank, bool> behavior)
             => _canTargetSelfBehavior = behavior;
 
         /// <summary>
         /// Sets a custom behavior for the RequiresGuess method.
         /// </summary>
-        public void SetupRequiresGuess(Func<CardType, bool> behavior)
+        public void SetupRequiresGuess(Func<CardRank, bool> behavior)
             => _requiresGuessBehavior = behavior;
 
         #endregion

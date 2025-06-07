@@ -24,14 +24,14 @@ public class DefaultDeckProvider : BaseDeckProvider
     {
         return new List<CardQuantity>
         {
-            new(CardType.Guard, 5),
-            new(CardType.Priest, 2),
-            new(CardType.Baron, 2),
-            new(CardType.Handmaid, 2),
-            new(CardType.Prince, 2),
-            new(CardType.King, 1),
-            new(CardType.Countess, 1),
-            new(CardType.Princess, 1)
+            new(CardRank.Guard, 5),
+            new(CardRank.Priest, 2),
+            new(CardRank.Baron, 2),
+            new(CardRank.Handmaid, 2),
+            new(CardRank.Prince, 2),
+            new(CardRank.King, 1),
+            new(CardRank.Countess, 1),
+            new(CardRank.Princess, 1)
         };
     }
 

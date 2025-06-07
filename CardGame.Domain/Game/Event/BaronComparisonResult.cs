@@ -12,12 +12,12 @@ public record BaronComparisonResult : IDomainEvent
     // Event Specific Properties
     public Guid GameId { get; }
     public Guid Player1Id { get; }
-    public CardType Player1Card { get; }
+    public CardRank Player1Card { get; }
     public Guid Player2Id { get; }
-    public CardType Player2Card { get; }
+    public CardRank Player2Card { get; }
     public Guid? LoserPlayerId { get; }
 
-    public BaronComparisonResult(Guid gameId, Guid player1Id, CardType player1Card, Guid player2Id, CardType player2Card, Guid? loserPlayerId, Guid? correlationId = null)
+    public BaronComparisonResult(Guid gameId, Guid player1Id, CardRank player1Card, Guid player2Id, CardRank player2Card, Guid? loserPlayerId, Guid? correlationId = null)
     {
         EventId = Guid.NewGuid();
         OccurredOn = DateTimeOffset.UtcNow;

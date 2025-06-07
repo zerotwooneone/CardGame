@@ -79,7 +79,7 @@ public sealed record Hand
     /// <summary>
     /// Checks if the hand contains a card of the specified type.
     /// </summary>
-    public bool Contains(CardType cardType) => cardType != null && Cards.Any(c => c.Rank == cardType);
+    public bool Contains(CardRank cardRank) => cardRank != null && Cards.Any(c => c.Rank == cardRank);
 
     /// <summary>
     /// Gets the single card held, assuming the hand contains exactly one card.

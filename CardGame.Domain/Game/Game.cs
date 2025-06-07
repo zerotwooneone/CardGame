@@ -184,7 +184,7 @@ public class Game : IGameOperations // Aggregate Root
         bool creatorFound = false;
         foreach (var pInfo in playerInfoList)
         {
-            var player = Player.Load(pInfo.Id, pInfo.Name, PlayerStatus.Active, Hand.Empty, new List<CardType>(), 0, false, loggerFactory.CreateLogger<Player>()); // MODIFIED: Pass logger
+            var player = Player.Load(pInfo.Id, pInfo.Name, PlayerStatus.Active, Hand.Empty, new List<CardRank>(), 0, false, loggerFactory.CreateLogger<Player>()); // MODIFIED: Pass logger
             game.Players.Add(player);
             if (pInfo.Id == creatorPlayerId) creatorFound = true;
         }
@@ -330,7 +330,7 @@ public class Game : IGameOperations // Aggregate Root
         _logger.LogDebug("[Game {GameId}] StartNewRound: Exit. GamePhase: {CurrentPhase}, _isSettingUpRound: {IsSettingUpValue}", Id, GamePhase, _isSettingUpRound);
     }
 
-    public void PlayCard(Guid playerId, Card cardToPlay, Guid? targetPlayerId, CardType? guessedCardType, IDeckProvider deckProvider) // Corrected: deckProvider parameter restored
+    public void PlayCard(Guid playerId, Card cardToPlay, Guid? targetPlayerId, CardRank? guessedCardType, IDeckProvider deckProvider) // Corrected: deckProvider parameter restored
     {
         // 1. SETUP & INITIAL VALIDATION
         var player = GetPlayerById(playerId); // GetPlayerById will throw if not found
@@ -396,7 +396,7 @@ public class Game : IGameOperations // Aggregate Root
         }
     }
 
-    private void ValidatePlayCard(Player player, Card cardToPlayInstance, Guid? targetPlayerId, CardType? guessedCardType) // Correct: no deckProvider parameter
+    private void ValidatePlayCard(Player player, Card cardToPlayInstance, Guid? targetPlayerId, CardRank? guessedCardType) // Correct: no deckProvider parameter
     {
         if (GamePhase != GamePhase.RoundInProgress) 
             throw new InvalidMoveException("Game is not in progress.");

@@ -171,7 +171,7 @@ public class GameController : ControllerBase
         }
 
         // 2. Validate and Convert GuessedCardType (int?) to CardType?
-        CardType? guessedCardTypeDomainObject = null;
+        CardRank? guessedCardTypeDomainObject = null;
         if (request.GuessedCardType.HasValue)
         {
             // Validate the integer value
@@ -185,7 +185,7 @@ public class GameController : ControllerBase
             try
             {
                 // Convert valid int to CardType object
-                guessedCardTypeDomainObject = CardType.FromValue(guessedValue);
+                guessedCardTypeDomainObject = CardRank.FromValue(guessedValue);
             }
             catch (Exception) // Catch potential error from FromValue if int is invalid (e.g., 0, 9)
             {

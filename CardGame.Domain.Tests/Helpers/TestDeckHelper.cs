@@ -15,22 +15,22 @@ public static class TestDeckHelper
     public static List<Card> CreateStandardTestCardList()
     {
         return new List<Card> {
-            new(CardType.Princess.Name, CardType.Princess), 
-            new(CardType.Countess.Name, CardType.Countess),
-            new(CardType.King.Name, CardType.King), 
-            new(CardType.Prince.Name, CardType.Prince),
-            new(CardType.Prince.Name, CardType.Prince), 
-            new(CardType.Handmaid.Name, CardType.Handmaid),
-            new(CardType.Handmaid.Name, CardType.Handmaid), 
-            new(CardType.Baron.Name, CardType.Baron),
-            new(CardType.Baron.Name, CardType.Baron), 
-            new(CardType.Priest.Name, CardType.Priest),
-            new(CardType.Priest.Name, CardType.Priest), 
-            new(CardType.Guard.Name, CardType.Guard),
-            new(CardType.Guard.Name, CardType.Guard), 
-            new(CardType.Guard.Name, CardType.Guard),
-            new(CardType.Guard.Name, CardType.Guard), 
-            new(CardType.Guard.Name, CardType.Guard),
+            new(CardRank.Princess.Name, CardRank.Princess), 
+            new(CardRank.Countess.Name, CardRank.Countess),
+            new(CardRank.King.Name, CardRank.King), 
+            new(CardRank.Prince.Name, CardRank.Prince),
+            new(CardRank.Prince.Name, CardRank.Prince), 
+            new(CardRank.Handmaid.Name, CardRank.Handmaid),
+            new(CardRank.Handmaid.Name, CardRank.Handmaid), 
+            new(CardRank.Baron.Name, CardRank.Baron),
+            new(CardRank.Baron.Name, CardRank.Baron), 
+            new(CardRank.Priest.Name, CardRank.Priest),
+            new(CardRank.Priest.Name, CardRank.Priest), 
+            new(CardRank.Guard.Name, CardRank.Guard),
+            new(CardRank.Guard.Name, CardRank.Guard), 
+            new(CardRank.Guard.Name, CardRank.Guard),
+            new(CardRank.Guard.Name, CardRank.Guard), 
+            new(CardRank.Guard.Name, CardRank.Guard),
         };
     }
 }

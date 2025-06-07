@@ -39,5 +39,5 @@ public interface IDeckProvider
     /// <param name="card">The card that was played.</param>
     /// <param name="targetPlayer">The player targeted by the card, if any.</param>
     /// <param name="guessedCardType">The card type guessed by the acting player, if applicable.</param>
-    void ExecuteCardEffect(IGameOperations game, Player actingPlayer, Card card, Player? targetPlayer, CardType? guessedCardType);
+    void ExecuteCardEffect(IGameOperations game, Player actingPlayer, Card card, Player? targetPlayer, CardRank? guessedCardType);
 }

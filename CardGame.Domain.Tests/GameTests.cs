@@ -25,12 +25,12 @@ namespace CardGame.Domain.Tests
 
         private static readonly Guid _testDeckDefinitionId = Guid.NewGuid();
 
-        private static readonly Card _guard = new Card("guard-default", CardType.Guard);
-        private static readonly Card _priest = new Card("priest-default", CardType.Priest);
-        private static readonly Card _baron = new Card("baron-default", CardType.Baron);
-        private static readonly Card _handmaid = new Card("handmaid-default", CardType.Handmaid);
-        private static readonly Card _king = new Card("king-default", CardType.King);
-        private static readonly Card _countess = new Card("countess-default", CardType.Countess);
+        private static readonly Card _guard = new Card("guard-default", CardRank.Guard);
+        private static readonly Card _priest = new Card("priest-default", CardRank.Priest);
+        private static readonly Card _baron = new Card("baron-default", CardRank.Baron);
+        private static readonly Card _handmaid = new Card("handmaid-default", CardRank.Handmaid);
+        private static readonly Card _king = new Card("king-default", CardRank.King);
+        private static readonly Card _countess = new Card("countess-default", CardRank.Countess);
 
         [SetUp]
         public void Setup()
@@ -53,9 +53,9 @@ namespace CardGame.Domain.Tests
                 _handmaid, _handmaid,                   
                 _king,                                  
                 _countess, 
-                new Card("extra1-default", CardType.Guard), 
-                new Card("extra2-default", CardType.Priest),
-                new Card("extra3-default", CardType.Baron)
+                new Card("extra1-default", CardRank.Guard), 
+                new Card("extra2-default", CardRank.Priest),
+                new Card("extra3-default", CardRank.Baron)
             }; 
         }
 
@@ -193,7 +193,7 @@ namespace CardGame.Domain.Tests
             
             var cardToPlayP1 = EnsurePlayerHasAnyCard(game, p1);
             _mockDeckProvider.Setup(dp => dp.ExecuteCardEffect(It.IsAny<IGameOperations>(), p1, cardToPlayP1, null, null))
-                .Callback((IGameOperations gameOps, Player actor, Card card, Player? target, CardType? guess) => 
+                .Callback((IGameOperations gameOps, Player actor, Card card, Player? target, CardRank? guess) => 
                 {
                     gameOps.EliminatePlayer(p2.Id, "Eliminated by P1's card effect for test");
                 });
@@ -217,7 +217,7 @@ namespace CardGame.Domain.Tests
             
             var cardToPlayP1 = EnsurePlayerHasAnyCard(game, p1);
             _mockDeckProvider.Setup(dp => dp.ExecuteCardEffect(It.IsAny<IGameOperations>(), p1, cardToPlayP1, p2, null))
-                .Callback((IGameOperations gameOps, Player actor, Card card, Player? target, CardType? guess) => 
+                .Callback((IGameOperations gameOps, Player actor, Card card, Player? target, CardRank? guess) => 
                 {
                     if (target != null) gameOps.EliminatePlayer(target.Id, "Eliminated by P1's card effect for test");
                 });
@@ -269,7 +269,7 @@ namespace CardGame.Domain.Tests
 
             var cardToPlayP1Round1 = EnsurePlayerHasAnyCard(game, p1);
             _mockDeckProvider.Setup(dp => dp.ExecuteCardEffect(It.IsAny<IGameOperations>(), p1, cardToPlayP1Round1, p2, null))
-                .Callback((IGameOperations gameOps, Player actor, Card card, Player? target, CardType? guess) => 
+                .Callback((IGameOperations gameOps, Player actor, Card card, Player? target, CardRank? guess) => 
                 {
                     if (target != null) gameOps.EliminatePlayer(target.Id, "Eliminated by P1 for round 1 win");
                 });
@@ -303,7 +303,7 @@ namespace CardGame.Domain.Tests
             var p1Info = new PlayerInfo(Guid.NewGuid(), "Player 1");
             GameClass game = CreateGameForTest(new List<PlayerInfo> { p1Info, new PlayerInfo(Guid.NewGuid(), "Player 2") }, p1Info.Id);
             var p1 = game.Players.Single(p => p.Id == p1Info.Id); 
-            var cardNotInHand = new Card("other-card-appearance", CardType.Baron); 
+            var cardNotInHand = new Card("other-card-appearance", CardRank.Baron); 
             
             Assert.Throws<InvalidMoveException>(() => 
                 game.PlayCard(p1.Id, cardNotInHand, null, null, _mockDeckProvider.Object)

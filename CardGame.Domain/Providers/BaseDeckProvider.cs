@@ -12,7 +12,7 @@ namespace CardGame.Domain.Providers
 {
     public abstract class BaseDeckProvider : IDeckProvider
     {
-        protected record CardQuantity(CardType Type, int Count);
+        protected record CardQuantity(CardRank Rank, int Count);
 
         // Abstract properties to be implemented by derived classes
         public abstract Guid DeckId { get; }
@@ -30,9 +30,9 @@ namespace CardGame.Domain.Providers
         /// Gets the appearance ID for a given card type, based on the theme.
         /// Derived classes can override for more complex appearance logic.
         /// </summary>
-        protected virtual string GetCardAppearanceId(CardType cardType)
+        protected virtual string GetCardAppearanceId(CardRank cardRank)
         {
-            return $"assets/decks/{ThemeName}/{cardType.Name.ToLowerInvariant()}.webp";
+            return $"assets/decks/{ThemeName}/{cardRank.Name.ToLowerInvariant()}.webp";
         }
 
         public DeckDefinition GetDeck()
@@ -40,25 +40,25 @@ namespace CardGame.Domain.Providers
             var cards = new List<Card>();
             foreach (var quantity in GetCardQuantities())
             {
-                var appearanceId = GetCardAppearanceId(quantity.Type);
+                var appearanceId = GetCardAppearanceId(quantity.Rank);
                 for (int i = 0; i < quantity.Count; i++)
                 {
-                    cards.Add(new Card(appearanceId, quantity.Type));
+                    cards.Add(new Card(appearanceId, quantity.Rank));
                 }
             }
             return new DeckDefinition(cards.ToImmutableList(), DeckBackAppearanceId, this);
         }
 
-        public virtual void ExecuteCardEffect(IGameOperations game, Player actingPlayer, Card card, Player? targetPlayer, CardType? guessedCardType)
+        public virtual void ExecuteCardEffect(IGameOperations game, Player actingPlayer, Card card, Player? targetPlayer, CardRank? guessedCardType)
         {
             // General Countess Rule: If holding Countess AND (King or Prince), must play Countess.
-            bool handHasCountess = actingPlayer.Hand.Cards.Any(c => c.Rank == CardType.Countess);
-            bool handHasKing = actingPlayer.Hand.Cards.Any(c => c.Rank == CardType.King);
-            bool handHasPrince = actingPlayer.Hand.Cards.Any(c => c.Rank == CardType.Prince);
+            bool handHasCountess = actingPlayer.Hand.Cards.Any(c => c.Rank == CardRank.Countess);
+            bool handHasKing = actingPlayer.Hand.Cards.Any(c => c.Rank == CardRank.King);
+            bool handHasPrince = actingPlayer.Hand.Cards.Any(c => c.Rank == CardRank.Prince);
 
             if (handHasCountess && (handHasKing || handHasPrince))
             {
-                if (card.Rank == CardType.King || card.Rank == CardType.Prince)
+                if (card.Rank == CardRank.King || card.Rank == CardRank.Prince)
                 {
                     throw new InvalidMoveException($"Cannot play {card.Rank.Name} when holding the Countess (and King/Prince). You must play the Countess.");
                 }
@@ -84,7 +84,7 @@ namespace CardGame.Domain.Providers
                 {
                     throw new InvalidMoveException($"{card.Rank.Name} requires a guessed card type.");
                 }
-                if (guessedCardType == CardType.Guard)
+                if (guessedCardType == CardRank.Guard)
                 {
                     throw new InvalidMoveException("Cannot guess Guard with a Guard.");
                 }
@@ -97,7 +97,7 @@ namespace CardGame.Domain.Providers
         /// Performs the actual effect of the card after validation has passed.
         /// Derived classes must implement this to define card behaviors.
         /// </summary>
-        protected virtual void PerformCardEffect(IGameOperations game, Player actingPlayer, Card card, Player? targetPlayer, CardType? guessedCardType)
+        protected virtual void PerformCardEffect(IGameOperations game, Player actingPlayer, Card card, Player? targetPlayer, CardRank? guessedCardType)
         {
             switch (card.Rank.Value)
             {
@@ -131,21 +131,21 @@ namespace CardGame.Domain.Providers
         }
 
         // Common rule implementations - can be overridden if a deck changes these fundamental rules
-        public virtual bool RequiresTargetPlayer(CardType cardType) =>
-            cardType == CardType.Guard || 
-            cardType == CardType.Priest || 
-            cardType == CardType.Baron || 
-            cardType == CardType.Prince || 
-            cardType == CardType.King;
+        public virtual bool RequiresTargetPlayer(CardRank cardRank) =>
+            cardRank == CardRank.Guard || 
+            cardRank == CardRank.Priest || 
+            cardRank == CardRank.Baron || 
+            cardRank == CardRank.Prince || 
+            cardRank == CardRank.King;
     
-        public virtual bool CanTargetSelf(CardType cardType) => 
-            cardType == CardType.Prince; 
+        public virtual bool CanTargetSelf(CardRank cardRank) => 
+            cardRank == CardRank.Prince; 
 
-        public virtual bool RequiresGuess(CardType cardType) => 
-            cardType == CardType.Guard;
+        public virtual bool RequiresGuess(CardRank cardRank) => 
+            cardRank == CardRank.Guard;
 
         // Default Card Effect Implementations
-        protected virtual void ExecuteGuardEffect(IGameOperations game, Player actingPlayer, Player targetPlayer, CardType? guessedCardType, Card guardCard)
+        protected virtual void ExecuteGuardEffect(IGameOperations game, Player actingPlayer, Player targetPlayer, CardRank? guessedCardType, Card guardCard)
         {
             if (targetPlayer.IsProtected)
             {
@@ -320,10 +320,10 @@ namespace CardGame.Domain.Providers
                 {
                     PlayedCard = princeCard,
                     TargetDiscardedCard = discardedCard, // Changed from DiscardedCard to TargetDiscardedCard for clarity
-                    IsPrivate = discardedCard.Rank == CardType.Princess // Keep Princess discard private
+                    IsPrivate = discardedCard.Rank == CardRank.Princess // Keep Princess discard private
                 });
                 
-                if (discardedCard.Rank == CardType.Princess)
+                if (discardedCard.Rank == CardRank.Princess)
                 {
                     game.AddLogEntry(new GameLogEntry(
                         eventType: GameLogEventType.PlayerEliminated,

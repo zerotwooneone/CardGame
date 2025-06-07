@@ -12,7 +12,7 @@ public record PlayCardCommand(
     Guid PlayerId, // ID of the player making the move (authenticated user)
     string CardToPlayId, // Changed from Card to Guid
     Guid? TargetPlayerId,
-    CardType? GuessedCardType
+    CardRank? GuessedCardType
 
     // Pass the parsed CardType
 ) : IRequest; // Simple command, returns Unit (void) on success

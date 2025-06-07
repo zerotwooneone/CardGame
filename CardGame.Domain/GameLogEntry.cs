@@ -29,7 +29,7 @@ public class GameLogEntry
     public Card? GuessedPlayerActualCard { get; set; } // The actual card revealed if a Guard guess hits
     
     // For Guard Guess specifics
-    public CardType? GuessedRank { get; set; } // The rank guessed by the Guard player
+    public CardRank? GuessedRank { get; set; } // The rank guessed by the Guard player
     public bool? WasGuessCorrect { get; set; }   
 
     // For Baron Comparison specifics (loser ID)
