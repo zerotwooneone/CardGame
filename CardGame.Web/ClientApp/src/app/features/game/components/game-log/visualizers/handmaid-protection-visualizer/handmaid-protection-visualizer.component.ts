@@ -3,7 +3,7 @@ import { CommonModule } from '@angular/common';
 import { CardDisplayComponent } from '@gameComponents/card-display/card-display.component';
 import { GameLogEntryDto } from '@features/game/models/gameLogEntryDto';
 import { UiInteractionService } from '@features/card-reference/services/ui-interaction-service.service';
-import { CardType } from '@features/game/models/cardType';
+import { CardRank } from '@features/game/models/cardRank';
 import { CardDto } from '@features/game/models/cardDto';
 
 @Component({
@@ -25,7 +25,7 @@ export class HandmaidProtectionVisualizerComponent {
     if (this.playedHandmaidCardDisplay?.rank !== undefined) {
       this.uiInteractionService.requestScrollToCardReference(this.playedHandmaidCardDisplay.rank);
     } else {
-      this.uiInteractionService.requestScrollToCardReference(CardType.Handmaid);
+      this.uiInteractionService.requestScrollToCardReference(CardRank.Handmaid);
     }
   }
 }

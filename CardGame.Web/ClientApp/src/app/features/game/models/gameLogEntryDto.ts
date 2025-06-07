@@ -1,7 +1,7 @@
 import { GameLogEventType } from './gameLogEventType';
 import { RoundEndPlayerSummaryDto } from './roundEndPlayerSummaryDto';
 import { CardDto } from './cardDto';
-import {CardType} from './cardType';
+import {CardRank} from './cardRank';
 
 export interface GameLogEntryDto {
   id: string;
@@ -25,7 +25,7 @@ export interface GameLogEntryDto {
 
   // Guard Effect
   guessedPlayerActualCard?: CardDto;
-  guessedRank?: CardType;
+  guessedRank?: CardRank;
   wasGuessCorrect?: boolean;
 
   // Baron Effect

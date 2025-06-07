@@ -2,7 +2,7 @@ import { Component, Input, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { CardDisplayComponent } from '@gameComponents/card-display/card-display.component';
 import { GameLogEntryDto } from '@features/game/models/gameLogEntryDto';
-import { CardType } from '@features/game/models/cardType';
+import { CardRank } from '@features/game/models/cardRank';
 import { UiInteractionService } from '@features/card-reference/services/ui-interaction-service.service';
 import { CardDto } from '@features/game/models/cardDto';
 
@@ -19,7 +19,7 @@ export class GuardHitVisualizerComponent {
 
   get playedGuardCardDisplay(): CardDto | undefined {
     // This should be the Guard card played by the acting player.
-    return this.logEntry.playedCard; 
+    return this.logEntry.playedCard;
   }
 
   // This is the card that was revealed due to the Guard hit.
@@ -28,7 +28,7 @@ export class GuardHitVisualizerComponent {
   }
 
   // Expose the guessed rank for display in the template message
-  get guessedRankDisplay(): CardType | undefined {
+  get guessedRankDisplay(): CardRank | undefined {
     return this.logEntry.guessedRank;
   }
 
@@ -50,7 +50,7 @@ export class GuardHitVisualizerComponent {
       this.uiInteractionService.requestScrollToCardReference(this.playedGuardCardDisplay.rank);
     } else {
       // Fallback if rank somehow isn't on the DTO, though it should be for a Guard card.
-      this.uiInteractionService.requestScrollToCardReference(CardType.Guard);
+      this.uiInteractionService.requestScrollToCardReference(CardRank.Guard);
     }
   }
 

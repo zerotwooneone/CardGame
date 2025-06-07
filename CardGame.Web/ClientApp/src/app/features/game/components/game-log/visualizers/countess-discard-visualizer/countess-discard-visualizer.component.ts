@@ -2,7 +2,7 @@ import { Component, Input, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { CardDisplayComponent } from '@gameComponents/card-display/card-display.component';
 import { GameLogEntryDto } from '@features/game/models/gameLogEntryDto';
-import { CardType } from '@features/game/models/cardType';
+import { CardRank } from '@features/game/models/cardRank';
 import { CardDto } from '@features/game/models/cardDto';
 import { UiInteractionService } from '@features/card-reference/services/ui-interaction-service.service';
 
@@ -31,7 +31,7 @@ export class CountessDiscardVisualizerComponent {
     // playedCard could be Prince or King
     if (this.playedPrinceOrKingCardDisplay?.rank !== undefined) {
       this.uiInteractionService.requestScrollToCardReference(this.playedPrinceOrKingCardDisplay.rank);
-    } 
+    }
   }
 
   onDiscardedCountessCardInfoClicked(): void {
@@ -40,7 +40,7 @@ export class CountessDiscardVisualizerComponent {
       this.uiInteractionService.requestScrollToCardReference(this.discardedCountessCardDisplay.rank);
     } else {
       // Fallback just in case, though it should be Countess
-      this.uiInteractionService.requestScrollToCardReference(CardType.Countess);
+      this.uiInteractionService.requestScrollToCardReference(CardRank.Countess);
     }
   }
 }

@@ -4,7 +4,7 @@ import { CardDisplayComponent } from '@gameComponents/card-display/card-display.
 import { GameLogEntryDto } from '@features/game/models/gameLogEntryDto';
 import { CardDto } from '@features/game/models/cardDto';
 import { UiInteractionService } from '@features/card-reference/services/ui-interaction-service.service';
-import { CardType } from '@features/game/models/cardType';
+import { CardRank } from '@features/game/models/cardRank';
 
 @Component({
   selector: 'app-guard-miss-visualizer',
@@ -33,7 +33,7 @@ export class GuardMissVisualizerComponent {
     if (this.playedGuardCardDisplay?.rank !== undefined) {
       this.uiInteractionService.requestScrollToCardReference(this.playedGuardCardDisplay.rank);
     } else {
-      this.uiInteractionService.requestScrollToCardReference(CardType.Guard); 
+      this.uiInteractionService.requestScrollToCardReference(CardRank.Guard);
     }
   }
 

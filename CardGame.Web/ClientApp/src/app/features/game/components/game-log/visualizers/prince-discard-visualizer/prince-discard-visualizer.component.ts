@@ -2,7 +2,7 @@ import { Component, Input, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { CardDisplayComponent } from '@gameComponents/card-display/card-display.component';
 import { GameLogEntryDto } from '@features/game/models/gameLogEntryDto';
-import { CardType } from '@features/game/models/cardType';
+import { CardRank } from '@features/game/models/cardRank';
 import { UiInteractionService } from '@features/card-reference/services/ui-interaction-service.service';
 import { CardDto } from '@features/game/models/cardDto';
 
@@ -17,7 +17,7 @@ export class PrinceDiscardVisualizerComponent {
   @Input() logEntry!: GameLogEntryDto;
   private uiInteractionService = inject(UiInteractionService);
 
-  public CardType = CardType; // Expose CardType to the template
+  public CardType = CardRank; // Expose CardType to the template
 
   get playedPrinceCardDisplay(): CardDto | undefined {
     return this.logEntry.playedCard;
@@ -35,7 +35,7 @@ export class PrinceDiscardVisualizerComponent {
     if (this.playedPrinceCardDisplay?.rank !== undefined) {
       this.uiInteractionService.requestScrollToCardReference(this.playedPrinceCardDisplay.rank);
     } else {
-      this.uiInteractionService.requestScrollToCardReference(CardType.Prince); // Fallback
+      this.uiInteractionService.requestScrollToCardReference(CardRank.Prince); // Fallback
     }
   }
 

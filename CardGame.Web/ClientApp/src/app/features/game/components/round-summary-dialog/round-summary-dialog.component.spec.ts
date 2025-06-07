@@ -3,7 +3,7 @@ import { MAT_DIALOG_DATA, MatDialogRef } from '@angular/material/dialog';
 import { HttpClientTestingModule } from '@angular/common/http/testing';
 import { RoundSummaryDialogComponent } from './round-summary-dialog.component';
 import { RoundEndSummaryDto } from '../../models/roundEndSummaryDto';
-import { CardType } from '../../models/cardType';
+import { CardRank } from '../../models/cardRank';
 
 describe('RoundSummaryDialogComponent', () => {
   let component: RoundSummaryDialogComponent;
@@ -16,13 +16,13 @@ describe('RoundSummaryDialogComponent', () => {
         playerId: '1',
         playerName: 'Player 1',
         tokensWon: 1,
-        cardsHeld: [{ rank: CardType.Guard, appearanceId: 'guard_1.png' }],
+        cardsHeld: [{ rank: CardRank.Guard, appearanceId: 'guard_1.png' }],
       },
       {
         playerId: '2',
         playerName: 'Player 2',
         tokensWon: 0,
-        cardsHeld: [{ rank: CardType.Prince, appearanceId: 'prince_5.png' }],
+        cardsHeld: [{ rank: CardRank.Prince, appearanceId: 'prince_5.png' }],
       },
     ],
   };
@@ -35,7 +35,7 @@ describe('RoundSummaryDialogComponent', () => {
       ],
       providers: [
         { provide: MAT_DIALOG_DATA, useValue: mockDialogData },
-        { provide: MatDialogRef, useValue: {} } 
+        { provide: MatDialogRef, useValue: {} }
       ]
     })
     .compileComponents();

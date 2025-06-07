@@ -2,7 +2,7 @@ import { Component, Input, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { CardDisplayComponent } from '@gameComponents/card-display/card-display.component';
 import { GameLogEntryDto } from '@features/game/models/gameLogEntryDto';
-import { CardType } from '@features/game/models/cardType';
+import { CardRank } from '@features/game/models/cardRank';
 import { UiInteractionService } from '@features/card-reference/services/ui-interaction-service.service';
 import { CardDto } from '@features/game/models/cardDto';
 
@@ -30,7 +30,7 @@ export class KingTradeVisualizerComponent {
       this.uiInteractionService.requestScrollToCardReference(this.playedKingCardDisplay.rank);
     } else {
       // Fallback in case playedCard is unexpectedly undefined for this log type
-      this.uiInteractionService.requestScrollToCardReference(CardType.King);
+      this.uiInteractionService.requestScrollToCardReference(CardRank.King);
     }
   }
 

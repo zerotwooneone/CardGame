@@ -1,7 +1,7 @@
 
 
 // Corresponds to C# CardType enum
-export enum CardType {
+export enum CardRank {
   Guard = 1,
   Priest = 2,
   Baron = 3,
