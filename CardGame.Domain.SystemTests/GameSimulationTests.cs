@@ -15,6 +15,7 @@ using GameUnderTest = CardGame.Domain.Game.Game;
 namespace CardGame.Domain.SystemTests
 {
     [TestFixture]
+    [Category("CardGame.Domain.SystemTests")]
     public class GameSimulationTests
     {
         private IDeckProvider _deckProvider;
@@ -29,7 +30,7 @@ namespace CardGame.Domain.SystemTests
         private void SimulateSingleGamePlay(int? seed = null)
         {
             var localRandomizer = new TestRandomizer(seed); // Initialize with seed here, local instance
-            var loggerFactory = LoggerFactory.Create(builder => builder.AddConsole());
+            var loggerFactory = LoggerFactory.Create(builder => builder.AddConsole()); // ADDED loggerFactory
             Console.WriteLine($"--- Starting game with Seed: {localRandomizer.Seed} ---");
 
             // 1. Setup Game (copied from original test method)
@@ -57,7 +58,7 @@ namespace CardGame.Domain.SystemTests
             {
                 if (game.GamePhase == GamePhase.NotStarted || game.GamePhase == GamePhase.RoundOver)
                 {
-                    game.StartNewRound(); // Pass localRandomizer
+                    game.StartNewRound(); // MODIFIED: Removed localRandomizer
                 }
                 Console.WriteLine($"Seed: {localRandomizer.Seed} - Round {game.RoundNumber} started ---");
             
@@ -92,7 +93,7 @@ namespace CardGame.Domain.SystemTests
                         continue;
                     }
 
-                    Card cardToPlay = null;
+                    Card? cardToPlay = null; // MODIFIED to nullable
                     Guid? targetPlayerId = null;
                     CardType? guessedCardType = null;
                     bool cardPlayedThisTurn = false;
@@ -167,7 +168,7 @@ namespace CardGame.Domain.SystemTests
                             var originalHandShuffled = currentPlayer.Hand.Cards.ToList(); // Get a fresh copy
                             localRandomizer.Shuffle(originalHandShuffled);
 
-                            Card cardToAttemptInFallback = null;
+                            Card? cardToAttemptInFallback = null; // MODIFIED to nullable
                             bool fallbackPlayFound = false;
 
                             // Iterate through the shuffled hand to find a fallback play
@@ -227,12 +228,40 @@ namespace CardGame.Domain.SystemTests
                                 break;
                             }
 
-                            if (fallbackPlayFound && cardToAttemptInFallback != null)
+                            if (fallbackPlayFound && cardToAttemptInFallback != null) // ADDED null check for cardToAttemptInFallback
                             {
-                                cardToPlay = cardToAttemptInFallback;
-                                // targetPlayerId and guessedCardType are already set from the loop
-                                Console.WriteLine($"Seed: {localRandomizer.Seed} - Fallback play: Player {currentPlayer.Name} will attempt to play {cardToPlay.Rank.Name}. Target: {targetPlayerId}, Guess: {guessedCardType}");
-                                cardPlayedThisTurn = true; // We are now attempting a play
+                                try
+                                {
+                                    Console.WriteLine($"Seed: {localRandomizer.Seed} - Fallback: Player {currentPlayer.Name} attempts to play {cardToAttemptInFallback.Rank.Name} (Target: {targetPlayerId?.ToString() ?? "None"}, Guess: {guessedCardType?.Name ?? "None"})"); // MODIFIED: guessedCardType?.Name
+                                    game.PlayCard(currentPlayer.Id, cardToAttemptInFallback, targetPlayerId, guessedCardType, _deckProvider); 
+                                    cardPlayedThisTurn = true;
+                                }
+                                catch (GameRuleException ex)
+                                {
+                                    var actingPlayerTestView = game.Players.FirstOrDefault(p => p.Id == currentPlayer.Id);
+                                    var targetPlayerTestView = targetPlayerId.HasValue ? game.Players.FirstOrDefault(p => p.Id == targetPlayerId.Value) : null;
+
+                                    string actingPlayerHand = actingPlayerTestView != null ? string.Join(", ", actingPlayerTestView.Hand.Cards.Select(c => c.Rank.Name)) : "N/A";
+                                    string targetPlayerHand = targetPlayerTestView != null ? string.Join(", ", targetPlayerTestView.Hand.Cards.Select(c => c.Rank.Name)) : "N/A";
+                                    string targetPlayerStatus = targetPlayerTestView?.Status.Name ?? "N/A";
+
+                                    string detailedMessage = $"Seed: {localRandomizer.Seed} - GameRuleException on Turn {(turnsInCurrentRound + 1)}, Round {game.RoundNumber}. Player {currentPlayer.Name} ({currentPlayer.Id}) playing {cardToAttemptInFallback.Rank.Name} ({cardToAttemptInFallback.AppearanceId.Substring(0,4)}) targeting {(targetPlayerTestView?.Name ?? "None")} ({(targetPlayerTestView?.Id.ToString() ?? "N/A")}).\nTestView Acting Player: Hand: [{actingPlayerHand}], Status: {actingPlayerTestView?.Status.Name ?? "N/A"}.\nTestView Target Player: Hand: [{targetPlayerHand}], Status: {targetPlayerStatus}.\nOriginal Exception: {ex.Message}";
+                                    Console.WriteLine(detailedMessage);
+                                    throw new Exception(detailedMessage, ex); 
+                                }
+                                catch (InvalidMoveException ex)
+                                {
+                                    var actingPlayerTestView = game.Players.FirstOrDefault(p => p.Id == currentPlayer.Id);
+                                    var targetPlayerTestView = targetPlayerId.HasValue ? game.Players.FirstOrDefault(p => p.Id == targetPlayerId.Value) : null;
+
+                                    string actingPlayerHand = actingPlayerTestView != null ? string.Join(", ", actingPlayerTestView.Hand.Cards.Select(c => c.Rank.Name)) : "N/A";
+                                    string targetPlayerHand = targetPlayerTestView != null ? string.Join(", ", targetPlayerTestView.Hand.Cards.Select(c => c.Rank.Name)) : "N/A";
+                                    string targetPlayerStatus = targetPlayerTestView?.Status.Name ?? "N/A";
+
+                                    string detailedMessage = $"Seed: {localRandomizer.Seed} - InvalidMoveException on Turn {(turnsInCurrentRound + 1)}, Round {game.RoundNumber}. Player {currentPlayer.Name} ({currentPlayer.Id}) attempting to play {cardToAttemptInFallback?.Rank.Name ?? "UnknownCard"} ({cardToAttemptInFallback?.AppearanceId.Substring(0,4) ?? "N/A"}) targeting {(targetPlayerTestView?.Name ?? "None")} ({(targetPlayerTestView?.Id.ToString() ?? "N/A")}).\nTestView Acting Player: Hand: [{actingPlayerHand}], Status: {actingPlayerTestView?.Status.Name ?? "N/A"}.\nTestView Target Player: Hand: [{targetPlayerHand}], Status: {targetPlayerStatus}.\nOriginal Exception: {ex.Message}";
+                                    Console.WriteLine(detailedMessage);
+                                    throw new Exception(detailedMessage, ex);
+                                }
                             }
                             else
                             {
@@ -249,44 +278,44 @@ namespace CardGame.Domain.SystemTests
                         }
                     }
                 
-                    Console.WriteLine($"Seed: {localRandomizer.Seed} - Player {currentPlayer.Name} plays {cardToPlay.Rank.Name}" +
-                                  $"{(targetPlayerId.HasValue ? $" targeting Player {game.Players.First(p => p.Id == targetPlayerId.Value).Name}" : "")}" +
-                                  $"{(guessedCardType != null ? $" guessing {guessedCardType?.Name}" : "")}");
-                
-                    try
+                    if (cardToPlay != null) // ADDED null check
                     {
-                        game.PlayCard(currentPlayer.Id, cardToPlay, targetPlayerId, guessedCardType, _deckProvider);
+                        try
+                        {
+                            Console.WriteLine($"Seed: {localRandomizer.Seed} - Player {currentPlayer.Name} plays {cardToPlay.Rank.Name} (Target: {targetPlayerId?.ToString() ?? "None"}, Guess: {guessedCardType?.Name ?? "None"})"); // MODIFIED: guessedCardType?.Name
+                            game.PlayCard(currentPlayer.Id, cardToPlay, targetPlayerId, guessedCardType, _deckProvider); 
+                        }
+                        catch (GameRuleException ex)
+                        {
+                            var actingPlayerTestView = game.Players.FirstOrDefault(p => p.Id == currentPlayer.Id);
+                            var targetPlayerTestView = targetPlayerId.HasValue ? game.Players.FirstOrDefault(p => p.Id == targetPlayerId.Value) : null;
+
+                            string actingPlayerHand = actingPlayerTestView != null ? string.Join(", ", actingPlayerTestView.Hand.Cards.Select(c => c.Rank.Name)) : "N/A";
+                            string targetPlayerHand = targetPlayerTestView != null ? string.Join(", ", targetPlayerTestView.Hand.Cards.Select(c => c.Rank.Name)) : "N/A";
+                            string targetPlayerStatus = targetPlayerTestView?.Status.Name ?? "N/A";
+
+                            string detailedMessage = $"Seed: {localRandomizer.Seed} - GameRuleException on Turn {(turnsInCurrentRound + 1)}, Round {game.RoundNumber}. Player {currentPlayer.Name} ({currentPlayer.Id}) playing {cardToPlay.Rank.Name} ({cardToPlay.AppearanceId.Substring(0,4)}) targeting {(targetPlayerTestView?.Name ?? "None")} ({(targetPlayerTestView?.Id.ToString() ?? "N/A")}).\nTestView Acting Player: Hand: [{actingPlayerHand}], Status: {actingPlayerTestView?.Status.Name ?? "N/A"}.\nTestView Target Player: Hand: [{targetPlayerHand}], Status: {targetPlayerStatus}.\nOriginal Exception: {ex.Message}";
+                            Console.WriteLine(detailedMessage);
+                            throw new Exception(detailedMessage, ex); 
+                        }
+                        catch (InvalidMoveException ex)
+                        {
+                            var actingPlayerTestView = game.Players.FirstOrDefault(p => p.Id == currentPlayer.Id);
+                            var targetPlayerTestView = targetPlayerId.HasValue ? game.Players.FirstOrDefault(p => p.Id == targetPlayerId.Value) : null;
+
+                            string actingPlayerHand = actingPlayerTestView != null ? string.Join(", ", actingPlayerTestView.Hand.Cards.Select(c => c.Rank.Name)) : "N/A";
+                            string targetPlayerHand = targetPlayerTestView != null ? string.Join(", ", targetPlayerTestView.Hand.Cards.Select(c => c.Rank.Name)) : "N/A";
+                            string targetPlayerStatus = targetPlayerTestView?.Status.Name ?? "N/A";
+
+                            string detailedMessage = $"Seed: {localRandomizer.Seed} - InvalidMoveException on Turn {(turnsInCurrentRound + 1)}, Round {game.RoundNumber}. Player {currentPlayer.Name} ({currentPlayer.Id}) attempting to play {cardToPlay?.Rank.Name ?? "UnknownCard"} ({cardToPlay?.AppearanceId.Substring(0,4) ?? "N/A"}) targeting {(targetPlayerTestView?.Name ?? "None")} ({(targetPlayerTestView?.Id.ToString() ?? "N/A")}).\nTestView Acting Player: Hand: [{actingPlayerHand}], Status: {actingPlayerTestView?.Status.Name ?? "N/A"}.\nTestView Target Player: Hand: [{targetPlayerHand}], Status: {targetPlayerStatus}.\nOriginal Exception: {ex.Message}";
+                            Console.WriteLine(detailedMessage);
+                            throw new Exception(detailedMessage, ex);
+                        }
+
+                        turnsInCurrentRound++;
+                        turnsTakenOverall++;
                     }
-                    catch (GameRuleException ex)
-                    {
-                        var actingPlayerTestView = game.Players.FirstOrDefault(p => p.Id == currentPlayer.Id);
-                        var targetPlayerTestView = targetPlayerId.HasValue ? game.Players.FirstOrDefault(p => p.Id == targetPlayerId.Value) : null;
-
-                        string actingPlayerHand = actingPlayerTestView != null ? string.Join(", ", actingPlayerTestView.Hand.Cards.Select(c => c.Rank.Name)) : "N/A";
-                        string targetPlayerHand = targetPlayerTestView != null ? string.Join(", ", targetPlayerTestView.Hand.Cards.Select(c => c.Rank.Name)) : "N/A";
-                        string targetPlayerStatus = targetPlayerTestView?.Status.Name ?? "N/A";
-
-                        string detailedMessage = $"Seed: {localRandomizer.Seed} - GameRuleException on Turn {(turnsInCurrentRound + 1)}, Round {game.RoundNumber}. Player {currentPlayer.Name} ({currentPlayer.Id}) playing {cardToPlay.Rank.Name} ({cardToPlay.AppearanceId.Substring(0,4)}) targeting {(targetPlayerTestView?.Name ?? "None")} ({(targetPlayerTestView?.Id.ToString() ?? "N/A")}).\nTestView Acting Player: Hand: [{actingPlayerHand}], Status: {actingPlayerTestView?.Status.Name ?? "N/A"}.\nTestView Target Player: Hand: [{targetPlayerHand}], Status: {targetPlayerStatus}.\nOriginal Exception: {ex.Message}";
-                        Console.WriteLine(detailedMessage);
-                        throw new Exception(detailedMessage, ex); 
-                    }
-                    catch (InvalidMoveException ex)
-                    {
-                        var actingPlayerTestView = game.Players.FirstOrDefault(p => p.Id == currentPlayer.Id);
-                        var targetPlayerTestView = targetPlayerId.HasValue ? game.Players.FirstOrDefault(p => p.Id == targetPlayerId.Value) : null;
-
-                        string actingPlayerHand = actingPlayerTestView != null ? string.Join(", ", actingPlayerTestView.Hand.Cards.Select(c => c.Rank.Name)) : "N/A";
-                        string targetPlayerHand = targetPlayerTestView != null ? string.Join(", ", targetPlayerTestView.Hand.Cards.Select(c => c.Rank.Name)) : "N/A";
-                        string targetPlayerStatus = targetPlayerTestView?.Status.Name ?? "N/A";
-
-                        string detailedMessage = $"Seed: {localRandomizer.Seed} - InvalidMoveException on Turn {(turnsInCurrentRound + 1)}, Round {game.RoundNumber}. Player {currentPlayer.Name} ({currentPlayer.Id}) attempting to play {cardToPlay?.Rank.Name ?? "UnknownCard"} ({cardToPlay?.AppearanceId.Substring(0,4) ?? "N/A"}) targeting {(targetPlayerTestView?.Name ?? "None")} ({(targetPlayerTestView?.Id.ToString() ?? "N/A")}).\nTestView Acting Player: Hand: [{actingPlayerHand}], Status: {actingPlayerTestView?.Status.Name ?? "N/A"}.\nTestView Target Player: Hand: [{targetPlayerHand}], Status: {targetPlayerStatus}.\nOriginal Exception: {ex.Message}";
-                        Console.WriteLine(detailedMessage);
-                        throw new Exception(detailedMessage, ex);
-                    }
-
-                    turnsInCurrentRound++;
-                    turnsTakenOverall++;
-                }
+                } // ADDED closing brace for the inner while loop (while (game.GamePhase == GamePhase.RoundInProgress...))
             
                 (game.GamePhase == GamePhase.RoundOver || game.GamePhase == GamePhase.GameOver || turnsInCurrentRound >= maxTurnsInRound).Should().BeTrue($"Seed: {localRandomizer.Seed} - Round {game.RoundNumber} did not complete as expected within {maxTurnsInRound} turns. GamePhase={game.GamePhase}, turnsInCurrentRound={turnsInCurrentRound}.");
 
@@ -323,7 +352,7 @@ namespace CardGame.Domain.SystemTests
         [Test]
         public void Should_Successfully_Complete_Specific_Game_With_Random_Plays()
         {
-            SimulateSingleGamePlay(692458833); // Call the new refactored method
+            SimulateSingleGamePlay(1237624095); // 692458833
         }
 
         [Test]

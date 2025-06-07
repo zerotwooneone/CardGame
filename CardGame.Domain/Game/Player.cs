@@ -102,11 +102,23 @@ public class Player // Entity
 
     internal Card? DiscardHand(bool deckEmpty)
     {
-        var card = Hand.GetHeldCard();
-        Hand = Hand.Empty;
-        if (card != null) PlayedCards.Add(card.Rank);
-        return card;
-    } // Simplified
+        if (Hand.Cards.Count == 0) return null; // Nothing to discard
+
+        var cardsInHandBeforeDiscard = Hand.GetCards().ToList(); // Store all cards
+        Hand = Hand.Empty; // Discard the hand
+
+        Card? princessCard = null;
+        foreach (var cardInHand in cardsInHandBeforeDiscard)
+        {
+            PlayedCards.Add(cardInHand.Rank); // Add all discarded cards to played cards
+            if (cardInHand.Rank == CardGame.Domain.Types.CardType.Princess) 
+            {
+                princessCard = cardInHand; // Note if Princess was discarded
+            }
+        }
+        
+        return princessCard; // Return Princess if discarded, otherwise null
+    }
 
     internal void SwapHandWith(Player otherPlayer)
     {

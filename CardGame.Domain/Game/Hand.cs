@@ -83,6 +83,7 @@ public sealed record Hand
 
     /// <summary>
     /// Gets the single card held, assuming the hand contains exactly one card.
+    /// Returns the card if Cards.Count == 1; otherwise, returns null (if hand is empty or contains more than one card).
     /// </summary>
     public Card? GetHeldCard() => Cards.Count == 1 ? Cards.Single() : null;
 

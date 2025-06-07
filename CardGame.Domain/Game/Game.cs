@@ -338,7 +338,17 @@ public class Game : IGameOperations // Aggregate Root
         player.PlayCard(cardToPlayInstance);
         DiscardPile.Add(cardToPlayInstance);
 
+        // ADDED: Proactive check for acting player after playing their card
+        CheckAndHandleHandlessPlayerWithEmptyDeck(player, cardToPlayInstance);
+
         Player? targetPlayer = targetPlayerId.HasValue ? GetPlayerById(targetPlayerId.Value) : null; 
+
+        // RETAINED: Pre-effect check for target player's hand (deck-agnostic)
+        if (targetPlayer != null && targetPlayer.Status == PlayerStatus.Active && !targetPlayer.Hand.Cards.Any())
+        {
+            throw new GameRuleException($"[Game {Id}] Target player {targetPlayer.Name} (ID: {targetPlayer.Id}) is active but has no cards in hand. This is an invalid state to be targeted.");
+        }
+
         var logEntry = new GameLogEntry(
             GameLogEventType.CardPlayed,
             playerId,
@@ -356,11 +366,25 @@ public class Game : IGameOperations // Aggregate Root
 
         AddDomainEvent(new PlayerPlayedCard(Id, playerId, cardToPlayInstance, targetPlayerId, guessedCardType));
 
+        // REVISED: Pre-effect check for target player's hand (deck-agnostic)
+        if (targetPlayer != null && targetPlayer.Status == PlayerStatus.Active && !targetPlayer.Hand.Cards.Any())
+        {
+            throw new GameRuleException($"[Game {Id}] Target player {targetPlayer.Name} (ID: {targetPlayer.Id}) is active but has no cards in hand. This is an invalid state to be targeted.");
+        }
+
         // Execute the card effect using the provided deck provider
-        deckProvider.ExecuteCardEffect(this, player, cardToPlayInstance, targetPlayer, guessedCardType); // Corrected: Call is active
+        deckProvider.ExecuteCardEffect(this, player, cardToPlayInstance, targetPlayer, guessedCardType);
 
-        bool roundEndedImmediately = CheckRoundEndCondition();
+        // ADDED: Proactive checks after card effect
+        CheckAndHandleHandlessPlayerWithEmptyDeck(player, cardToPlayInstance); // Check acting player again
+        if (targetPlayer != null)
+        {
+            CheckAndHandleHandlessPlayerWithEmptyDeck(targetPlayer, cardToPlayInstance);
+        }
 
+        bool roundEndedImmediately = CheckRoundEndCondition(true);
+
+        // REMOVED: Specific post-effect checks for active/handless/empty-deck, now covered by proactive helper.
         if (!roundEndedImmediately && GamePhase == GamePhase.RoundInProgress) 
         {
              AdvanceTurn();
@@ -390,8 +414,18 @@ public class Game : IGameOperations // Aggregate Root
     private Player GetPlayerById(Guid playerId)
     {
         var player = Players.FirstOrDefault(p => p.Id == playerId);
-        if (player == null) throw new DomainException($"Player with ID '{playerId}' not found.", 1002); // CORRECTED
+        if (player == null) throw new DomainException($"Player with ID '{playerId}' not found in game {Id}.", 1002); // Corrected to DomainException with error code
         return player;
+    }
+
+    private void CheckAndHandleHandlessPlayerWithEmptyDeck(Player playerToCheck, Card? cardPlayedOrResponsible)
+    {
+        if (playerToCheck.Status == PlayerStatus.Active && !playerToCheck.Hand.Cards.Any() && Deck.CardsRemaining == 0)
+        {
+            _logger.LogInformation($"[Game {Id}] Player {playerToCheck.Name} (ID: {playerToCheck.Id}) is active, handless, and deck empty. Attempting elimination.");
+            EliminatePlayer(playerToCheck.Id, "became handless with an empty deck", cardPlayedOrResponsible);
+            _logger.LogWarning($"[Game {Id}] DIAGNOSTIC: After EliminatePlayer call in C&HHPlayerWED for Player {playerToCheck.Id}, Status is: {playerToCheck.Status}");
+        }
     }
 
     private void AddLogEntry(GameLogEntry entry)
@@ -424,6 +458,8 @@ public class Game : IGameOperations // Aggregate Root
         if (Deck.CardsRemaining == 0)
         {
             _logger.LogWarning("[Game {GameId}] Deck is empty, cannot draw initial turn card for Player {PlayerId}.", Id, playerId);
+            // ADDED: Check if player is now handless with an empty deck
+            CheckAndHandleHandlessPlayerWithEmptyDeck(player, null); 
         }
         else
         {
@@ -437,13 +473,21 @@ public class Game : IGameOperations // Aggregate Root
         }
 
         _logger.LogDebug("[Game {GameId}] DrawInitialTurnCard: Calling CheckRoundEndCondition. _isSettingUpRound: {IsSettingUpValue}", Id, _isSettingUpRound);
-        bool roundEnded = CheckRoundEndCondition();
+        bool roundEnded = CheckRoundEndCondition(false);
         _logger.LogDebug("[Game {GameId}] DrawInitialTurnCard: Returned from CheckRoundEndCondition. roundEnded: {EndedValue}, GamePhase: {CurrentPhase}, _isSettingUpRound: {IsSettingUpValue}", Id, roundEnded, GamePhase, _isSettingUpRound);
     }
 
-    private bool CheckRoundEndCondition()
+    private bool CheckRoundEndCondition(bool isCheckingAfterPlayerAction)
     {
-        _logger.LogDebug("[Game {GameId}] CheckRoundEndCondition: Entry. _isSettingUpRound: {IsSettingUpValue}, GamePhase: {CurrentPhase}, DeckRemaining: {DeckCount}", Id, _isSettingUpRound, GamePhase, Deck.CardsRemaining);
+        _logger.LogDebug("[Game {GameId}] CheckRoundEndCondition: Entry. isCheckingAfterPlayerAction: {IsAfterAction}, _isSettingUpRound: {IsSettingUpValue}, GamePhase: {CurrentPhase}, DeckRemaining: {DeckCount}", 
+            Id, isCheckingAfterPlayerAction, _isSettingUpRound, GamePhase, Deck.CardsRemaining);
+
+        // DIAGNOSTIC LOGGING
+        _logger.LogWarning("[Game {Id}] DIAGNOSTIC: In CheckRoundEndCondition, iterating player statuses BEFORE Where clause:", Id);
+        foreach (var p_diag in Players)
+        {
+            _logger.LogWarning($"[Game {Id}] DIAGNOSTIC: Player {p_diag.Id} - Status: {p_diag.Status}");
+        }
 
         if (_isSettingUpRound)
         {
@@ -457,10 +501,26 @@ public class Game : IGameOperations // Aggregate Root
             return false; 
         }
 
-        var activePlayers = Players.Where(p => p.Status == PlayerStatus.Active).ToList();
-        if (activePlayers.Count <= 1 || Deck.CardsRemaining == 0)
+        var activePlayers = new List<Player>();
+        foreach (var p_filter in Players) 
+        { 
+            if (p_filter.Status == PlayerStatus.Active) 
+            { 
+                activePlayers.Add(p_filter); 
+            } 
+        } 
+        _logger.LogInformation($"[Game {Id}] CheckRoundEndCondition: Manual filter found {activePlayers.Count} active players (Deck: {Deck.CardsRemaining}).");
+
+        bool roundEndConditionMet = activePlayers.Count <= 1;
+        if (isCheckingAfterPlayerAction && Deck.CardsRemaining == 0)
         {
-            _logger.LogInformation("[Game {GameId}] CheckRoundEndCondition: Condition met (ActivePlayers: {ACount}, Deck: {DCount}). Calling EndRound.", Id, activePlayers.Count, Deck.CardsRemaining);
+            roundEndConditionMet = true;
+        }
+
+        if (roundEndConditionMet)
+        {
+            _logger.LogInformation("[Game {GameId}] CheckRoundEndCondition: Condition met (ActivePlayers: {ACount}, Deck: {DCount}, IsAfterAction: {IsAfterAction}). Calling EndRound.", 
+                Id, activePlayers.Count, Deck.CardsRemaining, isCheckingAfterPlayerAction);
             EndRound(activePlayers);
             _logger.LogDebug("[Game {GameId}] CheckRoundEndCondition: Returned from EndRound. GamePhase: {CurrentPhase}. Returning true.", Id, GamePhase);
             return true;
@@ -498,9 +558,17 @@ public class Game : IGameOperations // Aggregate Root
 
             foreach (var player in activePlayers)
             {
-                var playerHeldCard = player.Hand.GetHeldCard();
-                if (playerHeldCard != null)
+                if (player.Hand.Count == 0) // Player is active, deck is empty, but they have no card.
                 {
+                    throw new GameRuleException($"[Game {Id}] Player {player.Name} (ID: {player.Id}) is active and deck is empty, but has no card in hand to compare. This indicates an inconsistent state or rule violation.");
+                }
+                else if (player.Hand.Count > 1) // Player has too many cards for round-end comparison
+                {
+                    throw new GameRuleException($"[Game {Id}] Player {player.Name} (ID: {player.Id}) is active and deck is empty, but has {player.Hand.Count} cards in hand. Should have exactly one. This indicates an inconsistent state or rule violation.");
+                }
+                else // Player has exactly one card
+                {
+                    var playerHeldCard = player.Hand.Cards.Single(); // Safe to get the single card
                     _logger.LogTrace("[Game {GameId}] Player {PlayerName} holds {CardRank} (Value: {CardValue}).", Id, player.Name, playerHeldCard.Rank.Name, playerHeldCard.Rank.Value); 
                     if (playerHeldCard.Rank.Value > highestRank)
                     {
@@ -511,10 +579,6 @@ public class Game : IGameOperations // Aggregate Root
                     else if (playerHeldCard.Rank.Value == highestRank)
                     {                    potentialWinners.Add(player);
                     }
-                }
-                else
-                {
-                    throw new GameRuleException($"[Game {Id}] Player {player.Name} (ID: {player.Id}) is active and deck is empty, but has no card in hand to compare. This indicates an inconsistent state or rule violation.");
                 }
             }
 
