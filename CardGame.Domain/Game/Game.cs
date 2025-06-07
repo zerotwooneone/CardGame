@@ -332,24 +332,26 @@ public class Game : IGameOperations // Aggregate Root
 
     public void PlayCard(Guid playerId, Card cardToPlay, Guid? targetPlayerId, CardType? guessedCardType, IDeckProvider deckProvider) // Corrected: deckProvider parameter restored
     {
+        // 1. SETUP & INITIAL VALIDATION
         var player = GetPlayerById(playerId); // GetPlayerById will throw if not found
-        ValidatePlayCard(player, cardToPlay, targetPlayerId, guessedCardType); // Correct: no deckProvider here
-
-        var cardToPlayInstance = player.Hand.Cards.First(c => c.AppearanceId == cardToPlay.AppearanceId && c.Rank == cardToPlay.Rank);
-        player.PlayCard(cardToPlayInstance);
-        DiscardPile.Add(cardToPlayInstance);
-
-        // ADDED: Proactive check for acting player after playing their card
-        CheckAndHandleHandlessPlayerWithEmptyDeck(player, cardToPlayInstance);
-
         Player? targetPlayer = targetPlayerId.HasValue ? GetPlayerById(targetPlayerId.Value) : null; 
 
-        // RETAINED: Pre-effect check for target player's hand (deck-agnostic)
+        ValidatePlayCard(player, cardToPlay, targetPlayerId, guessedCardType); // Existing validation
+
+        // Pre-effect validation: Ensure target player (if any) is in a valid state to be targeted.
+        // This check could also be part of ValidatePlayCard or handled by the deckProvider if card-specific.
         if (targetPlayer != null && targetPlayer.Status == PlayerStatus.Active && !targetPlayer.Hand.Cards.Any())
         {
-            throw new GameRuleException($"[Game {Id}] Target player {targetPlayer.Name} (ID: {targetPlayer.Id}) is active but has no cards in hand. This is an invalid state to be targeted.");
+            throw new GameRuleException($"[Game {Id}] Target player {targetPlayer.Name} (ID: {targetPlayer.Id}) is active but has no cards in hand. This is an invalid state to be targeted by most card effects.");
         }
 
+        var cardToPlayInstance = player.Hand.Cards.First(c => c.AppearanceId == cardToPlay.AppearanceId && c.Rank == cardToPlay.Rank);
+
+        // 2. PLAYER ACTION - PLAY CARD & BASIC STATE UPDATE
+        player.PlayCard(cardToPlayInstance); // Removes from hand, adds to player's played cards
+        DiscardPile.Add(cardToPlayInstance);
+
+        // 3. LOG THE ACTION
         var logEntry = new GameLogEntry(
             GameLogEventType.CardPlayed,
             playerId,
@@ -364,31 +366,33 @@ public class Game : IGameOperations // Aggregate Root
             GuessedRank = guessedCardType
         };
         AddLogEntry(logEntry);
-
         AddDomainEvent(new PlayerPlayedCard(Id, playerId, cardToPlayInstance, targetPlayerId, guessedCardType));
 
-        // REVISED: Pre-effect check for target player's hand (deck-agnostic)
-        if (targetPlayer != null && targetPlayer.Status == PlayerStatus.Active && !targetPlayer.Hand.Cards.Any())
-        {
-            throw new GameRuleException($"[Game {Id}] Target player {targetPlayer.Name} (ID: {targetPlayer.Id}) is active but has no cards in hand. This is an invalid state to be targeted.");
-        }
-
-        // Execute the card effect using the provided deck provider
+        // 4. EXECUTE CARD EFFECT
+        // This method is responsible for the card's primary logic, including any direct eliminations 
+        // or state changes it causes (e.g., updating player status, forcing draws/discards).
+        // It should also handle its own specific logging for the effect's outcome.
         deckProvider.ExecuteCardEffect(this, player, cardToPlayInstance, targetPlayer, guessedCardType);
 
-        // ADDED: Proactive checks after card effect
-        CheckAndHandleHandlessPlayerWithEmptyDeck(player, cardToPlayInstance); // Check acting player again
-        if (targetPlayer != null)
+        // 5. POST-EFFECT STATE CHECKS & GENERAL ELIMINATIONS
+        // Check if the acting player was eliminated or ran out of cards when the deck is empty.
+        CheckAndHandleHandlessPlayerWithEmptyDeck(player, cardToPlayInstance); 
+        
+        // Check if the target player (if any and still active) was eliminated or ran out of cards when the deck is empty.
+        if (targetPlayer != null && targetPlayer.Status == PlayerStatus.Active) // Only check if still active after card effect
         {
             CheckAndHandleHandlessPlayerWithEmptyDeck(targetPlayer, cardToPlayInstance);
         }
 
-        bool roundEndedImmediately = CheckRoundEndCondition(true);
+        // 6. ROUND & GAME PROGRESSION
+        // CheckRoundEndCondition will internally call EndRound if conditions are met.
+        // EndRound will then call StartNewRound if the game is not over.
+        bool roundEnded = CheckRoundEndCondition(isCheckingAfterPlayerAction: true); 
 
-        // REMOVED: Specific post-effect checks for active/handless/empty-deck, now covered by proactive helper.
-        if (!roundEndedImmediately && GamePhase == GamePhase.RoundInProgress) 
+        if (!roundEnded && GamePhase == GamePhase.RoundInProgress) 
         {
-             AdvanceTurn();
+            // AdvanceTurn should correctly skip any players eliminated during this turn.
+            AdvanceTurn();
         }
     }
 
