@@ -56,10 +56,6 @@ namespace CardGame.Domain.SystemTests
 
             while (game.GamePhase != GamePhase.GameOver && turnsTakenOverall < maxTurnsOverall)
             {
-                if (game.GamePhase == GamePhase.NotStarted || game.GamePhase == GamePhase.RoundOver)
-                {
-                    game.StartNewRound(); // MODIFIED: Removed localRandomizer
-                }
                 Console.WriteLine($"Seed: {localRandomizer.Seed} - Round {game.RoundNumber} started ---");
             
                 int maxTurnsInRound = 50; 

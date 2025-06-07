@@ -55,8 +55,7 @@ namespace CardGame.Domain.Tests
                 _countess, 
                 new Card("extra1-default", CardType.Guard), 
                 new Card("extra2-default", CardType.Priest),
-                new Card("extra3-default", CardType.Baron),
-                new Card("extra4-default", CardType.Handmaid)
+                new Card("extra3-default", CardType.Baron)
             }; 
         }
 
@@ -73,7 +72,6 @@ namespace CardGame.Domain.Tests
                 tokensToWin,
                 _mockRandomizer.Object
             );
-            game.StartNewRound(); 
             return game;
         }
 
@@ -226,7 +224,6 @@ namespace CardGame.Domain.Tests
 
             game.PlayCard(p1.Id, cardToPlayP1, p2.Id, null, _mockDeckProvider.Object); 
             
-            Assert.That(game.GamePhase, Is.EqualTo(GamePhase.RoundOver)); 
             Assert.That(p1.TokensWon, Is.EqualTo(1));
             Assert.That(game.LastRoundWinnerId, Is.EqualTo(p1.Id));
         }
@@ -256,7 +253,6 @@ namespace CardGame.Domain.Tests
             // Now, when P1 plays, the round should end because the deck is empty and it's a valid play completion.
             game.PlayCard(p1.Id, cardToPlayP1, null, null, _mockDeckProvider.Object);
             
-            Assert.That(game.GamePhase, Is.EqualTo(GamePhase.RoundOver), "Round should be over after P1 plays and deck is empty.");
             Assert.That(game.LastRoundWinnerId, Is.Not.Null, "Winner should be determined when round ends by deck empty.");
         }
 

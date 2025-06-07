@@ -89,9 +89,7 @@ public class CreateGameCommandHandler : IRequestHandler<CreateGameCommand, Guid>
         // --- Start First Round ---
         _logger.LogDebug("Starting first round for game {GameId}...", game.Id);
         // StartNewRound uses the initialDeckCardSet provided during CreateNewGame and the randomizer
-        game.StartNewRound(); 
-        // RoundStarted, TurnStarted etc. events are now also in game.DomainEvents
-
+        
         // --- Save Final State ---
         _logger.LogDebug("Saving game state for {GameId}...", game.Id);
         await _gameRepository.SaveAsync(game, cancellationToken).ConfigureAwait(false);

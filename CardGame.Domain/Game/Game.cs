@@ -193,6 +193,7 @@ public class Game : IGameOperations // Aggregate Root
         if (game.Players.Count < 2 || game.Players.Count > 4) throw new DomainException($"Game must have between 2 and 4 players (found {game.Players.Count}).", 1000);
 
         game.AddDomainEvent(new GameCreated(gameId, playerInfoList, tokensToWin, creatorPlayerId));
+        game.StartNewRound();
         return game;
     }
 
@@ -224,7 +225,7 @@ public class Game : IGameOperations // Aggregate Root
         return game;
     }
 
-    public void StartNewRound()
+    private void StartNewRound()
     {
         _logger.LogDebug("[Game {GameId}] StartNewRound: Entry. Current _isSettingUpRound: {IsSettingUpValue}, GamePhase: {CurrentPhase}", Id, _isSettingUpRound, GamePhase);
         _isSettingUpRound = true; // Set flag at the beginning
@@ -653,7 +654,12 @@ public class Game : IGameOperations // Aggregate Root
             GamePhase = GamePhase.RoundOver;
             AddDomainEvent(new RoundEnded(Id, null, "Tie or no winner determined this round.", playerSummariesForEvent)); 
         }
-        _logger.LogDebug("[Game {GameId}] EndRound: Exit. GamePhase set to {CurrentPhase}. LastRoundWinnerId: {WinnerId}", Id, GamePhase, LastRoundWinnerId);
+
+        if (GamePhase == GamePhase.RoundOver)
+        {
+            StartNewRound();
+        }
+        
     }
 
     private void AdvanceTurn()
