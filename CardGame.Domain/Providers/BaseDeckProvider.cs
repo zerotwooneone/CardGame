@@ -7,6 +7,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Collections.Immutable;
+using CardRank = CardGame.Domain.BaseGame.CardRank;
 
 namespace CardGame.Domain.Providers
 {

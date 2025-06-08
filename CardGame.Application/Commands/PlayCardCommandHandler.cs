@@ -4,6 +4,7 @@ using CardGame.Domain.Types;
 using FluentValidation;
 using MediatR;
 using Microsoft.Extensions.Logging;
+using CardRank = CardGame.Domain.BaseGame.CardRank;
 
 namespace CardGame.Application.Commands;
 

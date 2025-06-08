@@ -1,6 +1,6 @@
 using GeneratorAttributes;
 
-namespace CardGame.Domain.Types;
+namespace CardGame.Domain.BaseGame;
 
 [EnumLike]
 public sealed partial class CardRank 

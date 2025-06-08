@@ -6,6 +6,7 @@ using CardGame.Domain.Game.GameException;
 using CardGame.Domain.Interfaces;
 using CardGame.Domain.Types;
 using Microsoft.Extensions.Logging;
+using CardRank = CardGame.Domain.BaseGame.CardRank;
 
 namespace CardGame.Domain.Game;
 

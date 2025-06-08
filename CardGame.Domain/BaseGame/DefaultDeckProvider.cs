@@ -1,9 +1,6 @@
-using CardGame.Domain.Interfaces;
-using CardGame.Domain.Types;
-using System;
-using System.Collections.Generic;
+using CardGame.Domain.Providers;
 
-namespace CardGame.Domain.Providers;
+namespace CardGame.Domain.BaseGame;
 
 /// <summary>
 /// Provides the default Love Letter deck configuration.

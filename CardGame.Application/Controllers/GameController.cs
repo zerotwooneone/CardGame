@@ -7,7 +7,8 @@ using FluentValidation;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using System.Security.Claims; // Added this line
+using System.Security.Claims;
+using CardRank = CardGame.Domain.BaseGame.CardRank; // Added this line
 
 namespace CardGame.Application.Controllers;
 

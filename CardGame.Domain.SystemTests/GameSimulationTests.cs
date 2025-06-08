@@ -1,3 +1,4 @@
+using CardGame.Domain.BaseGame;
 using CardGame.Domain.Game;
 using CardGame.Domain.Game.GameException;
 using CardGame.Domain.Interfaces;
@@ -5,6 +6,7 @@ using CardGame.Domain.Providers;
 using CardGame.Domain.Types;
 using FluentAssertions;
 using Microsoft.Extensions.Logging;
+using CardRank = CardGame.Domain.BaseGame.CardRank;
 // For Game, Player, Card, Hand, PlayerInfo, DeckDefinition
 // For IDeckProvider
 // For DefaultDeckProvider

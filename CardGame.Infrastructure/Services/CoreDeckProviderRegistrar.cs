@@ -1,4 +1,5 @@
 using CardGame.Application.Common.Interfaces;
+using CardGame.Domain.BaseGame;
 using CardGame.Domain.Interfaces;
 using CardGame.Domain.Providers;
 

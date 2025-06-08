@@ -5,6 +5,7 @@ using CardGame.Domain.Game.GameException;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using CardRank = CardGame.Domain.BaseGame.CardRank;
 
 namespace CardGame.Domain.Providers;
 

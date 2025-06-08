@@ -1,5 +1,6 @@
 ﻿using CardGame.Domain.Game;
 using CardGame.Domain.Types;
+using CardRank = CardGame.Domain.BaseGame.CardRank;
 
 namespace CardGame.Domain.Tests.Helpers;
 

@@ -2,6 +2,7 @@ using CardGame.Domain.Game;
 using CardGame.Domain.Types;
 using System;
 using System.Collections.Generic;
+using CardRank = CardGame.Domain.BaseGame.CardRank;
 
 namespace CardGame.Domain.Interfaces;
 

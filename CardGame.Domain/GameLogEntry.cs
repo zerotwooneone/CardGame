@@ -1,5 +1,6 @@
 using CardGame.Domain.Types; // For CardType
-using CardGame.Domain.Game; // For Card
+using CardGame.Domain.Game;
+using CardRank = CardGame.Domain.BaseGame.CardRank; // For Card
 
 namespace CardGame.Domain;
 

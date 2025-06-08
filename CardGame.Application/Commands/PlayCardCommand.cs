@@ -1,6 +1,7 @@
 ﻿using CardGame.Domain.Types;
 using FluentValidation;
 using MediatR;
+using CardRank = CardGame.Domain.BaseGame.CardRank;
 
 namespace CardGame.Application.Commands;
 

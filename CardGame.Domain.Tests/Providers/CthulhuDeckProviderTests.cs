@@ -9,6 +9,7 @@ using CardGame.Domain.Game;
 using CardGame.Domain.Game.GameException;
 using Moq;
 using CardGame.Domain.Interfaces;
+using CardRank = CardGame.Domain.BaseGame.CardRank;
 
 namespace CardGame.Domain.Tests.Providers
 {

@@ -1,6 +1,7 @@
 using CardGame.Domain.Types;
 using Microsoft.Extensions.Logging;
 using CardGame.Domain.Interfaces;
+using CardRank = CardGame.Domain.BaseGame.CardRank;
 
 namespace CardGame.Domain.Game;
 
@@ -111,7 +112,7 @@ public class Player // Entity
         foreach (var cardInHand in cardsInHandBeforeDiscard)
         {
             PlayedCards.Add(cardInHand.Rank); // Add all discarded cards to played cards
-            if (cardInHand.Rank == CardGame.Domain.Types.CardRank.Princess) 
+            if (cardInHand.Rank == CardRank.Princess) 
             {
                 princessCard = cardInHand; // Note if Princess was discarded
             }

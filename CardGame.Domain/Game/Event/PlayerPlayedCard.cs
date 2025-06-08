@@ -1,6 +1,7 @@
 using CardGame.Domain.Interfaces;
 using CardGame.Domain.Types;
 using CardGame.Domain.Game;
+using CardRank = CardGame.Domain.BaseGame.CardRank;
 
 namespace CardGame.Domain.Game.Event;
 

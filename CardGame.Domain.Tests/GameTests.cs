@@ -9,7 +9,8 @@ using CardGame.Domain.Common;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using CardGame.Domain.Game.GameException; 
+using CardGame.Domain.Game.GameException;
+using CardRank = CardGame.Domain.BaseGame.CardRank;
 
 namespace CardGame.Domain.Tests
 {

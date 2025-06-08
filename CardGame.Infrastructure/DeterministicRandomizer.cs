@@ -2,6 +2,7 @@
 using CardGame.Domain.Game;
 using CardGame.Domain.Types;
 using Microsoft.Extensions.Logging;
+using CardRank = CardGame.Domain.BaseGame.CardRank;
 
 namespace CardGame.Infrastructure;
 
