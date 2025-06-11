@@ -17,7 +17,14 @@ It is crucial to understand that these tests **do not cover the specific effects
 ## Key Components
 
 *   **`GameTests.cs`**: Contains the majority of tests, focusing on the `Game` aggregate and its interactions.
-*   **`TestDoubles/`**: Includes test doubles (stubs, mocks) used to isolate the domain logic from external dependencies or to provide controlled test data.
+*   **`TestDoubles/`**: This directory contains test doubles (fakes, stubs, mocks) used to isolate the domain logic from external dependencies or to provide controlled test data. Key fakes include:
+    *   `NonShufflingRandomizer.cs`: Provides a predictable implementation of `IRandomizer` for consistent test outcomes.
+    *   `FakeLogger.cs` & `FakeLoggerFactory.cs`: Provide no-op logging implementations for `ILogger<T>` and `ILoggerFactory`, preventing logging side effects during tests.
+    *   `FakeDeckProvider.cs`: A configurable implementation of `IDeckProvider`, allowing tests to specify card sets, rank definitions, and optionally hook into card effect execution logic.
+
+### Important Testing Considerations
+
+*   **`GamePhase` Testing**: Be aware that methods like `Game.CreateNewGame()` and `Game.PlayCard()` can trigger subsequent game logic that advances turns, starts new rounds, or even ends the game. This means that the `GamePhase` might change to `RoundOver` or `GameOver` immediately within the execution of these methods. When testing, focus on the expected outcomes of these state transitions (e.g., correct winner awarded, new round setup correctly, game ended appropriately) rather than assuming `GamePhase` will remain `InProgress` unless the test conditions are specifically designed to prevent phase changes.
 
 ## Testing Dependencies
 
