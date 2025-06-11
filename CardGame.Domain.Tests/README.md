@@ -58,5 +58,6 @@ When contributing to or modifying tests in this project, please adhere to the fo
 5.  **Coverage:** When adding new features or modifying existing logic in `CardGame.Domain`, ensure corresponding unit tests are added or updated in this project to maintain good test coverage of the domain rules.
 6.  **No Side Effects:** Tests should be self-contained and not rely on external state or produce side effects that could interfere with other tests.
 7.  **README Updates:** If significant changes are made to the testing strategy, scope, or tooling for this project, please proactively update this README.md.
+8.  **Minimize Test Variance:** Strive for deterministic tests. Avoid using `Guid.NewGuid()` directly for identifiers in test setup where a fixed value can be used (e.g., prefer `new Guid("your-fixed-guid-here")` or static `Guid` fields). This improves repeatability and simplifies debugging. The same principle applies to other potential sources of randomness or environment-dependent values where predictable test data is feasible.
 
 By following these guidelines, we can maintain a robust and focused test suite for the core domain of the CardGame application.
