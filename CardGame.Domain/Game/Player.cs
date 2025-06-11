@@ -1,7 +1,5 @@
 using CardGame.Domain.Types;
 using Microsoft.Extensions.Logging;
-using CardGame.Domain.Interfaces;
-using CardRank = CardGame.Domain.BaseGame.CardRank;
 
 namespace CardGame.Domain.Game;
 
@@ -14,7 +12,7 @@ public class Player // Entity
     public string Name { get; private set; }
     public PlayerStatus Status { get; private set; } = PlayerStatus.Active;
     public Hand Hand { get; private set; } = Hand.Empty;
-    public List<CardRank> PlayedCards { get; private set; } = new List<CardRank>();
+    public List<Card> PlayedCards { get; private set; } = new List<Card>();
     public int TokensWon { get; private set; } = 0;
     public bool IsProtected { get; private set; } = false;
     public bool IsPlayersTurn { get; set; } = false;
@@ -49,7 +47,7 @@ public class Player // Entity
         string name,
         PlayerStatus status,
         Hand hand, // Assume Hand VO is already loaded
-        List<CardRank> playedCards, // Assume List<CardType> is loaded
+        List<Card> playedCards, // Assume List<CardType> is loaded
         int tokensWon,
         bool isProtected,
         ILogger<Player> logger)
@@ -57,7 +55,7 @@ public class Player // Entity
         var player = new Player(id, name, logger); // Use private constructor
         player.Status = status ?? PlayerStatus.Active;
         player.Hand = hand ?? Hand.Empty;
-        player.PlayedCards = playedCards ?? new List<CardRank>();
+        player.PlayedCards = playedCards ?? new List<Card>();
         player.TokensWon = tokensWon;
         player.IsProtected = isProtected;
         return player;
@@ -73,15 +71,6 @@ public class Player // Entity
         return Status == PlayerStatus.Active && Hand.Cards.Count < 2;
     }
 
-    // --- Internal Methods for Aggregate ---
-    internal void PrepareForNewRound()
-    {
-        Status = PlayerStatus.Active;
-        Hand = Hand.Empty;
-        PlayedCards.Clear();
-        IsProtected = false;
-    }
-
     internal void GiveCard(Card card)
     {
         Hand = Hand.Add(card);
@@ -90,35 +79,32 @@ public class Player // Entity
     internal void PlayCard(Card cardInstance)
     {
         _logger.LogDebug("Player {PlayerName} ({PlayerId}) hand BEFORE playing {CardType} ({CardInstanceId}): {HandCards}", 
-            Name, Id, cardInstance.Rank.Name, cardInstance.AppearanceId.Substring(0,4), 
-            string.Join(", ", Hand.Cards.Select(c => $"{c.Rank.Name}({c.AppearanceId.Substring(0,4)})")));
+            Name, Id, cardInstance.Rank.Value, cardInstance.AppearanceId.Substring(0,4), 
+            string.Join(", ", Hand.Cards.Select(c => $"{c.Rank.Value}({c.AppearanceId.Substring(0,4)})")));
 
         Hand = Hand.Remove(cardInstance); // This is PlayerHand.Remove which calls ImmutableList<Card>.Remove
-        PlayedCards.Add(cardInstance.Rank);
+        PlayedCards.Add(cardInstance);
 
         _logger.LogDebug("Player {PlayerName} ({PlayerId}) hand AFTER playing {CardType} ({CardInstanceId}): {HandCards}", 
-            Name, Id, cardInstance.Rank.Name, cardInstance.AppearanceId.Substring(0,4), 
-            string.Join(", ", Hand.Cards.Select(c => $"{c.Rank.Name}({c.AppearanceId.Substring(0,4)})")));
+            Name, Id, cardInstance.Rank.Value, cardInstance.AppearanceId.Substring(0,4), 
+            string.Join(", ", Hand.Cards.Select(c => $"{c.Rank.Value}({c.AppearanceId.Substring(0,4)})")));
     }
 
-    internal Card? DiscardHand(bool deckEmpty)
+    public Card? DiscardHand()
     {
         if (Hand.Cards.Count == 0) return null; // Nothing to discard
 
         var cardsInHandBeforeDiscard = Hand.GetCards().ToList(); // Store all cards
         Hand = Hand.Empty; // Discard the hand
 
-        Card? princessCard = null;
+        Card? lastDiscard = null;
         foreach (var cardInHand in cardsInHandBeforeDiscard)
         {
-            PlayedCards.Add(cardInHand.Rank); // Add all discarded cards to played cards
-            if (cardInHand.Rank == CardRank.Princess) 
-            {
-                princessCard = cardInHand; // Note if Princess was discarded
-            }
+            PlayedCards.Add(cardInHand); // Add all discarded cards to played cards
+            lastDiscard = cardInHand; //
         }
         
-        return princessCard; // Return Princess if discarded, otherwise null
+        return lastDiscard; // Return Princess if discarded, otherwise null
     }
 
     internal void SwapHandWith(Player otherPlayer)
@@ -126,7 +112,7 @@ public class Player // Entity
         (Hand, otherPlayer.Hand) = (otherPlayer.Hand, Hand);
     } // Simplified
 
-    internal void SetProtection(bool isProtected)
+    public void SetProtection(bool isProtected)
     {
         IsProtected = isProtected;
     }
@@ -142,14 +128,13 @@ public class Player // Entity
     }
 
     // Method to reset player state for a new round
-    internal void StartNewRound(ILogger<Player> logger) // Added logger parameter to match Game.cs call, though _logger field exists
+    internal void StartNewRound() 
     {
-        // _logger = logger; // Could re-assign if intended, or use existing _logger if constructor injects it properly.
         Hand = Hand.Empty; 
         Status = PlayerStatus.Active;
         IsProtected = false;
         IsPlayersTurn = false;
-        // PlayedCards.Clear(); // Typically, played cards history is for the whole game, not per round. Confirm if this should be cleared.
+        PlayedCards.Clear(); 
         _logger.LogDebug("Player {PlayerName} ({PlayerId}) state reset for new round.", Name, Id);
     }
 }

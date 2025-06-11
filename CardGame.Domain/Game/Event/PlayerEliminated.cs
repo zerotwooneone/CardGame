@@ -1,6 +1,4 @@
 ﻿using CardGame.Domain.Interfaces;
-using CardGame.Domain.Types;
-using CardRank = CardGame.Domain.BaseGame.CardRank;
 
 namespace CardGame.Domain.Game.Event;
 
@@ -14,9 +12,9 @@ public record PlayerEliminated : IDomainEvent
     public Guid GameId { get; }
     public Guid PlayerId { get; }
     public string Reason { get; }
-    public CardRank? CardResponsible { get; }
+    public Card? CardResponsible { get; }
 
-    public PlayerEliminated(Guid gameId, Guid playerId, string reason, CardRank? cardResponsible, Guid? correlationId = null)
+    public PlayerEliminated(Guid gameId, Guid playerId, string reason, Card? cardResponsible, Guid? correlationId = null)
     {
         EventId = Guid.NewGuid();
         OccurredOn = DateTimeOffset.UtcNow;

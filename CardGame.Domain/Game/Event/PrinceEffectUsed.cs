@@ -1,6 +1,4 @@
 ﻿using CardGame.Domain.Interfaces;
-using CardGame.Domain.Types;
-using CardRank = CardGame.Domain.BaseGame.CardRank;
 
 namespace CardGame.Domain.Game.Event;
 
@@ -14,10 +12,10 @@ public record PrinceEffectUsed : IDomainEvent
     public Guid GameId { get; }
     public Guid ActorPlayerId { get; }
     public Guid TargetPlayerId { get; }
-    public CardRank DiscardedCardRank { get; }
+    public Card DiscardedCard { get; }
     public string DiscardedCardId { get; }
 
-    public PrinceEffectUsed(Guid gameId, Guid actorPlayerId, Guid targetPlayerId, CardRank discardedCardRank, string discardedCardId, Guid? correlationId = null)
+    public PrinceEffectUsed(Guid gameId, Guid actorPlayerId, Guid targetPlayerId, Card discardedCard, string discardedCardId, Guid? correlationId = null)
     {
         EventId = Guid.NewGuid();
         OccurredOn = DateTimeOffset.UtcNow;
@@ -25,7 +23,7 @@ public record PrinceEffectUsed : IDomainEvent
         GameId = gameId;
         ActorPlayerId = actorPlayerId;
         TargetPlayerId = targetPlayerId;
-        DiscardedCardRank = discardedCardRank;
+        DiscardedCard = discardedCard;
         DiscardedCardId = discardedCardId;
     }
 }

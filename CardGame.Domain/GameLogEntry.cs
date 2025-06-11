@@ -1,6 +1,4 @@
-using CardGame.Domain.Types; // For CardType
 using CardGame.Domain.Game;
-using CardRank = CardGame.Domain.BaseGame.CardRank; // For Card
 
 namespace CardGame.Domain;
 
@@ -30,7 +28,7 @@ public class GameLogEntry
     public Card? GuessedPlayerActualCard { get; set; } // The actual card revealed if a Guard guess hits
     
     // For Guard Guess specifics
-    public CardRank? GuessedRank { get; set; } // The rank guessed by the Guard player
+    public int? GuessedRank { get; set; } // The rank guessed by the Guard player
     public bool? WasGuessCorrect { get; set; }   
 
     // For Baron Comparison specifics (loser ID)

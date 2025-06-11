@@ -1,6 +1,4 @@
 using CardGame.Domain.Game.GameException;
-using CardGame.Domain.Types;
-using CardRank = CardGame.Domain.BaseGame.CardRank;
 
 namespace CardGame.Domain.Game;
 
@@ -67,7 +65,7 @@ public sealed record Hand
 
         if (indexToRemove == -1)
         {
-            throw new CardNotFoundInHandException($"Card '{cardToRemoveByValue.Rank.Name}' (AppearanceId: '{cardToRemoveByValue.AppearanceId}') not found in hand by value.");
+            throw new CardNotFoundInHandException($"Card '{cardToRemoveByValue.Rank.Value}' (AppearanceId: '{cardToRemoveByValue.AppearanceId}') not found in hand by value.");
         }
 
         var newCardsList = Cards.ToList(); // Create a mutable copy
@@ -75,12 +73,6 @@ public sealed record Hand
 
         return new Hand(newCardsList);
     }
-
-
-    /// <summary>
-    /// Checks if the hand contains a card of the specified type.
-    /// </summary>
-    public bool Contains(CardRank cardRank) => cardRank != null && Cards.Any(c => c.Rank == cardRank);
 
     /// <summary>
     /// Gets the single card held, assuming the hand contains exactly one card.

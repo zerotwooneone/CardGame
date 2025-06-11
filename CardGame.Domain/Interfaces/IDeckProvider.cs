@@ -1,8 +1,7 @@
 using CardGame.Domain.Game;
-using CardGame.Domain.Types;
 using System;
 using System.Collections.Generic;
-using CardRank = CardGame.Domain.BaseGame.CardRank;
+using CardGame.Domain.Types;
 
 namespace CardGame.Domain.Interfaces;
 
@@ -33,12 +32,24 @@ public interface IDeckProvider
     DeckDefinition GetDeck();
     
     /// <summary>
+    /// Gets the definitions for the ranks used in the deck.
+    /// </summary>
+    IReadOnlyDictionary<int, IEnumerable<RankDefinition>> RankDefinitions { get; }
+
+    /// <summary>
     /// Executes the effect of a played card.
     /// </summary>
     /// <param name="game">The game operations interface to interact with the game state.</param>
-    /// <param name="actingPlayer">The player who played the card.</param>
-    /// <param name="card">The card that was played.</param>
-    /// <param name="targetPlayer">The player targeted by the card, if any.</param>
-    /// <param name="guessedCardType">The card type guessed by the acting player, if applicable.</param>
-    void ExecuteCardEffect(IGameOperations game, Player actingPlayer, Card card, Player? targetPlayer, CardRank? guessedCardType);
+    /// <param name="actingPlayer">The ID of the player who played the card.</param>
+    /// <param name="cardRankValue">The rank value of the card that was played.</param>
+    /// <param name="targetPlayerId">The ID of the player targeted by the card, if any.</param>
+    /// <param name="guessedRankValue">The rank value guessed by the acting player, if applicable.</param>
+    void ExecuteCardEffect(
+        IGameOperations game, 
+        Player actingPlayer, 
+        Card card,
+        Player? targetPlayer, 
+        int? guessedRankValue);
+    
+    
 }

@@ -1,6 +1,4 @@
 using CardGame.Domain.Interfaces;
-using CardGame.Domain.Types;
-using CardRank = CardGame.Domain.BaseGame.CardRank;
 
 namespace CardGame.Domain.Game.Event;
 
@@ -15,11 +13,11 @@ public record RoundStarted : IDomainEvent
     public int RoundNumber { get; }
     public List<Guid> PlayerIds { get; }
     public int DeckCount { get; }
-    public CardRank? SetAsideCardType { get; }
+    public Card? SetAsideCard { get; }
     public List<PublicCardInfo> PubliclySetAsideCards { get; }
     public Guid DeckId { get; }
 
-    public RoundStarted(Guid gameId, int roundNumber, List<Guid> playerIds, int deckCount, CardRank? setAsideCardType,
+    public RoundStarted(Guid gameId, int roundNumber, List<Guid> playerIds, int deckCount, Card? setAsideCard,
         List<PublicCardInfo> publiclySetAsideCards, Guid deckId, Guid? correlationId = null)
     {
         EventId = Guid.NewGuid();
@@ -29,7 +27,7 @@ public record RoundStarted : IDomainEvent
         RoundNumber = roundNumber;
         PlayerIds = playerIds ?? new List<Guid>();
         DeckCount = deckCount;
-        SetAsideCardType = setAsideCardType;
+        SetAsideCard = setAsideCard;
         PubliclySetAsideCards = publiclySetAsideCards;
         DeckId = deckId;
     }

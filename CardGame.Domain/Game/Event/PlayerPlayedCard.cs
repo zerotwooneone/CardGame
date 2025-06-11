@@ -1,7 +1,4 @@
 using CardGame.Domain.Interfaces;
-using CardGame.Domain.Types;
-using CardGame.Domain.Game;
-using CardRank = CardGame.Domain.BaseGame.CardRank;
 
 namespace CardGame.Domain.Game.Event;
 
@@ -16,9 +13,9 @@ public record PlayerPlayedCard : IDomainEvent
     public Guid PlayerId { get; }
     public Card PlayedCard { get; }
     public Guid? TargetPlayerId { get; }
-    public CardRank? GuessedCardType { get; }
+    public int? GuessedRankValue { get; }
 
-    public PlayerPlayedCard(Guid gameId, Guid playerId, Card playedCard, Guid? targetPlayerId, CardRank? guessedCardType, Guid? correlationId = null)
+    public PlayerPlayedCard(Guid gameId, Guid playerId, Card playedCard, Guid? targetPlayerId, int? guessedRankValue, Guid? correlationId = null)
     {
         EventId = Guid.NewGuid();
         OccurredOn = DateTimeOffset.UtcNow;
@@ -27,6 +24,6 @@ public record PlayerPlayedCard : IDomainEvent
         PlayerId = playerId;
         PlayedCard = playedCard ?? throw new ArgumentNullException(nameof(playedCard));
         TargetPlayerId = targetPlayerId;
-        GuessedCardType = guessedCardType;
+        GuessedRankValue = guessedRankValue;
     }
 }
