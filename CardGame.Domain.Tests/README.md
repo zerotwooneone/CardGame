@@ -22,6 +22,16 @@ It is crucial to understand that these tests **do not cover the specific effects
     *   `FakeLogger.cs` & `FakeLoggerFactory.cs`: Provide no-op logging implementations for `ILogger<T>` and `ILoggerFactory`, preventing logging side effects during tests.
     *   `FakeDeckProvider.cs`: A configurable implementation of `IDeckProvider`, allowing tests to specify card sets, rank definitions, and optionally hook into card effect execution logic.
 
+### Card Equality and `RankDefinition`
+
+A critical aspect of testing card-related logic (e.g., playing cards, hand manipulation) is understanding how `Card` equality is determined. The `Card` type is a record defined as `Card(RankDefinition Rank, string AppearanceId)`, and `RankDefinition` is `RankDefinition(Guid Id, int Value)`.
+
+Because `RankDefinition` includes a `Guid Id`, `Card` equality is sensitive to the specific `RankDefinition` instance used. For tests involving the base Love Letter game (from `CardGame.Decks.BaseGame`), it is **essential** to use a single, canonical `RankDefinition` instance for all `Card` instances of the same logical rank (e.g., all Guard cards must share the same `RankDefinition` for Guards).
+
+Creating a `new RankDefinition(Guid.NewGuid(), ...)` for each card instance, even if they represent the same type of card (like multiple Guards), will lead to inequality. This can cause tests to fail unexpectedly, for example, when attempting to remove a played card from a hand, as the `Hand.Remove(card)` operation relies on correct equality.
+
+The `GameTests.cs` file demonstrates the correct approach by defining and reusing shared static `RankDefinition` instances (e.g., `_guardRankDef`, `_priestRankDef`) for all test cards of a given rank.
+
 ### Important Testing Considerations
 
 *   **`GamePhase` Testing**: Be aware that methods like `Game.CreateNewGame()` and `Game.PlayCard()` can trigger subsequent game logic that advances turns, starts new rounds, or even ends the game. This means that the `GamePhase` might change to `RoundOver` or `GameOver` immediately within the execution of these methods. When testing, focus on the expected outcomes of these state transitions (e.g., correct winner awarded, new round setup correctly, game ended appropriately) rather than assuming `GamePhase` will remain `InProgress` unless the test conditions are specifically designed to prevent phase changes.
