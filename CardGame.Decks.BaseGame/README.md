@@ -1,4 +1,4 @@
-﻿# CardGame.Domain.BaseGame
+# CardGame.Decks.BaseGame
 
 This directory contains foundational components for a "base" version or a simple expansion of the Love Letter card game. It serves as an example of how to structure an expansion library within the `CardGame.Domain` project.
 
