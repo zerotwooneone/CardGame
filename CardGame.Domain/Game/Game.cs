@@ -658,7 +658,6 @@ public class Game : IGameOperations // Aggregate Root
             roundWinner.AddToken(); // Player's total tokens are updated here
             _logger.LogDebug("[Game {GameId}] Player {PlayerName} awarded a token. Total tokens: {Tokens}", Id, roundWinner.Name, roundWinner.TokensWon);
 
-            // Safely get winning card name for the event
             string winningCardNameForEvent = winningCard?.Rank.Value.ToString() ?? "";
             
             // MODIFIED: Use safely determined winningCardNameForEvent
