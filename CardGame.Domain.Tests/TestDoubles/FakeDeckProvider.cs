@@ -1,67 +1,75 @@
+using CardGame.Domain.Common;
 using CardGame.Domain.Game;
 using CardGame.Domain.Interfaces;
 using CardGame.Domain.Types;
-using System;
-using System.Collections.Generic;
+using Microsoft.Extensions.Logging;
 using System.Linq;
 
-namespace CardGame.Domain.Tests.TestDoubles
+namespace CardGame.Domain.Tests.TestDoubles;
+
+public class FakeDeckProvider : IDeckProvider
 {
-    public class FakeDeckProvider : IDeckProvider
+    private readonly ILogger<FakeDeckProvider> _logger;
+    private readonly List<Card> _initialCards; 
+    private readonly List<RankDefinition> _allRankDefinitions;
+    public Action<IGameOperations, Player, Card, Player?, int?>? CardEffectAction { get; set; }
+
+    public Guid DeckId { get; } = new Guid("11111111-FAFE-DECF-1111-111111111111"); 
+    public string DisplayName { get; set; } = "Fake Test Deck";
+    public string Description { get; set; } = "A deck provider specifically for testing purposes.";
+    public string DeckBackAppearanceId { get; set; } = "test/fake_back.png"; 
+
+    public FakeDeckProvider(
+        List<Card> initialCardsForDeck,
+        List<RankDefinition> allAvailableRankDefinitions,
+        ILoggerFactory loggerFactory,
+        Action<IGameOperations, Player, Card, Player?, int?>? cardEffectAction = null)
     {
-        public Guid DeckId { get; set; } = Guid.NewGuid();
-        public string DisplayName { get; set; } = "Fake Test Deck";
-        public string Description { get; set; } = "A deck provider for testing purposes.";
-        public string DefaultBackAppearanceId { get; set; } = "test/fake_back.png";
+        _initialCards = initialCardsForDeck ?? new List<Card>();
+        _allRankDefinitions = allAvailableRankDefinitions ?? new List<RankDefinition>();
+        CardEffectAction = cardEffectAction;
+        _logger = loggerFactory.CreateLogger<FakeDeckProvider>();
+        _logger.LogInformation($"FakeDeckProvider: Constructor. CardEffectAction is {(CardEffectAction == null ? "NULL" : "NOT NULL")}. Deck will have {_initialCards.Count} cards. Total RankDefinitions provided: {_allRankDefinitions.Count}");
+    }
 
-        private readonly List<Card> _cardsToProvide;
-        private readonly Dictionary<int, IEnumerable<RankDefinition>> _rankDefinitionsToProvide;
+    public DeckDefinition GetDeck()
+    {
+        _logger.LogInformation($"FakeDeckProvider: GetDeck called. Returning DeckDefinition with {_initialCards.Count} cards and back ID '{DeckBackAppearanceId}'.");
+        return new DeckDefinition(_initialCards, DeckBackAppearanceId, this);
+    }
 
-        public Action<IGameOperations, Player, Card, Player?, int?>? CardEffectAction { get; set; }
-
-        public FakeDeckProvider(List<Card>? cards = null, Dictionary<int, IEnumerable<RankDefinition>>? rankDefinitions = null)
+    public IReadOnlyDictionary<int, IEnumerable<RankDefinition>> RankDefinitions
+    {
+        get
         {
-            if (cards == null || !cards.Any())
-            {
-                var defaultRank = new RankDefinition(Guid.NewGuid(), 1); 
-                _cardsToProvide = new List<Card>
-                {
-                    new Card(defaultRank, "test/card_default_1.png"),
-                    new Card(new RankDefinition(Guid.NewGuid(), 2), "test/card_default_2.png"),
-                    new Card(new RankDefinition(Guid.NewGuid(), 3), "test/card_default_3.png"),
-                    new Card(new RankDefinition(Guid.NewGuid(), 4), "test/card_default_4.png"),
-                    new Card(new RankDefinition(Guid.NewGuid(), 5), "test/card_default_5.png") 
-                };
-            }
-            else
-            {
-                _cardsToProvide = cards;
-            }
+            var groupedRanks = _allRankDefinitions
+                .GroupBy(r => r.Value)
+                .ToDictionary(g => g.Key, g => g.AsEnumerable());
+            _logger.LogInformation($"FakeDeckProvider: RankDefinitions accessed. Returning {groupedRanks.Count} groups.");
+            return groupedRanks;
+        }
+    }
 
-            if (rankDefinitions == null)
+    public void ExecuteCardEffect(IGameOperations gameOperations, Player actingPlayer, Card cardPlayed, Player? targetPlayer, int? guessedRankValue)
+    {
+        _logger.LogInformation($"FakeDeckProvider: ExecuteCardEffect CALLED. ActingPlayerId: {actingPlayer.Id}, CardPlayed: {cardPlayed.Rank.Value} ('{cardPlayed.AppearanceId}'), TargetPlayerId: {(targetPlayer != null ? targetPlayer.Id.ToString() : "N/A")}, GuessedRankValue: {guessedRankValue?.ToString() ?? "N/A"}");
+        if (CardEffectAction != null)
+        {
+            _logger.LogInformation("FakeDeckProvider: CardEffectAction is NOT NULL. Invoking now...");
+            try
             {
-                _rankDefinitionsToProvide = _cardsToProvide
-                    .Select(c => c.Rank)
-                    .Distinct()
-                    .GroupBy(r => r.Value)
-                    .ToDictionary(g => g.Key, g => g.Cast<RankDefinition>().AsEnumerable());
+                CardEffectAction.Invoke(gameOperations, actingPlayer, cardPlayed, targetPlayer, guessedRankValue);
+                _logger.LogInformation("FakeDeckProvider: CardEffectAction invocation finished.");
             }
-            else
+            catch (Exception ex)
             {
-                _rankDefinitionsToProvide = rankDefinitions;
+                _logger.LogError(ex, "FakeDeckProvider: Exception during CardEffectAction.Invoke.");
+                throw; 
             }
         }
-
-        public DeckDefinition GetDeck()
+        else
         {
-            return new DeckDefinition(_cardsToProvide, DefaultBackAppearanceId, this);
-        }
-
-        public IReadOnlyDictionary<int, IEnumerable<RankDefinition>> RankDefinitions => _rankDefinitionsToProvide;
-
-        public void ExecuteCardEffect(IGameOperations game, Player actingPlayer, Card card, Player? targetPlayer, int? guessedRankValue)
-        {
-            CardEffectAction?.Invoke(game, actingPlayer, card, targetPlayer, guessedRankValue);
+            _logger.LogWarning("FakeDeckProvider: CardEffectAction IS NULL. No card effect will be executed by this FakeDeckProvider.");
         }
     }
 }

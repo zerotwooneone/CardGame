@@ -446,9 +446,11 @@ public class Game : IGameOperations // Aggregate Root
     public void EliminatePlayer(Guid playerId, string reason, Card? cardResponsible = null)
     {
         var player = GetPlayerById(playerId);
+        _logger.LogWarning("[Game {GameId}] Attempting to eliminate Player {PlayerId} ({PlayerName}). Current Status: {PlayerStatus}. Reason: {Reason}", Id, playerId, player.Name, player.Status, reason);
         if (player.Status == PlayerStatus.Active)
         {
-            player.Eliminate();
+            player.Eliminate(); // This should change player.Status
+            _logger.LogWarning("[Game {GameId}] Player {PlayerId} ({PlayerName}) status AFTER calling player.Eliminate(): {PlayerStatus}. Should be Eliminated.", Id, playerId, player.Name, player.Status);
             // MODIFIED: GameLogEntry to use RevealedRankValueOnElimination and RevealedAppearanceIdOnElimination
             AddLogEntry(new GameLogEntry(GameLogEventType.PlayerEliminated, playerId, player.Name, $"{player.Name} was eliminated: {reason}") );
             // MODIFIED: PlayerEliminated event to use cardResponsibleRankValue and cardResponsibleAppearanceId

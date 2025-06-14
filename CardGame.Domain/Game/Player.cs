@@ -79,15 +79,15 @@ public class Player // Entity
     internal void PlayCard(Card cardInstance)
     {
         _logger.LogDebug("Player {PlayerName} ({PlayerId}) hand BEFORE playing {CardType} ({CardInstanceId}): {HandCards}", 
-            Name, Id, cardInstance.Rank.Value, cardInstance.AppearanceId.Substring(0,4), 
-            string.Join(", ", Hand.Cards.Select(c => $"{c.Rank.Value}({c.AppearanceId.Substring(0,4)})")));
+            Name, Id, cardInstance.Rank.Value, cardInstance.AppearanceId.Substring(0, Math.Min(4, cardInstance.AppearanceId.Length)), 
+            string.Join(", ", Hand.Cards.Select(c => $"{c.Rank.Value}({c.AppearanceId.Substring(0, Math.Min(4, c.AppearanceId.Length))})")));
 
         Hand = Hand.Remove(cardInstance); // This is PlayerHand.Remove which calls ImmutableList<Card>.Remove
         PlayedCards.Add(cardInstance);
 
         _logger.LogDebug("Player {PlayerName} ({PlayerId}) hand AFTER playing {CardType} ({CardInstanceId}): {HandCards}", 
-            Name, Id, cardInstance.Rank.Value, cardInstance.AppearanceId.Substring(0,4), 
-            string.Join(", ", Hand.Cards.Select(c => $"{c.Rank.Value}({c.AppearanceId.Substring(0,4)})")));
+            Name, Id, cardInstance.Rank.Value, cardInstance.AppearanceId.Substring(0, Math.Min(4, cardInstance.AppearanceId.Length)), 
+            string.Join(", ", Hand.Cards.Select(c => $"{c.Rank.Value}({c.AppearanceId.Substring(0, Math.Min(4, c.AppearanceId.Length))})")));
     }
 
     public Card? DiscardHand()
@@ -119,7 +119,9 @@ public class Player // Entity
 
     internal void Eliminate()
     {
+        _logger.LogWarning("[Player {PlayerId}] Player.Eliminate() called. Current Status: {PlayerStatus}. Setting to Eliminated.", Id, Status);
         Status = PlayerStatus.Eliminated;
+        _logger.LogWarning("[Player {PlayerId}] Player.Eliminate() finished. Status is now: {PlayerStatus}.", Id, Status);
     }
 
     internal void AddToken()

@@ -94,3 +94,37 @@ This section is intended for AI coding assistants (like Cascade) to ensure smoot
 ## A Note on Collaboration
 
 While the initial structure and concepts for this project were outlined manually, the vast majority of the C# backend code (domain logic, application layer, infrastructure implementations, tests), Angular frontend components and services, Dockerfile configuration, and associated documentation were generated and iteratively refined through collaboration with **Gemini 2.5 Pro**. It's been an interesting experiment in AI-assisted development for exploring DDD and related patterns! This really helped knock out some of the tedious parts of clean architecture and assisted with refactoring things quickly.
+
+---
+
+## AI Developer Notes
+
+This section contains important notes for AI assistants working on this codebase.
+
+### Setting Up Decks in Unit Tests
+
+When writing unit tests that involve a deck of cards (`CardGame.Domain.Tests`), it is critical to understand the drawing mechanism to correctly predict player hands and game flow.
+
+- **Deck Data Structure**: The `Deck` class is backed by an `ImmutableStack<Card>`.
+- **Creation Logic**: The factory method `ImmutableStack.CreateRange(IEnumerable<Card>)` treats the **last** element of the input collection as the **top** of the stack. The top card is the first one to be drawn.
+- **List Preparation**: To set up a predictable deck, create a `List<Card>` where the cards are ordered from the bottom of the deck to the top. The last card in your list will be the first card drawn.
+
+#### Example Draw Order
+
+If you create a list for the deck as follows:
+
+```csharp
+var testDeck = new List<Card> { cardA, cardB, cardC };
+```
+
+The draw order will be: `cardC`, then `cardB`, then `cardA`.
+
+#### Card Distribution Sequence (2-Player Game Example)
+
+1.  The deck is created from the provided list, effectively reversing the list order for drawing.
+2.  The top card is drawn and privately set aside.
+3.  The next X cards (based on player count rules, e.g., 3 cards for a 2-player game are publicly set aside) are drawn.
+4.  Initial hands are dealt to players in order.
+5.  The first player to take a turn draws an additional card to begin their turn.
+
+Always trace this full sequence to ensure your test assertions about player hands are correct.

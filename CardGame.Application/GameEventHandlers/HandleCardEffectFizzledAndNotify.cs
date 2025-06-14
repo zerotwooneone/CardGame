@@ -5,7 +5,8 @@ using MediatR;
 using Microsoft.Extensions.Logging;
 using CardGame.Domain; 
 using CardGame.Domain.Interfaces; 
-using System.Linq; 
+using System.Linq;
+using CardGame.Domain.Game.Event;
 
 namespace CardGame.Application.GameEventHandlers;
 
