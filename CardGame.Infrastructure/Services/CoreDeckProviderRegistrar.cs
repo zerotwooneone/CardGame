@@ -1,7 +1,6 @@
-using CardGame.Application.Common.Interfaces;
-using CardGame.Domain.BaseGame;
+using CardGame.Decks.BaseGame;
+using CardGame.Decks.Cthulu;
 using CardGame.Domain.Interfaces;
-using CardGame.Domain.Providers;
 
 namespace CardGame.Infrastructure.Services;
 

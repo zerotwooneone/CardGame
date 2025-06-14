@@ -9,6 +9,8 @@
 
     <ItemGroup>
       <ProjectReference Include="..\CardGame.Application\CardGame.Application.csproj" />
+      <ProjectReference Include="..\CardGame.Decks.BaseGame\CardGame.Decks.BaseGame.csproj" />
+      <ProjectReference Include="..\CardGame.Decks.Cthulu\CardGame.Decks.Cthulu.csproj" />
       <ProjectReference Include="..\CardGame.Domain\CardGame.Domain.csproj" />
     </ItemGroup>
 
