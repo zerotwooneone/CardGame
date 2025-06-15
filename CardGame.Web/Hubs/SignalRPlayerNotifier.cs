@@ -87,7 +87,7 @@ public class SignalRPlayerNotifier : IPlayerNotifier
                 .ReceivePriestReveal(targetPlayerId, targetPlayerName, revealedCard);
 
             _logger.LogInformation("Sent Priest reveal to Player {PriestPlayerId} about Target {TargetPlayerId}'s card (Rank: {RevealedCardRank}).", 
-                priestPlayerId, targetPlayerId, revealedCard.Rank);
+                priestPlayerId, targetPlayerId, revealedCard);
         }
         catch (Exception ex)
         {
