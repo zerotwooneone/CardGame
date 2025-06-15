@@ -58,28 +58,18 @@ A crucial concept in this domain is the **Game Log**. It is not a technical or s
 
 ## Card Identification in the Domain
 
-Understanding how cards are identified and compared is crucial in this domain:
+The domain has a specific way of identifying and comparing cards, which is crucial for game logic, especially when dealing with card effects, hand management, and potentially network synchronization or persistence if those features were fully implemented.
 
-1.  **Visual Identity (`AppearanceId`):**
-    *   Each `Card` has an `AppearanceId` (string). This identifier is used by the presentation layer to determine how the card looks (e.g., which artwork to display).
-    *   Cards that are visually identical share the same `AppearanceId`. For example, if a player has two "Guard" cards in their hand that look the same, both `Card` instances will have the same `AppearanceId`.
-    *   The domain itself is not concerned with the *format* of the `AppearanceId` (e.g., it's not necessarily a URL or an asset key, but an abstract identifier for the visual representation).
-    *   Standard decks typically have one unique `AppearanceId` per `CardType`. However, the design allows for future expansion decks to potentially introduce multiple `AppearanceId`s for the same functional `CardType` (e.g., alternate art versions of a Baron card).
+1.  **`AppearanceId` (string):** This is primarily for the presentation layer. It's a string (e.g., `"guard"`, `"premium-assassin"`) that the UI can use to display the correct card image and potentially basic text. Multiple actual card *instances* in a game can share the same `AppearanceId` (e.g., there are multiple Guard cards in a deck).
 
-2.  **Functional Identity (`Rank` as `CardType`):**
-    *   Each `Card` has a `Rank` property, which is an instance of the `CardType` enum-like class (e.g., `CardType.Guard`, `CardType.Baron`).
-    *   The `Rank` (i.e., the `CardType` instance) defines the card's behavior, rules, and its power level in the game. The integer power level is accessible via `Rank.Value`.
-    *   Comparing `card1.Rank == card2.Rank` checks if two cards are functionally the same type.
+2.  **`Rank` (int):** This is an integer representing the card's functional value or power level. For example, a Guard might be Rank 1, a Priest Rank 2, etc. This is distinct from `AppearanceId` because different decks (e.g., base game vs. premium expansion) might have cards with the same numerical rank but different names and effects (and thus different `AppearanceId`s).
+    *Deck providers (implementations of `IDeckProvider`) are responsible for interpreting a card's `Rank` (integer) and `AppearanceId` (string) to resolve it to a specific, rich card type object (like `PremiumCardRank` or a base game `CardRank` type). This rich type contains the detailed effect logic, name, description, etc.*
 
-3.  **Card Equality (Value Equality):**
-    *   The `Card` type is a `record`. By default, records in C# implement value-based equality. This means two `Card` instances are considered equal if all their public properties have the same values.
-    *   In our `Card` record, equality is therefore determined by both `AppearanceId` and `Rank` (the `CardType` instance).
-    *   This value equality is critical. For example, when a player plays a card, and that card needs to be removed from their hand (`Hand.Remove(playedCard)`), the system must find and remove a card that is *equal* to the `playedCard` based on this combined visual and functional identity.
-    *   This is especially important because the `playedCard` instance might be a new object (e.g., deserialized from a command) and not the exact same object instance that's in the `Hand`'s collection. `object.ReferenceEquals` would fail in such cases.
-    *   `Hand.Remove(cardToRemove)` will remove the *first* card in the hand that matches `cardToRemove` based on this value equality (i.e., same `AppearanceId` and `Rank`).
+3.  **`Card` Equality:** The `Card` type itself (`CardGame.Domain.Game.Card`) is a `record`. This means equality is value-based, determined by its properties: `Rank` (int) and `AppearanceId` (string). Two `Card` objects are considered equal if they have the same `Rank` and the same `AppearanceId`. This is vital for operations like `Hand.Remove(playedCard)`, because the `playedCard` instance might be a new object (e.g., created from a player's action or deserialized) and not the same reference as the one in the hand list.
 
-4.  **No Unique Instance ID for Domain Logic:**
-    *   The domain logic deliberately avoids relying on a unique `InstanceId` (like a `Guid`) for individual card instances for core gameplay mechanics like removal or comparison of played cards.
-    *   The focus is on the *kind* of card (Appearance + Rank) rather than a specific, uniquely tracked instance, simplifying state management and correctly handling scenarios with deserialized objects.
+4.  **No Unique Instance ID (for core gameplay):** Critically, the domain logic for core gameplay (playing cards, effects, hand management) deliberately *avoids* relying on a unique `InstanceId` (like a `Guid`) for individual card *instances*. The game logic cares about the *kind* of card being played (defined by its `AppearanceId` and `Rank`), not a specific, uniquely tracked instance of that card. This simplifies state management, especially if cards are ever serialized/deserialized, and aligns with how physical card games work (you don't track each Guard card by a unique serial number).
+    -   While an `InstanceId` *was* briefly and incorrectly part of the `Card` record, it has been removed to adhere to this domain principle. The identity and behavior are fully defined by `Rank` and `AppearanceId`.
 
-This approach ensures that card comparisons are robust, especially when dealing with object instances that might originate from different sources (e.g., in-memory objects vs. deserialized objects from network requests or storage), and correctly models the user's expectation of how cards are treated in the game.
+This approach ensures that the game logic is robust and that card identity is based on its functional and visual characteristics rather than a specific object reference or unique ID, which is more aligned with the nature of card games.
+
+## Domain Events
