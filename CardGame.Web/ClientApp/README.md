@@ -9,6 +9,15 @@ This project contains the Angular single-page application (SPA) that serves as t
 
 ## Code Guidelines
 
+### Guiding Philosophy: Backend Authority vs. Frontend UX
+
+While the backend (`CardGame.Domain` and `CardGame.Application`) is the ultimate source of truth for all game rules and business logic, the frontend should not be entirely "dumb." The guiding principle is a balance:
+
+-   **Backend is Authoritative**: The backend is responsible for enforcing all game rules. It should be impossible for a client to put the game into an invalid state.
+-   **Frontend Prevents Invalid Actions**: To provide a better user experience and avoid unnecessary API calls that would only result in errors, the frontend should contain just enough logic to prevent a user from attempting an invalid action. For example, the UI should disable the option to play a card that requires a target if no valid targets are available.
+
+This approach favors putting complex logic on the backend but avoids relying on backend exceptions and HTTP errors as the primary mechanism for user feedback, which leads to a smoother and more responsive experience.
+
 ### What Should Be in This Project:
 *   **Angular Components**: Reusable UI building blocks (e.g., `CardDisplayComponent`, `GameViewComponent`).
 *   **Angular Services**: For encapsulating business logic, API communication (`GameStateService`, `DeckService`), and shared state.
