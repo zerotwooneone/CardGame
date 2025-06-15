@@ -79,15 +79,15 @@ public class Player // Entity
     internal void PlayCard(Card cardInstance)
     {
         _logger.LogDebug("Player {PlayerName} ({PlayerId}) hand BEFORE playing {CardType} ({CardInstanceId}): {HandCards}", 
-            Name, Id, cardInstance.Rank.Value, cardInstance.AppearanceId.Substring(0, Math.Min(4, cardInstance.AppearanceId.Length)), 
-            string.Join(", ", Hand.Cards.Select(c => $"{c.Rank.Value}({c.AppearanceId.Substring(0, Math.Min(4, c.AppearanceId.Length))})")));
+            Name, Id, cardInstance.Rank, cardInstance.AppearanceId.Substring(0, Math.Min(4, cardInstance.AppearanceId.Length)), 
+            string.Join(", ", Hand.Cards.Select(c => $"{c.Rank}({c.AppearanceId.Substring(0, Math.Min(4, c.AppearanceId.Length))})")));
 
         Hand = Hand.Remove(cardInstance); // This is PlayerHand.Remove which calls ImmutableList<Card>.Remove
         PlayedCards.Add(cardInstance);
 
         _logger.LogDebug("Player {PlayerName} ({PlayerId}) hand AFTER playing {CardType} ({CardInstanceId}): {HandCards}", 
-            Name, Id, cardInstance.Rank.Value, cardInstance.AppearanceId.Substring(0, Math.Min(4, cardInstance.AppearanceId.Length)), 
-            string.Join(", ", Hand.Cards.Select(c => $"{c.Rank.Value}({c.AppearanceId.Substring(0, Math.Min(4, c.AppearanceId.Length))})")));
+            Name, Id, cardInstance.Rank, cardInstance.AppearanceId.Substring(0, Math.Min(4, cardInstance.AppearanceId.Length)), 
+            string.Join(", ", Hand.Cards.Select(c => $"{c.Rank}({c.AppearanceId.Substring(0, Math.Min(4, c.AppearanceId.Length))})")));
     }
 
     public Card? DiscardHand()

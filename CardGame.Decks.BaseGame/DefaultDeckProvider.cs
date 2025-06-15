@@ -23,94 +23,26 @@ public class DefaultDeckProvider : BaseDeckProvider
     protected override string ThemeName => "default";
 
     protected override string DeckBackAppearanceId => "assets/decks/default/back.webp";
-    public override IReadOnlyDictionary<int, IEnumerable<RankDefinition>> RankDefinitions => Rank_Definitions;
-
-    public static readonly IReadOnlyDictionary<int, IEnumerable<RankDefinition>>
-        Rank_Definitions = DefineNumericRanks();
-
-    private static IReadOnlyDictionary<int, IEnumerable<RankDefinition>> DefineNumericRanks()
-    {
-        var definitions = new Dictionary<int, IEnumerable<RankDefinition>>
-        {
-            [CardRank.Guard.Value] = new List<RankDefinition>
-            {
-                new(
-                    Guid.Parse("00000000-0000-0000-0000-000000000001"),
-                    Value: CardRank.Guard.Value
-                )
-            },
-            [CardRank.Priest.Value] = new List<RankDefinition>
-            {
-                new(
-                    Guid.Parse("00000000-0000-0000-0000-000000000002"),
-                    Value: CardRank.Priest.Value
-                )
-            },
-            [CardRank.Baron.Value] = new List<RankDefinition>
-            {
-                new(
-                    Guid.Parse("00000000-0000-0000-0000-000000000003"),
-                    Value: CardRank.Baron.Value
-                )
-            },
-            [CardRank.Handmaid.Value] = new List<RankDefinition>
-            {
-                new(
-                    Guid.Parse("00000000-0000-0000-0000-000000000004"),
-                    Value: CardRank.Handmaid.Value
-                )
-            },
-            [CardRank.Prince.Value] = new List<RankDefinition>
-            {
-                new(
-                    Guid.Parse("00000000-0000-0000-0000-000000000005"),
-                    Value: CardRank.Prince.Value
-                )
-            },
-            [CardRank.King.Value] = new List<RankDefinition>
-            {
-                new(
-                    Guid.Parse("00000000-0000-0000-0000-000000000006"),
-                    Value: CardRank.King.Value
-                )
-            },
-            [CardRank.Countess.Value] = new List<RankDefinition>
-            {
-                new(
-                    Guid.Parse("00000000-0000-0000-0000-000000000007"),
-                    Value: CardRank.Countess.Value
-                )
-            },
-            [CardRank.Princess.Value] = new List<RankDefinition>
-            {
-                new(
-                    Guid.Parse("00000000-0000-0000-0000-000000000008"),
-                    Value: CardRank.Princess.Value
-                )
-            }
-        };
-        return new ReadOnlyDictionary<int, IEnumerable<RankDefinition>>(definitions);
-    }
 
     protected override IEnumerable<CardQuantity> GetCardQuantities()
     {
         return new List<CardQuantity>
         {
-            new(Rank_Definitions[CardRank.Guard.Value].First(), 5),
-            new(Rank_Definitions[CardRank.Priest.Value].First(), 2),
-            new(Rank_Definitions[CardRank.Baron.Value].First(), 2),
-            new(Rank_Definitions[CardRank.Handmaid.Value].First(), 2),
-            new(Rank_Definitions[CardRank.Prince.Value].First(), 2),
-            new(Rank_Definitions[CardRank.King.Value].First(), 1),
-            new(Rank_Definitions[CardRank.Countess.Value].First(), 1),
-            new(Rank_Definitions[CardRank.Princess.Value].First(), 1)
+            new(CardRank.Guard.Value, 5),
+            new(CardRank.Priest.Value, 2),
+            new(CardRank.Baron.Value, 2),
+            new(CardRank.Handmaid.Value, 2),
+            new(CardRank.Prince.Value, 2),
+            new(CardRank.King.Value, 1),
+            new(CardRank.Countess.Value, 1),
+            new(CardRank.Princess.Value, 1)
         };
     }
 
     /// <inheritdoc />
-    protected override string GetCardAppearanceId(RankDefinition rank, int index)
+    protected override string GetCardAppearanceId(int rank, int index)
     {
-        var cardRank = CardRank.FromValue(rank.Value);
+        var cardRank = CardRank.FromValue(rank);
         return $"assets/decks/default/{cardRank.Name.ToLowerInvariant()}.webp";
     }
 
@@ -146,7 +78,7 @@ public class DefaultDeckProvider : BaseDeckProvider
         }
 
         var targetCard = targetPlayer.Hand.Cards.First();
-        var targetCardRank = CardRank.FromValue(targetCard.Rank.Value);
+        var targetCardRank = CardRank.FromValue(targetCard.Rank);
         if (targetCardRank == guessedCard)
         {
             game.AddLogEntry(new GameLogEntry(
@@ -156,7 +88,7 @@ public class DefaultDeckProvider : BaseDeckProvider
                 targetPlayerId: targetPlayer.Id,
                 targetPlayerName: targetPlayer.Name,
                 message:
-                $"{actingPlayer.Name} correctly guessed {targetPlayer.Name}'s {targetCard.Rank.Value} with the Guard!")
+                $"{actingPlayer.Name} correctly guessed {targetPlayer.Name}'s {targetCard.Rank} with the Guard!")
             {
                 PlayedCard = guardCard,
                 GuessedRank = guessedCard.Value,
@@ -204,7 +136,7 @@ public class DefaultDeckProvider : BaseDeckProvider
             GameLogEventType.PriestEffect,
             actingPlayer.Id,
             actingPlayer.Name,
-            $"{actingPlayer.Name} looked at {targetPlayer.Name}'s {targetCard.Rank.Value} with the Priest.")
+            $"{actingPlayer.Name} looked at {targetPlayer.Name}'s {targetCard.Rank} with the Priest.")
         );
     }
 
@@ -225,24 +157,24 @@ public class DefaultDeckProvider : BaseDeckProvider
         var actingPlayerCard = actingPlayer.Hand.Cards.First();
         var targetPlayerCard = targetPlayer.Hand.Cards.First();
 
-        if (actingPlayerCard.Rank.Value > targetPlayerCard.Rank.Value)
+        if (actingPlayerCard.Rank > targetPlayerCard.Rank)
         {
             game.AddLogEntry(new GameLogEntry(
                 GameLogEventType.BaronCompare,
                 actingPlayer.Id,
                 actingPlayer.Name,
-                $"{actingPlayer.Name} played Baron against {targetPlayer.Name} and won with {actingPlayerCard.Rank.Value} vs {targetPlayerCard.Rank.Value}")
+                $"{actingPlayer.Name} played Baron against {targetPlayer.Name} and won with {actingPlayerCard.Rank} vs {targetPlayerCard.Rank}")
             );
 
             game.EliminatePlayer(targetPlayer.Id, "lost a Baron comparison", baronCard);
         }
-        else if (actingPlayerCard.Rank.Value < targetPlayerCard.Rank.Value)
+        else if (actingPlayerCard.Rank < targetPlayerCard.Rank)
         {
             game.AddLogEntry(new GameLogEntry(
                 GameLogEventType.BaronCompare,
                 actingPlayer.Id,
                 actingPlayer.Name,
-                $"{actingPlayer.Name} played Baron against {targetPlayer.Name} and lost with {actingPlayerCard.Rank.Value} vs {targetPlayerCard.Rank.Value}")
+                $"{actingPlayer.Name} played Baron against {targetPlayer.Name} and lost with {actingPlayerCard.Rank} vs {targetPlayerCard.Rank}")
             );
 
             game.EliminatePlayer(actingPlayer.Id, "lost a Baron comparison", baronCard);
@@ -253,7 +185,7 @@ public class DefaultDeckProvider : BaseDeckProvider
                 GameLogEventType.BaronCompare,
                 actingPlayer.Id,
                 actingPlayer.Name,
-                $"{actingPlayer.Name} played Baron against {targetPlayer.Name} but it was a tie with {actingPlayerCard.Rank.Value}")
+                $"{actingPlayer.Name} played Baron against {targetPlayer.Name} but it was a tie with {actingPlayerCard.Rank}")
             );
         }
     }
@@ -305,14 +237,14 @@ public class DefaultDeckProvider : BaseDeckProvider
                 targetPlayerId: target.Id,
                 targetPlayerName: target.Name,
                 message:
-                $"{actingPlayer.Name} used the Prince to make {target.Name} discard their {discardedCard.Rank.Value}.")
+                $"{actingPlayer.Name} used the Prince to make {target.Name} discard their {discardedCard.Rank}.")
             {
                 PlayedCard = princeCard,
                 TargetDiscardedCard = discardedCard, // Changed from DiscardedCard to TargetDiscardedCard for clarity
-                IsPrivate = discardedCard.Rank.Value == CardRank.Princess.Value // Keep Princess discard private
+                IsPrivate = discardedCard.Rank == CardRank.Princess.Value // Keep Princess discard private
             });
 
-            if (discardedCard.Rank.Value == CardRank.Princess.Value)
+            if (discardedCard.Rank == CardRank.Princess.Value)
             {
                 game.AddLogEntry(new GameLogEntry(
                     eventType: GameLogEventType.PlayerEliminated,
@@ -377,7 +309,7 @@ public class DefaultDeckProvider : BaseDeckProvider
                 targetPlayerId: targetPlayer.Id,
                 targetPlayerName: targetPlayer.Name,
                 message:
-                $"{actingPlayer.Name} played the King and swapped hands with {targetPlayer.Name}. {actingPlayer.Name} now has {actingPlayerCard.Rank.Value}, {targetPlayer.Name} now has {targetPlayerCard.Rank.Value}.")
+                $"{actingPlayer.Name} played the King and swapped hands with {targetPlayer.Name}. {actingPlayer.Name} now has {actingPlayerCard.Rank}, {targetPlayer.Name} now has {targetPlayerCard.Rank}.")
             {
                 PlayedCard = kingCard // Added to log which card caused the trade
             });
@@ -419,11 +351,11 @@ public class DefaultDeckProvider : BaseDeckProvider
         Player? targetPlayer,
         int? guessedRankValue)
     {
-        var cardRank = CardRank.FromValue(card.Rank.Value);
+        var cardRank = CardRank.FromValue(card.Rank);
         // General Countess Rule: If holding Countess AND (King or Prince), must play Countess.
-        bool handHasCountess = actingPlayer.Hand.Cards.Any(c => c.Rank.Value == CardRank.Countess.Value);
-        bool handHasKing = actingPlayer.Hand.Cards.Any(c => c.Rank.Value == CardRank.King.Value);
-        bool handHasPrince = actingPlayer.Hand.Cards.Any(c => c.Rank.Value == CardRank.Prince.Value);
+        bool handHasCountess = actingPlayer.Hand.Cards.Any(c => c.Rank == CardRank.Countess.Value);
+        bool handHasKing = actingPlayer.Hand.Cards.Any(c => c.Rank == CardRank.King.Value);
+        bool handHasPrince = actingPlayer.Hand.Cards.Any(c => c.Rank == CardRank.Prince.Value);
 
         if (handHasCountess && (handHasKing || handHasPrince))
         {
@@ -466,7 +398,7 @@ public class DefaultDeckProvider : BaseDeckProvider
     protected override void PerformCardEffect(IGameOperations game, Player actingPlayer, Card card,
         Player? targetPlayer, int? guessedCardRankValue)
     {
-        switch (card.Rank.Value)
+        switch (card.Rank)
         {
             case 1: // CardType.Guard
                 var guessedCardRank = CardRank.FromValue(guessedCardRankValue!.Value);
@@ -503,7 +435,7 @@ public class DefaultDeckProvider : BaseDeckProvider
                 break;
             default:
                 throw new ArgumentOutOfRangeException(nameof(card),
-                    $"Unknown card type value: {card.Rank.Value} (Id: {card.Rank.Id})");
+                    $"Unknown card type value: {card.Rank} (AppearanceId: {card.AppearanceId})");
         }
     }
 }

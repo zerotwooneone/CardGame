@@ -30,11 +30,6 @@ public interface IDeckProvider
     /// </summary>
     /// <returns>A <see cref="DeckDefinition"/>.</returns>
     DeckDefinition GetDeck();
-    
-    /// <summary>
-    /// Gets the definitions for the ranks used in the deck.
-    /// </summary>
-    IReadOnlyDictionary<int, IEnumerable<RankDefinition>> RankDefinitions { get; }
 
     /// <summary>
     /// Executes the effect of a played card.

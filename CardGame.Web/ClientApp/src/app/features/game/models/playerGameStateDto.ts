@@ -16,7 +16,6 @@ export interface PlayerGameStateDto {
   tokensNeededToWin: number;
   players: PlayerHandInfoDto[];
   deckCardsRemaining: number;
-  discardPile: CardDto[];
   playerHand: CardDto[];
   gameLog: GameLogEntryDto[];
 }

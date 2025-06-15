@@ -1,13 +1,9 @@
 using CardGame.Application.Common.Interfaces;
 using CardGame.Application.Common.Notifications;
-using CardGame.Application.DTOs;
 using CardGame.Domain.Game.Event;
 using MediatR;
 using Microsoft.Extensions.Logging;
-using CardGame.Domain; 
-using CardGame.Domain.Interfaces; 
-using System.Linq;
-using CardGame.Domain.Types;
+using CardGame.Domain.Interfaces;
 
 namespace CardGame.Application.GameEventHandlers;
 
@@ -36,7 +32,7 @@ public class HandlePrinceEffectUsedAndNotify : INotificationHandler<DomainEventN
     {
         var domainEvent = notification.DomainEvent;
         _logger.LogDebug("Handling PrinceEffectUsed by {ActorPlayerId} on {TargetPlayerId} in Game {GameId}. Discarded: {DiscardedCardType}", 
-            domainEvent.ActorPlayerId, domainEvent.TargetPlayerId, domainEvent.GameId, domainEvent.DiscardedCardRank);
+            domainEvent.ActorPlayerId, domainEvent.TargetPlayerId, domainEvent.GameId, domainEvent.DiscardedCard.Rank.Value);
 
  
         return Task.CompletedTask;

@@ -82,6 +82,7 @@ public class CreateGameCommandHandler : IRequestHandler<CreateGameCommand, Guid>
             request.CreatorPlayerId, 
             deckDefinition.Cards, 
             _loggerFactory,
+            deckProvider,
             request.TokensToWin ?? 4, 
             _randomizer);
         // GameCreated event is now in game.DomainEvents

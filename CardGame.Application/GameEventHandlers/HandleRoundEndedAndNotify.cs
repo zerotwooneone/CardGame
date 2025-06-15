@@ -4,9 +4,6 @@ using CardGame.Application.DTOs;
 using CardGame.Domain.Game.Event;
 using MediatR;
 using Microsoft.Extensions.Logging;
-using CardGame.Domain; 
-using CardGame.Domain.Interfaces; 
-using System.Linq; 
 
 namespace CardGame.Application.GameEventHandlers;
 
@@ -44,7 +41,7 @@ public class HandleRoundEndedAndNotify : INotificationHandler<DomainEventNotific
                     AppearanceId = card.AppearanceId,
                     Rank = card.Rank.Value
                 }).ToList(),
-                TokensWon = summary.TokensWon
+                TokensWon = summary.TokensAwarded
             }).ToList();
 
         var summaryData = new RoundEndSummaryDto

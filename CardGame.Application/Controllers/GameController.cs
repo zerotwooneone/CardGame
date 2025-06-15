@@ -2,13 +2,11 @@ using CardGame.Application.Commands;
 using CardGame.Application.DTOs;
 using CardGame.Application.Queries;
 using CardGame.Domain.Interfaces;
-using CardGame.Domain.Types;
 using FluentValidation;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System.Security.Claims;
-using CardRank = CardGame.Domain.BaseGame.CardRank; // Added this line
 
 namespace CardGame.Application.Controllers;
 
@@ -132,7 +130,7 @@ public class GameController : ControllerBase
                 request.TokensToWin // Added TokensToWin
             );
 
-            var gameId = await _mediator.Send(command);
+            var gameId = await _mediator.Send(command).ConfigureAwait(false);
 
             return CreatedAtRoute("GetSpectatorGameState", new {gameId = gameId}, gameId);
         }
@@ -171,8 +169,7 @@ public class GameController : ControllerBase
             return Unauthorized();
         }
 
-        // 2. Validate and Convert GuessedCardType (int?) to CardType?
-        CardRank? guessedCardTypeDomainObject = null;
+        // 2. Validate  GuessedCardType (int?)
         if (request.GuessedCardType.HasValue)
         {
             // Validate the integer value
@@ -180,18 +177,6 @@ public class GameController : ControllerBase
             if (guessedValue == 1) // Cannot guess Guard
             {
                 ModelState.AddModelError(nameof(request.GuessedCardType), "Cannot guess Guard when playing a Guard.");
-                return BadRequest(new ValidationProblemDetails(ModelState));
-            }
-
-            try
-            {
-                // Convert valid int to CardType object
-                guessedCardTypeDomainObject = CardRank.FromValue(guessedValue);
-            }
-            catch (Exception) // Catch potential error from FromValue if int is invalid (e.g., 0, 9)
-            {
-                ModelState.AddModelError(nameof(request.GuessedCardType),
-                    $"Invalid card type value '{guessedValue}' provided for guess.");
                 return BadRequest(new ValidationProblemDetails(ModelState));
             }
         }
@@ -204,7 +189,7 @@ public class GameController : ControllerBase
                 currentPlayerId,
                 request.CardId,
                 request.TargetPlayerId,
-                guessedCardTypeDomainObject 
+                request.GuessedCardType 
             );
 
             // 4. Send the command

@@ -66,7 +66,7 @@ namespace CardGame.Domain.SystemTests
                 while (game.GamePhase == GamePhase.RoundInProgress && turnsInCurrentRound < maxTurnsInRound)
                 {
                     Player currentPlayer = game.Players.First(p => p.Id == game.CurrentTurnPlayerId);
-                    Console.WriteLine($"Seed: {localRandomizer.Seed} - Turn {turnsInCurrentRound + 1} (Round {game.RoundNumber}): Player {currentPlayer.Name}'s turn. Hand: {string.Join(", ", currentPlayer.Hand.Cards.Select(c => CardRank.FromValue(c.Rank.Value).Name))}");
+                    Console.WriteLine($"Seed: {localRandomizer.Seed} - Turn {turnsInCurrentRound + 1} (Round {game.RoundNumber}): Player {currentPlayer.Name}'s turn. Hand: {string.Join(", ", currentPlayer.Hand.Cards.Select(c => CardRank.FromValue(c.Rank).Name))}");
 
                     if (currentPlayer.Status != PlayerStatus.Active)
                     {
@@ -100,25 +100,25 @@ namespace CardGame.Domain.SystemTests
                     localRandomizer.Shuffle(allHandCards); // Shuffle for variety
 
                     List<Card> candidateCardsToConsider = new List<Card>();
-                    bool hasCountess = allHandCards.Any(c => c.Rank.Value == CardRank.Countess.Value);
-                    bool hasKing = allHandCards.Any(c => c.Rank.Value == CardRank.King.Value);
-                    bool hasPrince = allHandCards.Any(c => c.Rank.Value == CardRank.Prince.Value);
+                    bool hasCountess = allHandCards.Any(c => c.Rank == CardRank.Countess.Value);
+                    bool hasKing = allHandCards.Any(c => c.Rank == CardRank.King.Value);
+                    bool hasPrince = allHandCards.Any(c => c.Rank == CardRank.Prince.Value);
 
                     if (hasCountess && (hasKing || hasPrince))
                     {
-                        var countessCard = allHandCards.FirstOrDefault(c => c.Rank.Value == CardRank.Countess.Value);
+                        var countessCard = allHandCards.FirstOrDefault(c => c.Rank == CardRank.Countess.Value);
                         if (countessCard != null) candidateCardsToConsider.Add(countessCard);
                         Console.WriteLine($"Seed: {localRandomizer.Seed} - Player {currentPlayer.Name} must play Countess due to King/Prince.");
                     }
                     else
                     {
-                        if (allHandCards.Count == 1 && allHandCards[0].Rank.Value == CardRank.Princess.Value)
+                        if (allHandCards.Count == 1 && allHandCards[0].Rank == CardRank.Princess.Value)
                         {
                             candidateCardsToConsider.Add(allHandCards[0]);
                         }
                         else
                         {
-                            candidateCardsToConsider.AddRange(allHandCards.Where(c => c.Rank.Value != CardRank.Princess.Value || allHandCards.Count == 1));
+                            candidateCardsToConsider.AddRange(allHandCards.Where(c => c.Rank != CardRank.Princess.Value || allHandCards.Count == 1));
                         }
                     }
 
@@ -128,10 +128,10 @@ namespace CardGame.Domain.SystemTests
                         int? currentGuessedRankValue = SelectGuessedCardType(cardInHandChoice, localRandomizer);
 
                         bool requirementsMet = true;
-                        bool cardRequiresTarget = cardInHandChoice.Rank.Value == CardRank.Guard.Value || cardInHandChoice.Rank.Value == CardRank.Priest.Value || cardInHandChoice.Rank.Value == CardRank.Baron.Value || cardInHandChoice.Rank.Value == CardRank.King.Value || cardInHandChoice.Rank.Value == CardRank.Prince.Value;
-                        bool cardRequiresGuess = cardInHandChoice.Rank.Value == CardRank.Guard.Value;
+                        bool cardRequiresTarget = cardInHandChoice.Rank == CardRank.Guard.Value || cardInHandChoice.Rank == CardRank.Priest.Value || cardInHandChoice.Rank == CardRank.Baron.Value || cardInHandChoice.Rank == CardRank.King.Value || cardInHandChoice.Rank == CardRank.Prince.Value;
+                        bool cardRequiresGuess = cardInHandChoice.Rank == CardRank.Guard.Value;
 
-                        if (cardInHandChoice.Rank.Value == CardRank.Baron.Value && currentPlayer.Hand.Cards.Count <= 1)
+                        if (cardInHandChoice.Rank == CardRank.Baron.Value && currentPlayer.Hand.Cards.Count <= 1)
                         {
                             Console.WriteLine($"Seed: {localRandomizer.Seed} - Player {currentPlayer.Name} cannot play Baron as it's their only card or they have no other card to compare.");
                             requirementsMet = false;
@@ -161,7 +161,7 @@ namespace CardGame.Domain.SystemTests
                         // If still no card played, and player has cards, it's an issue with test logic or an unhandled scenario by test AI.
                         if (currentPlayer.Hand.Cards.Any()) 
                         {
-                            Console.WriteLine($"Seed: {localRandomizer.Seed} - Test logic could not find a 'perfect' play for Player {currentPlayer.Name} with hand: {string.Join(", ", currentPlayer.Hand.Cards.Select(c=> CardRank.FromValue(c.Rank.Value).Name))}. Candidates considered: {string.Join(", ", candidateCardsToConsider.Select(c=> CardRank.FromValue(c.Rank.Value).Name))}. Attempting a fallback play.");
+                            Console.WriteLine($"Seed: {localRandomizer.Seed} - Test logic could not find a 'perfect' play for Player {currentPlayer.Name} with hand: {string.Join(", ", currentPlayer.Hand.Cards.Select(c=> CardRank.FromValue(c.Rank).Name))}. Candidates considered: {string.Join(", ", candidateCardsToConsider.Select(c=> CardRank.FromValue(c.Rank).Name))}. Attempting a fallback play.");
 
                             var originalHandShuffled = currentPlayer.Hand.Cards.ToList(); // Get a fresh copy
                             localRandomizer.Shuffle(originalHandShuffled);
@@ -173,8 +173,8 @@ namespace CardGame.Domain.SystemTests
                             foreach (var candidateFallbackCard in originalHandShuffled)
                             {
                                 // Rule: Must play Countess if King or Prince is also in hand (and Countess is chosen here by shuffle)
-                                if (candidateFallbackCard.Rank.Value == CardRank.Countess.Value && 
-                                    originalHandShuffled.Any(c => c.Rank.Value == CardRank.King.Value || c.Rank.Value == CardRank.Prince.Value))
+                                if (candidateFallbackCard.Rank == CardRank.Countess.Value && 
+                                    originalHandShuffled.Any(c => c.Rank == CardRank.King.Value || c.Rank == CardRank.Prince.Value))
                                 {
                                     // This is a valid play, Countess has no target
                                     cardToAttemptInFallback = candidateFallbackCard;
@@ -184,13 +184,13 @@ namespace CardGame.Domain.SystemTests
                                     break;
                                 }
                                 // Rule: Cannot play Princess if other cards are available (unless it's the only card)
-                                if (candidateFallbackCard.Rank.Value == CardRank.Princess.Value && originalHandShuffled.Count > 1)
+                                if (candidateFallbackCard.Rank == CardRank.Princess.Value && originalHandShuffled.Count > 1)
                                 {
                                     continue; // Skip Princess if other options exist in fallback
                                 }
 
                                 // Additional check for Baron in fallback
-                                if (candidateFallbackCard.Rank.Value == CardRank.Baron.Value && currentPlayer.Hand.Cards.Count <= 1)
+                                if (candidateFallbackCard.Rank == CardRank.Baron.Value && currentPlayer.Hand.Cards.Count <= 1)
                                 {
                                     Console.WriteLine($"Seed: {localRandomizer.Seed} - Fallback: Skipping Baron for {currentPlayer.Name} as it's their only card or they have no other card to compare.");
                                     continue;
@@ -199,16 +199,16 @@ namespace CardGame.Domain.SystemTests
                                 targetPlayerId = SelectTargetPlayer(currentPlayer, candidateFallbackCard, game.Players.ToList(), localRandomizer);
                                 guessedRankValue = SelectGuessedCardType(candidateFallbackCard, localRandomizer);
 
-                                bool fallbackRequiresTarget = candidateFallbackCard.Rank.Value == CardRank.Guard.Value || candidateFallbackCard.Rank.Value == CardRank.Priest.Value || candidateFallbackCard.Rank.Value == CardRank.Baron.Value || candidateFallbackCard.Rank.Value == CardRank.King.Value || candidateFallbackCard.Rank.Value == CardRank.Prince.Value;
+                                bool fallbackRequiresTarget = candidateFallbackCard.Rank == CardRank.Guard.Value || candidateFallbackCard.Rank == CardRank.Priest.Value || candidateFallbackCard.Rank == CardRank.Baron.Value || candidateFallbackCard.Rank == CardRank.King.Value || candidateFallbackCard.Rank == CardRank.Prince.Value;
 
                                 if (fallbackRequiresTarget && !targetPlayerId.HasValue)
                                 {
-                                    Console.WriteLine($"Seed: {localRandomizer.Seed} - Fallback: Skipping {CardRank.FromValue(candidateFallbackCard.Rank.Value).Name} for {currentPlayer.Name} as it requires a target but none found.");
+                                    Console.WriteLine($"Seed: {localRandomizer.Seed} - Fallback: Skipping {CardRank.FromValue(candidateFallbackCard.Rank).Name} for {currentPlayer.Name} as it requires a target but none found.");
                                     continue;
                                 }
                             
                                 // Check if Guard requires a guess and if a guess was found
-                                if (candidateFallbackCard.Rank.Value == CardRank.Guard.Value && guessedRankValue == null)
+                                if (candidateFallbackCard.Rank == CardRank.Guard.Value && guessedRankValue == null)
                                 {
                                     Console.WriteLine($"Seed: {localRandomizer.Seed} - Fallback: Skipping Guard for {currentPlayer.Name} as it requires a guess but none found.");
                                     continue;
@@ -223,30 +223,30 @@ namespace CardGame.Domain.SystemTests
                             {
                                 try
                                 {
-                                    Console.WriteLine($"Seed: {localRandomizer.Seed} - Fallback: Player {currentPlayer.Name} attempts to play {CardRank.FromValue(cardToAttemptInFallback.Rank.Value).Name} (Target: {targetPlayerId?.ToString() ?? "None"}, Guess: {(guessedRankValue.HasValue ? CardRank.FromValue(guessedRankValue.Value).Name : "None")})"); 
+                                    Console.WriteLine($"Seed: {localRandomizer.Seed} - Fallback: Player {currentPlayer.Name} attempts to play {CardRank.FromValue(cardToAttemptInFallback.Rank).Name} (Target: {targetPlayerId?.ToString() ?? "None"}, Guess: {(guessedRankValue.HasValue ? CardRank.FromValue(guessedRankValue.Value).Name : "None")})"); 
                                     game.PlayCard(currentPlayer.Id, cardToAttemptInFallback, targetPlayerId, guessedRankValue);
                                     cardPlayedThisTurn = true;
                                 }
                                 catch (GameRuleException ex)
                                 {
-                                    Console.WriteLine($"Seed: {localRandomizer.Seed} - Fallback play failed for {CardRank.FromValue(cardToAttemptInFallback.Rank.Value).Name}. Exception: {ex.Message}");
+                                    Console.WriteLine($"Seed: {localRandomizer.Seed} - Fallback play failed for {CardRank.FromValue(cardToAttemptInFallback.Rank).Name}. Exception: {ex.Message}");
                                 }
                                 catch (InvalidMoveException ex)
                                 {
-                                    Console.WriteLine($"Seed: {localRandomizer.Seed} - Fallback play was invalid for {CardRank.FromValue(cardToAttemptInFallback.Rank.Value).Name}. Exception: {ex.Message}");
+                                    Console.WriteLine($"Seed: {localRandomizer.Seed} - Fallback play was invalid for {CardRank.FromValue(cardToAttemptInFallback.Rank).Name}. Exception: {ex.Message}");
                                 }
                             }
                         }
 
                         if (!cardPlayedThisTurn)
                         {
-                            Console.WriteLine($"Seed: {localRandomizer.Seed} - Player {currentPlayer.Name} has no valid card to play. Hand: {string.Join(", ", currentPlayer.Hand.Cards.Select(c => CardRank.FromValue(c.Rank.Value).Name))}. Skipping turn.");
+                            Console.WriteLine($"Seed: {localRandomizer.Seed} - Player {currentPlayer.Name} has no valid card to play. Hand: {string.Join(", ", currentPlayer.Hand.Cards.Select(c => CardRank.FromValue(c.Rank).Name))}. Skipping turn.");
                         }
                     }
                 
                     if (cardToPlay != null)
                     {
-                        Console.WriteLine($"Seed: {localRandomizer.Seed} - Player {currentPlayer.Name} plays {CardRank.FromValue(cardToPlay.Rank.Value).Name}. Target: {(targetPlayerId.HasValue ? game.Players.First(p => p.Id == targetPlayerId).Name : "N/A")}. Guess: {(guessedRankValue.HasValue ? CardRank.FromValue(guessedRankValue.Value).Name : "N/A")}");
+                        Console.WriteLine($"Seed: {localRandomizer.Seed} - Player {currentPlayer.Name} plays {CardRank.FromValue(cardToPlay.Rank).Name}. Target: {(targetPlayerId.HasValue ? game.Players.First(p => p.Id == targetPlayerId).Name : "N/A")}. Guess: {(guessedRankValue.HasValue ? CardRank.FromValue(guessedRankValue.Value).Name : "N/A")}");
                         game.PlayCard(currentPlayer.Id, cardToPlay, targetPlayerId, guessedRankValue);
                         turnsInCurrentRound++;
                         turnsTakenOverall++;
@@ -357,7 +357,7 @@ namespace CardGame.Domain.SystemTests
                 return null;
 
             // For Prince, the player can target themselves
-            if (cardToPlay.Rank.Value == CardRank.Prince.Value)
+            if (cardToPlay.Rank == CardRank.Prince.Value)
             {
                 potentialTargets.Add(currentPlayer);
             }
@@ -373,7 +373,7 @@ namespace CardGame.Domain.SystemTests
 
         private int? SelectGuessedCardType(Card cardToPlay, TestRandomizer randomizer)
         {
-            if (cardToPlay.Rank.Value != CardRank.Guard.Value) return null;
+            if (cardToPlay.Rank != CardRank.Guard.Value) return null;
 
             var possibleRanks = CardRank.List().Where(r => r.Value != CardRank.Guard.Value).ToList();
 

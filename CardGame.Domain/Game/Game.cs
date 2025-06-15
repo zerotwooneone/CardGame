@@ -265,7 +265,7 @@ public class Game : IGameOperations // Aggregate Root
                             GameLogEventType.CardSetAsidePublicly,
                             Id,
                             "System",
-                            $"Rank {publiclySetAside.Rank.Value} Rank Id:{publiclySetAside.Rank.Id} ({publiclySetAside.AppearanceId}) set aside publicly.")
+                            $"Rank {publiclySetAside.Rank} ({publiclySetAside.AppearanceId}) set aside publicly.")
                         { PlayedCard = publiclySetAside });
                     }
                 }
@@ -583,14 +583,14 @@ public class Game : IGameOperations // Aggregate Root
                 {
                     var playerHeldCard = player.Hand.Cards.Single(); // Safe to get the single card
                     // MODIFIED: Use RankValue and _deckProvider for name
-                    _logger.LogTrace("[Game {GameId}] Player {PlayerName} holds {PlayerHeldValue})", Id, player.Name, playerHeldCard.Rank.Value);
-                    if (playerHeldCard.Rank.Value > highestRank)
+                    _logger.LogTrace("[Game {GameId}] Player {PlayerName} holds {PlayerHeldValue})", Id, player.Name, playerHeldCard.Rank);
+                    if (playerHeldCard.Rank > highestRank)
                     {
-                        highestRank = playerHeldCard.Rank.Value;
+                        highestRank = playerHeldCard.Rank;
                         potentialWinners.Clear();
                         potentialWinners.Add(player);
                     }
-                    else if (playerHeldCard.Rank.Value == highestRank)
+                    else if (playerHeldCard.Rank == highestRank)
                     {
                         potentialWinners.Add(player);
                     }
@@ -602,7 +602,7 @@ public class Game : IGameOperations // Aggregate Root
                 roundWinner = potentialWinners.Single();
                 winningCard = roundWinner.Hand.GetHeldCard();
                 // MODIFIED: Use RankValue and _deckProvider for name
-                _logger.LogDebug("[Game {GameId}] Round {RoundNumber} winner by highest card: {PlayerName} with {CardValue})", Id, RoundNumber, roundWinner.Name, winningCard?.Rank.Value);
+                _logger.LogDebug("[Game {GameId}] Round {RoundNumber} winner by highest card: {PlayerName} with {CardValue})", Id, RoundNumber, roundWinner.Name, winningCard?.Rank);
             }
             else if (potentialWinners.Count > 1)
             {
@@ -660,7 +660,7 @@ public class Game : IGameOperations // Aggregate Root
             roundWinner.AddToken(); // Player's total tokens are updated here
             _logger.LogDebug("[Game {GameId}] Player {PlayerName} awarded a token. Total tokens: {Tokens}", Id, roundWinner.Name, roundWinner.TokensWon);
 
-            string winningCardNameForEvent = winningCard?.Rank.Value.ToString() ?? "";
+            string winningCardNameForEvent = winningCard?.Rank.ToString() ?? "";
             
             // MODIFIED: Use safely determined winningCardNameForEvent
             AddDomainEvent(new RoundEnded(Id, roundWinner.Id, winningCardNameForEvent, playerSummariesForEvent));

@@ -15,42 +15,24 @@ public class GameTests
 {
     private static FakeLoggerFactory _fakeLoggerFactory = null!;
     private static NonShufflingRandomizer _nonShufflingRandomizer = null!;
-    private static FakeDeckProvider _defaultDeckProvider = null!;
     private static List<PlayerInfo> _twoPlayerInfos = null!;
     private static List<PlayerInfo> _threePlayerInfos = null!;
     private static List<PlayerInfo> _fourPlayerInfos = null!;
 
-    // Canonical Rank Definitions for tests
-    private static readonly RankDefinition _guardRankDef = new(new Guid("10000000-0000-0000-0000-000000000001"), CardRank.Guard.Value);
-    private static readonly RankDefinition _priestRankDef = new(new Guid("10000000-0000-0000-0000-000000000002"), CardRank.Priest.Value);
-    private static readonly RankDefinition _baronRankDef = new(new Guid("10000000-0000-0000-0000-000000000003"), CardRank.Baron.Value);
-    private static readonly RankDefinition _handmaidRankDef = new(new Guid("10000000-0000-0000-0000-000000000004"), CardRank.Handmaid.Value);
-    private static readonly RankDefinition _princeRankDef = new(new Guid("10000000-0000-0000-0000-000000000005"), CardRank.Prince.Value);
-    private static readonly RankDefinition _kingRankDef = new(new Guid("10000000-0000-0000-0000-000000000006"), CardRank.King.Value);
-    private static readonly RankDefinition _countessRankDef = new(new Guid("10000000-0000-0000-0000-000000000007"), CardRank.Countess.Value);
-    private static readonly RankDefinition _princessRankDef = new(new Guid("10000000-0000-0000-0000-000000000008"), CardRank.Princess.Value);
-
-    // List of all unique rank definitions used in tests
-    private static readonly List<RankDefinition> _allTestRankDefinitions = new List<RankDefinition>
-    {
-        _guardRankDef, _priestRankDef, _baronRankDef, _handmaidRankDef,
-        _princeRankDef, _kingRankDef, _countessRankDef, _princessRankDef
-    };
-
-    // Canonical Card instances for tests
-    private static readonly Card _g1 = new(_guardRankDef, "g1");
-    private static readonly Card _g2 = new(_guardRankDef, "g2");
-    private static readonly Card _p1 = new(_priestRankDef, "p1");
-    private static readonly Card _p2 = new(_priestRankDef, "p2");
-    private static readonly Card _b1 = new(_baronRankDef, "b1");
-    private static readonly Card _b2 = new(_baronRankDef, "b2");
-    private static readonly Card _h1 = new(_handmaidRankDef, "h1");
-    private static readonly Card _h2 = new(_handmaidRankDef, "h2");
-    private static readonly Card _prince1 = new(_princeRankDef, "prince1");
-    private static readonly Card _prince2 = new(_princeRankDef, "prince2");
-    private static readonly Card _k = new(_kingRankDef, "k");
-    private static readonly Card _c = new(_countessRankDef, "c");
-    private static readonly Card _princess = new(_princessRankDef, "princess");
+   // Canonical Card instances for tests
+    private static readonly Card _g1 = new(CardRank.Guard.Value, "g1");
+    private static readonly Card _g2 = new(CardRank.Guard.Value, "g2");
+    private static readonly Card _p1 = new(CardRank.Priest.Value, "p1");
+    private static readonly Card _p2 = new(CardRank.Priest.Value, "p2");
+    private static readonly Card _b1 = new(CardRank.Baron.Value, "b1");
+    private static readonly Card _b2 = new(CardRank.Baron.Value, "b2");
+    private static readonly Card _h1 = new( CardRank.Handmaid.Value,"h1");
+    private static readonly Card _h2 = new( CardRank.Handmaid.Value,"h2");
+    private static readonly Card _prince1 = new( CardRank.Prince.Value,"prince1");
+    private static readonly Card _prince2 = new( CardRank.Prince.Value,"prince2");
+    private static readonly Card _k = new(CardRank.King.Value, "k");
+    private static readonly Card _c = new(CardRank.Countess.Value, "c");
+    private static readonly Card _princess = new(CardRank.Princess.Value, "princess");
 
     private static List<Card> _defaultTestDeckCards = null!;
 
@@ -65,8 +47,6 @@ public class GameTests
         _fourPlayerInfos = new List<PlayerInfo> { _threePlayerInfos[0], _threePlayerInfos[1], _threePlayerInfos[2], new PlayerInfo(new Guid("00000000-0000-0000-0000-FFFFEE000004"), "Player4") };
 
         _defaultTestDeckCards = new List<Card> { _g1, _g2, _p1, _p2, _b1, _b2, _h1, _h2, _prince1, _prince2, _k, _c, _princess };
-        // Default provider for tests that don't need custom card effects or specific deck setups beyond the default.
-        _defaultDeckProvider = new FakeDeckProvider(_defaultTestDeckCards, _allTestRankDefinitions, _fakeLoggerFactory);
     }
 
     [OneTimeTearDown]
@@ -84,16 +64,9 @@ public class GameTests
         var pInfos = playerInfos ?? _twoPlayerInfos;
         var cardsForDeck = deckCards ?? _defaultTestDeckCards;
 
-        if (!cardsForDeck.Any())
-        {
-            // Ensure there's at least one card for the game to start if a custom empty list was somehow passed.
-            cardsForDeck = new List<Card> { new Card(_guardRankDef, "fallback_g1_crt_game") }; 
-        }
-
         // Instantiate FakeDeckProvider with all necessary parameters, including the cardEffectAction
         var currentTestDeckProvider = new FakeDeckProvider(
             new List<Card>(cardsForDeck), // The specific cards for this game's deck
-            _allTestRankDefinitions,      // All possible rank definitions this provider knows
             _fakeLoggerFactory,           // Logger factory
             cardEffectAction              // The card effect action for this test
         );
@@ -135,13 +108,13 @@ public class GameTests
     public void PlayCard_PlayerNotInTurn_ThrowsException()
     {
         // Arrange
-        var p1InitialCardToPlay = new Card(_guardRankDef, "g1_nit_hand");     // P1 should play this Guard first
-        var p1CardToPlayOutOfTurn = new Card(_priestRankDef, "p1_nit_oops"); // P1 should attempt to play this Priest out of turn
-        var p2InitialCardInHand = new Card(_baronRankDef, "b2_nit_hand");
+        var p1InitialCardToPlay = _g1;
+        var p1CardToPlayOutOfTurn = _p1;
+        var p2InitialCardInHand = _b1;
 
-        var saCard1_TopOfDeck = new Card(_kingRankDef, "sa1_nit_deck_top");       // Will be drawn 1st (Public Set Aside 1)
-        var saCard2_MidDeck = new Card(_countessRankDef, "sa2_nit_deck_mid");   // Will be drawn 2nd (Public Set Aside 2)
-        var saCard3_LowDeck = new Card(_princessRankDef, "sa3_nit_deck_low");   // Will be drawn 3rd (Public Set Aside 3)
+        var saCard1_TopOfDeck = _k;
+        var saCard2_MidDeck = _c;
+        var saCard3_LowDeck = _princess;
 
         // Deck setup for 2 players (1 private set-aside, 1 public set-aside):
         // Stack (top to bottom) -> Draw order:
@@ -171,7 +144,7 @@ public class GameTests
         // P1 plays their initial card (Guard)
         // The card P1 was dealt as their first card is p1InitialCardToPlay
         var cardForP1ToPlayFirst = player1.Hand.Cards.First();
-        game.PlayCard(player1.Id, cardForP1ToPlayFirst, player2.Id, _baronRankDef.Value); // P1 plays Guard, guesses Baron on P2
+        game.PlayCard(player1.Id, cardForP1ToPlayFirst, player2.Id, _b1.Rank); // P1 plays Guard, guesses Baron on P2
 
         // Re-fetch player1 to get the updated hand state after playing a card
         player1 = game.Players.Single(p => p.Id == _twoPlayerInfos[0].Id);
@@ -193,7 +166,7 @@ public class GameTests
         var (game, players, operations) = CreateTestGame();
         var player1 = players.Single(p => p.Id == _twoPlayerInfos[0].Id);
         var player2 = players.Single(p => p.Id == _twoPlayerInfos[1].Id);
-        var cardNotInHand = new Card(_princessRankDef, "fake_princess"); // A card not in P1's hand
+        var cardNotInHand = _princess;
 
         // Act & Assert
         Action action = () => game.PlayCard(player1.Id, cardNotInHand, player2.Id, null);
@@ -205,10 +178,10 @@ public class GameTests
     {
         // Arrange
         // Deck: P2Draw (last card), P1Play, P2Initial, P1Initial, SA1, SA2, SA3
-        var p2DrawCard_LastInDeck = new Card(_princeRankDef, "p2_draw_last");
-        var p1PlayCard = new Card(_guardRankDef, "p1_play_g");
-        var p2InitialCard = new Card(_baronRankDef, "p2_init_b");
-        var p1InitialCard = new Card(_priestRankDef, "p1_init_p");
+        var p2DrawCard_LastInDeck = _prince1;
+        var p1PlayCard = _g1;
+        var p2InitialCard = _b1;
+        var p1InitialCard = _p1;
         
         var initialDeck = new List<Card>
         {
@@ -216,9 +189,9 @@ public class GameTests
             p1PlayCard,          // This will be drawn by P1 for their first turn
             p2InitialCard,       // P2's initial hand card
             p1InitialCard,       // P1's initial hand card
-            new Card(_kingRankDef, "sa1_ed"),
-            new Card(_countessRankDef, "sa2_ed"),
-            new Card(_princessRankDef, "sa3_ed")
+            _k,
+            _c,
+            _princess
         };
 
         var (game, players, operations) = CreateTestGame(deckCards: initialDeck, tokensToWin: 2);
@@ -336,7 +309,7 @@ public class GameTests
             cardEffectAction: (gameOps, actingPlayer, cardPlayed, targetPlayer, guessedRank) =>
             {
                 // Ensure the targetPlayer (player2) is eliminated.
-                if (targetPlayer != null && cardPlayed.Rank.Value == CardRank.Guard.Value)
+                if (targetPlayer != null && cardPlayed.Rank == CardRank.Guard.Value)
                 {
                     // The gameId for EliminatePlayer should come from the game instance itself (gameOps)
                     gameOps.EliminatePlayer(targetPlayer.Id, "Guard effect in test");
@@ -386,7 +359,7 @@ public class GameTests
             deckCards: deckCards,
             cardEffectAction: (gameOps, actingPlayer, cardPlayed, targetPlayer, guessedRank) =>
             {
-                if (targetPlayer != null && cardPlayed.Rank.Value == CardRank.Guard.Value)
+                if (targetPlayer != null && cardPlayed.Rank == CardRank.Guard.Value)
                 {
                     gameOps.EliminatePlayer(targetPlayer.Id, "Guard effect for final token");
                 }

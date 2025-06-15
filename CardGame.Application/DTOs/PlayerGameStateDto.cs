@@ -13,7 +13,6 @@ public class PlayerGameStateDto
     public int TokensNeededToWin { get; set; }
     public List<PlayerHandInfoDto> Players { get; set; } = new List<PlayerHandInfoDto>();
     public int DeckCardsRemaining { get; set; }
-    public List<CardDto> DiscardPile { get; set; } = new List<CardDto>();
 
     /// <summary>
     /// Gets or sets the ID of the deck definition used for this game.

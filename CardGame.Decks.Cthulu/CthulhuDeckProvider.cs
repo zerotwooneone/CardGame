@@ -19,9 +19,9 @@ public class CthulhuDeckProvider : DefaultDeckProvider
     /// Gets the appearance ID for a given card type, based on the theme.
     /// Derived classes can override for more complex appearance logic.
     /// </summary>
-    protected override string GetCardAppearanceId(RankDefinition rank, int index)
+    protected override string GetCardAppearanceId(int rank, int index)
     {
-        var cardRank = CardRank.FromValue(rank.Value);
+        var cardRank = CardRank.FromValue(rank);
         return $"assets/decks/cthulu/{cardRank.Name.ToLowerInvariant()}.webp";
     }
 }

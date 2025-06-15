@@ -56,7 +56,7 @@ public class GetPlayerGameStateQueryHandler : IRequestHandler<GetPlayerGameState
                 Message = log.Message,
 
                 // --- Map from Domain.GameLogEntry.Card to Application.DTOs.CardDto ---
-                PlayedCard = log.PlayedCard != null ? new CardDto { Rank = log.PlayedCard.Rank.Value, AppearanceId = log.PlayedCard.AppearanceId } : null,
+                PlayedCard = log.PlayedCard != null ? new CardDto { RankValue =log.PlayedCard.Rank.Value, AppearanceId = log.PlayedCard.AppearanceId } : null,
                 DrawnCard = log.DrawnCard != null ? new CardDto { Rank = log.DrawnCard.Rank.Value, AppearanceId = log.DrawnCard.AppearanceId } : null,
                 DiscardedCard = log.DiscardedCard != null ? new CardDto { Rank = log.DiscardedCard.Rank.Value, AppearanceId = log.DiscardedCard.AppearanceId } : null,
                 RevealedPlayerCard = log.RevealedPlayerCard != null ? new CardDto { Rank = log.RevealedPlayerCard.Rank.Value, AppearanceId = log.RevealedPlayerCard.AppearanceId } : null,
@@ -69,7 +69,7 @@ public class GetPlayerGameStateQueryHandler : IRequestHandler<GetPlayerGameState
                 GuessedPlayerActualCard = log.GuessedPlayerActualCard != null ? new CardDto { Rank = log.GuessedPlayerActualCard.Rank.Value, AppearanceId = log.GuessedPlayerActualCard.AppearanceId } : null,
 
                 // Guard specific
-                GuessedRank = log.GuessedRank?.Value,
+                GuessedRank = log.GuessedRank,
                 WasGuessCorrect = log.WasGuessCorrect,
 
                 // Baron specific
@@ -104,11 +104,6 @@ public class GetPlayerGameStateQueryHandler : IRequestHandler<GetPlayerGameState
             CurrentTurnPlayerId = game.CurrentTurnPlayerId,
             TokensNeededToWin = game.TokensNeededToWin,
             DeckCardsRemaining = game.Deck.CardsRemaining,
-            DiscardPile = game.DiscardPile.Select(card => new CardDto
-            {
-                Rank = card.Rank.Value,
-                AppearanceId = card.AppearanceId
-            }).ToList(),
 
             // Map player info - show hand count for everyone
             Players = game.Players.Select(player => new PlayerHandInfoDto
@@ -117,14 +112,12 @@ public class GetPlayerGameStateQueryHandler : IRequestHandler<GetPlayerGameState
                 Name = player.Name,
                 Status = player.Status.Value, // Corrected: player.Status.Value
                 HandCardCount = player.Hand.GetCards().Count(), // Corrected: Added () to Count
-                PlayedCards = player.PlayedCards.Select(cardType => // 'cardType' is from player.PlayedCards
+                PlayedCards = player.PlayedCards.Select(playedCard => 
                 {
-                    // Find the CardDefinition from the loaded DeckDefinition to get AppearanceId
-                    var cardDef = deckDefinition?.Cards.FirstOrDefault(cd => cd.Rank == cardType);
                     return new CardDto
                     {
-                        Rank = cardType.Value, // Rank from CardType's Value
-                        AppearanceId = cardDef?.AppearanceId ?? string.Empty // AppearanceId from CardDefinition
+                        Rank = GetRankDefinition(playedCard), 
+                        AppearanceId = playedCard.AppearanceId
                     };
                 }).ToList(),
                 TokensWon = player.TokensWon, // Corrected: player.TokensWon
@@ -136,7 +129,7 @@ public class GetPlayerGameStateQueryHandler : IRequestHandler<GetPlayerGameState
             PlayerHand = (requestingPlayer.Status == PlayerStatus.Active)
                 ? requestingPlayer.Hand.GetCards().Select(card => new CardDto
                 {
-                    Rank = card.Rank.Value,
+                    Rank = GetRankDefinition(card),
                     AppearanceId = card.AppearanceId
                 }).ToList()
                 : new List<CardDto>(), // Empty list if eliminated
@@ -144,5 +137,10 @@ public class GetPlayerGameStateQueryHandler : IRequestHandler<GetPlayerGameState
         };
 
         return playerStateDto;
+    }
+
+    private static RankDto GetRankDefinition(Card card)
+    {
+        return new RankDto{Value = card.Rank.Value, Id = card.Rank.Id.ToString()};
     }
 }

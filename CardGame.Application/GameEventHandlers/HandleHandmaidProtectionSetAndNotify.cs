@@ -1,12 +1,7 @@
-using CardGame.Application.Common.Interfaces;
 using CardGame.Application.Common.Notifications;
-using CardGame.Domain;
 using CardGame.Domain.Game.Event;
-using CardGame.Domain.Interfaces;
 using MediatR;
 using Microsoft.Extensions.Logging;
-using System.Linq;
-using CardGame.Domain.Types;
 
 namespace CardGame.Application.GameEventHandlers;
 

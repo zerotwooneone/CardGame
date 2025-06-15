@@ -8,5 +8,5 @@ namespace CardGame.Domain.Game
     /// </summary>
     /// <param name="RankValue">The numerical value representing the card's rank.</param>
     /// <param name="AppearanceId">The identifier for the card's visual appearance.</param>
-    public record Card(RankDefinition Rank, string AppearanceId);
+    public record Card(int Rank, string AppearanceId);
 }

@@ -65,7 +65,7 @@ public sealed record Hand
 
         if (indexToRemove == -1)
         {
-            throw new CardNotFoundInHandException($"Card '{cardToRemoveByValue.Rank.Value}' (AppearanceId: '{cardToRemoveByValue.AppearanceId}') not found in hand by value.");
+            throw new CardNotFoundInHandException($"Card '{cardToRemoveByValue.Rank}' (AppearanceId: '{cardToRemoveByValue.AppearanceId}') not found in hand by value.");
         }
 
         var newCardsList = Cards.ToList(); // Create a mutable copy

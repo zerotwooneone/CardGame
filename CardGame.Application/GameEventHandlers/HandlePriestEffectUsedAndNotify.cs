@@ -1,13 +1,10 @@
 using CardGame.Application.Common.Interfaces;
 using CardGame.Application.Common.Notifications;
 using CardGame.Application.DTOs;
-using CardGame.Domain; 
 using CardGame.Domain.Game.Event;
 using MediatR;
 using Microsoft.Extensions.Logging;
-using System.Linq;
-using CardGame.Domain.Interfaces; 
-using CardGame.Domain.Types; 
+using CardGame.Domain.Interfaces;
 
 namespace CardGame.Application.GameEventHandlers;
 
@@ -37,7 +34,7 @@ public class HandlePriestEffectUsedAndNotify : INotificationHandler<DomainEventN
         var domainEvent = notification.DomainEvent;
         _logger.LogDebug(
             "Handling PriestEffectUsed event for Game {GameId}. Player {PriestPlayerId} targeted {TargetPlayerId}. Revealed Card Type: {RevealedCardType}. Preparing to notify.",
-            domainEvent.GameId, domainEvent.PriestPlayerId, domainEvent.TargetPlayerId, domainEvent.RevealedCardRank.ToString());
+            domainEvent.GameId, domainEvent.PriestPlayerId, domainEvent.TargetPlayerId, domainEvent.RevealedCard.Rank.Value.ToString());
 
         var game = await _gameRepository.GetByIdAsync(domainEvent.GameId, cancellationToken).ConfigureAwait(false);
         if (game == null)
@@ -58,7 +55,7 @@ public class HandlePriestEffectUsedAndNotify : INotificationHandler<DomainEventN
         var revealedCardDto = new CardDto
         {
             AppearanceId = domainEvent.RevealedCardId, 
-            Rank = domainEvent.RevealedCardRank.Value   
+            Rank = domainEvent.RevealedCard.Rank.Value   
         };
 
         try
@@ -68,7 +65,7 @@ public class HandlePriestEffectUsedAndNotify : INotificationHandler<DomainEventN
                 domainEvent.TargetPlayerId,
                 targetPlayerName,
                 revealedCardDto,
-                cancellationToken);
+                cancellationToken).ConfigureAwait(false);
 
             _logger.LogInformation("Priest reveal notification successfully sent to player {PriestPlayerId} for game {GameId} regarding target {TargetPlayerId}.", 
                 domainEvent.PriestPlayerId, domainEvent.GameId, domainEvent.TargetPlayerId);

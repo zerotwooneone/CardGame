@@ -1,7 +1,6 @@
 ﻿using CardGame.Domain.Types;
 using FluentValidation;
 using MediatR;
-using CardRank = CardGame.Domain.BaseGame.CardRank;
 
 namespace CardGame.Application.Commands;
 
@@ -13,7 +12,7 @@ public record PlayCardCommand(
     Guid PlayerId, // ID of the player making the move (authenticated user)
     string CardToPlayId, // Changed from Card to Guid
     Guid? TargetPlayerId,
-    CardRank? GuessedCardType
+    int? GuessedCardType
 
     // Pass the parsed CardType
 ) : IRequest; // Simple command, returns Unit (void) on success

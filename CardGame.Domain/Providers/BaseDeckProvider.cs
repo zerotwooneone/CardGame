@@ -8,7 +8,7 @@ namespace CardGame.Domain.Providers
 {
     public abstract class BaseDeckProvider : IDeckProvider
     {
-        protected record CardQuantity(RankDefinition Rank, int Count);
+        protected record CardQuantity(int Rank, int Count);
 
         // Abstract properties to be implemented by derived classes
         public abstract Guid DeckId { get; }
@@ -16,9 +16,7 @@ namespace CardGame.Domain.Providers
         public abstract string Description { get; }
         protected abstract string ThemeName { get; }
         protected abstract string DeckBackAppearanceId { get; }
-        
-        public abstract IReadOnlyDictionary<int, IEnumerable<RankDefinition>> RankDefinitions { get; }
-
+ 
         /// <summary>
         /// Gets the list of card types and their quantities for this deck.
         /// </summary>
@@ -28,7 +26,7 @@ namespace CardGame.Domain.Providers
         /// Gets the appearance ID for a given card type, based on the theme.
         /// Derived classes can override for more complex appearance logic.
         /// </summary>
-        protected abstract string GetCardAppearanceId(RankDefinition rank, int index);
+        protected abstract string GetCardAppearanceId(int rank, int index);
 
         public void ExecuteCardEffect(
             IGameOperations game, 
@@ -38,10 +36,6 @@ namespace CardGame.Domain.Providers
             int? guessedRankValue)
         {
 
-            if(guessedRankValue.HasValue && !RankDefinitions.TryGetValue(guessedRankValue.Value, out var guessedRankDefinitions))
-            {
-                throw new InvalidMoveException("Invalid card rank.");
-            }
             ValidateCardEffect(actingPlayer, card, targetPlayer, guessedRankValue); 
             PerformCardEffect(game, actingPlayer, card, targetPlayer, guessedRankValue);
         }
@@ -57,7 +51,7 @@ namespace CardGame.Domain.Providers
                     cards.Add(new Card( quantity.Rank,appearanceId));
                 }
             }
-            return new DeckDefinition(cards.ToImmutableList(), DeckBackAppearanceId, this);
+            return new DeckDefinition(cards.ToImmutableList(), DeckBackAppearanceId);
         }
 
         protected abstract void ValidateCardEffect(
