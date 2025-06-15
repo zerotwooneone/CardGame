@@ -45,6 +45,17 @@ This project is the heart of the Love Letter card game application. It contains 
 *   **Purity**: Strive to keep this layer free from infrastructure or application-specific concerns.
 *   **No External Dependencies**: This project should have minimal external library dependencies, usually only core .NET libraries.
 
+## Key Domain Concepts
+
+### The Game Log as a Narrative
+
+A crucial concept in this domain is the **Game Log**. It is not a technical or system-level debug log. Instead, its primary purpose is to create a clear, human-readable narrative of the game's events for players and spectators.
+
+*   **Purpose**: To tell the story of the game round, explaining *what* happened and *why*.
+*   **Audience**: Players and spectators.
+*   **Clarity**: Log messages should be descriptive and easy to understand, especially for events that cause sudden or non-obvious state changes (e.g., a player being eliminated, the round ending, a card's effect being fizzled).
+*   **`GameLogEventType`**: The `GameLogEventType` enum should be used to create distinct, specific story beats. This allows the UI to potentially render different types of events in unique ways (e.g., with different icons or styling) to enhance the narrative quality.
+
 ## Card Identification in the Domain
 
 Understanding how cards are identified and compared is crucial in this domain:
