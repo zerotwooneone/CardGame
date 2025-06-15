@@ -37,6 +37,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CardGame.Decks.BaseGame", "
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CardGame.Decks.Premium", "CardGame.Decks.Premium\CardGame.Decks.Premium.csproj", "{17C49F44-D753-47B1-8B52-5A9E00818709}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CardGame.Decks.PremiumTests", "CardGame.Decks.PremiumTests\CardGame.Decks.PremiumTests.csproj", "{86EB5166-5E3C-45BB-A221-8452ED4671E5}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -91,6 +93,10 @@ Global
 		{17C49F44-D753-47B1-8B52-5A9E00818709}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{17C49F44-D753-47B1-8B52-5A9E00818709}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{17C49F44-D753-47B1-8B52-5A9E00818709}.Release|Any CPU.Build.0 = Release|Any CPU
+		{86EB5166-5E3C-45BB-A221-8452ED4671E5}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{86EB5166-5E3C-45BB-A221-8452ED4671E5}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{86EB5166-5E3C-45BB-A221-8452ED4671E5}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{86EB5166-5E3C-45BB-A221-8452ED4671E5}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -105,5 +111,6 @@ Global
 		{EA075D1A-DFF3-4552-8C48-7EFF572E79B3} = {6CB6AE29-5B29-4BA4-B05F-2327277A2DDF}
 		{91F3414B-0224-4C99-B7C1-8F7279EB3155} = {6CB6AE29-5B29-4BA4-B05F-2327277A2DDF}
 		{17C49F44-D753-47B1-8B52-5A9E00818709} = {6CB6AE29-5B29-4BA4-B05F-2327277A2DDF}
+		{86EB5166-5E3C-45BB-A221-8452ED4671E5} = {6CB6AE29-5B29-4BA4-B05F-2327277A2DDF}
 	EndGlobalSection
 EndGlobal
