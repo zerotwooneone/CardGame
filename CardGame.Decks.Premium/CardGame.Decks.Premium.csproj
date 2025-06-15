@@ -7,4 +7,10 @@
         <Nullable>enable</Nullable>
     </PropertyGroup>
 
+    <ItemGroup>
+      <ProjectReference Include="..\CardGame.Domain\CardGame.Domain.csproj" />
+      <ProjectReference Include="..\CodeGenConsoleTest\CodeGenConsoleTest.csproj" />
+      <ProjectReference Include="..\CodeGenerator\CodeGenerator.csproj" />
+    </ItemGroup>
+
 </Project>
