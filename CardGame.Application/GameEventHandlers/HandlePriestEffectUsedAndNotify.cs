@@ -34,7 +34,7 @@ public class HandlePriestEffectUsedAndNotify : INotificationHandler<DomainEventN
         var domainEvent = notification.DomainEvent;
         _logger.LogDebug(
             "Handling PriestEffectUsed event for Game {GameId}. Player {PriestPlayerId} targeted {TargetPlayerId}. Revealed Card Type: {RevealedCardType}. Preparing to notify.",
-            domainEvent.GameId, domainEvent.PriestPlayerId, domainEvent.TargetPlayerId, domainEvent.RevealedCard.Rank.Value.ToString());
+            domainEvent.GameId, domainEvent.PriestPlayerId, domainEvent.TargetPlayerId, domainEvent.RevealedCard.Rank.ToString());
 
         var game = await _gameRepository.GetByIdAsync(domainEvent.GameId, cancellationToken).ConfigureAwait(false);
         if (game == null)
@@ -55,7 +55,7 @@ public class HandlePriestEffectUsedAndNotify : INotificationHandler<DomainEventN
         var revealedCardDto = new CardDto
         {
             AppearanceId = domainEvent.RevealedCardId, 
-            Rank = domainEvent.RevealedCard.Rank.Value   
+            RankValue = domainEvent.RevealedCard.Rank   
         };
 
         try

@@ -32,7 +32,7 @@ public class HandlePrinceEffectUsedAndNotify : INotificationHandler<DomainEventN
     {
         var domainEvent = notification.DomainEvent;
         _logger.LogDebug("Handling PrinceEffectUsed by {ActorPlayerId} on {TargetPlayerId} in Game {GameId}. Discarded: {DiscardedCardType}", 
-            domainEvent.ActorPlayerId, domainEvent.TargetPlayerId, domainEvent.GameId, domainEvent.DiscardedCard.Rank.Value);
+            domainEvent.ActorPlayerId, domainEvent.TargetPlayerId, domainEvent.GameId, domainEvent.DiscardedCard.Rank);
 
  
         return Task.CompletedTask;

@@ -56,17 +56,17 @@ public class GetPlayerGameStateQueryHandler : IRequestHandler<GetPlayerGameState
                 Message = log.Message,
 
                 // --- Map from Domain.GameLogEntry.Card to Application.DTOs.CardDto ---
-                PlayedCard = log.PlayedCard != null ? new CardDto { RankValue =log.PlayedCard.Rank.Value, AppearanceId = log.PlayedCard.AppearanceId } : null,
-                DrawnCard = log.DrawnCard != null ? new CardDto { Rank = log.DrawnCard.Rank.Value, AppearanceId = log.DrawnCard.AppearanceId } : null,
-                DiscardedCard = log.DiscardedCard != null ? new CardDto { Rank = log.DiscardedCard.Rank.Value, AppearanceId = log.DiscardedCard.AppearanceId } : null,
-                RevealedPlayerCard = log.RevealedPlayerCard != null ? new CardDto { Rank = log.RevealedPlayerCard.Rank.Value, AppearanceId = log.RevealedPlayerCard.AppearanceId } : null,
-                ActingPlayerBaronCard = log.ActingPlayerBaronCard != null ? new CardDto { Rank = log.ActingPlayerBaronCard.Rank.Value, AppearanceId = log.ActingPlayerBaronCard.AppearanceId } : null,
-                TargetPlayerBaronCard = log.TargetPlayerBaronCard != null ? new CardDto { Rank = log.TargetPlayerBaronCard.Rank.Value, AppearanceId = log.TargetPlayerBaronCard.AppearanceId } : null,
-                TargetDiscardedCard = log.TargetDiscardedCard != null ? new CardDto { Rank = log.TargetDiscardedCard.Rank.Value, AppearanceId = log.TargetDiscardedCard.AppearanceId } : null,
-                TargetNewCardAfterPrince = log.TargetNewCardAfterPrince != null ? new CardDto { Rank = log.TargetNewCardAfterPrince.Rank.Value, AppearanceId = log.TargetNewCardAfterPrince.AppearanceId } : null,
-                RevealedTradedCard = log.RevealedTradedCard != null ? new CardDto { Rank = log.RevealedTradedCard.Rank.Value, AppearanceId = log.RevealedTradedCard.AppearanceId } : null,
-                RevealedCardOnElimination = log.RevealedCardOnElimination != null ? new CardDto { Rank = log.RevealedCardOnElimination.Rank.Value, AppearanceId = log.RevealedCardOnElimination.AppearanceId } : null,
-                GuessedPlayerActualCard = log.GuessedPlayerActualCard != null ? new CardDto { Rank = log.GuessedPlayerActualCard.Rank.Value, AppearanceId = log.GuessedPlayerActualCard.AppearanceId } : null,
+                PlayedCard = log.PlayedCard != null ? new CardDto { RankValue =log.PlayedCard.Rank, AppearanceId = log.PlayedCard.AppearanceId } : null,
+                DrawnCard = log.DrawnCard != null ? new CardDto { RankValue = log.DrawnCard.Rank, AppearanceId = log.DrawnCard.AppearanceId } : null,
+                DiscardedCard = log.DiscardedCard != null ? new CardDto { RankValue = log.DiscardedCard.Rank, AppearanceId = log.DiscardedCard.AppearanceId } : null,
+                RevealedPlayerCard = log.RevealedPlayerCard != null ? new CardDto { RankValue = log.RevealedPlayerCard.Rank, AppearanceId = log.RevealedPlayerCard.AppearanceId } : null,
+                ActingPlayerBaronCard = log.ActingPlayerBaronCard != null ? new CardDto { RankValue = log.ActingPlayerBaronCard.Rank, AppearanceId = log.ActingPlayerBaronCard.AppearanceId } : null,
+                TargetPlayerBaronCard = log.TargetPlayerBaronCard != null ? new CardDto { RankValue = log.TargetPlayerBaronCard.Rank, AppearanceId = log.TargetPlayerBaronCard.AppearanceId } : null,
+                TargetDiscardedCard = log.TargetDiscardedCard != null ? new CardDto { RankValue = log.TargetDiscardedCard.Rank, AppearanceId = log.TargetDiscardedCard.AppearanceId } : null,
+                TargetNewCardAfterPrince = log.TargetNewCardAfterPrince != null ? new CardDto { RankValue = log.TargetNewCardAfterPrince.Rank, AppearanceId = log.TargetNewCardAfterPrince.AppearanceId } : null,
+                RevealedTradedCard = log.RevealedTradedCard != null ? new CardDto { RankValue = log.RevealedTradedCard.Rank, AppearanceId = log.RevealedTradedCard.AppearanceId } : null,
+                RevealedCardOnElimination = log.RevealedCardOnElimination != null ? new CardDto { RankValue = log.RevealedCardOnElimination.Rank, AppearanceId = log.RevealedCardOnElimination.AppearanceId } : null,
+                GuessedPlayerActualCard = log.GuessedPlayerActualCard != null ? new CardDto { RankValue = log.GuessedPlayerActualCard.Rank, AppearanceId = log.GuessedPlayerActualCard.AppearanceId } : null,
 
                 // Guard specific
                 GuessedRank = log.GuessedRank,
@@ -86,7 +86,7 @@ public class GetPlayerGameStateQueryHandler : IRequestHandler<GetPlayerGameState
                 {
                     PlayerId = s.PlayerId,
                     PlayerName = s.PlayerName,
-                    CardsHeld = s.CardsHeld.Select(c => new CardDto { Rank = c.Rank.Value, AppearanceId = c.AppearanceId }).ToList(), // Corrected: c.Type.Value
+                    CardsHeld = s.CardsHeld.Select(c => new CardDto { RankValue = c.Rank, AppearanceId = c.AppearanceId }).ToList(), // Corrected: c.Type.Value
                     TokensWon = s.Score
                 }).ToList(),
                 TokensHeld = log.TokensHeld
@@ -116,7 +116,7 @@ public class GetPlayerGameStateQueryHandler : IRequestHandler<GetPlayerGameState
                 {
                     return new CardDto
                     {
-                        Rank = GetRankDefinition(playedCard), 
+                        RankValue = playedCard.Rank, 
                         AppearanceId = playedCard.AppearanceId
                     };
                 }).ToList(),
@@ -129,7 +129,7 @@ public class GetPlayerGameStateQueryHandler : IRequestHandler<GetPlayerGameState
             PlayerHand = (requestingPlayer.Status == PlayerStatus.Active)
                 ? requestingPlayer.Hand.GetCards().Select(card => new CardDto
                 {
-                    Rank = GetRankDefinition(card),
+                    RankValue = card.Rank,
                     AppearanceId = card.AppearanceId
                 }).ToList()
                 : new List<CardDto>(), // Empty list if eliminated
@@ -137,10 +137,5 @@ public class GetPlayerGameStateQueryHandler : IRequestHandler<GetPlayerGameState
         };
 
         return playerStateDto;
-    }
-
-    private static RankDto GetRankDefinition(Card card)
-    {
-        return new RankDto{Value = card.Rank.Value, Id = card.Rank.Id.ToString()};
     }
 }

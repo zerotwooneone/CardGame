@@ -15,6 +15,5 @@ export interface SpectatorGameStateDto {
   tokensNeededToWin: number;
   players: SpectatorPlayerDto[];
   deckCardsRemaining: number;
-  discardPile: CardDto[];
   gameLog: GameLogEntryDto[];
 }

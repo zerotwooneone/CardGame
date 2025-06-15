@@ -45,7 +45,7 @@ public class HandlePlayerPlayedCardAndSendHandUpdate : INotificationHandler<Doma
             var handDto = player.Hand.GetCards().Select(c => new CardDto
             {
                 AppearanceId = c.AppearanceId, // Ensure DTO has Id
-                Rank = c.Rank.Value
+                RankValue = c.Rank
             }).ToList();
 
             // Send the hand update using the notifier service ONLY to the player who acted

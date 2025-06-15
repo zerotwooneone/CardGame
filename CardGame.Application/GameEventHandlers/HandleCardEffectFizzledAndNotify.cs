@@ -29,7 +29,7 @@ public class HandleCardEffectFizzledAndNotify : INotificationHandler<DomainEvent
     {
         var domainEvent = notification.DomainEvent;
         _logger.LogDebug("Handling CardEffectFizzled domain event for Game {GameId}, Actor {ActorId}, Card {CardType}, Target {TargetId}, Reason: {Reason}. Primary log entry created in Game.cs.",
-            domainEvent.GameId, domainEvent.ActorId, domainEvent.Card.Rank.Value, domainEvent.TargetId, domainEvent.Reason);
+            domainEvent.GameId, domainEvent.ActorId, domainEvent.Card.Rank, domainEvent.TargetId, domainEvent.Reason);
 
         // The primary GameLogEntry for EffectFizzled (e.g., due to Handmaid) 
         // is created directly in the Game.cs methods (e.g., ExecuteKingEffect, ExecutePrinceEffect, etc.)
@@ -54,7 +54,7 @@ public class HandleCardEffectFizzledAndNotify : INotificationHandler<DomainEvent
         //     cancellationToken).ConfigureAwait(false);
 
         _logger.LogInformation("CardEffectFizzled event processed for Game {GameId}. Actor: {ActorId}, Card: {CardType}, Target: {TargetId}, Reason: {Reason}. Log entry was created in domain.",
-            domainEvent.GameId, domainEvent.ActorId, domainEvent.Card.Rank.Value, domainEvent.TargetId, domainEvent.Reason);
+            domainEvent.GameId, domainEvent.ActorId, domainEvent.Card.Rank, domainEvent.TargetId, domainEvent.Reason);
 
         // No game.AddLogEntry() call here anymore.
         // No _gameRepository.SaveAsync(game, ...) is needed here if the handler isn't modifying the game state related to the log.

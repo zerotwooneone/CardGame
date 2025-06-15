@@ -4,7 +4,6 @@ using CardGame.Domain.Types;
 using FluentValidation;
 using MediatR;
 using Microsoft.Extensions.Logging;
-using CardRank = CardGame.Domain.BaseGame.CardRank;
 
 namespace CardGame.Application.Commands;
 
@@ -96,17 +95,9 @@ public class PlayCardCommandHandler : IRequestHandler<PlayCardCommand>
         }
 
         // 7. Perform validation that depends on the actual card type being played (e.g., Guard guess)
-        if (cardToPlayInstance.Rank == CardRank.Guard)
-        {
-            if (request.GuessedCardType == null)
-                throw new ValidationException("A card type must be guessed when playing a Guard.");
-            if (request.GuessedCardType == CardRank.Guard)
-                throw new ValidationException("Cannot guess Guard when playing a Guard.");
-            if (request.TargetPlayerId == null)
-                throw new ValidationException("Target player must be specified when playing a Guard.");
-        }
-
-        _logger.LogDebug("Pre-domain logic validations passed for Game {GameId}.", request.GameId);
+        //NA
+        
+        
         // --- End Fail Fast Validations ---
 
 
@@ -117,8 +108,7 @@ public class PlayCardCommandHandler : IRequestHandler<PlayCardCommand>
             request.PlayerId,
             cardToPlayInstance, // Pass the found instance
             request.TargetPlayerId,
-            request.GuessedCardType,
-            deckProvider
+            request.GuessedCardType
         );
         _logger.LogDebug("Game.PlayCard executed for Game {GameId}. {EventCount} domain events to raise.", request.GameId,
             game.DomainEvents.Count);
