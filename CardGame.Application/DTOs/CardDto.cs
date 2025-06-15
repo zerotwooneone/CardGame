@@ -5,6 +5,6 @@ namespace CardGame.Application.DTOs;
 /// </summary>
 public class CardDto
 {
-    public int RankValue { get; set; } 
+    public int Rank { get; set; } 
     public string AppearanceId { get; set; } = string.Empty;
 }

@@ -55,7 +55,7 @@ public class HandlePriestEffectUsedAndNotify : INotificationHandler<DomainEventN
         var revealedCardDto = new CardDto
         {
             AppearanceId = domainEvent.RevealedCardId, 
-            RankValue = domainEvent.RevealedCard.Rank   
+            Rank = domainEvent.RevealedCard.Rank   
         };
 
         try

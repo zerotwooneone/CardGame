@@ -65,7 +65,7 @@ public class GetSpectatorGameStateQueryHandler : IRequestHandler<GetSpectatorGam
                     var cardDef = deckDefinition?.Cards.FirstOrDefault(cd => cd.Rank == cardType.Rank);
                     return new CardDto
                     {
-                        RankValue = cardType.Rank,
+                        Rank = cardType.Rank,
                         AppearanceId = cardDef?.AppearanceId ?? string.Empty // Use string.Empty if not found
                     };
                 }).ToList(),
@@ -87,17 +87,17 @@ public class GetSpectatorGameStateQueryHandler : IRequestHandler<GetSpectatorGam
                     Message = log.Message,
 
                     // --- Map from Domain.GameLogEntry.Card to Application.DTOs.CardDto ---
-                    PlayedCard = log.PlayedCard != null ? new CardDto { RankValue = log.PlayedCard.Rank, AppearanceId = log.PlayedCard.AppearanceId } : null,
-                    DrawnCard = log.DrawnCard != null ? new CardDto { RankValue = log.DrawnCard.Rank, AppearanceId = log.DrawnCard.AppearanceId } : null,
-                    DiscardedCard = log.DiscardedCard != null ? new CardDto { RankValue = log.DiscardedCard.Rank, AppearanceId = log.DiscardedCard.AppearanceId } : null,
-                    RevealedPlayerCard = log.RevealedPlayerCard != null ? new CardDto { RankValue = log.RevealedPlayerCard.Rank, AppearanceId = log.RevealedPlayerCard.AppearanceId } : null,
-                    ActingPlayerBaronCard = log.ActingPlayerBaronCard != null ? new CardDto { RankValue = log.ActingPlayerBaronCard.Rank, AppearanceId = log.ActingPlayerBaronCard.AppearanceId } : null,
-                    TargetPlayerBaronCard = log.TargetPlayerBaronCard != null ? new CardDto { RankValue = log.TargetPlayerBaronCard.Rank, AppearanceId = log.TargetPlayerBaronCard.AppearanceId } : null,
-                    TargetDiscardedCard = log.TargetDiscardedCard != null ? new CardDto { RankValue = log.TargetDiscardedCard.Rank, AppearanceId = log.TargetDiscardedCard.AppearanceId } : null,
-                    TargetNewCardAfterPrince = log.TargetNewCardAfterPrince != null ? new CardDto { RankValue = log.TargetNewCardAfterPrince.Rank, AppearanceId = log.TargetNewCardAfterPrince.AppearanceId } : null,
-                    RevealedTradedCard = log.RevealedTradedCard != null ? new CardDto { RankValue = log.RevealedTradedCard.Rank, AppearanceId = log.RevealedTradedCard.AppearanceId } : null,
-                    RevealedCardOnElimination = log.RevealedCardOnElimination != null ? new CardDto { RankValue = log.RevealedCardOnElimination.Rank, AppearanceId = log.RevealedCardOnElimination.AppearanceId } : null,
-                    GuessedPlayerActualCard = log.GuessedPlayerActualCard != null ? new CardDto { RankValue = log.GuessedPlayerActualCard.Rank, AppearanceId = log.GuessedPlayerActualCard.AppearanceId } : null,
+                    PlayedCard = log.PlayedCard != null ? new CardDto { Rank = log.PlayedCard.Rank, AppearanceId = log.PlayedCard.AppearanceId } : null,
+                    DrawnCard = log.DrawnCard != null ? new CardDto { Rank = log.DrawnCard.Rank, AppearanceId = log.DrawnCard.AppearanceId } : null,
+                    DiscardedCard = log.DiscardedCard != null ? new CardDto { Rank = log.DiscardedCard.Rank, AppearanceId = log.DiscardedCard.AppearanceId } : null,
+                    RevealedPlayerCard = log.RevealedPlayerCard != null ? new CardDto { Rank = log.RevealedPlayerCard.Rank, AppearanceId = log.RevealedPlayerCard.AppearanceId } : null,
+                    ActingPlayerBaronCard = log.ActingPlayerBaronCard != null ? new CardDto { Rank = log.ActingPlayerBaronCard.Rank, AppearanceId = log.ActingPlayerBaronCard.AppearanceId } : null,
+                    TargetPlayerBaronCard = log.TargetPlayerBaronCard != null ? new CardDto { Rank = log.TargetPlayerBaronCard.Rank, AppearanceId = log.TargetPlayerBaronCard.AppearanceId } : null,
+                    TargetDiscardedCard = log.TargetDiscardedCard != null ? new CardDto { Rank = log.TargetDiscardedCard.Rank, AppearanceId = log.TargetDiscardedCard.AppearanceId } : null,
+                    TargetNewCardAfterPrince = log.TargetNewCardAfterPrince != null ? new CardDto { Rank = log.TargetNewCardAfterPrince.Rank, AppearanceId = log.TargetNewCardAfterPrince.AppearanceId } : null,
+                    RevealedTradedCard = log.RevealedTradedCard != null ? new CardDto { Rank = log.RevealedTradedCard.Rank, AppearanceId = log.RevealedTradedCard.AppearanceId } : null,
+                    RevealedCardOnElimination = log.RevealedCardOnElimination != null ? new CardDto { Rank = log.RevealedCardOnElimination.Rank, AppearanceId = log.RevealedCardOnElimination.AppearanceId } : null,
+                    GuessedPlayerActualCard = log.GuessedPlayerActualCard != null ? new CardDto { Rank = log.GuessedPlayerActualCard.Rank, AppearanceId = log.GuessedPlayerActualCard.AppearanceId } : null,
                     
                     // Guard specific
                     GuessedRank = log.GuessedRank,
@@ -117,7 +117,7 @@ public class GetSpectatorGameStateQueryHandler : IRequestHandler<GetSpectatorGam
                     {
                         PlayerId = s.PlayerId,
                         PlayerName = s.PlayerName,
-                        CardsHeld = s.CardsHeld.Select(c => new CardDto { RankValue = c.Rank, AppearanceId = c.AppearanceId }).ToList(), // Corrected: c.Type.Value
+                        CardsHeld = s.CardsHeld.Select(c => new CardDto { Rank = c.Rank, AppearanceId = c.AppearanceId }).ToList(), // Corrected: c.Type.Value
                         TokensWon = s.Score 
                     }).ToList(), 
                     TokensHeld = log.TokensHeld

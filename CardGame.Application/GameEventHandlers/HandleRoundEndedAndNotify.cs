@@ -39,7 +39,7 @@ public class HandleRoundEndedAndNotify : INotificationHandler<DomainEventNotific
                 CardsHeld = summary.CardsHeld.Select(card => new CardDto
                 {
                     AppearanceId = card.AppearanceId,
-                    RankValue = card.Rank
+                    Rank = card.Rank
                 }).ToList(),
                 TokensWon = summary.TokensAwarded
             }).ToList();
