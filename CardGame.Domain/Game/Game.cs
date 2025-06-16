@@ -23,6 +23,8 @@ public class Game : IGameOperations // Aggregate Root
     public Guid? LastRoundWinnerId { get; private set; }
     private readonly List<GameLogEntry> _logEntries = new(); // New log entry list
 
+    private readonly Dictionary<Guid, Dictionary<string, string>> _deckSpecificGameStatuses = new();
+
     private readonly IReadOnlyList<Card> _initialDeckCardSet;
     private readonly Guid _deckDefinitionId; // Added field
     public Guid DeckDefinitionId => _deckDefinitionId; // ADDED Public getter
@@ -119,6 +121,81 @@ public class Game : IGameOperations // Aggregate Root
         );
     }
 
+    void IGameOperations.AwardAffectionToken(Guid playerId, int amount)
+    {
+        var player = GetPlayerById(playerId);
+        for (int i = 0; i < amount; i++)
+        {
+            player.AddToken();
+        }
+        AddLogEntry(new GameLogEntry(GameLogEventType.TokenAwarded, playerId, player.Name, $"{player.Name} was awarded {amount} affection token(s)."));
+        AddDomainEvent(new TokenAwarded(Id, playerId, amount));
+    }
+
+    void IGameOperations.SetPlayerDeckStatus(Guid playerId, Guid deckId, string key, string? value)
+    {
+        var player = GetPlayerById(playerId);
+        if (!player.DeckSpecificStatuses.ContainsKey(deckId))
+        {
+            player.DeckSpecificStatuses[deckId] = new Dictionary<string, string>();
+        }
+        player.DeckSpecificStatuses[deckId][key] = value ?? string.Empty;
+    }
+
+    string? IGameOperations.GetPlayerDeckStatus(Guid playerId, Guid deckId, string key)
+    {
+        var player = GetPlayerById(playerId);
+        if (player.DeckSpecificStatuses.TryGetValue(deckId, out var statuses) && statuses.TryGetValue(key, out var value))
+        {
+            return value;
+        }
+        return null;
+    }
+
+    void IGameOperations.ClearPlayerDeckStatus(Guid playerId, Guid deckId, string key)
+    {
+        var player = GetPlayerById(playerId);
+        if (player.DeckSpecificStatuses.TryGetValue(deckId, out var statuses))
+        {
+            statuses.Remove(key);
+        }
+    }
+
+    void IGameOperations.ClearAllPlayerDeckStatusesForPlayer(Guid playerId, Guid deckId)
+    {
+        var player = GetPlayerById(playerId);
+        if (player.DeckSpecificStatuses.ContainsKey(deckId))
+        {
+            player.DeckSpecificStatuses.Remove(deckId);
+        }
+    }
+
+    void IGameOperations.SetGameDeckStatus(Guid deckId, string key, string? value)
+    {
+        if (!_deckSpecificGameStatuses.ContainsKey(deckId))
+        {
+            _deckSpecificGameStatuses[deckId] = new Dictionary<string, string>();
+        }
+        _deckSpecificGameStatuses[deckId][key] = value ?? string.Empty;
+    }
+
+    string? IGameOperations.GetGameDeckStatus(Guid deckId, string key)
+    {
+        if (_deckSpecificGameStatuses.TryGetValue(deckId, out var statuses) && statuses.TryGetValue(key, out var value))
+        {
+            return value;
+        }
+        return null;
+    }
+
+    void IGameOperations.ClearGameDeckStatus(Guid deckId, string key)
+    {
+        if (_deckSpecificGameStatuses.TryGetValue(deckId, out var statuses))
+        { 
+            statuses.Remove(key);
+        }
+    }
+
     #endregion
 
     private Game(Guid id, Guid deckDefinitionId, IReadOnlyList<Card> initialDeckCardSet, IRandomizer? randomizer, ILogger<Game> logger, ILoggerFactory loggerFactory, IDeckProvider deckProvider)
@@ -183,7 +260,7 @@ public class Game : IGameOperations // Aggregate Root
         foreach (var pInfo in playerInfoList)
         {
             // Assuming Player.Load now takes List<int> for known cards (already refactored as per memory)
-            var player = Player.Load(pInfo.Id, pInfo.Name, PlayerStatus.Active, Hand.Empty, new List<Card>(), 0, false, loggerFactory.CreateLogger<Player>());
+            var player = Player.Load(pInfo.Id, pInfo.Name, PlayerStatus.Active, Hand.Empty, new List<Card>(), 0, false, new Dictionary<Guid, Dictionary<string, string>>(), loggerFactory.CreateLogger<Player>());
             game.Players.Add(player);
             if (pInfo.Id == creatorPlayerId) creatorFound = true;
         }
@@ -196,7 +273,7 @@ public class Game : IGameOperations // Aggregate Root
         return game;
     }
 
-    public static Game Load(Guid id, Guid deckDefinitionId, int roundNumber, GamePhase gamePhase, Guid currentTurnPlayerId, List<Player> players, Deck deck, Card? setAsideCard, List<Card> publiclySetAsideCards, int tokensToWin, Guid? lastRoundWinnerId, List<Card> initialDeckCardSet, ILoggerFactory loggerFactory, IDeckProvider deckProvider)
+    public static Game Load(Guid id, Guid deckDefinitionId, int roundNumber, GamePhase gamePhase, Guid currentTurnPlayerId, List<Player> players, Deck deck, Card? setAsideCard, List<Card> publiclySetAsideCards, int tokensToWin, Guid? lastRoundWinnerId, List<Card> initialDeckCardSet, Dictionary<Guid, Dictionary<string, string>> deckSpecificGameStatuses, ILoggerFactory loggerFactory, IDeckProvider deckProvider)
     {
         if (initialDeckCardSet == null) throw new ArgumentNullException(nameof(initialDeckCardSet));
         if (!initialDeckCardSet.Any()) throw new ArgumentException("Initial deck card set cannot be empty for loading.", nameof(initialDeckCardSet));
@@ -221,6 +298,11 @@ public class Game : IGameOperations // Aggregate Root
             TokensNeededToWin = tokensToWin,
             LastRoundWinnerId = lastRoundWinnerId
         };
+        game._deckSpecificGameStatuses.Clear();
+        foreach (var entry in deckSpecificGameStatuses)
+        {
+            game._deckSpecificGameStatuses.Add(entry.Key, new Dictionary<string, string>(entry.Value));
+        }
         return game;
     }
 

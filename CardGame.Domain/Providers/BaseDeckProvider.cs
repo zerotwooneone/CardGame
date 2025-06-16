@@ -32,12 +32,13 @@ namespace CardGame.Domain.Providers
             IGameOperations game, 
             Player actingPlayer, 
             Card card,
-            Player? targetPlayer, 
-            int? guessedRankValue)
+            Player? targetPlayer1, 
+            int? guessedCardRankValue,
+            Player? targetPlayer2 = null)
         {
 
-            ValidateCardEffect(actingPlayer, card, targetPlayer, guessedRankValue); 
-            PerformCardEffect(game, actingPlayer, card, targetPlayer, guessedRankValue);
+            ValidateCardEffect(actingPlayer, card, targetPlayer1, guessedCardRankValue); 
+            PerformCardEffect(game, actingPlayer, card, targetPlayer1, guessedCardRankValue);
         }
 
         public DeckDefinition GetDeck()
@@ -65,12 +66,8 @@ namespace CardGame.Domain.Providers
         /// Performs the actual effect of the card after validation has passed.
         /// Derived classes must implement this to define card behaviors.
         /// </summary>
-        /// <summary>
-        /// Performs the actual effect of the card after validation has passed.
-        /// Derived classes must implement this to define card behaviors.
-        /// </summary>
         protected abstract void PerformCardEffect(IGameOperations game, Player actingPlayer, Card card,
-            Player? targetPlayer, int? guessedCardRankValue);
+            Player? targetPlayer1, int? guessedCardRankValue);
     
 
         

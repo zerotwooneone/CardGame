@@ -35,15 +35,21 @@ public class FakeDeckProvider : IDeckProvider
         return new DeckDefinition(_initialCards, DeckBackAppearanceId);
     }
 
-    public void ExecuteCardEffect(IGameOperations gameOperations, Player actingPlayer, Card cardPlayed, Player? targetPlayer, int? guessedRankValue)
+    public void ExecuteCardEffect(
+        IGameOperations gameOperations, 
+        Player actingPlayer, 
+        Card cardPlayed, 
+        Player? targetPlayer1, 
+        int? guessedRankValue, 
+    Player? targetPlayer2)
     {
-        _logger.LogInformation($"FakeDeckProvider: ExecuteCardEffect CALLED. ActingPlayerId: {actingPlayer.Id}, CardPlayed: {cardPlayed.Rank} ('{cardPlayed.AppearanceId}'), TargetPlayerId: {(targetPlayer != null ? targetPlayer.Id.ToString() : "N/A")}, GuessedRankValue: {guessedRankValue?.ToString() ?? "N/A"}");
+        _logger.LogInformation($"FakeDeckProvider: ExecuteCardEffect CALLED. ActingPlayerId: {actingPlayer.Id}, CardPlayed: {cardPlayed.Rank} ('{cardPlayed.AppearanceId}'), TargetPlayerId: {(targetPlayer1 != null ? targetPlayer1.Id.ToString() : "N/A")}, GuessedRankValue: {guessedRankValue?.ToString() ?? "N/A"}");
         if (CardEffectAction != null)
         {
             _logger.LogInformation("FakeDeckProvider: CardEffectAction is NOT NULL. Invoking now...");
             try
             {
-                CardEffectAction.Invoke(gameOperations, actingPlayer, cardPlayed, targetPlayer, guessedRankValue);
+                CardEffectAction.Invoke(gameOperations, actingPlayer, cardPlayed, targetPlayer1, guessedRankValue);
                 _logger.LogInformation("FakeDeckProvider: CardEffectAction invocation finished.");
             }
             catch (Exception ex)

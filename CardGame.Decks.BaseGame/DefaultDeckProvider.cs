@@ -82,7 +82,7 @@ public class DefaultDeckProvider : BaseDeckProvider
         if (targetCardRank == guessedCard)
         {
             game.AddLogEntry(new GameLogEntry(
-                eventType: GameLogEventType.GuardHit,
+                GameLogEventType.GuardHit,
                 actingPlayerId: actingPlayer.Id,
                 actingPlayerName: actingPlayer.Name,
                 targetPlayerId: targetPlayer.Id,
@@ -102,7 +102,7 @@ public class DefaultDeckProvider : BaseDeckProvider
         else
         {
             game.AddLogEntry(new GameLogEntry(
-                eventType: GameLogEventType.GuardMiss,
+                GameLogEventType.GuardMiss,
                 actingPlayerId: actingPlayer.Id,
                 actingPlayerName: actingPlayer.Name,
                 targetPlayerId: targetPlayer.Id,
@@ -396,21 +396,21 @@ public class DefaultDeckProvider : BaseDeckProvider
     }
 
     protected override void PerformCardEffect(IGameOperations game, Player actingPlayer, Card card,
-        Player? targetPlayer, int? guessedCardRankValue)
+        Player? targetPlayer1, int? guessedCardRankValue)
     {
         switch (card.Rank)
         {
             case 1: // CardType.Guard
                 var guessedCardRank = CardRank.FromValue(guessedCardRankValue!.Value);
                 ExecuteGuardEffect(game, actingPlayer,
-                    targetPlayer ?? throw new ArgumentNullException(nameof(targetPlayer)), guessedCardRank, card);
+                    targetPlayer1 ?? throw new ArgumentNullException(nameof(targetPlayer1)), guessedCardRank, card);
                 break;
             case 2: // CardType.Priest
                 ExecutePriestEffect(game, actingPlayer,
-                    targetPlayer ?? throw new ArgumentNullException(nameof(targetPlayer)));
+                    targetPlayer1 ?? throw new ArgumentNullException(nameof(targetPlayer1)));
                 break;
             case 3: // CardType.Baron
-                ExecuteBaronEffect(game, actingPlayer, targetPlayer!, card);
+                ExecuteBaronEffect(game, actingPlayer, targetPlayer1!, card);
                 break;
             case 4: // CardType.Handmaid
                 ExecuteHandmaidEffect(game, actingPlayer,
@@ -418,12 +418,12 @@ public class DefaultDeckProvider : BaseDeckProvider
                 break;
             case 5: // CardType.Prince
                 ExecutePrinceEffect(game, actingPlayer,
-                    targetPlayer ?? throw new ArgumentNullException(nameof(targetPlayer)),
+                    targetPlayer1 ?? throw new ArgumentNullException(nameof(targetPlayer1)),
                     card); // Prince targetPlayer is validated by RequiresTargetPlayer
                 break;
             case 6: // CardType.King
                 ExecuteKingEffect(game, actingPlayer,
-                    targetPlayer ?? throw new ArgumentNullException(nameof(targetPlayer)), card);
+                    targetPlayer1 ?? throw new ArgumentNullException(nameof(targetPlayer1)), card);
                 break;
             case 7: // CardType.Countess
                 ExecuteCountessEffect(game, actingPlayer,
@@ -439,5 +439,3 @@ public class DefaultDeckProvider : BaseDeckProvider
         }
     }
 }
-
-

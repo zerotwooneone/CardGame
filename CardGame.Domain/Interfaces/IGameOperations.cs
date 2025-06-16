@@ -60,8 +60,73 @@ public interface IGameOperations
     /// Gets the current game state information needed by card effects.
     /// </summary>
     IGameStateInfo GetGameState();
+
+    /// <summary>
+    /// Awards one or more affection tokens to a specific player.
+    /// </summary>
+    /// <param name="playerId">The ID of the player to award tokens to.</param>
+    /// <param name="tokensToAward">The number of tokens to award.</param>
+    void AwardAffectionToken(Guid playerId, int tokensToAward);
+
+    // --- Generic Deck Status Management ---
+
+    /// <summary>
+    /// Sets a custom, deck-specific status on a player.
+    /// </summary>
+    /// <param name="playerId">The ID of the player.</param>
+    /// <param name="deckId">The unique ID of the deck setting the status.</param>
+    /// <param name="statusKey">The key for the status (e.g., "JesterTokenHolder").</param>
+    /// <param name="statusValue">The value for the status (e.g., the ID of the player who gave the token).</param>
+    void SetPlayerDeckStatus(Guid playerId, Guid deckId, string statusKey, string? statusValue);
+
+    /// <summary>
+    /// Retrieves a custom, deck-specific status from a player.
+    /// </summary>
+    /// <param name="playerId">The ID of the player.</param>
+    /// <param name="deckId">The unique ID of the deck that set the status.</param>
+    /// <param name="statusKey">The key for the status.</param>
+    /// <returns>The status value, or null if not set.</returns>
+    string? GetPlayerDeckStatus(Guid playerId, Guid deckId, string statusKey);
+
+    /// <summary>
+    /// Clears a single custom, deck-specific status from a player.
+    /// </summary>
+    /// <param name="playerId">The ID of the player.</param>
+    /// <param name="deckId">The unique ID of the deck that set the status.</param>
+    /// <param name="statusKey">The key for the status to clear.</param>
+    void ClearPlayerDeckStatus(Guid playerId, Guid deckId, string statusKey);
+
+    /// <summary>
+    /// Clears all deck-specific statuses set by a particular deck for a given player.
+    /// </summary>
+    /// <param name="playerId">The ID of the player.</param>
+    /// <param name="deckId">The unique ID of the deck whose statuses should be cleared.</param>
+    void ClearAllPlayerDeckStatusesForPlayer(Guid playerId, Guid deckId);
+
+    /// <summary>
+    /// Sets a custom, deck-specific status on the game itself.
+    /// </summary>
+    /// <param name="deckId">The unique ID of the deck setting the status.</param>
+    /// <param name="statusKey">The key for the status (e.g., "SycophantMandateActive").</param>
+    /// <param name="statusValue">The value for the status.</param>
+    void SetGameDeckStatus(Guid deckId, string statusKey, string? statusValue);
+
+    /// <summary>
+    /// Retrieves a custom, deck-specific status from the game.
+    /// </summary>
+    /// <param name="deckId">The unique ID of the deck that set the status.</param>
+    /// <param name="statusKey">The key for the status.</param>
+    /// <returns>The status value, or null if not set.</returns>
+    string? GetGameDeckStatus(Guid deckId, string statusKey);
+
+    /// <summary>
+    /// Clears a single custom, deck-specific status from the game.
+    /// </summary>
+    /// <param name="deckId">The unique ID of the deck that set the status.</param>
+    /// <param name="statusKey">The key for the status to clear.</param>
+    void ClearGameDeckStatus(Guid deckId, string statusKey);
 }
-    
+
 /// <summary>
 /// Provides read-only access to game state information needed by card effects.
 /// </summary>

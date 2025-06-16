@@ -36,15 +36,16 @@ public interface IDeckProvider
     /// </summary>
     /// <param name="game">The game operations interface to interact with the game state.</param>
     /// <param name="actingPlayer">The ID of the player who played the card.</param>
-    /// <param name="cardRankValue">The rank value of the card that was played.</param>
-    /// <param name="targetPlayerId">The ID of the player targeted by the card, if any.</param>
-    /// <param name="guessedRankValue">The rank value guessed by the acting player, if applicable.</param>
+    /// <param name="card">The card that was played.</param>
+    /// <param name="targetPlayer1">The ID of the first player targeted by the card, if any.</param>
+    /// <param name="guessedCardRankValue">The rank value guessed by the acting player, if applicable.</param>
+    /// <param name="targetPlayer2">The ID of the second player targeted by the card, if any.</param>
     void ExecuteCardEffect(
-        IGameOperations game, 
-        Player actingPlayer, 
+        IGameOperations game,
+        Player actingPlayer,
         Card card,
-        Player? targetPlayer, 
-        int? guessedRankValue);
-    
-    
+        Player? targetPlayer1,
+        int? guessedCardRankValue,
+        Player? targetPlayer2 = null
+    );
 }

@@ -16,6 +16,7 @@ public class Player // Entity
     public int TokensWon { get; private set; } = 0;
     public bool IsProtected { get; private set; } = false;
     public bool IsPlayersTurn { get; set; } = false;
+    public Dictionary<Guid, Dictionary<string, string>> DeckSpecificStatuses { get; private set; } = new();
 
     private readonly ILogger<Player> _logger;
 
@@ -50,6 +51,7 @@ public class Player // Entity
         List<Card> playedCards, // Assume List<CardType> is loaded
         int tokensWon,
         bool isProtected,
+        Dictionary<Guid, Dictionary<string, string>> deckSpecificStatuses,
         ILogger<Player> logger)
     {
         var player = new Player(id, name, logger); // Use private constructor
@@ -58,6 +60,7 @@ public class Player // Entity
         player.PlayedCards = playedCards ?? new List<Card>();
         player.TokensWon = tokensWon;
         player.IsProtected = isProtected;
+        player.DeckSpecificStatuses = deckSpecificStatuses ?? new();
         return player;
     }
     // --- End Factory Methods ---
@@ -137,6 +140,7 @@ public class Player // Entity
         IsProtected = false;
         IsPlayersTurn = false;
         PlayedCards.Clear(); 
+        DeckSpecificStatuses.Clear();
         _logger.LogDebug("Player {PlayerName} ({PlayerId}) state reset for new round.", Name, Id);
     }
 }
