@@ -66,7 +66,29 @@ While this project, particularly `PremiumDeckProvider.cs`, implements domain int
 
 This ensures that the `PremiumDeckProvider` acts as a reliable and predictable component in translating card plays into game effects, failing fast when its own operational integrity is compromised.
 
+## Logging Philosophy
+
+The `ILogger` interface provided via dependency injection (e.g., `ILogger<PremiumDeckProvider>`) is used for internal diagnostics and operational visibility within the `PremiumDeckProvider`. This logging is distinct from `GameLogEntry` events, which are intended for player-facing game history and potentially for game replays or audits.
+
+Guidance for using `ILogger` levels within this project:
+
+-   **`LogError`**: Should be used very rarely. Reserved for catastrophic failures within the provider that, for some reason, don't warrant an immediate exception but indicate a severe, unrecoverable problem (e.g., failure to initialize critical static data if it weren't handled by a static constructor, or a caught exception from a critical infrastructure piece that still allows the provider to limp along in a degraded state – though exceptions are generally preferred).
+
+-   **`LogWarning`**: For conditions that might lead to unexpected behavior but are somewhat recoverable or have been handled, or that indicate a potential misuse of the provider by its caller. 
+    *   Example: If the game engine calls `ExecuteCardEffect` with parameters that violate a card's known preconditions (e.g., no target provided for a card that requires one, attempting to target self with a card that prohibits it). The effect will typically fizzle, and a `GameLogEntry` will record this, but the `LogWarning` highlights a potential issue in the calling logic.
+
+-   **`LogInformation`**: For high-level, summary-type information about the provider's lifecycle or significant state changes that are not part of routine card effect execution. This level should be used sparingly to avoid excessive noise.
+    *   Example: "PremiumDeckProvider initialized with X unique card types."
+
+-   **`LogDebug`**: This is the primary level for detailed operational flow during card effect execution. Use this to trace the steps taken, decisions made, and intermediate states within an effect's logic.
+    *   Examples: "Executing Guard effect for Player A on Player B", "Player B discarded Princess due to Prince effect", "Target C is protected by Handmaid, fizzling effect."
+
+-   **`LogTrace`**: For extremely verbose, low-level diagnostic information. This might include logging every minor step, data value, or frequent event if needed for intensive debugging scenarios. Use with caution as it can generate a very large volume of logs.
+
+**Key Distinction**: Always remember that `ILogger` is for the *provider's internal state and diagnostics*. Player-visible game events, rule outcomes, and actions taken are logged via `gameOperations.AddLogEntry(new GameLogEntry(...))`. Exceptions are the preferred way to handle contract violations or unrecoverable internal errors.
+
 ## AI Assistant Notes
 
 - When modifying card effects, ensure consistency between `PremiumCardRank.cs` (properties like `RequiresTarget`, `Description`), `PremiumDeckProvider.cs` (effect execution logic), and `CardEffects.md` (specification).
 - The `PremiumDeckProvider.GetPremiumRankFromCard()` method is crucial for correctly interpreting a generic `Card` object from the domain as a specific `PremiumCardRank`.
+- **Error Handling**: Never use `gameOperations.AddLogEntry` to log internal system errors, bugs, or unhandled cases. The `GameLog` is for player-facing events only. For programming errors (like a missing card effect implementation), **throw an exception** (e.g., `NotImplementedException`) to ensure the issue is surfaced immediately and not hidden in game logs.

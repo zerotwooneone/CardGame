@@ -12,11 +12,13 @@ namespace CardGame.Decks.Premium
     public class PremiumDeckProvider : IDeckProvider
     {
         private readonly ILogger<PremiumDeckProvider> _logger;
-        private static readonly string _jesterToken = $"JesterToken{Guid.Parse("0005F11F-4760-4A2C-9B6C-4F9F1CF9A111")}";
-        private static readonly string _assassinMarkKey = $"AssassinMark{Guid.Parse("0005F11F-4760-4A2C-9B6C-4F9F1CF9A222")}";
+        private static readonly Guid _deckId = new("A9A5F11F-4760-4A2C-9B6C-4F9F1CF9A717");
+        private const string _assassinMarkKey = "AssassinMarkedTarget";
+        private const string _sycophantMarkKey = "SycophantMarkedBy"; // Player ID of the Sycophant who marked them
+        private const string _jesterTokenKey = "JesterToken"; // Token indicating a player has a Jester token
         private static readonly List<Card> _allPremiumCards = new List<Card>();
 
-        public Guid DeckId => new Guid("A9A5F11F-4760-4A2C-9B6C-4F9F1CF9A717");
+        public Guid DeckId => _deckId;
         public string DisplayName => "Love Letter Premium Deck";
         public string Description => "The premium expansion deck for Love Letter, featuring additional roles and more complex interactions.";
 
@@ -73,140 +75,145 @@ namespace CardGame.Decks.Premium
                 ? PremiumCardRank.FromValue(guessedCardRankValue.Value) 
                 : null;
 
-            // Validate targetPlayer1 based on card requirements
-            if (premiumRankPlayed.RequiresTarget && targetPlayer1 == null)
+            Player? effectiveTarget1 = targetPlayer1;
+            Player? effectiveTarget2 = targetPlayer2;
+
+            // --- Overall Target Count Validation (based on initially provided targets) ---
+            int providedTargetsCount = (targetPlayer1 != null ? 1 : 0) + (targetPlayer2 != null ? 1 : 0);
+
+            if (providedTargetsCount < premiumRankPlayed.MinTargets || providedTargetsCount > premiumRankPlayed.MaxTargets)
             {
-                _logger.LogWarning("Card {PremiumRankName} requires a target, but none was provided for targetPlayer1.", premiumRankPlayed.Name);
-                gameOperations.AddLogEntry(new GameLogEntry(GameLogEventType.EffectFizzled, actingPlayer.Id, actingPlayer.Name, $"{actingPlayer.Name} played {premiumRankPlayed.Name}, but no primary target was provided when one was required.")
-                {
-                    PlayedCard = cardPlayed,
-                    FizzleReason = "No primary target provided when required."
-                });
-                return;
+                throw new ArgumentException($"Card '{premiumRankPlayed.Name}' requires between {premiumRankPlayed.MinTargets} and {premiumRankPlayed.MaxTargets} targets, but {providedTargetsCount} were provided.");
             }
 
-            // Specific checks for targetPlayer1 if it's provided
-            if (targetPlayer1 != null)
+            // --- Target 1 Specific Validation (if it was provided and card can have targets) ---
+            if (premiumRankPlayed.MaxTargets > 0 && targetPlayer1 != null)
             {
                 if (targetPlayer1.Id == actingPlayer.Id && !premiumRankPlayed.CanTargetSelf)
                 {
-                    _logger.LogWarning("Card {PremiumRankName} cannot target self, but acting player was targeted as targetPlayer1.", premiumRankPlayed.Name);
-                    gameOperations.AddLogEntry(new GameLogEntry(GameLogEventType.EffectFizzled, actingPlayer.Id, actingPlayer.Name, $"{actingPlayer.Name} attempted to play {premiumRankPlayed.Name} targeting self with the primary target, which is not allowed.")
-                    {
-                        PlayedCard = cardPlayed,
-                        TargetPlayerId = targetPlayer1.Id,
-                        TargetPlayerName = targetPlayer1.Name,
-                        FizzleReason = "Cannot target self with primary target."
-                    });
-                    return; 
+                    throw new ArgumentException($"Card '{premiumRankPlayed.Name}' cannot target self, but acting player was targeted as targetPlayer1.", nameof(targetPlayer1));
                 }
-                // Handmaid Protection Check for targetPlayer1
-                // Sycophant is a special case that can bypass Handmaid for its *initial* marking effect.
-                // Other effects targeting a Handmaid-protected player should fizzle.
                 if (targetPlayer1.IsProtected && premiumRankPlayed.Name != PremiumCardRank.Sycophant.Name) 
                 {
-                    _logger.LogInformation("Primary target player {TargetName} is protected by Handmaid effect. Card {PremiumRankName} has no effect on them.", targetPlayer1.Name, premiumRankPlayed.Name);
-                    gameOperations.AddLogEntry(new GameLogEntry(GameLogEventType.EffectFizzled, actingPlayer.Id, actingPlayer.Name, targetPlayer1.Id, targetPlayer1.Name, $"{actingPlayer.Name} played {premiumRankPlayed.Name} targeting {targetPlayer1.Name}, but {targetPlayer1.Name} is protected. No effect.")
+                    _logger.LogInformation("Primary target player {TargetName} is protected by Handmaid. Effect on them will be skipped.", targetPlayer1.Name);
+                    gameOperations.AddLogEntry(new GameLogEntry(GameLogEventType.EffectFizzled, actingPlayer.Id, actingPlayer.Name, $"{actingPlayer.Name} played {premiumRankPlayed.Name} targeting {targetPlayer1.Name}, but {targetPlayer1.Name} is protected. Effect on this target is skipped.")
                     {
                         PlayedCard = cardPlayed,
                         FizzleReason = "Target is protected by Handmaid."
                     });
-                    // If an effect *only* targets targetPlayer1 and it's protected, the entire effect might fizzle here.
-                    // For cards that might also have targetPlayer2 or other effects, we might only skip action on targetPlayer1.
-                    // For simplicity and common single-target card behavior, we return.
-                    return; 
+                    effectiveTarget1 = null; 
                 }
             }
-            
-            // TODO: Add similar validation for targetPlayer2 if premiumRankPlayed indicates a second target is required or possible,
-            // including null checks, CanTargetSelf (if applicable to a second target), and IsProtected.
 
-            _logger.LogInformation("Executing effect for card {PremiumRankName} played by {PlayerName}", premiumRankPlayed.Name, actingPlayer.Name);
+            // --- Target 2 Specific Validation (if it was provided and card can have a second target) ---
+            if (premiumRankPlayed.MaxTargets > 1 && targetPlayer2 != null) // MaxTargets > 1 implies a second target slot is potentially valid
+            {
+                // Specific validation for Cardinal: targets must be different.
+                if (premiumRankPlayed.Name == PremiumCardRank.Cardinal.Name && targetPlayer1 != null && targetPlayer1.Id == targetPlayer2.Id)
+                {
+                    throw new ArgumentException($"Cardinal requires two different players to trade hands, but {targetPlayer1.Name} was targeted twice.");
+                }
+
+                if (targetPlayer2.Id == actingPlayer.Id && !premiumRankPlayed.CanTargetSelf)
+                {
+                    throw new ArgumentException($"Card '{premiumRankPlayed.Name}' cannot target self, but acting player was targeted as targetPlayer2.", nameof(targetPlayer2));
+                }
+                if (targetPlayer2.IsProtected && premiumRankPlayed.Name != PremiumCardRank.Sycophant.Name) 
+                {
+                    _logger.LogInformation("Secondary target player {TargetName} is protected by Handmaid. Effect on them will be skipped.", targetPlayer2.Name);
+                    gameOperations.AddLogEntry(new GameLogEntry(GameLogEventType.EffectFizzled, actingPlayer.Id, actingPlayer.Name, $"{actingPlayer.Name} played {premiumRankPlayed.Name} targeting {targetPlayer2.Name}, but {targetPlayer2.Name} is protected. Effect on this target is skipped.")
+                    {
+                        PlayedCard = cardPlayed,
+                        FizzleReason = "Target is protected by Handmaid."
+                    });
+                    effectiveTarget2 = null; 
+                }
+            }
+
+            // --- Final Check: Do we still have enough *effective* targets after protection? ---
+            int effectiveTargetsCount = (effectiveTarget1 != null ? 1 : 0) + (effectiveTarget2 != null ? 1 : 0);
+            if (effectiveTargetsCount < premiumRankPlayed.MinTargets)
+            {
+                _logger.LogWarning("Card {PremiumRankName} requires at least {MinTargets} effective target(s) after protection checks, but only {EffectiveCount} remain valid.", 
+                                 premiumRankPlayed.Name, premiumRankPlayed.MinTargets, effectiveTargetsCount);
+                // Only add a new fizzle log if one wasn't already added for initial target count mismatch.
+                if (providedTargetsCount >= premiumRankPlayed.MinTargets) 
+                {
+                    gameOperations.AddLogEntry(new GameLogEntry(GameLogEventType.EffectFizzled, actingPlayer.Id, actingPlayer.Name, $"{actingPlayer.Name} played {premiumRankPlayed.Name}, but all required targets became invalid (e.g., due to protection or other reasons). Effect cannot proceed.")
+                    {
+                        PlayedCard = cardPlayed,
+                        FizzleReason = "Required targets became invalid after validation."
+                    });
+                }
+                return;
+            }
+            
+            // If we've reached here, basic target validation has passed or adjusted targets.
+            _logger.LogDebug("Executing effect for card {PremiumRankName} played by {PlayerName}. EffectiveTarget1: {Target1Name}, EffectiveTarget2: {Target2Name}", 
+                           premiumRankPlayed.Name, actingPlayer.Name, effectiveTarget1?.Name ?? "None", effectiveTarget2?.Name ?? "None");
+            
             gameOperations.AddLogEntry(new GameLogEntry(GameLogEventType.CardPlayed, actingPlayer.Id, actingPlayer.Name, $"{actingPlayer.Name} played {premiumRankPlayed.Name} ({premiumRankPlayed.Description}).")
             {
                 PlayedCard = cardPlayed
             });
 
             // Effect logic based on the card's rank name
-            // This assumes unique names for each PremiumCardRank instance
             switch (premiumRankPlayed.Name)
             {
-                case var _ when premiumRankPlayed.Name == PremiumCardRank.Guard.Name: // Value 1
-                    Effect_Guard(gameOperations, actingPlayer, targetPlayer1, guessedPremiumRank, cardPlayed);
+                case var _ when premiumRankPlayed.Name == PremiumCardRank.Guard.Name: 
+                    Effect_Guard(gameOperations, actingPlayer, effectiveTarget1!, guessedPremiumRank, cardPlayed);
                     break;
-                case var _ when premiumRankPlayed.Name == PremiumCardRank.Priest.Name: // Value 2 (Original)
-                    Effect_Priest(gameOperations, actingPlayer, targetPlayer1, cardPlayed);
+                case var _ when premiumRankPlayed.Name == PremiumCardRank.Priest.Name: 
+                    Effect_Priest(gameOperations, actingPlayer, effectiveTarget1!, cardPlayed);
                     break;
-                case var _ when premiumRankPlayed.Name == PremiumCardRank.Cardinal.Name: // Value 2 (New)
-                    // Cardinal targets two players. Ensure targets list is appropriate.
-                    if (targetPlayer1 != null && targetPlayer2 != null)
-                    {
-                        Effect_Cardinal(gameOperations, actingPlayer, targetPlayer1, targetPlayer2, cardPlayed); // Pass cardPlayed
-                    }
-                    else
-                    {
-                        _logger.LogWarning("Cardinal played by {PlayerName} requires 2 targets, but {TargetCount} were provided.", actingPlayer.Name, targetPlayer1 != null ? 1 : 0);
-                        gameOperations.AddLogEntry(new GameLogEntry(GameLogEventType.EffectFizzled, actingPlayer.Id, actingPlayer.Name, $"{actingPlayer.Name} played Cardinal but did not target exactly two players.") { PlayedCard = cardPlayed, FizzleReason = "Cardinal requires exactly two targets." });
-                    }
+                case var _ when premiumRankPlayed.Name == PremiumCardRank.Cardinal.Name: 
+                    // MinTargets for Cardinal is 2. The validation above ensures effectiveTarget1 and effectiveTarget2 are non-null if we reach here.
+                    Effect_Cardinal(gameOperations, actingPlayer, effectiveTarget1!, effectiveTarget2!, cardPlayed); 
                     break;
-                case var _ when premiumRankPlayed.Name == PremiumCardRank.Baron.Name: // Value 3 (Original)
-                    Effect_Baron(gameOperations, actingPlayer, targetPlayer1, cardPlayed);
+                case var _ when premiumRankPlayed.Name == PremiumCardRank.Baron.Name: 
+                    Effect_Baron(gameOperations, actingPlayer, effectiveTarget1!, cardPlayed);
                     break;
-                case var _ when premiumRankPlayed.Name == PremiumCardRank.Baroness.Name: // Value 3 (New)
-                    if (targetPlayer1 != null)
-                    {
-                        Effect_Baroness(gameOperations, actingPlayer, targetPlayer1, targetPlayer2, cardPlayed);
-                    }
-                    else
-                    {
-                        _logger.LogWarning("Baroness played by {PlayerName} requires 1 or 2 targets, but {TargetCount} were provided.", actingPlayer.Name, targetPlayer1 != null ? 1 : 0);
-                        gameOperations.AddLogEntry(new GameLogEntry(GameLogEventType.EffectFizzled, actingPlayer.Id, actingPlayer.Name, $"{actingPlayer.Name} played Baroness but did not target one or two players.") { PlayedCard = cardPlayed, FizzleReason = "Baroness requires one or two targets." });
-                    }
+                case var _ when premiumRankPlayed.Name == PremiumCardRank.Baroness.Name: 
+                    // Baroness MinTargets is 1, MaxTargets is 2. Effect_Baroness should handle if effectiveTarget2 is null.
+                    Effect_Baroness(gameOperations, actingPlayer, effectiveTarget1, effectiveTarget2, cardPlayed);
                     break;
-                case var _ when premiumRankPlayed.Name == PremiumCardRank.Handmaid.Name: // Value 4 (Original)
+                case var _ when premiumRankPlayed.Name == PremiumCardRank.Handmaid.Name: 
                     Effect_Handmaid(gameOperations, actingPlayer, cardPlayed);
                     break;
-                case var _ when premiumRankPlayed.Name == PremiumCardRank.Sycophant.Name: // Value 4 (New)
-                    Effect_Sycophant(gameOperations, actingPlayer, targetPlayer1, cardPlayed);
+                case var _ when premiumRankPlayed.Name == PremiumCardRank.Sycophant.Name: 
+                    Effect_Sycophant(gameOperations, actingPlayer, effectiveTarget1!, cardPlayed);
                     break;
-                case var _ when premiumRankPlayed.Name == PremiumCardRank.Prince.Name: // Value 5 (Original)
-                    Effect_Prince(gameOperations, actingPlayer, targetPlayer1, cardPlayed);
+                case var _ when premiumRankPlayed.Name == PremiumCardRank.Prince.Name: 
+                    Effect_Prince(gameOperations, actingPlayer, effectiveTarget1!, cardPlayed);
                     break;
-                case var _ when premiumRankPlayed.Name == PremiumCardRank.Count.Name: // Value 5 (New)
+                case var _ when premiumRankPlayed.Name == PremiumCardRank.Count.Name: 
                     Effect_Count(gameOperations, actingPlayer, cardPlayed);
                     break;
-                case var _ when premiumRankPlayed.Name == PremiumCardRank.King.Name: // Value 6 (Original)
-                    Effect_King(gameOperations, actingPlayer, targetPlayer1, cardPlayed);
+                case var _ when premiumRankPlayed.Name == PremiumCardRank.King.Name: 
+                    Effect_King(gameOperations, actingPlayer, effectiveTarget1!, cardPlayed);
                     break;
-                case var _ when premiumRankPlayed.Name == PremiumCardRank.Constable.Name: // Value 6 (New)
+                case var _ when premiumRankPlayed.Name == PremiumCardRank.Constable.Name:
                     Effect_Constable(gameOperations, actingPlayer, cardPlayed);
                     break;
-                case var _ when premiumRankPlayed.Name == PremiumCardRank.Countess.Name: // Value 7 (Original)
+                case var _ when premiumRankPlayed.Name == PremiumCardRank.Countess.Name: 
                     Effect_Countess(gameOperations, actingPlayer, cardPlayed);
                     break;
-                case var _ when premiumRankPlayed.Name == PremiumCardRank.DowagerQueen.Name: // Value 7 (New)
-                    Effect_DowagerQueen(gameOperations, actingPlayer, targetPlayer1, cardPlayed);
+                case var _ when premiumRankPlayed.Name == PremiumCardRank.DowagerQueen.Name: 
+                    Effect_DowagerQueen(gameOperations, actingPlayer, effectiveTarget1!, cardPlayed);
                     break;
-                case var _ when premiumRankPlayed.Name == PremiumCardRank.Princess.Name: // Value 8 (Original)
-                    // Princess effect is primarily on discard, handled by Prince or game rules.
-                    // Playing her directly might have no immediate effect beyond being played.
-                    _logger.LogInformation("Princess played by {PlayerName}. No direct effect on play, but discard rules apply.", actingPlayer.Name);
-                    gameOperations.AddLogEntry(new GameLogEntry(GameLogEventType.CardPlayed, actingPlayer.Id, actingPlayer.Name, $"{actingPlayer.Name} played Princess. If this was a forced discard (e.g. by Prince), they are out of the round.") { PlayedCard = cardPlayed });
+                case var _ when premiumRankPlayed.Name == PremiumCardRank.Bishop.Name: 
+                    Effect_Bishop(gameOperations, actingPlayer, effectiveTarget1!, guessedPremiumRank, cardPlayed);
                     break;
-                case var _ when premiumRankPlayed.Name == PremiumCardRank.Bishop.Name: // Value 9 (New)
-                    Effect_Bishop(gameOperations, actingPlayer, targetPlayer1, guessedPremiumRank, cardPlayed);
+                case var _ when premiumRankPlayed.Name == PremiumCardRank.Jester.Name: 
+                    Effect_Jester(gameOperations, actingPlayer, cardPlayed); 
                     break;
-                case var _ when premiumRankPlayed.Name == PremiumCardRank.Jester.Name: // Value 0 (New)
-                    Effect_Jester(gameOperations, actingPlayer, cardPlayed);
-                    break;
-                case var _ when premiumRankPlayed.Name == PremiumCardRank.Assassin.Name: // Value 0 (New)
-                     Effect_Assassin(gameOperations, actingPlayer, targetPlayer1, cardPlayed);
+                case var _ when premiumRankPlayed.Name == PremiumCardRank.Assassin.Name: 
+                    Effect_Assassin(gameOperations, actingPlayer, effectiveTarget1, cardPlayed);
                     break;
                 default:
-                    // This case should ideally not be reached if all cards are implemented.
-                    // Throwing an exception is more appropriate for an unhandled card type
-                    // than trying to log it as a player-facing "no-op".
-                    throw new InvalidOperationException($"No effect logic defined for card {premiumRankPlayed.Name} (Value: {premiumRankPlayed.Value}). This indicates an unimplemented card effect in PremiumDeckProvider.");
+                    // This case indicates a programming error where a new PremiumCardRank was added
+                    // without its corresponding effect logic in this switch statement.
+                    throw new NotImplementedException($"The card effect for '{premiumRankPlayed.Name}' has not been implemented in PremiumDeckProvider.ExecuteCardEffect.");
             }
         }
 
@@ -256,36 +263,48 @@ namespace CardGame.Decks.Premium
         // Individual card effect methods (assuming these are largely correct as per previous review)
         // Ensure they use gameOperations for all state changes and logging.
 
-        private void Effect_Guard(IGameOperations gameOperations, Player actingPlayer, Player? target, PremiumCardRank? guessedRank, Card cardPlayed)
+        private void Effect_Guard(IGameOperations gameOperations, Player actingPlayer, Player target, PremiumCardRank guessedRank, Card cardPlayed)
         {
-            if (target == null || guessedRank == null)
+            var currentTargetState = gameOperations.GetPlayer(target.Id) 
+                ?? throw new InvalidOperationException($"Guard target player {target.Name} ({target.Id}) not found in game state.");
+            
+            // Rule: Cannot guess Guard with a Guard.
+            if (guessedRank.Name == PremiumCardRank.Guard.Name)
             {
-                _logger.LogWarning("Guard effect failed: Target or guessed rank null for player {PlayerName}.", actingPlayer.Name);
-                gameOperations.AddLogEntry(new GameLogEntry(GameLogEventType.EffectFizzled, actingPlayer.Id, actingPlayer.Name, "Played Guard but target or guessed rank was invalid.")
+                _logger.LogDebug("Guard effect fizzled: Player {PlayerName} guessed Guard.", actingPlayer.Name);
+                gameOperations.AddLogEntry(new GameLogEntry(GameLogEventType.EffectFizzled, actingPlayer.Id, actingPlayer.Name, $"{actingPlayer.Name} played Guard but incorrectly guessed Guard (not allowed).")
                 {
                     PlayedCard = cardPlayed,
-                    FizzleReason = "Target or guessed rank was null for Guard."
+                    TargetPlayerId = target.Id,
+                    TargetPlayerName = target.Name,
+                    GuessedRank = guessedRank.Value,
+                    FizzleReason = "Cannot guess Guard with Guard."
                 });
                 return;
             }
 
+            var targetCard = currentTargetState.Hand.GetHeldCard() 
+                ?? throw new InvalidOperationException($"Guard target {target.Name} ({currentTargetState.Name}) has no card to check.");
+
             // Assassin's Mark Check: If the target is marked, the assassin is eliminated.
-            var assassinMarkerIdStr = gameOperations.GetPlayerDeckStatus(target.Id, DeckId, _assassinMarkKey);
+            var assassinMarkerIdStr = gameOperations.GetPlayerDeckStatus(target.Id, DeckId, _assassinMarkKey); 
             if (!string.IsNullOrEmpty(assassinMarkerIdStr) && Guid.TryParse(assassinMarkerIdStr, out var assassinPlayerId))
             {
                 var assassinPlayer = gameOperations.GetPlayer(assassinPlayerId);
-                _logger.LogInformation("Assassin's mark triggered. Guard played by {GuardingPlayer} against {TargetPlayer} caused {AssassinPlayer} to be eliminated.", actingPlayer.Name, target.Name, assassinPlayer?.Name ?? "Unknown");
+                _logger.LogDebug("Assassin's mark triggered. Guard played by {GuardingPlayer} against {TargetPlayer} caused {AssassinPlayer} to be eliminated.", actingPlayer.Name, target.Name, assassinPlayer?.Name ?? "Unknown Assassin");
 
-                gameOperations.EliminatePlayer(assassinPlayerId, $"Eliminated because their Assassin's mark on {target.Name} was triggered by a Guard.", cardPlayed);
+                gameOperations.EliminatePlayer(assassinPlayerId, $"Eliminated because their Assassin's mark on {target.Name} was triggered by {actingPlayer.Name}'s Guard.", cardPlayed);
                 gameOperations.AddLogEntry(new GameLogEntry(
                     eventType: GameLogEventType.PlayerEliminated,
-                    actingPlayerId: actingPlayer.Id,
+                    actingPlayerId: actingPlayer.Id, // The Guard player is the one causing the elimination
                     actingPlayerName: actingPlayer.Name,
-                    message: $"{actingPlayer.Name} played the Princess and is eliminated!",
+                    message: $"{assassinPlayer?.Name ?? "The marked player"} was eliminated as their Assassin's mark on {target.Name} was triggered by {actingPlayer.Name}'s Guard.",
                     isPrivate: false)
                 {
                     PlayedCard = cardPlayed,
-                    RevealedCardOnElimination = target.Hand.GetHeldCard(),
+                    TargetPlayerId = assassinPlayerId, // The player who was eliminated
+                    TargetPlayerName = assassinPlayer?.Name ?? "Unknown Assassin",
+                    // RevealedCardOnElimination might not be relevant here, or could be the Guard player's card if desired
                 });
 
                 // Clear the mark after it's triggered
@@ -293,120 +312,75 @@ namespace CardGame.Decks.Premium
                 return; // The Guard's main effect does not proceed
             }
 
-            if (guessedRank.Name == PremiumCardRank.Guard.Name)
+            var targetPremiumRank = GetPremiumRankFromCard(targetCard);
+            if (targetPremiumRank != null && targetPremiumRank.Name == guessedRank.Name)
             {
-                 _logger.LogWarning("Guard effect failed: Player {PlayerName} guessed Guard.", actingPlayer.Name);
-                gameOperations.AddLogEntry(new GameLogEntry(GameLogEventType.EffectFizzled, actingPlayer.Id, actingPlayer.Name, "Played Guard but incorrectly guessed Guard (not allowed).")
+                _logger.LogDebug("Guard by {PlayerName} eliminated {TargetPlayerName}. Guessed: {GuessedRankName}", actingPlayer.Name, target.Name, guessedRank.Name);
+                gameOperations.EliminatePlayer(target.Id, $"Eliminated by {actingPlayer.Name}'s Guard (guessed {guessedRank.Name}).", cardPlayed);
+                gameOperations.AddLogEntry(new GameLogEntry(GameLogEventType.GuardHit, actingPlayer.Id, actingPlayer.Name, target.Id, target.Name, $"{actingPlayer.Name}'s Guard successfully targeted {target.Name} (guessed {guessedRank.Name}).")
                 {
                     PlayedCard = cardPlayed,
                     GuessedRank = guessedRank.Value,
-                    FizzleReason = "Cannot guess Guard with Guard."
+                    WasGuessCorrect = true,
+                    RevealedCardOnElimination = targetCard 
                 });
-                return;
-            }
-
-            var targetCard = gameOperations.GetPlayer(target.Id)?.Hand.GetHeldCard(); 
-            if (targetCard != null)
-            {
-                var targetPremiumRank = GetPremiumRankFromCard(targetCard);
-                if (targetPremiumRank != null && targetPremiumRank.Name == guessedRank.Name)
-                {
-                    _logger.LogInformation("Guard by {PlayerName} eliminated {TargetPlayerName}. Guessed: {GuessedRankName}", actingPlayer.Name, target.Name, guessedRank.Name);
-                    gameOperations.EliminatePlayer(target.Id, $"Eliminated by {actingPlayer.Name}'s Guard (guessed {guessedRank.Name}).", cardPlayed);
-                    gameOperations.AddLogEntry(new GameLogEntry(GameLogEventType.GuardHit, actingPlayer.Id, actingPlayer.Name, target.Id, target.Name, $"{actingPlayer.Name}'s Guard successfully targeted {target.Name} (guessed {guessedRank.Name}).")
-                    {
-                        PlayedCard = cardPlayed,
-                        GuessedRank = guessedRank.Value,
-                        WasGuessCorrect = true,
-                        RevealedCardOnElimination = targetCard 
-                    });
-                }
-                else
-                {
-                    _logger.LogInformation("Guard by {PlayerName} no effect on {TargetPlayerName}. Guessed: {GuessedRankName}, Had: {ActualRankName}", actingPlayer.Name, target.Name, guessedRank.Name, targetPremiumRank?.Name ?? "Unknown");
-                    gameOperations.AddLogEntry(new GameLogEntry(GameLogEventType.GuardMiss, actingPlayer.Id, actingPlayer.Name, target.Id, target.Name, $"{actingPlayer.Name}'s Guard had no effect on {target.Name} (guessed {guessedRank.Name}, had {(targetPremiumRank != null ? targetPremiumRank.Name : "unknown")}).")
-                    {
-                        PlayedCard = cardPlayed,
-                        GuessedRank = guessedRank.Value,
-                        WasGuessCorrect = false,
-                        GuessedPlayerActualCard = targetCard 
-                    });
-                }
             }
             else
             {
-                _logger.LogWarning("Guard target {TargetPlayerName} had no card in hand or hand unknown for {PlayerName}'s Guard.", target.Name, actingPlayer.Name);
-                 gameOperations.AddLogEntry(new GameLogEntry(GameLogEventType.GuardMiss, actingPlayer.Id, actingPlayer.Name, target.Id, target.Name, $"{actingPlayer.Name}'s Guard targeted {target.Name}, but their hand was empty or unknown.")
-                 {
+                _logger.LogDebug("Guard by {PlayerName} no effect on {TargetPlayerName}. Guessed: {GuessedRankName}, Had: {ActualRankName}", actingPlayer.Name, target.Name, guessedRank.Name, targetPremiumRank?.Name ?? "Unknown");
+                gameOperations.AddLogEntry(new GameLogEntry(GameLogEventType.GuardMiss, actingPlayer.Id, actingPlayer.Name, target.Id, target.Name, $"{actingPlayer.Name}'s Guard had no effect on {target.Name} (guessed {guessedRank.Name}, had {(targetPremiumRank != null ? targetPremiumRank.Name : "unknown")}).")
+                {
                     PlayedCard = cardPlayed,
                     GuessedRank = guessedRank.Value,
-                    WasGuessCorrect = false
-                 });
+                    WasGuessCorrect = false,
+                    GuessedPlayerActualCard = targetCard 
+                });
             }
         }
 
-        private void Effect_Priest(IGameOperations gameOperations, Player actingPlayer, Player? target, Card cardPlayed)
+        private void Effect_Priest(IGameOperations gameOperations, Player actingPlayer, Player target, Card cardPlayed)
         {
-            if (target == null)
-            {
-                _logger.LogWarning("Priest effect failed for player {PlayerName}: Target null.", actingPlayer.Name);
-                gameOperations.AddLogEntry(new GameLogEntry(GameLogEventType.EffectFizzled, actingPlayer.Id, actingPlayer.Name, "Played Priest but target was invalid.")
-                {
-                    PlayedCard = cardPlayed,
-                    FizzleReason = "Invalid target for Priest."
-                });
-                return;
-            }
+            var targetPlayerActual = gameOperations.GetPlayer(target.Id) 
+                ?? throw new InvalidOperationException($"Priest target player {target.Name} ({target.Id}) not found in game state.");
+            
+            var targetCardInHand = targetPlayerActual.Hand.GetHeldCard() 
+                ?? throw new InvalidOperationException($"Priest target {target.Name} ({targetPlayerActual.Name}) has no card to reveal.");
 
-            var targetActualPlayer = gameOperations.GetPlayer(target.Id);
-            var targetCardInHand = targetActualPlayer?.Hand.GetHeldCard();
-
-            if (targetCardInHand != null)
+            var revealedRank = GetPremiumRankFromCard(targetCardInHand);
+            _logger.LogDebug("{ActingPlayerName} sees {TargetPlayerName}'s hand, which contains {RevealedCardName}", actingPlayer.Name, target.Name, revealedRank.Name);
+            gameOperations.AddLogEntry(new GameLogEntry(GameLogEventType.PriestEffect, actingPlayer.Id, actingPlayer.Name, $"You used Priest to look at {target.Name}'s hand. They have: {revealedRank.Name} (Rank {revealedRank.Value}).", true) // isPrivate = true
             {
-                var targetPremiumRank = GetPremiumRankFromCard(targetCardInHand);
-                _logger.LogInformation("Priest effect by {PlayerName}: viewed {TargetPlayerName}'s hand: {CardName} (Rank {CardRank})", actingPlayer.Name, target.Name, targetPremiumRank?.Name ?? "Unknown", targetCardInHand.Rank);
-                gameOperations.AddLogEntry(new GameLogEntry(GameLogEventType.PriestEffect, actingPlayer.Id, actingPlayer.Name, $"You used Priest to look at {target.Name}'s hand, revealing {targetPremiumRank?.Name ?? "Unknown"} (Rank {targetCardInHand.Rank}).", true) // isPrivate = true
-                {
-                    PlayedCard = cardPlayed,
-                    TargetPlayerId = target.Id,
-                    TargetPlayerName = target.Name,
-                    RevealedPlayerCard = targetCardInHand
-                });
-            }
-            else
-            {
-                _logger.LogInformation("Priest effect by {PlayerName}: viewed {TargetPlayerName}'s hand: Empty/Unknown", actingPlayer.Name, target.Name);
-                gameOperations.AddLogEntry(new GameLogEntry(GameLogEventType.PriestEffect, actingPlayer.Id, actingPlayer.Name, $"You used Priest to look at {target.Name}'s hand, but it was empty/unknown.", true) // isPrivate = true
-                {
-                    PlayedCard = cardPlayed,
-                    TargetPlayerId = target.Id,
-                    TargetPlayerName = target.Name
-                });
-            }
+                PlayedCard = cardPlayed,
+                TargetPlayerId = target.Id,
+                TargetPlayerName = target.Name,
+                RevealedPlayerCard = targetCardInHand
+            });
         }
 
         private void Effect_Cardinal(IGameOperations gameOperations, Player actingPlayer, Player target1, Player target2, Card cardPlayed)
         {
-            if (target1.Id == target2.Id)
-            {
-                _logger.LogInformation("Cardinal effect by {PlayerName}: targeted the same player {TargetName} twice. No trade.", actingPlayer.Name, target1.Name);
-                gameOperations.AddLogEntry(new GameLogEntry(GameLogEventType.EffectFizzled, actingPlayer.Id, actingPlayer.Name, $"Played Cardinal targeting the same player ({target1.Name}) twice. No card trade occurred.")
-                {
-                    PlayedCard = cardPlayed,
-                    TargetPlayerId = target1.Id,
-                    TargetPlayerName = target1.Name,
-                    FizzleReason = "Cannot target the same player twice for Cardinal trade."
-                });
-                return;
-            }
+            // Target existence and distinctness already validated by ExecuteCardEffect.
+            // Now, ensure both players actually have cards to swap.
+            var player1Actual = gameOperations.GetPlayer(target1.Id) 
+                ?? throw new InvalidOperationException($"Cardinal target player {target1.Name} ({target1.Id}) not found in game state."); // Should not happen if ExecuteCardEffect is correct
+            var player2Actual = gameOperations.GetPlayer(target2.Id) 
+                ?? throw new InvalidOperationException($"Cardinal target player {target2.Name} ({target2.Id}) not found in game state."); // Should not happen
+
+            var target1CardInHand = player1Actual.Hand.GetHeldCard() 
+                ?? throw new InvalidOperationException($"Cardinal target {player1Actual.Name} has no card to swap.");
+            var target2CardInHand = player2Actual.Hand.GetHeldCard() 
+                ?? throw new InvalidOperationException($"Cardinal target {player2Actual.Name} has no card to swap.");
 
             gameOperations.SwapPlayerHands(target1.Id, target2.Id);
-            _logger.LogInformation("Cardinal effect by {PlayerName}: made {Target1Name} and {Target2Name} trade hands.", actingPlayer.Name, target1.Name, target2.Name);
-            
-            gameOperations.AddLogEntry(new GameLogEntry(GameLogEventType.CardinalEffect, actingPlayer.Id, actingPlayer.Name, $"{actingPlayer.Name} played Cardinal. {target1.Name} and {target2.Name} traded hands.")
+
+            _logger.LogDebug("{PlayerName} played Cardinal and made {Target1Name} and {Target2Name} trade hands.", actingPlayer.Name, target1.Name, target2.Name);
+            gameOperations.AddLogEntry(new GameLogEntry(GameLogEventType.CardinalEffect, actingPlayer.Id, actingPlayer.Name, $"{actingPlayer.Name} played Cardinal and made {target1.Name} and {target2.Name} trade hands.")
             {
-                PlayedCard = cardPlayed
-                // Additional target info is in the message for now.
+                PlayedCard = cardPlayed,
+                TargetPlayerId = target1.Id, // Primary target for log context
+                TargetPlayerName = target1.Name,
+                // Secondary target info is in the message for now.
+                // Consider adding TargetPlayer2Id, TargetPlayer2Name to GameLogEntry if needed more broadly
             });
 
             Player? playerToRevealTo = null;
@@ -421,7 +395,7 @@ namespace CardGame.Decks.Premium
                 if (revealedCard != null)
                 {
                     var revealedPremiumRank = GetPremiumRankFromCard(revealedCard);
-                    _logger.LogInformation("Cardinal view by {PlayerName}: saw {TargetName}'s new hand: {CardName} (Rank {CardRank})", playerToRevealTo.Name, handOfPlayerSeen.Name, revealedPremiumRank?.Name ?? "Unknown", revealedCard.Rank);
+                    _logger.LogDebug("Cardinal view by {PlayerName}: saw {TargetName}'s new hand: {CardName} (Rank {CardRank})", playerToRevealTo.Name, handOfPlayerSeen.Name, revealedPremiumRank?.Name ?? "Unknown", revealedCard.Rank);
                     gameOperations.AddLogEntry(new GameLogEntry(GameLogEventType.CardinalEffect, playerToRevealTo.Id, playerToRevealTo.Name, $"As Cardinal player, you now see {handOfPlayerSeen.Name}'s new hand: {revealedPremiumRank?.Name ?? "Unknown"} (Rank {revealedCard.Rank}).", true) // isPrivate = true
                     {
                         PlayedCard = cardPlayed,
@@ -432,7 +406,7 @@ namespace CardGame.Decks.Premium
                 }
                 else
                 {
-                    _logger.LogInformation("Cardinal view by {PlayerName}: saw {TargetName}'s new hand: Empty/Unknown", playerToRevealTo.Name, handOfPlayerSeen.Name);
+                    _logger.LogDebug("Cardinal view by {PlayerName}: saw {TargetName}'s new hand: Empty/Unknown", playerToRevealTo.Name, handOfPlayerSeen.Name);
                     gameOperations.AddLogEntry(new GameLogEntry(GameLogEventType.CardinalEffect, playerToRevealTo.Id, playerToRevealTo.Name, $"As Cardinal player, you attempt to see {handOfPlayerSeen.Name}'s new hand, but it's empty/unknown.", true) // isPrivate = true
                     {
                         PlayedCard = cardPlayed,
@@ -443,171 +417,117 @@ namespace CardGame.Decks.Premium
             }
         }
 
-        private void Effect_Baron(IGameOperations gameOperations, Player actingPlayer, Player? target, Card cardPlayed)
+        private void Effect_Baron(IGameOperations gameOperations, Player actingPlayer, Player target, Card cardPlayed)
         {
-            if (target == null)
-            {
-                _logger.LogWarning("Baron effect failed for player {PlayerName}: Target null.", actingPlayer.Name);
-                gameOperations.AddLogEntry(new GameLogEntry(GameLogEventType.EffectFizzled, actingPlayer.Id, actingPlayer.Name, "Played Baron but target was invalid.")
-                {
-                    PlayedCard = cardPlayed,
-                    FizzleReason = "Invalid target for Baron."
-                });
-                return;
-            }
-
-            var actingPlayerActual = gameOperations.GetPlayer(actingPlayer.Id);
-            var targetActual = gameOperations.GetPlayer(target.Id);
-
-            var actingPlayerCardInHand = actingPlayerActual?.Hand.GetHeldCard();
-            var targetPlayerCardInHand = targetActual?.Hand.GetHeldCard();
-
-            if (actingPlayerCardInHand == null || targetPlayerCardInHand == null)
-            {
-                _logger.LogWarning("Baron effect failed for {PlayerName} against {TargetName}: One or both hands empty/unknown.", actingPlayer.Name, target.Name);
-                gameOperations.AddLogEntry(new GameLogEntry(GameLogEventType.EffectFizzled, actingPlayer.Id, actingPlayer.Name, $"{actingPlayer.Name} played Baron against {target.Name}, but one or both hands were empty/unknown. No comparison.")
-                {
-                    PlayedCard = cardPlayed,
-                    TargetPlayerId = target.Id,
-                    TargetPlayerName = target.Name,
-                    FizzleReason = "One or both hands empty for Baron comparison."
-                });
-                return;
-            }
+            var targetPlayerActual = gameOperations.GetPlayer(target.Id) 
+                ?? throw new InvalidOperationException($"Baron target player {target.Name} ({target.Id}) not found in game state.");
             
-            var actingPlayerRank = GetPremiumRankFromCard(actingPlayerCardInHand);
-            var targetPlayerRank = GetPremiumRankFromCard(targetPlayerCardInHand);
+            var actingPlayerCard = actingPlayer.Hand.GetHeldCard() 
+                ?? throw new InvalidOperationException($"Baron failed: Acting player {actingPlayer.Name} has no card to compare.");
+            var targetCard = targetPlayerActual.Hand.GetHeldCard() 
+                ?? throw new InvalidOperationException($"Baron failed: Target player {target.Name} has no card to compare.");
+            
+            var actingPlayerRank = GetPremiumRankFromCard(actingPlayerCard);
+            var targetRank = GetPremiumRankFromCard(targetCard);
 
-            _logger.LogInformation("Baron comparison by {PlayerName} ({Card1Rank}) vs {TargetName} ({Card2Rank})", actingPlayer.Name, actingPlayerCardInHand.Rank, target.Name, targetPlayerCardInHand.Rank);
+            _logger.LogDebug("Baron comparison by {PlayerName} ({Card1Rank}) vs {TargetName} ({Card2Rank})", actingPlayer.Name, actingPlayerCard.Rank, target.Name, targetCard.Rank);
 
             // Private logs for players involved in comparison
-            gameOperations.AddLogEntry(new GameLogEntry(GameLogEventType.BaronCompare, actingPlayer.Id, actingPlayer.Name, $"You (Baron) are comparing your {actingPlayerRank?.Name ?? "Unknown"} (Rank {actingPlayerCardInHand.Rank}) with {target.Name}'s {targetPlayerRank?.Name ?? "Unknown"} (Rank {targetPlayerCardInHand.Rank}).", true) 
+            gameOperations.AddLogEntry(new GameLogEntry(GameLogEventType.BaronCompare, actingPlayer.Id, actingPlayer.Name, $"You (Baron) are comparing your {actingPlayerRank?.Name ?? "Unknown"} (Rank {actingPlayerCard.Rank}) with {target.Name}'s {targetRank?.Name ?? "Unknown"} (Rank {targetCard.Rank}).", true) 
             {
                 PlayedCard = cardPlayed,
                 TargetPlayerId = target.Id, 
                 TargetPlayerName = target.Name,
-                ActingPlayerBaronCard = actingPlayerCardInHand, 
-                TargetPlayerBaronCard = targetPlayerCardInHand 
+                ActingPlayerBaronCard = actingPlayerCard, 
+                TargetPlayerBaronCard = targetCard 
             });
-            gameOperations.AddLogEntry(new GameLogEntry(GameLogEventType.BaronCompare, target.Id, target.Name, $"{actingPlayer.Name}'s Baron is comparing their {actingPlayerRank?.Name ?? "Unknown"} (Rank {actingPlayerCardInHand.Rank}) with your {targetPlayerRank?.Name ?? "Unknown"} (Rank {targetPlayerCardInHand.Rank}).", true) 
+            gameOperations.AddLogEntry(new GameLogEntry(GameLogEventType.BaronCompare, target.Id, target.Name, $"{actingPlayer.Name}'s Baron is comparing their {actingPlayerRank?.Name ?? "Unknown"} (Rank {actingPlayerCard.Rank}) with your {targetRank?.Name ?? "Unknown"} (Rank {targetCard.Rank}).", true) 
             {
                 PlayedCard = cardPlayed,
                 ActingPlayerId = actingPlayer.Id, 
                 ActingPlayerName = actingPlayer.Name,
-                ActingPlayerBaronCard = actingPlayerCardInHand, 
-                TargetPlayerBaronCard = targetPlayerCardInHand 
+                ActingPlayerBaronCard = actingPlayerCard, 
+                TargetPlayerBaronCard = targetCard 
             });
 
-            if (actingPlayerCardInHand.Rank > targetPlayerCardInHand.Rank)
+            if (actingPlayerCard.Rank > targetCard.Rank)
             {
-                _logger.LogInformation("Baron result: {TargetName} eliminated by {ActingPlayerName}'s Baron.", target.Name, actingPlayer.Name);
-                gameOperations.EliminatePlayer(target.Id, $"{actingPlayer.Name}'s Baron eliminated {target.Name} ({actingPlayerRank?.Name} > {targetPlayerRank?.Name}).", cardPlayed);
-                gameOperations.AddLogEntry(new GameLogEntry(GameLogEventType.BaronCompare, actingPlayer.Id, actingPlayer.Name, target.Id, target.Name, $"{actingPlayer.Name}'s Baron eliminated {target.Name} ({actingPlayerRank?.Name} > {targetPlayerRank?.Name}).") 
+                _logger.LogDebug("Baron result: {TargetName} eliminated by {ActingPlayerName}'s Baron.", target.Name, actingPlayer.Name);
+                gameOperations.EliminatePlayer(target.Id, $"{actingPlayer.Name}'s Baron eliminated {target.Name} ({actingPlayerRank?.Name} > {targetRank?.Name}).", cardPlayed);
+                gameOperations.AddLogEntry(new GameLogEntry(GameLogEventType.BaronCompare, actingPlayer.Id, actingPlayer.Name, target.Id, target.Name, $"{actingPlayer.Name}'s Baron eliminated {target.Name} ({actingPlayerRank?.Name} > {targetRank?.Name}).") 
                 { 
                     PlayedCard = cardPlayed, 
                     BaronLoserPlayerId = target.Id,
-                    RevealedCardOnElimination = targetPlayerCardInHand, // The loser's card is revealed
-                    ActingPlayerBaronCard = actingPlayerCardInHand, 
-                    TargetPlayerBaronCard = targetPlayerCardInHand 
+                    RevealedCardOnElimination = targetCard, // The loser's card is revealed
+                    ActingPlayerBaronCard = actingPlayerCard, 
+                    TargetPlayerBaronCard = targetCard 
                 });
             }
-            else if (targetPlayerCardInHand.Rank > actingPlayerCardInHand.Rank)
+            else if (targetCard.Rank > actingPlayerCard.Rank)
             {
-                _logger.LogInformation("Baron result: {ActingPlayerName} eliminated by {TargetName} in Baron comparison.", actingPlayer.Name, target.Name);
-                gameOperations.EliminatePlayer(actingPlayer.Id, $"{target.Name}'s Baron comparison eliminated {actingPlayer.Name} ({targetPlayerRank?.Name} > {actingPlayerRank?.Name}).", cardPlayed);
-                gameOperations.AddLogEntry(new GameLogEntry(GameLogEventType.BaronCompare, actingPlayer.Id, actingPlayer.Name, target.Id, target.Name, $"{target.Name} eliminated {actingPlayer.Name} with Baron ({targetPlayerRank?.Name} > {actingPlayerRank?.Name}).") 
+                _logger.LogDebug("Baron result: {ActingPlayerName} eliminated by {TargetName} in Baron comparison.", actingPlayer.Name, target.Name);
+                gameOperations.EliminatePlayer(actingPlayer.Id, $"{target.Name}'s Baron comparison eliminated {actingPlayer.Name} ({targetRank?.Name} > {actingPlayerRank?.Name}).", cardPlayed);
+                gameOperations.AddLogEntry(new GameLogEntry(GameLogEventType.BaronCompare, actingPlayer.Id, actingPlayer.Name, target.Id, target.Name, $"{target.Name} eliminated {actingPlayer.Name} with Baron ({targetRank?.Name} > {actingPlayerRank?.Name}).") 
                 { 
                     PlayedCard = cardPlayed, 
                     BaronLoserPlayerId = actingPlayer.Id,
-                    RevealedCardOnElimination = actingPlayerCardInHand, // The loser's card is revealed
-                    ActingPlayerBaronCard = actingPlayerCardInHand, 
-                    TargetPlayerBaronCard = targetPlayerCardInHand 
+                    RevealedCardOnElimination = actingPlayerCard, // The loser's card is revealed
+                    ActingPlayerBaronCard = actingPlayerCard, 
+                    TargetPlayerBaronCard = targetCard 
                 });
             }
-            else
+            else // Ranks are equal
             {
-                _logger.LogInformation("Baron result: Tie between {ActingPlayerName} and {TargetName}. No elimination.", actingPlayer.Name, target.Name);
-                gameOperations.AddLogEntry(new GameLogEntry(GameLogEventType.BaronCompare, actingPlayer.Id, actingPlayer.Name, target.Id, target.Name, $"{actingPlayer.Name}'s Baron comparison with {target.Name} resulted in a tie ({actingPlayerRank?.Name} vs {targetPlayerRank?.Name}). No one is eliminated.") 
-                { 
-                    PlayedCard = cardPlayed, 
-                    ActingPlayerBaronCard = actingPlayerCardInHand, 
-                    TargetPlayerBaronCard = targetPlayerCardInHand 
+                _logger.LogDebug("Baron result: Ranks equal between {ActingPlayerName} and {TargetName}. No one eliminated.", actingPlayer.Name, target.Name);
+                gameOperations.AddLogEntry(new GameLogEntry(GameLogEventType.BaronCompare, actingPlayer.Id, actingPlayer.Name, target.Id, target.Name, $"{actingPlayer.Name} and {target.Name} compared cards with Baron, but ranks were equal. No one was eliminated.")
+                {
+                    PlayedCard = cardPlayed,
+                    ActingPlayerBaronCard = actingPlayerCard, 
+                    TargetPlayerBaronCard = targetCard 
+                    // No BaronLoserPlayerId as it's a tie
                 });
             }
         }
 
-        private void Effect_Baroness(IGameOperations gameOperations, Player actingPlayer, Player? target1, Player? target2, Card cardPlayed)
+        private void Effect_Baroness(IGameOperations gameOperations, Player actingPlayer, Player target1, Player? target2, Card cardPlayed)
         {
-            if (target1 == null)
-            {
-                _logger.LogWarning("Baroness effect failed for player {PlayerName}: Target1 null.", actingPlayer.Name);
-                gameOperations.AddLogEntry(new GameLogEntry(GameLogEventType.EffectFizzled, actingPlayer.Id, actingPlayer.Name, "Played Baroness but the primary target was invalid.")
-                {
-                    PlayedCard = cardPlayed,
-                    FizzleReason = "Invalid primary target for Baroness."
-                });
-                return;
-            }
+            var target1CardInHand = gameOperations.GetPlayer(target1!.Id)?.Hand.GetHeldCard() 
+                ?? throw new InvalidOperationException($"Baroness target {target1.Name} ({target1.Id}) has no card to reveal.");
 
-            var target1Actual = gameOperations.GetPlayer(target1.Id);
-            var target1CardInHand = target1Actual?.Hand.GetHeldCard();
-
-            if (target1CardInHand != null)
+            var target1Rank = GetPremiumRankFromCard(target1CardInHand);
+            _logger.LogDebug("Baroness effect by {PlayerName}: viewed {TargetName1}'s hand: {CardName1} (Rank {CardRank1})", 
+                actingPlayer.Name, target1!.Name, target1Rank.Name, target1CardInHand.Rank);
+            gameOperations.AddLogEntry(new GameLogEntry(GameLogEventType.BaronessEffect, actingPlayer.Id, actingPlayer.Name, $"You used Baroness to look at {target1!.Name}'s hand, revealing {target1Rank.Name} (Rank {target1CardInHand.Rank}).", true) // isPrivate = true
             {
-                var target1Rank = GetPremiumRankFromCard(target1CardInHand);
-                _logger.LogInformation("Baroness effect by {PlayerName}: viewed {TargetName1}'s hand: {CardName1} (Rank {CardRank1})", actingPlayer.Name, target1.Name, target1Rank?.Name ?? "Unknown", target1CardInHand.Rank);
-                gameOperations.AddLogEntry(new GameLogEntry(GameLogEventType.BaronessEffect, actingPlayer.Id, actingPlayer.Name, $"You used Baroness to look at {target1.Name}'s hand, revealing {target1Rank?.Name ?? "Unknown"} (Rank {target1CardInHand.Rank}).", true) // isPrivate = true
-                {
-                    PlayedCard = cardPlayed,
-                    TargetPlayerId = target1.Id,
-                    TargetPlayerName = target1.Name,
-                    RevealedPlayerCard = target1CardInHand
-                });
-            }
-            else
-            {
-                _logger.LogInformation("Baroness effect by {PlayerName}: viewed {TargetName1}'s hand: Empty/Unknown", actingPlayer.Name, target1.Name);
-                gameOperations.AddLogEntry(new GameLogEntry(GameLogEventType.BaronessEffect, actingPlayer.Id, actingPlayer.Name, $"You used Baroness to look at {target1.Name}'s hand, but it was empty/unknown.", true) // isPrivate = true
-                {
-                    PlayedCard = cardPlayed,
-                    TargetPlayerId = target1.Id,
-                    TargetPlayerName = target1.Name
-                });
-            }
+                PlayedCard = cardPlayed,
+                TargetPlayerId = target1.Id,
+                TargetPlayerName = target1.Name,
+                RevealedPlayerCard = target1CardInHand
+            });
 
+            // If there's a second target, reveal their hand too
             if (target2 != null)
             {
-                var target2Actual = gameOperations.GetPlayer(target2.Id);
-                var target2CardInHand = target2Actual?.Hand.GetHeldCard();
-                if (target2CardInHand != null)
+                var target2CardInHand = gameOperations.GetPlayer(target2.Id)?.Hand.GetHeldCard() 
+                    ?? throw new InvalidOperationException($"Baroness target {target2.Name} ({target2.Id}) has no card to reveal.");
+
+                var target2Rank = GetPremiumRankFromCard(target2CardInHand);
+                _logger.LogDebug("Baroness effect by {PlayerName}: also viewed {TargetName2}'s hand: {CardName2} (Rank {CardRank2})", 
+                    actingPlayer.Name, target2.Name, target2Rank.Name, target2CardInHand.Rank);
+                gameOperations.AddLogEntry(new GameLogEntry(GameLogEventType.BaronessEffect, actingPlayer.Id, actingPlayer.Name, $"You used Baroness to also look at {target2.Name}'s hand, revealing {target2Rank.Name} (Rank {target2CardInHand.Rank}).", true) // isPrivate = true
                 {
-                    var target2Rank = GetPremiumRankFromCard(target2CardInHand);
-                    _logger.LogInformation("Baroness effect by {PlayerName}: also viewed {TargetName2}'s hand: {CardName2} (Rank {CardRank2})", actingPlayer.Name, target2.Name, target2Rank?.Name ?? "Unknown", target2CardInHand.Rank);
-                    gameOperations.AddLogEntry(new GameLogEntry(GameLogEventType.BaronessEffect, actingPlayer.Id, actingPlayer.Name, $"You used Baroness to also look at {target2.Name}'s hand, revealing {target2Rank?.Name ?? "Unknown"} (Rank {target2CardInHand.Rank}).", true) // isPrivate = true
-                    {
-                        PlayedCard = cardPlayed,
-                        TargetPlayerId = target2.Id,
-                        TargetPlayerName = target2.Name,
-                        RevealedPlayerCard = target2CardInHand
-                    });
-                }
-                else
-                {
-                    _logger.LogInformation("Baroness effect by {PlayerName}: also viewed {TargetName2}'s hand: Empty/Unknown", actingPlayer.Name, target2.Name);
-                    gameOperations.AddLogEntry(new GameLogEntry(GameLogEventType.BaronessEffect, actingPlayer.Id, actingPlayer.Name, $"You used Baroness to also look at {target2.Name}'s hand, but it was empty/unknown.", true) // isPrivate = true
-                    {
-                        PlayedCard = cardPlayed,
-                        TargetPlayerId = target2.Id,
-                        TargetPlayerName = target2.Name
-                    });
-                }
+                    PlayedCard = cardPlayed,
+                    TargetPlayerId = target2.Id,
+                    TargetPlayerName = target2.Name,
+                    RevealedPlayerCard = target2CardInHand
+                });
             }
         }
 
         private void Effect_Handmaid(IGameOperations gameOperations, Player actingPlayer, Card cardPlayed)
         {
             actingPlayer.SetProtection(true);
-            _logger.LogInformation("{PlayerName} played Handmaid and is protected until their next turn.", actingPlayer.Name);
+            _logger.LogDebug("Handmaid effect: {PlayerName} is protected until their next turn.", actingPlayer.Name);
             gameOperations.AddLogEntry(new GameLogEntry(GameLogEventType.HandmaidProtection, actingPlayer.Id, actingPlayer.Name, $"{actingPlayer.Name} played Handmaid and is protected until their next turn.")
             {
                 PlayedCard = cardPlayed,
@@ -616,149 +536,86 @@ namespace CardGame.Decks.Premium
             });
         }
 
-        private void Effect_Sycophant(IGameOperations gameOperations, Player actingPlayer, Player? target, Card cardPlayed)
+        private void Effect_Sycophant(IGameOperations gameOperations, Player actingPlayer, Player target, Card cardPlayed)
         {
-            if (target == null)
-            {
-                _logger.LogWarning("Sycophant effect failed for player {PlayerName}: Target null.", actingPlayer.Name);
-                gameOperations.AddLogEntry(new GameLogEntry(GameLogEventType.EffectFizzled, actingPlayer.Id, actingPlayer.Name, "Played Sycophant but target was invalid.")
-                {
-                    PlayedCard = cardPlayed,
-                    FizzleReason = "Invalid target for Sycophant."
-                });
-                return;
-            }
+            // target is guaranteed non-null by ExecuteCardEffect (MinTargets = 1 for Sycophant)
 
             // The game logic for Sycophant (forcing target) is likely handled by game rules when effects are resolved against a Sycophant-marked player.
-            // Here, we just log that the Sycophant has marked a target.
-            _logger.LogInformation("{PlayerName} played Sycophant, marking {TargetName}.", actingPlayer.Name, target.Name);
-            gameOperations.AddLogEntry(new GameLogEntry(GameLogEventType.SycophantEffect, actingPlayer.Id, actingPlayer.Name, $"{actingPlayer.Name} played Sycophant, marking {target.Name}. {target.Name} must target {actingPlayer.Name} with their next card effect, if possible.")
+            // Here, we set the mark and log that the Sycophant has marked a target.
+            gameOperations.SetPlayerDeckStatus(target.Id, DeckId, _sycophantMarkKey, actingPlayer.Id.ToString());
+
+            _logger.LogDebug("{PlayerName} played Sycophant, marking {TargetName}. {TargetName} must target {PlayerName} next turn.", actingPlayer.Name, target.Name, actingPlayer.Name);
+            gameOperations.AddLogEntry(new GameLogEntry(GameLogEventType.SycophantEffect, actingPlayer.Id, actingPlayer.Name, target.Id, target.Name, $"{actingPlayer.Name} played Sycophant, marking {target.Name}. {target.Name} must target {actingPlayer.Name} with their next card effect, if possible.")
             {
                 PlayedCard = cardPlayed,
                 TargetPlayerId = target.Id,
                 TargetPlayerName = target.Name
                 // Potentially add a property like MarkedBySycophantTargetId = target.Id if GameLogEntry supports it and it's useful for UI.
             });
-            // Actual enforcement of Sycophant's mark would be in gameOperations or target selection logic.
+            // Actual enforcement of Sycophant's mark would be in gameOperations or target selection logic based on the status set above.
         }
 
-        private void Effect_Prince(IGameOperations gameOperations, Player actingPlayer, Player? target, Card cardPlayed)
+        private void Effect_Prince(IGameOperations gameOperations, Player actingPlayer, Player target, Card cardPlayed)
         {
-            if (target == null)
+            _logger.LogDebug("Executing Prince effect: {ActingPlayerName} targets {TargetPlayerName}", actingPlayer.Name, target.Name);
+
+            var targetPlayerActual = gameOperations.GetPlayer(target.Id) 
+                ?? throw new InvalidOperationException($"Prince target player {target.Name} ({target.Id}) not found in game state.");
+            
+            var discardedCard = targetPlayerActual.DiscardHand();
+
+            if (discardedCard == null)
             {
-                _logger.LogWarning("Prince effect failed for player {PlayerName}: Target null.", actingPlayer.Name);
-                gameOperations.AddLogEntry(new GameLogEntry(GameLogEventType.EffectFizzled, actingPlayer.Id, actingPlayer.Name, "Played Prince but target was invalid.")
-                {
-                    PlayedCard = cardPlayed,
-                    FizzleReason = "Invalid target for Prince."
-                });
+                _logger.LogInformation("Prince target {TargetPlayerName} had no card to discard.", targetPlayerActual.Name);
+                gameOperations.AddLogEntry(new GameLogEntry(GameLogEventType.EffectFizzled,
+                    actingPlayer.Id, actingPlayer.Name,
+                    $"{actingPlayer.Name} uses the Prince on {targetPlayerActual.Name}, but they had no card.")
+                { PlayedCard = cardPlayed,  FizzleReason = "Target had no card in hand." });
                 return;
             }
 
-            var currentTargetState = gameOperations.GetPlayer(target.Id);
-            if (currentTargetState == null) 
+            var discardedRank = GetPremiumRankFromCard(discardedCard);
+            _logger.LogInformation("Prince forces {TargetPlayerName} to discard {DiscardedCardName}", targetPlayerActual.Name, discardedRank.Name);
+
+            if (discardedRank.Name == PremiumCardRank.Princess.Name)
             {
-                _logger.LogError("Prince effect failed: Target player {TargetPlayerId} not found after initial check.", target.Id);
-                gameOperations.AddLogEntry(new GameLogEntry(GameLogEventType.EffectFizzled, actingPlayer.Id, actingPlayer.Name, "Played Prince but target became unexpectedly invalid.")
-                {
-                    PlayedCard = cardPlayed,
-                    FizzleReason = "Target player data inconsistent."
-                });
-                return;
+                gameOperations.AddLogEntry(new GameLogEntry(GameLogEventType.PlayerEliminated,
+                    targetPlayerActual.Id, targetPlayerActual.Name,
+                    $"{targetPlayerActual.Name} is forced by {actingPlayer.Name}'s Prince to discard the Princess and is eliminated.")
+                { PlayedCard = cardPlayed, RevealedCardOnElimination = discardedCard  });
+                gameOperations.EliminatePlayer(targetPlayerActual.Id, "Discarded the Princess", cardPlayed);
             }
-
-            if (currentTargetState.IsProtected && currentTargetState.Id != actingPlayer.Id)
+            else
             {
-                _logger.LogInformation("Prince effect by {PlayerName} on {TargetName} fizzled due to Handmaid protection.", actingPlayer.Name, currentTargetState.Name);
-                gameOperations.AddLogEntry(new GameLogEntry(GameLogEventType.EffectFizzled, actingPlayer.Id, actingPlayer.Name, $"The Prince's effect on {currentTargetState.Name} was blocked by Handmaid protection.")
+                gameOperations.AddLogEntry(new GameLogEntry(GameLogEventType.PrinceDiscard,
+                    targetPlayerActual.Id, targetPlayerActual.Name,
+                    $"{actingPlayer.Name}'s Prince forces {targetPlayerActual.Name} to discard their hand.")
+                { PlayedCard = cardPlayed, RevealedCardOnElimination =  discardedCard  });
+
+                var drawnCard = gameOperations.DrawCardForPlayer(targetPlayerActual.Id);
+                if (drawnCard == null)
                 {
-                    PlayedCard = cardPlayed,
-                    TargetPlayerId = currentTargetState.Id,
-                    TargetPlayerName = currentTargetState.Name,
-                    FizzleReason = "Target is protected by Handmaid."
-                });
-                return;
-            }
-
-            Card? discardedCard = target.DiscardHand(); 
-
-            if (discardedCard == null) 
-            {
-                _logger.LogInformation("Prince effect by {PlayerName} on {TargetName}: Target had no card to discard or DiscardHeldCard returned null.", actingPlayer.Name, currentTargetState.Name);
-                gameOperations.AddLogEntry(new GameLogEntry(GameLogEventType.EffectFizzled, actingPlayer.Id, actingPlayer.Name, $"{actingPlayer.Name} played Prince on {currentTargetState.Name}, but they had no card to discard.")
-                {
-                    PlayedCard = cardPlayed,
-                    TargetPlayerId = currentTargetState.Id,
-                    TargetPlayerName = currentTargetState.Name,
-                    FizzleReason = "Target has no cards to discard for Prince or discard failed."
-                });
-                return;
-            }
-
-            var discardedPremiumRank = GetPremiumRankFromCard(discardedCard); // Throws on invalid card
-
-            _logger.LogInformation("Prince effect by {PlayerName}: {TargetName} discarded {DiscardedCardName} (Rank {DiscardedCardRank}).", 
-                actingPlayer.Name, currentTargetState.Name, discardedPremiumRank?.Name ?? "Unknown Card", discardedCard.Rank);
-
-            gameOperations.AddLogEntry(new GameLogEntry(GameLogEventType.PrinceDiscard, actingPlayer.Id, actingPlayer.Name,
-                $"{actingPlayer.Name} used the Prince to make {currentTargetState.Name} discard their {discardedPremiumRank?.Name ?? "card"}.")
-            {
-                PlayedCard = cardPlayed,
-                TargetPlayerId = currentTargetState.Id,
-                TargetPlayerName = currentTargetState.Name,
-                TargetDiscardedCard = discardedCard,
-                IsPrivate = (discardedPremiumRank?.Name == PremiumCardRank.Princess.Name) 
-            });
-
-            if (discardedPremiumRank?.Name == PremiumCardRank.Princess.Name)
-            {
-                _logger.LogInformation("{TargetName} discarded Princess due to Prince effect by {PlayerName} and is eliminated.", currentTargetState.Name, actingPlayer.Name);
-                gameOperations.AddLogEntry(new GameLogEntry(GameLogEventType.PlayerEliminated, currentTargetState.Id, currentTargetState.Name, 
-                    $"{currentTargetState.Name} discarded the Princess and is eliminated!")
-                {
-                    PlayedCard = cardPlayed, // The Prince card that caused the discard
-                    RevealedCardOnElimination = discardedCard // The Princess card itself
-                });
-                gameOperations.EliminatePlayer(currentTargetState.Id, "discarded the Princess", cardPlayed);
-                return; // Effect ends here
-            }
-
-            // If player is not eliminated, they draw a new card
-            if (currentTargetState.Status != PlayerStatus.Eliminated)
-            {
-                var drawnCard = gameOperations.DrawCardForPlayer(currentTargetState.Id);
-                if (drawnCard != null)
-                {
-                    _logger.LogInformation("{TargetName} drew a new card after discarding due to Prince effect by {PlayerName}.", currentTargetState.Name, actingPlayer.Name);
-                    gameOperations.AddLogEntry(new GameLogEntry(GameLogEventType.PlayerDrewCard, currentTargetState.Id, currentTargetState.Name,
-                        $"{currentTargetState.Name} drew a new card after discarding due to the Prince.")
-                    {
-                        DrawnCard = drawnCard, // For private logs to the player
-                        IsPrivate = true       // Only the drawing player should know what they drew
-                    });
-                }
-                else
-                {
-                    _logger.LogInformation("Deck is empty. {TargetName} could not draw a new card after discarding due to Prince effect by {PlayerName}.", currentTargetState.Name, actingPlayer.Name);
-                    gameOperations.AddLogEntry(new GameLogEntry(GameLogEventType.DeckEmpty, currentTargetState.Id, currentTargetState.Name,
-                        $"{currentTargetState.Name} could not draw a new card as the deck is empty.")
-                    {
-                        PlayedCard = cardPlayed // Context: this happened because of the Prince
-                    });
+                    _logger.LogInformation("{TargetPlayerName} discarded, but the deck is empty and they are eliminated.", targetPlayerActual.Name);
+                    gameOperations.AddLogEntry(new GameLogEntry(GameLogEventType.PlayerEliminated,
+                        targetPlayerActual.Id, targetPlayerActual.Name,
+                        $"{targetPlayerActual.Name} discarded their card, but was eliminated because the deck is empty.")
+                    { PlayedCard = cardPlayed, RevealedCardOnElimination =  discardedCard  });
+                    gameOperations.EliminatePlayer(targetPlayerActual.Id, "Forced to draw from an empty deck", cardPlayed);
                 }
             }
         }
 
         private void Effect_Count(IGameOperations gameOperations, Player actingPlayer, Card cardPlayed)
         {
-            var actingPlayerActual = gameOperations.GetPlayer(actingPlayer.Id);
-            var cardInHand = actingPlayerActual?.Hand.GetHeldCard();
+            var playerActual = gameOperations.GetPlayer(actingPlayer.Id);
+            var cardInHand = playerActual?.Hand.GetHeldCard(); // Should always exist as player just played a card and has one left
 
             if (cardInHand != null)
             {
                 var premiumRankInHand = GetPremiumRankFromCard(cardInHand);
-                _logger.LogInformation("{PlayerName} played Count and looked at their own hand: {CardName} (Rank {CardRank}).", actingPlayer.Name, premiumRankInHand?.Name ?? "Unknown", cardInHand.Rank);
-                gameOperations.AddLogEntry(new GameLogEntry(GameLogEventType.CountEffect, actingPlayer.Id, actingPlayer.Name, $"You played Count and looked at your hand, revealing {premiumRankInHand?.Name ?? "Unknown"} (Rank {cardInHand.Rank}).", true) // isPrivate = true
+                _logger.LogDebug("Count effect: {PlayerName} adds current card value {CardValue} to their score pile.", 
+                    actingPlayer.Name, premiumRankInHand.Value);
+                gameOperations.AddLogEntry(new GameLogEntry(GameLogEventType.CountEffect, actingPlayer.Id, actingPlayer.Name, $"{actingPlayer.Name} played Count and added their current card's value ({premiumRankInHand.Value}) to their score pile.")
                 {
                     PlayedCard = cardPlayed,
                     RevealedPlayerCard = cardInHand // The card they looked at in their own hand
@@ -770,42 +627,22 @@ namespace CardGame.Decks.Premium
             }
             else
             {
-                _logger.LogInformation("{PlayerName} played Count but their hand was empty/unknown.", actingPlayer.Name);
-                gameOperations.AddLogEntry(new GameLogEntry(GameLogEventType.CountEffect, actingPlayer.Id, actingPlayer.Name, "You played Count, but your hand was empty/unknown.", true) // isPrivate = true
+                // This should ideally not happen if player has a card after playing one.
+                _logger.LogWarning("Count effect: {PlayerName} had no card in hand after playing Count. This is unexpected.", actingPlayer.Name);
+                gameOperations.AddLogEntry(new GameLogEntry(GameLogEventType.EffectFizzled, actingPlayer.Id, actingPlayer.Name, $"{actingPlayer.Name} played Count, but an issue occurred accessing their hand.")
                 {
-                    PlayedCard = cardPlayed
+                    PlayedCard = cardPlayed,
+                    FizzleReason = "Player had no card in hand after playing Count."
                 });
             }
         }
 
-        private void Effect_King(IGameOperations gameOperations, Player actingPlayer, Player? target, Card cardPlayed)
+        private void Effect_King(IGameOperations gameOperations, Player actingPlayer, Player target, Card cardPlayed)
         {
-            if (target == null)
-            {
-                _logger.LogWarning("King effect failed for player {PlayerName}: Target null.", actingPlayer.Name);
-                gameOperations.AddLogEntry(new GameLogEntry(GameLogEventType.EffectFizzled, actingPlayer.Id, actingPlayer.Name, "Played King but target was invalid.")
-                {
-                    PlayedCard = cardPlayed,
-                    FizzleReason = "Invalid target for King."
-                });
-                return;
-            }
-
-            if (actingPlayer.Id == target.Id)
-            {
-                _logger.LogInformation("King effect by {PlayerName}: Targeted self. No hand swap.", actingPlayer.Name);
-                gameOperations.AddLogEntry(new GameLogEntry(GameLogEventType.EffectFizzled, actingPlayer.Id, actingPlayer.Name, $"{actingPlayer.Name} played King targeting themself. No hand swap occurred.")
-                {
-                    PlayedCard = cardPlayed,
-                    TargetPlayerId = target.Id,
-                    TargetPlayerName = target.Name,
-                    FizzleReason = "Cannot target self with King for hand swap."
-                });
-                return;
-            }
-
+            _ = gameOperations.GetPlayer(target.Id) ?? throw new InvalidOperationException($"King target player {target.Name} ({target.Id}) not found in game state.");
+            
             gameOperations.SwapPlayerHands(actingPlayer.Id, target.Id);
-            _logger.LogInformation("{PlayerName} played King and traded hands with {TargetName}.", actingPlayer.Name, target.Name);
+            _logger.LogDebug("King effect: {ActingPlayerName} swapped hands with {TargetPlayerName}", actingPlayer.Name, target.Name);
             gameOperations.AddLogEntry(new GameLogEntry(GameLogEventType.KingTrade, actingPlayer.Id, actingPlayer.Name, $"{actingPlayer.Name} played King and traded hands with {target.Name}.")
             {
                 PlayedCard = cardPlayed,
@@ -816,96 +653,49 @@ namespace CardGame.Decks.Premium
 
         private void Effect_Constable(IGameOperations gameOperations, Player actingPlayer, Card cardPlayed)
         {
-            // Constable's effect is passive: If you eliminate another player while you have the Constable, take a Jester token.
-            // Playing the Constable itself doesn't grant a token immediately.
-            // The actual Jester token gain would be logged when the condition is met (elimination).
-            _logger.LogInformation("{PlayerName} played Constable. Their passive ability is now active.", actingPlayer.Name);
-            gameOperations.AddLogEntry(new GameLogEntry(GameLogEventType.CardPlayed, actingPlayer.Id, actingPlayer.Name, $"{actingPlayer.Name} played Constable. If they eliminate another player holding a Jester token, they will gain a Jester token.")
-            {
-                PlayedCard = cardPlayed
-                // No specific target for playing Constable itself. Its effect is conditional on future eliminations.
-            });
-            // Note: Game logic elsewhere should check if an eliminating player has Constable and the eliminated player has a Jester token.
+            _logger.LogDebug("Executing Constable effect for {PlayerName}. This card has a passive effect and does not generate a game log entry on its own.", actingPlayer.Name);
+            // No game log entry is needed here. The effect is passive.
+            // The awarding of a Jester token will be logged if/when the player is eliminated.
+            gameOperations.SetPlayerDeckStatus(actingPlayer.Id, DeckId, PremiumCardRank.Constable.Name, "true");
         }
 
         private void Effect_Countess(IGameOperations gameOperations, Player actingPlayer, Card cardPlayed)
         {
-            // Countess's main effect is being forced to be played if held with King, Prince, or Count.
-            // Playing her otherwise has no direct effect beyond being played.
-            _logger.LogInformation("{PlayerName} played Countess.", actingPlayer.Name);
-            gameOperations.AddLogEntry(new GameLogEntry(GameLogEventType.CardPlayed, actingPlayer.Id, actingPlayer.Name, $"{actingPlayer.Name} played Countess. If held with a King, Prince, or Count, it must be played.")
-            {
-                PlayedCard = cardPlayed
-            });
+            _logger.LogDebug("Executing Countess effect for {PlayerName}. No immediate effect, so no game log entry is generated.", actingPlayer.Name);
+            // No game log entry is needed. The core game engine logs the card play,
+            // and since there is no subsequent effect, there's nothing more to add to the player-facing log.
         }
 
-        private void Effect_DowagerQueen(IGameOperations gameOperations, Player actingPlayer, Player? target, Card cardPlayed)
+        private void Effect_DowagerQueen(IGameOperations gameOperations, Player actingPlayer, Player target, Card cardPlayed)
         {
-            if (target == null)
-            {
-                _logger.LogWarning("Dowager Queen effect failed for player {PlayerName}: Target null.", actingPlayer.Name);
-                gameOperations.AddLogEntry(new GameLogEntry(GameLogEventType.EffectFizzled, actingPlayer.Id, actingPlayer.Name, "Played Dowager Queen but target was invalid.")
-                {
-                    PlayedCard = cardPlayed,
-                    FizzleReason = "Invalid target for Dowager Queen."
-                });
-                return;
-            }
-
-            var actingPlayerActual = gameOperations.GetPlayer(actingPlayer.Id);
-            var targetActual = gameOperations.GetPlayer(target.Id);
-
-            var actingPlayerCardInHand = actingPlayerActual?.Hand.GetHeldCard();
-            var targetPlayerCardInHand = targetActual?.Hand.GetHeldCard();
-
-            if (actingPlayerCardInHand == null || targetPlayerCardInHand == null)
-            {
-                _logger.LogWarning("Dowager Queen effect failed for {PlayerName} against {TargetName}: One or both hands empty/unknown.", actingPlayer.Name, target.Name);
-                gameOperations.AddLogEntry(new GameLogEntry(GameLogEventType.EffectFizzled, actingPlayer.Id, actingPlayer.Name, $"{actingPlayer.Name} played Dowager Queen against {target.Name}, but one or both hands were empty/unknown. No comparison.")
-                {
-                    PlayedCard = cardPlayed,
-                    TargetPlayerId = target.Id,
-                    TargetPlayerName = target.Name,
-                    FizzleReason = "One or both hands empty for Dowager Queen comparison."
-                });
-                return;
-            }
-
-            var actingPlayerRank = GetPremiumRankFromCard(actingPlayerCardInHand);
-            var targetPlayerRank = GetPremiumRankFromCard(targetPlayerCardInHand);
-
-            _logger.LogInformation("Dowager Queen comparison by {PlayerName} ({Card1Rank}) vs {TargetName} ({Card2Rank})", 
-                actingPlayer.Name, actingPlayerCardInHand.Rank, target.Name, targetPlayerCardInHand.Rank);
+            var targetPlayerActual = gameOperations.GetPlayer(target.Id) 
+                ?? throw new InvalidOperationException($"Dowager Queen target player {target.Name} ({target.Id}) not found in game state.");
             
-            // Private log for acting player
-            gameOperations.AddLogEntry(new GameLogEntry(GameLogEventType.DowagerQueenCompare, actingPlayer.Id, actingPlayer.Name, $"You (Dowager Queen) compared your {actingPlayerRank?.Name ?? "Unknown"} (Rank {actingPlayerCardInHand.Rank}) with {target.Name}'s {targetPlayerRank?.Name ?? "Unknown"} (Rank {targetPlayerCardInHand.Rank}).", true)
-            {
-                PlayedCard = cardPlayed,
-                TargetPlayerId = target.Id,
-                TargetPlayerName = target.Name
-                // ActingPlayerCard and TargetPlayerCard could be added if GameLogEntry supports them for this event.
-            });
-            // Private log for target player
-            gameOperations.AddLogEntry(new GameLogEntry(GameLogEventType.DowagerQueenCompare, target.Id, target.Name, $"{actingPlayer.Name} (Dowager Queen) compared their {actingPlayerRank?.Name ?? "Unknown"} (Rank {actingPlayerCardInHand.Rank}) with your {targetPlayerRank?.Name ?? "Unknown"} (Rank {targetPlayerCardInHand.Rank}).", true)
-            {
-                PlayedCard = cardPlayed,
-                ActingPlayerId = actingPlayer.Id,
-                ActingPlayerName = actingPlayer.Name
-            });
+            var actingPlayerCard = actingPlayer.Hand.GetHeldCard() 
+                ?? throw new InvalidOperationException($"Dowager Queen failed: Acting player {actingPlayer.Name} has no card to compare.");
+            var targetCard = targetPlayerActual.Hand.GetHeldCard() 
+                ?? throw new InvalidOperationException($"Dowager Queen failed: Target player {target.Name} has no card to compare.");
 
-            if (actingPlayerCardInHand.Rank > targetPlayerCardInHand.Rank)
+            var actingPlayerRank = GetPremiumRankFromCard(actingPlayerCard);
+            var targetRank = GetPremiumRankFromCard(targetCard);
+
+            _logger.LogDebug("Dowager Queen by {PlayerName} (has {ActingCardRank}) vs {TargetName} (has {TargetCardRank}): {WinnerName} wins comparison.", 
+                actingPlayer.Name, actingPlayerRank.Name, target.Name, targetRank.Name, 
+                actingPlayerRank.Value > targetRank.Value ? actingPlayer.Name : (targetRank.Value > actingPlayerRank.Value ? target.Name : "Tie"));
+
+            if (actingPlayerRank.Value > targetRank.Value)
             {
-                _logger.LogInformation("Dowager Queen result: {ActingPlayerName} has the higher card.", actingPlayer.Name);
-                gameOperations.AddLogEntry(new GameLogEntry(GameLogEventType.DowagerQueenCompare, actingPlayer.Id, actingPlayer.Name, target.Id, target.Name, $"{actingPlayer.Name}'s Dowager Queen revealed they have a higher card ({actingPlayerRank?.Name}) than {target.Name} ({targetPlayerRank?.Name}).")
+                _logger.LogDebug("Dowager Queen result: {ActingPlayerName} has the higher card.", actingPlayer.Name);
+                gameOperations.AddLogEntry(new GameLogEntry(GameLogEventType.DowagerQueenCompare, actingPlayer.Id, actingPlayer.Name, target.Id, target.Name, $"{actingPlayer.Name}'s Dowager Queen revealed they have a higher card ({actingPlayerRank.Name}) than {target.Name} ({targetRank.Name}).")
                 {
                     PlayedCard = cardPlayed,
                     WinnerPlayerId = actingPlayer.Id
                 });
             }
-            else if (targetPlayerCardInHand.Rank > actingPlayerCardInHand.Rank)
+            else if (targetRank.Value > actingPlayerRank.Value)
             {
-                _logger.LogInformation("Dowager Queen result: {TargetName} has the higher card.", target.Name);
-                gameOperations.AddLogEntry(new GameLogEntry(GameLogEventType.DowagerQueenCompare, actingPlayer.Id, actingPlayer.Name, target.Id, target.Name, $"{target.Name} revealed they have a higher card ({targetPlayerRank?.Name}) than {actingPlayer.Name} ({actingPlayerRank?.Name}) in Dowager Queen comparison.")
+                _logger.LogDebug("Dowager Queen result: {TargetName} has the higher card.", target.Name);
+                gameOperations.AddLogEntry(new GameLogEntry(GameLogEventType.DowagerQueenCompare, actingPlayer.Id, actingPlayer.Name, target.Id, target.Name, $"{target.Name} revealed they have a higher card ({targetRank.Name}) than {actingPlayer.Name} ({actingPlayerRank.Name}) in Dowager Queen comparison.")
                 {
                     PlayedCard = cardPlayed,
                     WinnerPlayerId = target.Id
@@ -913,145 +703,109 @@ namespace CardGame.Decks.Premium
             }
             else
             {
-                _logger.LogInformation("Dowager Queen result: Tie between {ActingPlayerName} and {TargetName}.", actingPlayer.Name, target.Name);
-                gameOperations.AddLogEntry(new GameLogEntry(GameLogEventType.DowagerQueenCompare, actingPlayer.Id, actingPlayer.Name, target.Id, target.Name, $"{actingPlayer.Name}'s Dowager Queen comparison with {target.Name} resulted in a tie ({actingPlayerRank?.Name} vs {targetPlayerRank?.Name}).")
+                _logger.LogDebug("Dowager Queen result: Tie between {ActingPlayerName} and {TargetName}.", actingPlayer.Name, target.Name);
+                gameOperations.AddLogEntry(new GameLogEntry(GameLogEventType.DowagerQueenCompare, actingPlayer.Id, actingPlayer.Name, target.Id, target.Name, $"{actingPlayer.Name}'s Dowager Queen comparison with {target.Name} resulted in a tie ({actingPlayerRank.Name} vs {targetRank.Name}).")
                 {
                     PlayedCard = cardPlayed
-                    // DowagerQueenWinnerId remains null for a tie
                 });
             }
         }
 
         // Princess effect is handled in ExecuteCardEffect as it's about being discarded.
 
-        private void Effect_Bishop(IGameOperations gameOperations, Player actingPlayer, Player? target, PremiumCardRank? guessedPremiumRank, Card cardPlayed)
+        private void Effect_Bishop(IGameOperations gameOperations, Player actingPlayer, Player target, PremiumCardRank guessedRank, Card cardPlayed)
         {
-            if (target == null)
-            {
-                _logger.LogWarning("Bishop effect failed for player {PlayerName}: Target null.", actingPlayer.Name);
-                gameOperations.AddLogEntry(new GameLogEntry(GameLogEventType.EffectFizzled, actingPlayer.Id, actingPlayer.Name, "Played Bishop but target was invalid.")
-                {
-                    PlayedCard = cardPlayed,
-                    FizzleReason = "Invalid target for Bishop."
-                });
-                return;
-            }
+            var targetCardInHand = gameOperations.GetPlayer(target.Id)?.Hand.GetHeldCard() 
+                ?? throw new InvalidOperationException($"Bishop target {target.Name} ({target.Id}) has no card to guess against.");
 
-            if (guessedPremiumRank == null)
-            {
-                _logger.LogWarning("Bishop effect failed for player {PlayerName}: Guessed rank null.", actingPlayer.Name);
-                gameOperations.AddLogEntry(new GameLogEntry(GameLogEventType.EffectFizzled, actingPlayer.Id, actingPlayer.Name, "Played Bishop but no card rank was guessed.")
-                {
-                    PlayedCard = cardPlayed,
-                    TargetPlayerId = target.Id,
-                    TargetPlayerName = target.Name,
-                    FizzleReason = "No card rank guessed for Bishop."
-                });
-                return;
-            }
-            
-            var targetActual = gameOperations.GetPlayer(target.Id);
-            var targetCardInHand = targetActual?.Hand.GetHeldCard();
+            var actualRank = GetPremiumRankFromCard(targetCardInHand);
+            bool guessCorrect = actualRank.Value == guessedRank.Value;
 
-            if (targetCardInHand == null)
-            {
-                _logger.LogInformation("Bishop effect by {PlayerName} on {TargetName}: Target has no card to check.", actingPlayer.Name, target.Name);
-                gameOperations.AddLogEntry(new GameLogEntry(GameLogEventType.EffectFizzled, actingPlayer.Id, actingPlayer.Name, $"{actingPlayer.Name} played Bishop on {target.Name}, but they had no card.")
-                {
-                    PlayedCard = cardPlayed,
-                    TargetPlayerId = target.Id,
-                    TargetPlayerName = target.Name,
-                    GuessedRank = guessedPremiumRank.Value,
-                    FizzleReason = "Target has no card for Bishop to check."
-                });
-                return;
-            }
-
-            var targetActualPremiumRank = GetPremiumRankFromCard(targetCardInHand);
-            bool guessCorrect = targetActualPremiumRank?.Value == guessedPremiumRank.Value;
-
-            _logger.LogInformation("Bishop effect by {PlayerName} on {TargetName}: Guessed {GuessedRankName} ({GuessedRankValue}). Target has {ActualRankName} ({ActualRankValue}). Correct: {IsCorrect}", 
-                actingPlayer.Name, target.Name, guessedPremiumRank.Name, guessedPremiumRank.Value, targetActualPremiumRank?.Name ?? "Unknown", targetActualPremiumRank?.Value ?? -1, guessCorrect);
+            _logger.LogDebug("Bishop effect by {PlayerName} on {TargetName}: Guessed {GuessedRankName} ({GuessedRankValue}). Target has {ActualRankName} ({ActualRankValue}). Correct: {IsCorrect}", 
+                actingPlayer.Name, target.Name, guessedRank.Name, guessedRank.Value, actualRank.Name, actualRank.Value, guessCorrect);
 
             // Private log for acting player about their guess
-            gameOperations.AddLogEntry(new GameLogEntry(guessCorrect ? GameLogEventType.BishopGuessCorrect : GameLogEventType.BishopGuessIncorrect, actingPlayer.Id, actingPlayer.Name, $"You played Bishop and guessed {guessedPremiumRank.Name} for {target.Name}'s card. Your guess was {(guessCorrect ? "correct" : "incorrect")}.", true)
+            gameOperations.AddLogEntry(new GameLogEntry(guessCorrect ? GameLogEventType.BishopGuessCorrect : GameLogEventType.BishopGuessIncorrect, actingPlayer.Id, actingPlayer.Name, $"You played Bishop and guessed {guessedRank.Name} for {target.Name}'s card. Your guess was {(guessCorrect ? "correct" : "incorrect")}.", true)
             {
                 PlayedCard = cardPlayed,
                 TargetPlayerId = target.Id,
                 TargetPlayerName = target.Name,
-                GuessedRank = guessedPremiumRank.Value,
-                RevealedPlayerCard = targetCardInHand, // Reveal to Bishop player what the card was
-                WasGuessCorrect = guessCorrect,
-                IsPrivate = true
+                GuessedRank = guessedRank.Value,
+                WasGuessCorrect = guessCorrect
             });
 
+            // Public log about the outcome
             if (guessCorrect)
             {
-                AssignJesterToken(gameOperations, target);
-                gameOperations.AddLogEntry(new GameLogEntry(GameLogEventType.BishopGuessCorrect, actingPlayer.Id, actingPlayer.Name, target.Id, target.Name, $"{actingPlayer.Name}'s Bishop correctly guessed {target.Name}'s card ({guessedPremiumRank.Name}). {target.Name} gains a Jester token.")
+                _logger.LogInformation("Bishop by {PlayerName} on {TargetName}: Correctly guessed {GuessedRankName}. {TargetName} discards and draws. {PlayerName} gains a token.", 
+                    actingPlayer.Name, target.Name, guessedRank.Name);
+                gameOperations.AddLogEntry(new GameLogEntry(GameLogEventType.BishopGuessCorrect, actingPlayer.Id, actingPlayer.Name, target.Id, target.Name, $"{actingPlayer.Name}'s Bishop correctly guessed {target.Name}'s card ({guessedRank.Name}). {actingPlayer.Name} gains a token. {target.Name} discards and draws.")
                 {
                     PlayedCard = cardPlayed,
-                    GuessedRank = guessedPremiumRank.Value,
-                    WasGuessCorrect = true
-                    // RevealedPlayerCard is not for public log
+                    GuessedRank = guessedRank.Value,
+                    WasGuessCorrect = true,
+                    RevealedCardOnElimination = targetCardInHand // Not elimination, but card is revealed
                 });
+
+                gameOperations.AwardAffectionToken(actingPlayer.Id, 1);
+                gameOperations.GetPlayer(target.Id)?.DiscardHand(); // Discard their current hand
+                var drawnCard = gameOperations.DrawCardForPlayer(target.Id); // Draw a new card
+                if (drawnCard == null)
+                {
+                    gameOperations.EliminatePlayer(target.Id, "Forced to draw from an empty deck after Bishop guess.", cardPlayed);
+                }
             }
-            else
+            else // Guess incorrect
             {
-                // Public log for incorrect guess (optional, could just be silent or a generic message)
-                gameOperations.AddLogEntry(new GameLogEntry(GameLogEventType.BishopGuessIncorrect, actingPlayer.Id, actingPlayer.Name, target.Id, target.Name, $"{actingPlayer.Name}'s Bishop incorrectly guessed {target.Name}'s card.")
+                _logger.LogInformation("Bishop by {PlayerName} on {TargetName}: Incorrectly guessed {GuessedRankName}. Target had {ActualRankName}. No effect.", 
+                    actingPlayer.Name, target.Name, guessedRank.Name, actualRank.Name);
+                gameOperations.AddLogEntry(new GameLogEntry(GameLogEventType.BishopGuessIncorrect, actingPlayer.Id, actingPlayer.Name, target.Id, target.Name, $"{actingPlayer.Name}'s Bishop incorrectly guessed {target.Name}'s card (guessed {guessedRank.Name}, had {actualRank.Name}). No effect.")
                 {
                     PlayedCard = cardPlayed,
-                    GuessedRank = guessedPremiumRank.Value,
-                    WasGuessCorrect = false
+                    GuessedRank = guessedRank.Value,
+                    WasGuessCorrect = false,
+                    GuessedPlayerActualCard = targetCardInHand
                 });
             }
         }
 
         private void AssignJesterToken(IGameOperations gameOperations, Player target)
         {
-            gameOperations.SetPlayerDeckStatus(target.Id,DeckId,_jesterToken, "true");
+            gameOperations.SetPlayerDeckStatus(target.Id,DeckId,_jesterTokenKey, "true");
         }
 
         private void Effect_Jester(IGameOperations gameOperations, Player actingPlayer, Card cardPlayed)
         {
-            if (gameOperations.GetPlayerDeckStatus(actingPlayer.Id, DeckId, _jesterToken) != "true")
+            if (gameOperations.GetPlayerDeckStatus(actingPlayer.Id, DeckId, _jesterTokenKey) != "true")
             {
                 AssignJesterToken(gameOperations, actingPlayer);
-                _logger.LogInformation("{PlayerName} played Jester and gained a Jester token.", actingPlayer.Name);
-                // The AssignJesterToken method is expected to create the primary JesterTokenAssigned log entry.
-                // We can add a CardPlayed log here to signify the Jester was the source, if desired, or rely on AssignJesterToken's context.
+                _logger.LogDebug("{PlayerName} played Jester and gained a Jester token.", actingPlayer.Name);
+                gameOperations.AddLogEntry(new GameLogEntry(GameLogEventType.JesterTokenAssigned, actingPlayer.Id, actingPlayer.Name, $"{actingPlayer.Name} played the Jester and gained a Jester Token!")
+                {
+                    PlayedCard = cardPlayed
+                });
             }
             else
             {
-                _logger.LogInformation("{PlayerName} played Jester, but already had a Jester token. No new token assigned.", actingPlayer.Name);
+                _logger.LogDebug("{PlayerName} played Jester, but already had a Jester token. No new token assigned.", actingPlayer.Name);
             }
         }
 
-         private void Effect_Assassin(IGameOperations gameOperations, Player actingPlayer, Player? target, Card cardPlayed)
+         private void MarkPlayerWithAssassin(IGameOperations gameOperations, Player target, Player assassin)
          {
-             if (target == null)
-             {
-                _logger.LogWarning("Assassin effect failed for player {PlayerName}: Target null.", actingPlayer.Name);
-                gameOperations.AddLogEntry(new GameLogEntry(GameLogEventType.EffectFizzled, actingPlayer.Id, actingPlayer.Name, "Played Assassin but the target was invalid.")
-                {
-                    PlayedCard = cardPlayed,
-                    FizzleReason = "Invalid target for Assassin."
-                });
-                return;
-             }
+             gameOperations.SetPlayerDeckStatus(target.Id, DeckId, _assassinMarkKey, assassin.Id.ToString());
+         }
+
+         private void Effect_Assassin(IGameOperations gameOperations, Player actingPlayer, Player target, Card cardPlayed)
+         {
+             // target is guaranteed non-null by ExecuteCardEffect (MinTargets = 1 for Assassin)
 
             MarkPlayerWithAssassin(gameOperations, target, actingPlayer);
-            _logger.LogInformation("{PlayerName} played Assassin, marking {TargetName}.", actingPlayer.Name, target.Name);
+            _logger.LogDebug("{PlayerName} played Assassin, marking {TargetName}.", actingPlayer.Name, target.Name);
             gameOperations.AddLogEntry(new GameLogEntry(GameLogEventType.AssassinMarked, actingPlayer.Id, actingPlayer.Name, target.Id, target.Name, $"{actingPlayer.Name} played Assassin, marking {target.Name}. If {target.Name} is targeted by a Guard, {actingPlayer.Name} will be eliminated.")
             {
                 PlayedCard = cardPlayed
             });
          }
-
-        private void MarkPlayerWithAssassin(IGameOperations gameOperations, Player target, Player source)
-        {
-            gameOperations.SetPlayerDeckStatus(target.Id, DeckId, _assassinMarkKey, source.Id.ToString());
-        }
     }
 }
