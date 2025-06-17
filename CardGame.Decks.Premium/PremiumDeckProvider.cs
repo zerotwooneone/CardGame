@@ -13,7 +13,6 @@ namespace CardGame.Decks.Premium
     {
         private readonly ILogger<PremiumDeckProvider> _logger;
         private static readonly Guid _deckId = new("A9A5F11F-4760-4A2C-9B6C-4F9F1CF9A717");
-        private const string _assassinMarkKey = "AssassinMarkedTarget";
         private const string _sycophantMarkKey = "SycophantMarkedBy"; // Player ID of the Sycophant who marked them
         private const string _jesterTokenKey = "JesterToken"; // Token indicating a player has a Jester token
         private static readonly List<Card> _allPremiumCards = new List<Card>();
@@ -78,6 +77,46 @@ namespace CardGame.Decks.Premium
             Player? effectiveTarget1 = targetPlayer1;
             Player? effectiveTarget2 = targetPlayer2;
 
+            // --- Sycophant Mark Redirection --- 
+            // This must happen BEFORE Handmaid protection is checked for the *effective* target.
+            if (effectiveTarget1 != null && premiumRankPlayed.MinTargets > 0 && effectiveTarget1.Id != actingPlayer.Id && premiumRankPlayed.Name != PremiumCardRank.Sycophant.Name) // Card targets an opponent, and is not Sycophant itself placing a mark
+            {
+                var allPlayers = gameOperations.GetGameState().Players; 
+                foreach (var p in allPlayers)
+                {
+                    var sycophantMarkerPlayerIdStr = gameOperations.GetPlayerDeckStatus(p.Id, DeckId, _sycophantMarkKey);
+                    if (!string.IsNullOrEmpty(sycophantMarkerPlayerIdStr)) // Player p is the victim of a Sycophant
+                    {
+                        var sycophantVictimPlayer = gameOperations.GetPlayer(p.Id);
+                        if (sycophantVictimPlayer != null && sycophantVictimPlayer.Id != actingPlayer.Id) // Sycophant victim is an opponent of actingPlayer
+                        {
+                            bool victimIsValidForThisCard = !(sycophantVictimPlayer.Id == actingPlayer.Id && !premiumRankPlayed.CanTargetSelf);
+                            // Potentially add other checks if 'premiumRankPlayed' has specific targeting restrictions beyond 'opponent' and 'self'
+
+                            if (victimIsValidForThisCard)
+                            {
+                                _logger.LogInformation("Sycophant mark active on {SycophantVictimName}. {ActingPlayerName}'s {CardPlayedName} targeting {OriginalTargetName} will be redirected to {SycophantVictimName}.",
+                                    sycophantVictimPlayer.Name, actingPlayer.Name, premiumRankPlayed.Name, effectiveTarget1.Name, sycophantVictimPlayer.Name);
+                                
+                                gameOperations.AddLogEntry(new GameLogEntry(GameLogEventType.SycophantEffect, 
+                                    actingPlayer.Id, 
+                                    actingPlayer.Name,
+                                    $@"{actingPlayer.Name}'s {premiumRankPlayed.Name} play, originally targeting {effectiveTarget1.Name}, was redirected to {sycophantVictimPlayer.Name} due to a Sycophant's influence.")
+                                {
+                                    PlayedCard = cardPlayed, 
+                                    TargetPlayerId = sycophantVictimPlayer.Id, 
+                                    TargetPlayerName = sycophantVictimPlayer.Name
+                                });
+
+                                effectiveTarget1 = sycophantVictimPlayer; // THE REDIRECTION
+                                gameOperations.ClearPlayerDeckStatus(sycophantVictimPlayer.Id, DeckId, _sycophantMarkKey); // Mark is consumed
+                                break; // Only one Sycophant mark can redirect a single play
+                            }
+                        }
+                    }
+                }
+            }
+
             // --- Overall Target Count Validation (based on initially provided targets) ---
             int providedTargetsCount = (targetPlayer1 != null ? 1 : 0) + (targetPlayer2 != null ? 1 : 0);
 
@@ -99,6 +138,8 @@ namespace CardGame.Decks.Premium
                     gameOperations.AddLogEntry(new GameLogEntry(GameLogEventType.EffectFizzled, actingPlayer.Id, actingPlayer.Name, $"{actingPlayer.Name} played {premiumRankPlayed.Name} targeting {targetPlayer1.Name}, but {targetPlayer1.Name} is protected. Effect on this target is skipped.")
                     {
                         PlayedCard = cardPlayed,
+                        TargetPlayerId = targetPlayer1.Id,
+                        TargetPlayerName = targetPlayer1.Name,
                         FizzleReason = "Target is protected by Handmaid."
                     });
                     effectiveTarget1 = null; 
@@ -124,6 +165,8 @@ namespace CardGame.Decks.Premium
                     gameOperations.AddLogEntry(new GameLogEntry(GameLogEventType.EffectFizzled, actingPlayer.Id, actingPlayer.Name, $"{actingPlayer.Name} played {premiumRankPlayed.Name} targeting {targetPlayer2.Name}, but {targetPlayer2.Name} is protected. Effect on this target is skipped.")
                     {
                         PlayedCard = cardPlayed,
+                        TargetPlayerId = targetPlayer2.Id,
+                        TargetPlayerName = targetPlayer2.Name,
                         FizzleReason = "Target is protected by Handmaid."
                     });
                     effectiveTarget2 = null; 
@@ -208,7 +251,7 @@ namespace CardGame.Decks.Premium
                     Effect_Jester(gameOperations, actingPlayer, cardPlayed); 
                     break;
                 case var _ when premiumRankPlayed.Name == PremiumCardRank.Assassin.Name: 
-                    Effect_Assassin(gameOperations, actingPlayer, effectiveTarget1, cardPlayed);
+                    Effect_Assassin(gameOperations, actingPlayer, cardPlayed);
                     break;
                 default:
                     // This case indicates a programming error where a new PremiumCardRank was added
@@ -268,6 +311,33 @@ namespace CardGame.Decks.Premium
             var currentTargetState = gameOperations.GetPlayer(target.Id) 
                 ?? throw new InvalidOperationException($"Guard target player {target.Name} ({target.Id}) not found in game state.");
             
+            var targetCardInHand = currentTargetState.Hand.GetHeldCard() 
+                ?? throw new InvalidOperationException($"Guard target {target.Name} ({currentTargetState.Name}) has no card to check.");
+
+            // Assassin Reaction Check (as per CardEffects.md)
+            var targetHeldRank = GetPremiumRankFromCard(targetCardInHand);
+            if (targetHeldRank.Name == PremiumCardRank.Assassin.Name)
+            {
+                _logger.LogInformation("Assassin revealed! {TargetPlayerName} held Assassin against {ActingPlayerName}'s Guard. {ActingPlayerName} is eliminated.", target.Name, actingPlayer.Name, actingPlayer.Name);
+                
+                gameOperations.EliminatePlayer(actingPlayer.Id, $"Eliminated by {target.Name}'s revealed Assassin when playing Guard.", cardPlayed); // cardPlayed is the Guard
+                target.DiscardHand();
+                gameOperations.DrawCardForPlayer(target.Id);
+
+                gameOperations.AddLogEntry(new GameLogEntry(
+                    GameLogEventType.PlayerEliminated, 
+                    target.Id, // The Assassin holder is the "actor" of this specific event outcome
+                    target.Name,
+                    $@"{actingPlayer.Name} was eliminated by {target.Name}'s revealed Assassin. {target.Name} discarded Assassin and drew a new card.")
+                {
+                    PlayedCard = cardPlayed, // Guard
+                    TargetPlayerId = actingPlayer.Id, // Player who was eliminated
+                    TargetPlayerName = actingPlayer.Name,
+                    RevealedCardOnElimination = targetCardInHand // The Assassin
+                });
+                return; // Guard's main effect does not proceed
+            }
+
             // Rule: Cannot guess Guard with a Guard.
             if (guessedRank.Name == PremiumCardRank.Guard.Name)
             {
@@ -283,36 +353,7 @@ namespace CardGame.Decks.Premium
                 return;
             }
 
-            var targetCard = currentTargetState.Hand.GetHeldCard() 
-                ?? throw new InvalidOperationException($"Guard target {target.Name} ({currentTargetState.Name}) has no card to check.");
-
-            // Assassin's Mark Check: If the target is marked, the assassin is eliminated.
-            var assassinMarkerIdStr = gameOperations.GetPlayerDeckStatus(target.Id, DeckId, _assassinMarkKey); 
-            if (!string.IsNullOrEmpty(assassinMarkerIdStr) && Guid.TryParse(assassinMarkerIdStr, out var assassinPlayerId))
-            {
-                var assassinPlayer = gameOperations.GetPlayer(assassinPlayerId);
-                _logger.LogDebug("Assassin's mark triggered. Guard played by {GuardingPlayer} against {TargetPlayer} caused {AssassinPlayer} to be eliminated.", actingPlayer.Name, target.Name, assassinPlayer?.Name ?? "Unknown Assassin");
-
-                gameOperations.EliminatePlayer(assassinPlayerId, $"Eliminated because their Assassin's mark on {target.Name} was triggered by {actingPlayer.Name}'s Guard.", cardPlayed);
-                gameOperations.AddLogEntry(new GameLogEntry(
-                    eventType: GameLogEventType.PlayerEliminated,
-                    actingPlayerId: actingPlayer.Id, // The Guard player is the one causing the elimination
-                    actingPlayerName: actingPlayer.Name,
-                    message: $"{assassinPlayer?.Name ?? "The marked player"} was eliminated as their Assassin's mark on {target.Name} was triggered by {actingPlayer.Name}'s Guard.",
-                    isPrivate: false)
-                {
-                    PlayedCard = cardPlayed,
-                    TargetPlayerId = assassinPlayerId, // The player who was eliminated
-                    TargetPlayerName = assassinPlayer?.Name ?? "Unknown Assassin",
-                    // RevealedCardOnElimination might not be relevant here, or could be the Guard player's card if desired
-                });
-
-                // Clear the mark after it's triggered
-                gameOperations.ClearPlayerDeckStatus(target.Id, DeckId, _assassinMarkKey);
-                return; // The Guard's main effect does not proceed
-            }
-
-            var targetPremiumRank = GetPremiumRankFromCard(targetCard);
+            var targetPremiumRank = GetPremiumRankFromCard(targetCardInHand); // Re-get rank in case it wasn't Assassin
             if (targetPremiumRank != null && targetPremiumRank.Name == guessedRank.Name)
             {
                 _logger.LogDebug("Guard by {PlayerName} eliminated {TargetPlayerName}. Guessed: {GuessedRankName}", actingPlayer.Name, target.Name, guessedRank.Name);
@@ -322,7 +363,7 @@ namespace CardGame.Decks.Premium
                     PlayedCard = cardPlayed,
                     GuessedRank = guessedRank.Value,
                     WasGuessCorrect = true,
-                    RevealedCardOnElimination = targetCard 
+                    RevealedCardOnElimination = targetCardInHand 
                 });
             }
             else
@@ -333,7 +374,7 @@ namespace CardGame.Decks.Premium
                     PlayedCard = cardPlayed,
                     GuessedRank = guessedRank.Value,
                     WasGuessCorrect = false,
-                    GuessedPlayerActualCard = targetCard 
+                    GuessedPlayerActualCard = targetCardInHand 
                 });
             }
         }
@@ -426,7 +467,7 @@ namespace CardGame.Decks.Premium
                 ?? throw new InvalidOperationException($"Baron failed: Acting player {actingPlayer.Name} has no card to compare.");
             var targetCard = targetPlayerActual.Hand.GetHeldCard() 
                 ?? throw new InvalidOperationException($"Baron failed: Target player {target.Name} has no card to compare.");
-            
+
             var actingPlayerRank = GetPremiumRankFromCard(actingPlayerCard);
             var targetRank = GetPremiumRankFromCard(targetCard);
 
@@ -538,21 +579,17 @@ namespace CardGame.Decks.Premium
 
         private void Effect_Sycophant(IGameOperations gameOperations, Player actingPlayer, Player target, Card cardPlayed)
         {
-            // target is guaranteed non-null by ExecuteCardEffect (MinTargets = 1 for Sycophant)
-
-            // The game logic for Sycophant (forcing target) is likely handled by game rules when effects are resolved against a Sycophant-marked player.
-            // Here, we set the mark and log that the Sycophant has marked a target.
+            // Target existence already validated by ExecuteCardEffect.
+            // Mark the target player with the Sycophant's mark, storing the acting player's ID as the one who placed it.
             gameOperations.SetPlayerDeckStatus(target.Id, DeckId, _sycophantMarkKey, actingPlayer.Id.ToString());
 
-            _logger.LogDebug("{PlayerName} played Sycophant, marking {TargetName}. {TargetName} must target {PlayerName} next turn.", actingPlayer.Name, target.Name, actingPlayer.Name);
-            gameOperations.AddLogEntry(new GameLogEntry(GameLogEventType.SycophantEffect, actingPlayer.Id, actingPlayer.Name, target.Id, target.Name, $"{actingPlayer.Name} played Sycophant, marking {target.Name}. {target.Name} must target {actingPlayer.Name} with their next card effect, if possible.")
+            _logger.LogDebug("{PlayerName} played Sycophant, marking {TargetName}.", actingPlayer.Name, target.Name);
+            gameOperations.AddLogEntry(new GameLogEntry(GameLogEventType.SycophantEffect, actingPlayer.Id, actingPlayer.Name, $"{actingPlayer.Name} played Sycophant, marking {target.Name}. The next applicable targeted card play by any player must target {target.Name}.")
             {
                 PlayedCard = cardPlayed,
                 TargetPlayerId = target.Id,
                 TargetPlayerName = target.Name
-                // Potentially add a property like MarkedBySycophantTargetId = target.Id if GameLogEntry supports it and it's useful for UI.
             });
-            // Actual enforcement of Sycophant's mark would be in gameOperations or target selection logic based on the status set above.
         }
 
         private void Effect_Prince(IGameOperations gameOperations, Player actingPlayer, Player target, Card cardPlayed)
@@ -791,21 +828,11 @@ namespace CardGame.Decks.Premium
             }
         }
 
-         private void MarkPlayerWithAssassin(IGameOperations gameOperations, Player target, Player assassin)
+         private void Effect_Assassin(IGameOperations gameOperations, Player actingPlayer, Card cardPlayed) // Target parameter removed as Assassin has no targets when played
          {
-             gameOperations.SetPlayerDeckStatus(target.Id, DeckId, _assassinMarkKey, assassin.Id.ToString());
-         }
-
-         private void Effect_Assassin(IGameOperations gameOperations, Player actingPlayer, Player target, Card cardPlayed)
-         {
-             // target is guaranteed non-null by ExecuteCardEffect (MinTargets = 1 for Assassin)
-
-            MarkPlayerWithAssassin(gameOperations, target, actingPlayer);
-            _logger.LogDebug("{PlayerName} played Assassin, marking {TargetName}.", actingPlayer.Name, target.Name);
-            gameOperations.AddLogEntry(new GameLogEntry(GameLogEventType.AssassinMarked, actingPlayer.Id, actingPlayer.Name, target.Id, target.Name, $"{actingPlayer.Name} played Assassin, marking {target.Name}. If {target.Name} is targeted by a Guard, {actingPlayer.Name} will be eliminated.")
-            {
-                PlayedCard = cardPlayed
-            });
+             // As per CardEffects.md: "Does nothing when played."
+             // The reactive part is handled in the effect of the card targeting the Assassin holder (e.g., Guard).
+             _logger.LogDebug("Assassin played by {PlayerName}. Effect: Does nothing on its own.", actingPlayer.Name);
          }
     }
 }
